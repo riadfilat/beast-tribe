@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
 import { notFound } from 'next/navigation';
+import UserActions from './UserActions';
 
 export default async function UserDetailPage({ params }: { params: { id: string } }) {
   await requireAdmin();
@@ -13,6 +14,18 @@ export default async function UserDetailPage({ params }: { params: { id: string 
     .single();
 
   if (!user) notFound();
+
+  // Check ban status via admin auth API
+  let isBanned = false;
+  try {
+    const { data: authUserRes } = await db.auth.admin.getUserById(params.id);
+    const bannedUntil = (authUserRes?.user as any)?.banned_until;
+    if (bannedUntil) {
+      isBanned = new Date(bannedUntil).getTime() > Date.now();
+    }
+  } catch {
+    // ignore
+  }
 
   // Parallel data fetching
   const [workoutLogs, xpHistory, eventRsvps, packMembership] = await Promise.all([
@@ -40,6 +53,9 @@ export default async function UserDetailPage({ params }: { params: { id: string 
   return (
     <div>
       <Link href="/users" className="text-sm text-brand-aqua hover:underline mb-4 inline-block">← Back to Users</Link>
+
+      {/* Actions */}
+      <UserActions userId={params.id} isBanned={isBanned} />
 
       {/* Profile Header */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">

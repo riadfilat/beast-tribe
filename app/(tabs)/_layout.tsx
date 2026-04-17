@@ -1,14 +1,26 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS } from '../../src/lib/constants';
 
-function TabBarIcon({ label, focused }: { label: string; focused: boolean }) {
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
+interface TabIconProps {
+  name: IoniconName;
+  nameFocused: IoniconName;
+  focused: boolean;
+  size?: number;
+}
+
+function TabIcon({ name, nameFocused, focused, size = 22 }: TabIconProps) {
   return (
-    <View style={[styles.iconBox, focused && styles.iconBoxActive]}>
-      <Text style={[styles.iconText, focused && styles.iconTextActive]}>
-        {label[0]}
-      </Text>
+    <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+      <Ionicons
+        name={focused ? nameFocused : name}
+        size={size}
+        color={focused ? COLORS.orange : COLORS.aqua}
+      />
     </View>
   );
 }
@@ -20,36 +32,53 @@ export default function TabLayout() {
         headerShown: false,
         tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: COLORS.orange,
-        tabBarInactiveTintColor: COLORS.tabInactive,
+        tabBarInactiveTintColor: COLORS.aqua,
         tabBarLabelStyle: styles.tabLabel,
       }}
     >
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ focused }) => <TabBarIcon label="H" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="workouts"
-        options={{
-          title: 'Workouts',
-          tabBarIcon: ({ focused }) => <TabBarIcon label="W" focused={focused} />,
+          title: 'HOME',
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name="home-outline" nameFocused="home" focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="feed"
         options={{
-          title: 'Feed',
-          tabBarIcon: ({ focused }) => <TabBarIcon label="F" focused={focused} />,
+          title: 'TRIBE',
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name="people-outline" nameFocused="people" focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="events"
+        options={{
+          title: 'EVENTS',
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name="calendar-outline" nameFocused="calendar" focused={focused} size={21} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="workouts"
+        options={{
+          title: 'MISSION',
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name="ribbon-outline" nameFocused="ribbon" focused={focused} size={21} />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
-          tabBarIcon: ({ focused }) => <TabBarIcon label="P" focused={focused} />,
+          title: 'PROFILE',
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name="person-outline" nameFocused="person" focused={focused} />
+          ),
         }}
       />
     </Tabs>
@@ -58,34 +87,27 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    borderTopColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: COLORS.tabBarBg,
+    borderTopColor: COLORS.tabBarBorder,
     borderTopWidth: 1,
-    height: 70,
+    height: 72,
     paddingTop: 6,
     paddingBottom: 10,
   },
   tabLabel: {
-    fontFamily: FONTS.body,
-    fontSize: 9,
+    fontFamily: FONTS.bodySemiBold,
+    fontSize: 8,
+    letterSpacing: 0.8,
   },
-  iconBox: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+  iconWrap: {
+    width: 40,
+    height: 36,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
-  iconBoxActive: {
-    backgroundColor: 'rgba(232,143,36,0.15)',
-  },
-  iconText: {
-    fontSize: 10,
-    fontFamily: FONTS.bodySemiBold,
-    color: 'rgba(255,255,255,0.2)',
-  },
-  iconTextActive: {
-    color: COLORS.orange,
+  iconWrapActive: {
+    backgroundColor: 'rgba(232,143,36,0.14)',
   },
 });

@@ -9,7 +9,7 @@ export const revalidate = 0;
 export default async function UsersPage({
   searchParams,
 }: {
-  searchParams: { q?: string; tier?: string; region?: string; page?: string };
+  searchParams: { q?: string; tier?: string; region?: string; page?: string; premium?: string };
 }) {
   await requireAdmin();
   const db = createAdminClient();
@@ -37,6 +37,9 @@ export default async function UsersPage({
   }
   if (searchParams.region && searchParams.region !== 'all') {
     query = query.eq('region', searchParams.region);
+  }
+  if (searchParams.premium === 'true') {
+    query = query.eq('is_premium', true);
   }
 
   const { data: users, count } = await query;

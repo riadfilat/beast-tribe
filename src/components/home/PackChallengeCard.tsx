@@ -43,9 +43,9 @@ export function PackChallengeCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: 'rgba(232,143,36,0.04)',
+    backgroundColor: 'rgba(232,143,36,0.07)',
     borderWidth: 1,
-    borderColor: 'rgba(232,143,36,0.15)',
+    borderColor: 'rgba(232,143,36,0.25)',
     borderRadius: 14,
     padding: 12,
     marginBottom: 10,
@@ -56,19 +56,19 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   title: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: FONTS.heading,
-    color: COLORS.white,
+    color: COLORS.textPrimary,
   },
   daysLeft: {
-    fontSize: 9,
+    fontSize: 11,
     fontFamily: FONTS.bodySemiBold,
     color: COLORS.orange,
   },
   detail: {
-    fontSize: 9,
+    fontSize: 11,
     fontFamily: FONTS.body,
     color: COLORS.textTertiary,
-    marginTop: 4,
+    marginTop: 6,
   },
 });

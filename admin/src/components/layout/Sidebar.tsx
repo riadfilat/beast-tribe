@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import { createClient } from '@/lib/supabase-browser';
 
 interface NavItem {
@@ -35,6 +36,7 @@ interface SidebarProps {
 
 export default function Sidebar({ type, userName, roleBadge, pendingModeration }: SidebarProps) {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
   const nav = type === 'admin' ? ADMIN_NAV : PARTNER_NAV;
 
   // Inject moderation badge
@@ -60,70 +62,96 @@ export default function Sidebar({ type, userName, roleBadge, pendingModeration }
   }
 
   return (
-    <aside className="w-64 bg-brand-teal min-h-screen flex flex-col text-white flex-none">
-      {/* Header */}
-      <div className="px-6 py-5 border-b border-white/10">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-brand-orange rounded-lg flex items-center justify-center text-sm font-bold text-white shadow-sm">
-            🐺
-          </div>
-          <div>
-            <h1 className="text-sm font-bold leading-tight">Beast Tribe</h1>
-            <p className="text-xs text-white/50 leading-tight">
-              {type === 'admin' ? 'Admin Dashboard' : 'Partner Portal'}
-            </p>
+    <>
+      {/* Mobile hamburger */}
+      <button
+        type="button"
+        aria-label="Toggle navigation"
+        onClick={() => setOpen((v) => !v)}
+        className="md:hidden fixed top-3 left-3 z-50 w-10 h-10 rounded-lg bg-brand-teal text-white flex items-center justify-center shadow-lg"
+      >
+        <span className="text-lg">{open ? '✕' : '☰'}</span>
+      </button>
+
+      {/* Backdrop for mobile */}
+      {open && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/40 z-30"
+          onClick={() => setOpen(false)}
+          aria-hidden
+        />
+      )}
+
+      <aside
+        className={`fixed md:static top-0 left-0 z-40 w-64 bg-brand-teal min-h-screen flex flex-col text-white flex-none transform transition-transform duration-200 md:w-64 md:translate-x-0 ${
+          open ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-white/10">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-brand-orange rounded-lg flex items-center justify-center text-sm font-bold text-white shadow-sm">
+              🐺
+            </div>
+            <div>
+              <h1 className="text-sm font-bold leading-tight">Beast Tribe</h1>
+              <p className="text-xs text-white/50 leading-tight">
+                {type === 'admin' ? 'Admin Dashboard' : 'Partner Portal'}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5">
-        {navWithBadges.map((item) => {
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
-                active
-                  ? 'bg-white/15 text-white font-medium shadow-sm'
-                  : 'text-white/60 hover:bg-white/8 hover:text-white/90'
-              }`}
-            >
-              <span className="text-base w-5 flex-none text-center">{item.icon}</span>
-              <span className="flex-1">{item.label}</span>
-              {item.badge ? (
-                <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold min-w-[20px] text-center">
-                  {item.badge > 99 ? '99+' : item.badge}
-                </span>
-              ) : null}
-              {active && (
-                <span className="w-1.5 h-1.5 rounded-full bg-brand-orange flex-none" />
-              )}
-            </Link>
-          );
-        })}
-      </nav>
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-4 space-y-0.5">
+          {navWithBadges.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
+                  active
+                    ? 'bg-white/15 text-white font-medium shadow-sm'
+                    : 'text-white/60 hover:bg-white/8 hover:text-white/90'
+                }`}
+              >
+                <span className="text-base w-5 flex-none text-center">{item.icon}</span>
+                <span className="flex-1">{item.label}</span>
+                {item.badge ? (
+                  <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold min-w-[20px] text-center">
+                    {item.badge > 99 ? '99+' : item.badge}
+                  </span>
+                ) : null}
+                {active && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-brand-orange flex-none" />
+                )}
+              </Link>
+            );
+          })}
+        </nav>
 
-      {/* User footer */}
-      <div className="px-4 py-4 border-t border-white/10">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full bg-brand-orange flex items-center justify-center text-xs font-bold text-white flex-none shadow-sm">
-            {userName.charAt(0).toUpperCase()}
+        {/* User footer */}
+        <div className="px-4 py-4 border-t border-white/10">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-8 h-8 rounded-full bg-brand-orange flex items-center justify-center text-xs font-bold text-white flex-none shadow-sm">
+              {userName.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate leading-tight">{userName}</p>
+              <p className="text-xs text-white/40 capitalize leading-tight">{roleBadge}</p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate leading-tight">{userName}</p>
-            <p className="text-xs text-white/40 capitalize leading-tight">{roleBadge}</p>
-          </div>
+          <button
+            onClick={handleSignOut}
+            className="w-full text-xs text-white/40 hover:text-white/70 transition text-left py-1 flex items-center gap-1"
+          >
+            <span>Sign out</span>
+            <span className="text-white/25">→</span>
+          </button>
         </div>
-        <button
-          onClick={handleSignOut}
-          className="w-full text-xs text-white/40 hover:text-white/70 transition text-left py-1 flex items-center gap-1"
-        >
-          <span>Sign out</span>
-          <span className="text-white/25">→</span>
-        </button>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }

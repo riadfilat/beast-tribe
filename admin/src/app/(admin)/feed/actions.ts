@@ -8,11 +8,14 @@ export async function hidePost(postId: string) {
   const admin = await requireAdmin();
   const db = createAdminClient();
 
-  await db.from('feed_posts').delete().eq('id', postId);
+  const { error } = await db.from('feed_posts')
+    .update({ is_hidden: true })
+    .eq('id', postId);
+  if (error) throw new Error(`Hide post error: ${error.message}`);
 
   await db.from('admin_audit_log').insert({
     admin_user_id: admin.id,
-    action: 'remove_post',
+    action: 'hide_post',
     target_table: 'feed_posts',
     target_id: postId,
   });

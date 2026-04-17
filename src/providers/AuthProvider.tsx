@@ -8,10 +8,12 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  isEmailConfirmed: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  refreshSession: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
 }
 
@@ -60,12 +62,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
-      setProfile(data as Profile | null);
+        .maybeSingle();
+      if (error) {
+        console.warn('[AuthProvider] fetchProfile error:', error.message);
+        setProfile(null);
+      } else {
+        setProfile(data as Profile | null);
+      }
+    } catch (err) {
+      console.warn('[AuthProvider] fetchProfile exception:', err);
+      setProfile(null);
     } finally {
       fetchingRef.current = false;
       setLoading(false);
@@ -81,14 +91,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       gender: null,
       total_xp: 0,
       level: 1,
-      tier: 'raw' as const,
+      tier: 'initiate' as const,
       current_streak: 0,
       longest_streak: 0,
       region: 'SA',
       is_premium: false,
       onboarding_completed: onboarded,
+      training_frequency: 4,
+      beast_score: 0,
       pack_id: null,
       created_at: new Date().toISOString(),
+      date_of_birth: null,
+      city: null,
+      experience_level: null,
+      five_k_time_seconds: null,
+      max_bench_kg: null,
+      daily_steps_avg: null,
     };
   }
 
@@ -103,21 +121,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error, data } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
 
-    if (data.user) {
+    // If Supabase returned a session immediately (email confirmation disabled),
+    // create the profile then sign out — the user MUST confirm their email
+    // before they can access the app, regardless of Supabase project settings.
+    if (data.user && data.session) {
       try {
-        const { error: profileError } = await supabase.from('profiles').insert({
-          id: data.user.id,
-          full_name: fullName,
-          display_name: fullName.split(' ')[0],
-        });
-        if (profileError) throw profileError;
-        await fetchProfile(data.user.id);
+        const { data: existing } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', data.user.id)
+          .maybeSingle();
+
+        if (!existing) {
+          const { error: profileError } = await supabase.from('profiles').insert({
+            id: data.user.id,
+            full_name: fullName,
+            display_name: fullName.split(' ')[0],
+          });
+          if (profileError) {
+            console.error('Profile insert error:', profileError);
+            throw profileError;
+          }
+        }
       } catch (err) {
-        // Clean up auth session if profile creation fails
         await supabase.auth.signOut();
         throw err;
       }
+      // Sign out so the user can't enter the app until email is confirmed
+      await supabase.auth.signOut();
     }
+
+    // Always end signup with the "check your email" prompt —
+    // whether Supabase confirmation is enabled or disabled.
+    throw new Error('CHECK_EMAIL_CONFIRMATION');
   }
 
   async function signIn(email: string, password: string) {
@@ -186,6 +222,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Re-fetches the session from Supabase — used after user clicks confirmation link
+  async function refreshSession() {
+    if (!isSupabaseConfigured) return;
+    const { data } = await supabase.auth.refreshSession();
+    if (data.session) {
+      setSession(data.session);
+      fetchingRef.current = false;
+      await fetchProfile(data.session.user.id);
+    }
+  }
+
+  // Email is confirmed if confirmed_at is set, or if Supabase confirmation is disabled (no email in unconfirmed list)
+  const isEmailConfirmed = !isSupabaseConfigured
+    ? true
+    : !!session?.user?.email_confirmed_at || !!session?.user?.confirmed_at;
+
   return (
     <AuthContext.Provider
       value={{
@@ -193,10 +245,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: session?.user ?? null,
         profile,
         loading,
+        isEmailConfirmed,
         signUp,
         signIn,
         signOut,
         refreshProfile,
+        refreshSession,
         completeOnboarding,
       }}
     >

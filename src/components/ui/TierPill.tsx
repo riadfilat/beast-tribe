@@ -31,12 +31,12 @@ export function TierPill({ tier, size = 'small', showLevel, level }: TierPillPro
           styles.text,
           {
             color: config.color,
-            fontSize: isSmall ? 9 : 11,
+            fontSize: isSmall ? 11 : 12,
           },
         ]}
       >
-        {config.label.toUpperCase()}
-        {showLevel && level ? ` — Level ${level}` : ''}
+        {config.shortLabel.toUpperCase()}
+        {showLevel && level ? ` · LVL ${level}` : ''}
       </Text>
     </View>
   );

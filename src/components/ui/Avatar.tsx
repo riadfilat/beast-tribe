@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { COLORS, FONTS, Tier, TIERS } from '../../lib/constants';
 import { getInitials } from '../../utils/format';
 
@@ -8,6 +8,8 @@ interface AvatarProps {
   size?: number;
   tier?: Tier;
   backgroundColor?: string;
+  imageUrl?: string;
+  localImage?: any;
 }
 
 const BG_COLORS = [COLORS.teal, COLORS.orange, COLORS.aqua, COLORS.coral, COLORS.blueGray, COLORS.green];
@@ -20,11 +22,13 @@ function hashColor(name: string): string {
   return BG_COLORS[Math.abs(hash) % BG_COLORS.length];
 }
 
-export function Avatar({ name, size = 32, tier, backgroundColor }: AvatarProps) {
+export function Avatar({ name, size = 32, tier, backgroundColor, imageUrl, localImage }: AvatarProps) {
+  const [imgError, setImgError] = useState(false);
   const bg = backgroundColor || hashColor(name);
   const borderColor = tier ? TIERS[tier].color : 'transparent';
   const hasBorder = !!tier;
   const fontSize = size * 0.35;
+  const hasImage = (imageUrl || localImage) && !imgError;
 
   return (
     <View
@@ -34,13 +38,26 @@ export function Avatar({ name, size = 32, tier, backgroundColor }: AvatarProps) 
           width: size,
           height: size,
           borderRadius: size / 2,
-          backgroundColor: bg,
+          backgroundColor: hasImage ? 'transparent' : bg,
           borderWidth: hasBorder ? 2 : 0,
           borderColor,
         },
       ]}
     >
-      <Text style={[styles.text, { fontSize }]}>{getInitials(name)}</Text>
+      {hasImage ? (
+        <Image
+          source={localImage || { uri: imageUrl }}
+          style={{
+            width: size - (hasBorder ? 4 : 0),
+            height: size - (hasBorder ? 4 : 0),
+            borderRadius: (size - (hasBorder ? 4 : 0)) / 2,
+          }}
+          resizeMode="cover"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <Text style={[styles.text, { fontSize }]}>{getInitials(name)}</Text>
+      )}
     </View>
   );
 }
@@ -49,6 +66,7 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   text: {
     fontFamily: FONTS.bodySemiBold,

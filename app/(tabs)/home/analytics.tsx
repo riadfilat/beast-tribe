@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { FilterTabs } from '../../../src/components/ui';
 import { COLORS, FONTS } from '../../../src/lib/constants';
 import { useWorkoutHistory, useStepHistory, useXPHistory, useProfile, useMyRSVPs } from '../../../src/hooks';
@@ -24,32 +25,10 @@ function getSinceDate(periodIndex: number): string | undefined {
   return undefined; // All time
 }
 
-// Demo data for when Supabase isn't connected
-const DEMO_WORKOUTS = [
-  { id: '1', title: 'Morning Run', duration_minutes: 35, calories_burned: 380, completed_at: new Date(Date.now() - 86400000).toISOString(), sport: { name: 'Running', emoji: '🏃' } },
-  { id: '2', title: 'HIIT Session', duration_minutes: 45, calories_burned: 520, completed_at: new Date(Date.now() - 86400000 * 2).toISOString(), sport: { name: 'Gym', emoji: '🏋️' } },
-  { id: '3', title: 'Yoga Flow', duration_minutes: 30, calories_burned: 180, completed_at: new Date(Date.now() - 86400000 * 3).toISOString(), sport: { name: 'Yoga', emoji: '🧘' } },
-  { id: '4', title: 'Chest & Back', duration_minutes: 50, calories_burned: 420, completed_at: new Date(Date.now() - 86400000 * 4).toISOString(), sport: { name: 'Gym', emoji: '🏋️' } },
-  { id: '5', title: '5K Run', duration_minutes: 28, calories_burned: 350, completed_at: new Date(Date.now() - 86400000 * 5).toISOString(), sport: { name: 'Running', emoji: '🏃' } },
-];
-
-const DEMO_STEPS = [
-  { logged_date: new Date().toISOString().split('T')[0], steps: 7200, step_goal: 10000 },
-  { logged_date: new Date(Date.now() - 86400000).toISOString().split('T')[0], steps: 9400, step_goal: 10000 },
-  { logged_date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0], steps: 6800, step_goal: 10000 },
-  { logged_date: new Date(Date.now() - 86400000 * 3).toISOString().split('T')[0], steps: 11200, step_goal: 10000 },
-  { logged_date: new Date(Date.now() - 86400000 * 4).toISOString().split('T')[0], steps: 8100, step_goal: 10000 },
-  { logged_date: new Date(Date.now() - 86400000 * 5).toISOString().split('T')[0], steps: 5400, step_goal: 10000 },
-  { logged_date: new Date(Date.now() - 86400000 * 6).toISOString().split('T')[0], steps: 10300, step_goal: 10000 },
-];
-
-const DEMO_XP = [
-  { amount: 200, source: 'workout', description: 'Completed: Morning Run', created_at: new Date(Date.now() - 86400000).toISOString() },
-  { amount: 300, source: 'workout', description: 'Completed: HIIT Session', created_at: new Date(Date.now() - 86400000 * 2).toISOString() },
-  { amount: 120, source: 'steps', description: 'Daily step goal reached', created_at: new Date(Date.now() - 86400000 * 3).toISOString() },
-  { amount: 150, source: 'workout', description: 'Completed: Yoga Flow', created_at: new Date(Date.now() - 86400000 * 3).toISOString() },
-  { amount: 50, source: 'quest', description: 'Quest: Log a meal', created_at: new Date(Date.now() - 86400000 * 4).toISOString() },
-];
+// Empty — real data from Supabase
+const DEMO_WORKOUTS: any[] = [];
+const DEMO_STEPS: any[] = [];
+const DEMO_XP: any[] = [];
 
 export default function AnalyticsScreen() {
   const router = useRouter();
@@ -110,8 +89,8 @@ export default function AnalyticsScreen() {
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Text style={styles.backArrow}>←</Text>
+          <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/home')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Ionicons name="arrow-back" size={22} color={COLORS.white} />
           </TouchableOpacity>
           <Text style={styles.title}>Performance</Text>
           <View style={{ width: 24 }} />
@@ -245,7 +224,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   scroll: { flex: 1, paddingHorizontal: 16 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, marginBottom: 12 },
-  backArrow: { fontSize: 22, color: COLORS.white },
   title: { fontSize: 18, fontFamily: FONTS.heading, color: COLORS.white },
 
   // Stats grid
@@ -284,7 +262,7 @@ const styles = StyleSheet.create({
     borderRadius: 14, padding: 14, gap: 10,
   },
   breakdownRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  breakdownName: { fontSize: 12, fontFamily: FONTS.bodyMedium, color: COLORS.white, width: 70 },
+  breakdownName: { fontSize: 12, fontFamily: FONTS.bodyMedium, color: COLORS.textPrimary, width: 70 },
   breakdownBarTrack: { flex: 1, height: 6, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 3, overflow: 'hidden' },
   breakdownBarFill: { height: '100%', backgroundColor: COLORS.orange, borderRadius: 3 },
   breakdownPct: { fontSize: 10, fontFamily: FONTS.body, color: COLORS.textSecondary, width: 50, textAlign: 'right' },

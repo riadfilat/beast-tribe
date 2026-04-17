@@ -7,7 +7,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- ============================================
 -- PROFILES
 -- ============================================
-CREATE TABLE profiles (
+CREATE TABLE IF NOT EXISTS profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name TEXT NOT NULL,
   display_name TEXT,
@@ -30,15 +30,23 @@ CREATE TABLE profiles (
 );
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can read own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can read own profile" ON profiles;
 CREATE POLICY "Users can read own profile" ON profiles FOR SELECT USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
 CREATE POLICY "Users can insert own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
+DROP POLICY IF EXISTS "Public profiles readable" ON profiles;
+DROP POLICY IF EXISTS "Public profiles readable" ON profiles;
 CREATE POLICY "Public profiles readable" ON profiles FOR SELECT USING (true);
 
 -- ============================================
 -- SPORTS
 -- ============================================
-CREATE TABLE sports (
+CREATE TABLE IF NOT EXISTS sports (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL UNIQUE,
   emoji TEXT,
@@ -50,12 +58,14 @@ CREATE TABLE sports (
 );
 
 ALTER TABLE sports ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Sports are public" ON sports;
+DROP POLICY IF EXISTS "Sports are public" ON sports;
 CREATE POLICY "Sports are public" ON sports FOR SELECT USING (true);
 
 -- ============================================
 -- USER_SPORTS
 -- ============================================
-CREATE TABLE user_sports (
+CREATE TABLE IF NOT EXISTS user_sports (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   sport_id UUID NOT NULL REFERENCES sports(id),
@@ -64,12 +74,14 @@ CREATE TABLE user_sports (
 );
 
 ALTER TABLE user_sports ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users manage own sports" ON user_sports;
+DROP POLICY IF EXISTS "Users manage own sports" ON user_sports;
 CREATE POLICY "Users manage own sports" ON user_sports FOR ALL USING (auth.uid() = user_id);
 
 -- ============================================
 -- BASELINES
 -- ============================================
-CREATE TABLE baselines (
+CREATE TABLE IF NOT EXISTS baselines (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   weight_kg NUMERIC(5,1),
@@ -83,12 +95,14 @@ CREATE TABLE baselines (
 );
 
 ALTER TABLE baselines ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users manage own baselines" ON baselines;
+DROP POLICY IF EXISTS "Users manage own baselines" ON baselines;
 CREATE POLICY "Users manage own baselines" ON baselines FOR ALL USING (auth.uid() = user_id);
 
 -- ============================================
 -- GOALS
 -- ============================================
-CREATE TABLE goals (
+CREATE TABLE IF NOT EXISTS goals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   sport_id UUID REFERENCES sports(id),
@@ -103,12 +117,14 @@ CREATE TABLE goals (
 );
 
 ALTER TABLE goals ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users manage own goals" ON goals;
+DROP POLICY IF EXISTS "Users manage own goals" ON goals;
 CREATE POLICY "Users manage own goals" ON goals FOR ALL USING (auth.uid() = user_id);
 
 -- ============================================
 -- PACKS
 -- ============================================
-CREATE TABLE packs (
+CREATE TABLE IF NOT EXISTS packs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   animal TEXT,
@@ -117,15 +133,17 @@ CREATE TABLE packs (
 );
 
 ALTER TABLE packs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Packs are public" ON packs;
+DROP POLICY IF EXISTS "Packs are public" ON packs;
 CREATE POLICY "Packs are public" ON packs FOR SELECT USING (true);
 
 -- Add FK to profiles now that packs table exists
-ALTER TABLE profiles ADD CONSTRAINT fk_profiles_pack FOREIGN KEY (pack_id) REFERENCES packs(id);
+ALTER TABLE profiles DROP CONSTRAINT IF EXISTS fk_profiles_pack; ALTER TABLE profiles ADD CONSTRAINT fk_profiles_pack FOREIGN KEY (pack_id) REFERENCES packs(id);
 
 -- ============================================
 -- XP_TRANSACTIONS
 -- ============================================
-CREATE TABLE xp_transactions (
+CREATE TABLE IF NOT EXISTS xp_transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   amount INTEGER NOT NULL,
@@ -135,10 +153,14 @@ CREATE TABLE xp_transactions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_xp_user_created ON xp_transactions(user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_xp_user_created ON xp_transactions(user_id, created_at);
 
 ALTER TABLE xp_transactions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users read own xp" ON xp_transactions;
+DROP POLICY IF EXISTS "Users read own xp" ON xp_transactions;
 CREATE POLICY "Users read own xp" ON xp_transactions FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users insert own xp" ON xp_transactions;
+DROP POLICY IF EXISTS "Users insert own xp" ON xp_transactions;
 CREATE POLICY "Users insert own xp" ON xp_transactions FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Trigger: recalculate level and tier on XP insert
@@ -167,6 +189,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_xp_recalc ON xp_transactions;
 CREATE TRIGGER trg_xp_recalc
 AFTER INSERT ON xp_transactions
 FOR EACH ROW EXECUTE FUNCTION recalculate_level_and_tier();
@@ -174,7 +197,7 @@ FOR EACH ROW EXECUTE FUNCTION recalculate_level_and_tier();
 -- ============================================
 -- WORKOUTS
 -- ============================================
-CREATE TABLE workouts (
+CREATE TABLE IF NOT EXISTS workouts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   description TEXT,
@@ -190,12 +213,14 @@ CREATE TABLE workouts (
 );
 
 ALTER TABLE workouts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Workouts are public" ON workouts;
+DROP POLICY IF EXISTS "Workouts are public" ON workouts;
 CREATE POLICY "Workouts are public" ON workouts FOR SELECT USING (true);
 
 -- ============================================
 -- WORKOUT_LOGS
 -- ============================================
-CREATE TABLE workout_logs (
+CREATE TABLE IF NOT EXISTS workout_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   workout_id UUID REFERENCES workouts(id),
@@ -211,12 +236,14 @@ CREATE TABLE workout_logs (
 );
 
 ALTER TABLE workout_logs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users manage own workout logs" ON workout_logs;
+DROP POLICY IF EXISTS "Users manage own workout logs" ON workout_logs;
 CREATE POLICY "Users manage own workout logs" ON workout_logs FOR ALL USING (auth.uid() = user_id);
 
 -- ============================================
 -- NUTRITION_LOGS
 -- ============================================
-CREATE TABLE nutrition_logs (
+CREATE TABLE IF NOT EXISTS nutrition_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   meal_type TEXT NOT NULL CHECK (meal_type IN ('breakfast', 'lunch', 'dinner', 'snack')),
@@ -230,12 +257,14 @@ CREATE TABLE nutrition_logs (
 );
 
 ALTER TABLE nutrition_logs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users manage own nutrition" ON nutrition_logs;
+DROP POLICY IF EXISTS "Users manage own nutrition" ON nutrition_logs;
 CREATE POLICY "Users manage own nutrition" ON nutrition_logs FOR ALL USING (auth.uid() = user_id);
 
 -- ============================================
 -- WATER_LOGS
 -- ============================================
-CREATE TABLE water_logs (
+CREATE TABLE IF NOT EXISTS water_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   glasses INTEGER NOT NULL DEFAULT 1,
@@ -244,12 +273,14 @@ CREATE TABLE water_logs (
 );
 
 ALTER TABLE water_logs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users manage own water logs" ON water_logs;
+DROP POLICY IF EXISTS "Users manage own water logs" ON water_logs;
 CREATE POLICY "Users manage own water logs" ON water_logs FOR ALL USING (auth.uid() = user_id);
 
 -- ============================================
 -- STEP_LOGS
 -- ============================================
-CREATE TABLE step_logs (
+CREATE TABLE IF NOT EXISTS step_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   steps INTEGER NOT NULL,
@@ -261,12 +292,14 @@ CREATE TABLE step_logs (
 );
 
 ALTER TABLE step_logs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users manage own steps" ON step_logs;
+DROP POLICY IF EXISTS "Users manage own steps" ON step_logs;
 CREATE POLICY "Users manage own steps" ON step_logs FOR ALL USING (auth.uid() = user_id);
 
 -- ============================================
 -- FEED_POSTS
 -- ============================================
-CREATE TABLE feed_posts (
+CREATE TABLE IF NOT EXISTS feed_posts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   content TEXT NOT NULL,
@@ -278,13 +311,17 @@ CREATE TABLE feed_posts (
 );
 
 ALTER TABLE feed_posts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Feed posts are public" ON feed_posts;
+DROP POLICY IF EXISTS "Feed posts are public" ON feed_posts;
 CREATE POLICY "Feed posts are public" ON feed_posts FOR SELECT USING (is_visible = true);
+DROP POLICY IF EXISTS "Users manage own posts" ON feed_posts;
+DROP POLICY IF EXISTS "Users manage own posts" ON feed_posts;
 CREATE POLICY "Users manage own posts" ON feed_posts FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- ============================================
 -- BEASTS (reactions — replaces "kudos")
 -- ============================================
-CREATE TABLE beasts (
+CREATE TABLE IF NOT EXISTS beasts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   post_id UUID NOT NULL REFERENCES feed_posts(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -293,14 +330,20 @@ CREATE TABLE beasts (
 );
 
 ALTER TABLE beasts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Beasts are public" ON beasts;
+DROP POLICY IF EXISTS "Beasts are public" ON beasts;
 CREATE POLICY "Beasts are public" ON beasts FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users give beasts" ON beasts;
+DROP POLICY IF EXISTS "Users give beasts" ON beasts;
 CREATE POLICY "Users give beasts" ON beasts FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users remove own beasts" ON beasts;
+DROP POLICY IF EXISTS "Users remove own beasts" ON beasts;
 CREATE POLICY "Users remove own beasts" ON beasts FOR DELETE USING (auth.uid() = user_id);
 
 -- ============================================
 -- EVENTS
 -- ============================================
-CREATE TABLE events (
+CREATE TABLE IF NOT EXISTS events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   description TEXT,
@@ -322,17 +365,19 @@ CREATE TABLE events (
 );
 
 -- Indexes for event search by coach, gym, sport
-CREATE INDEX idx_events_coach ON events(coach_name);
-CREATE INDEX idx_events_gym ON events(gym_name);
-CREATE INDEX idx_events_sport ON events(sport_id);
+CREATE INDEX IF NOT EXISTS idx_events_coach ON events(coach_name);
+CREATE INDEX IF NOT EXISTS idx_events_gym ON events(gym_name);
+CREATE INDEX IF NOT EXISTS idx_events_sport ON events(sport_id);
 
 ALTER TABLE events ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Events are public" ON events;
+DROP POLICY IF EXISTS "Events are public" ON events;
 CREATE POLICY "Events are public" ON events FOR SELECT USING (true);
 
 -- ============================================
 -- EVENT_RSVPS
 -- ============================================
-CREATE TABLE event_rsvps (
+CREATE TABLE IF NOT EXISTS event_rsvps (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -342,13 +387,17 @@ CREATE TABLE event_rsvps (
 );
 
 ALTER TABLE event_rsvps ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "RSVPs are public" ON event_rsvps;
+DROP POLICY IF EXISTS "RSVPs are public" ON event_rsvps;
 CREATE POLICY "RSVPs are public" ON event_rsvps FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users manage own RSVPs" ON event_rsvps;
+DROP POLICY IF EXISTS "Users manage own RSVPs" ON event_rsvps;
 CREATE POLICY "Users manage own RSVPs" ON event_rsvps FOR ALL USING (auth.uid() = user_id);
 
 -- ============================================
 -- PACK_CHALLENGES
 -- ============================================
-CREATE TABLE pack_challenges (
+CREATE TABLE IF NOT EXISTS pack_challenges (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   pack_a_id UUID NOT NULL REFERENCES packs(id),
   pack_b_id UUID NOT NULL REFERENCES packs(id),
@@ -362,12 +411,14 @@ CREATE TABLE pack_challenges (
 );
 
 ALTER TABLE pack_challenges ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Pack challenges are public" ON pack_challenges;
+DROP POLICY IF EXISTS "Pack challenges are public" ON pack_challenges;
 CREATE POLICY "Pack challenges are public" ON pack_challenges FOR SELECT USING (true);
 
 -- ============================================
 -- QUESTS
 -- ============================================
-CREATE TABLE quests (
+CREATE TABLE IF NOT EXISTS quests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   description TEXT,
@@ -380,12 +431,14 @@ CREATE TABLE quests (
 );
 
 ALTER TABLE quests ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Quests are public" ON quests;
+DROP POLICY IF EXISTS "Quests are public" ON quests;
 CREATE POLICY "Quests are public" ON quests FOR SELECT USING (true);
 
 -- ============================================
 -- USER_QUESTS
 -- ============================================
-CREATE TABLE user_quests (
+CREATE TABLE IF NOT EXISTS user_quests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   quest_id UUID NOT NULL REFERENCES quests(id),
@@ -397,12 +450,14 @@ CREATE TABLE user_quests (
 );
 
 ALTER TABLE user_quests ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users manage own quests" ON user_quests;
+DROP POLICY IF EXISTS "Users manage own quests" ON user_quests;
 CREATE POLICY "Users manage own quests" ON user_quests FOR ALL USING (auth.uid() = user_id);
 
 -- ============================================
 -- BADGES
 -- ============================================
-CREATE TABLE badges (
+CREATE TABLE IF NOT EXISTS badges (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   description TEXT,
@@ -414,12 +469,14 @@ CREATE TABLE badges (
 );
 
 ALTER TABLE badges ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Badges are public" ON badges;
+DROP POLICY IF EXISTS "Badges are public" ON badges;
 CREATE POLICY "Badges are public" ON badges FOR SELECT USING (true);
 
 -- ============================================
 -- USER_BADGES
 -- ============================================
-CREATE TABLE user_badges (
+CREATE TABLE IF NOT EXISTS user_badges (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   badge_id UUID NOT NULL REFERENCES badges(id),
@@ -428,13 +485,17 @@ CREATE TABLE user_badges (
 );
 
 ALTER TABLE user_badges ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "User badges are public" ON user_badges;
+DROP POLICY IF EXISTS "User badges are public" ON user_badges;
 CREATE POLICY "User badges are public" ON user_badges FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users earn badges" ON user_badges;
+DROP POLICY IF EXISTS "Users earn badges" ON user_badges;
 CREATE POLICY "Users earn badges" ON user_badges FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- ============================================
 -- BEAST_ROAR_NOMINATIONS
 -- ============================================
-CREATE TABLE beast_roar_nominations (
+CREATE TABLE IF NOT EXISTS beast_roar_nominations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   week_start DATE NOT NULL,
@@ -446,12 +507,14 @@ CREATE TABLE beast_roar_nominations (
 );
 
 ALTER TABLE beast_roar_nominations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Nominations are public" ON beast_roar_nominations;
+DROP POLICY IF EXISTS "Nominations are public" ON beast_roar_nominations;
 CREATE POLICY "Nominations are public" ON beast_roar_nominations FOR SELECT USING (true);
 
 -- ============================================
 -- BEAST_ROAR_VOTES
 -- ============================================
-CREATE TABLE beast_roar_votes (
+CREATE TABLE IF NOT EXISTS beast_roar_votes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   nomination_id UUID NOT NULL REFERENCES beast_roar_nominations(id) ON DELETE CASCADE,
   voter_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -460,13 +523,17 @@ CREATE TABLE beast_roar_votes (
 );
 
 ALTER TABLE beast_roar_votes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Votes are public" ON beast_roar_votes;
+DROP POLICY IF EXISTS "Votes are public" ON beast_roar_votes;
 CREATE POLICY "Votes are public" ON beast_roar_votes FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users cast votes" ON beast_roar_votes;
+DROP POLICY IF EXISTS "Users cast votes" ON beast_roar_votes;
 CREATE POLICY "Users cast votes" ON beast_roar_votes FOR INSERT WITH CHECK (auth.uid() = voter_id);
 
 -- ============================================
 -- DEVICE_CONNECTIONS
 -- ============================================
-CREATE TABLE device_connections (
+CREATE TABLE IF NOT EXISTS device_connections (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   provider TEXT NOT NULL,
@@ -480,12 +547,14 @@ CREATE TABLE device_connections (
 );
 
 ALTER TABLE device_connections ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users manage own connections" ON device_connections;
+DROP POLICY IF EXISTS "Users manage own connections" ON device_connections;
 CREATE POLICY "Users manage own connections" ON device_connections FOR ALL USING (auth.uid() = user_id);
 
 -- ============================================
 -- QR_CODES
 -- ============================================
-CREATE TABLE qr_codes (
+CREATE TABLE IF NOT EXISTS qr_codes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   code TEXT NOT NULL UNIQUE,
   purchase_ref TEXT,
@@ -497,6 +566,8 @@ CREATE TABLE qr_codes (
 );
 
 ALTER TABLE qr_codes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "QR codes readable" ON qr_codes;
+DROP POLICY IF EXISTS "QR codes readable" ON qr_codes;
 CREATE POLICY "QR codes readable" ON qr_codes FOR SELECT USING (true);
 
 -- ============================================
@@ -514,14 +585,14 @@ INSERT INTO sports (name, emoji, category, popularity_male, popularity_female) V
   ('Padel', '🎾', 'cardio', 7, 7),
   ('Football', '⚽', 'cardio', 8, 0),
   ('Walking', '🚶', 'cardio', 9, 8),
-  ('Group Fitness', '👥', 'cardio', 10, 9);
+  ('Group Fitness', '👥', 'cardio', 10, 9) ON CONFLICT DO NOTHING;
 
 -- SEED DATA: Packs
 INSERT INTO packs (name, animal) VALUES
   ('Wolf Pack', 'wolf'),
   ('Eagle Legion', 'eagle'),
   ('Tiger Squad', 'tiger'),
-  ('Rhino Force', 'rhino');
+  ('Rhino Force', 'rhino') ON CONFLICT DO NOTHING;
 
 -- SEED DATA: Badges
 INSERT INTO badges (name, description, color, requirement_type, requirement_value) VALUES
@@ -532,7 +603,7 @@ INSERT INTO badges (name, description, color, requirement_type, requirement_valu
   ('First Swim', 'Complete your first swim workout', '#EF8C86', 'workout_milestone', 1),
   ('Pack Win', 'Win a pack challenge', '#62B797', 'pack_challenge', 1),
   ('Beast Roar Winner', 'Win a Beast Roar vote', '#E88F24', 'beast_roar', 1),
-  ('Century Club', 'Earn 100 beasts on your posts', '#56C4C4', 'beasts_received', 100);
+  ('Century Club', 'Earn 100 beasts on your posts', '#56C4C4', 'beasts_received', 100) ON CONFLICT DO NOTHING;
 
 -- SEED DATA: Quests
 INSERT INTO quests (title, description, quest_type, xp_reward) VALUES
@@ -542,4 +613,4 @@ INSERT INTO quests (title, description, quest_type, xp_reward) VALUES
   ('Give 5 beasts', 'Support your tribe — beast 5 posts', 'daily', 30),
   ('Hit 10K steps', 'Walk 10,000 steps today', 'daily', 120),
   ('Complete 5 workouts this week', 'Finish 5 workouts in one week', 'weekly', 500),
-  ('Try a new sport', 'Complete a workout in a sport you haven''t tried', 'weekly', 300);
+  ('Try a new sport', 'Complete a workout in a sport you haven''t tried', 'weekly', 300) ON CONFLICT DO NOTHING;

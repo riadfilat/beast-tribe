@@ -17,7 +17,8 @@
       "bundleIdentifier": "com.operationbeast.beasttribe",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Beast Tribe needs access to your photos to share workout progress.",
-        "NSCameraUsageDescription": "Beast Tribe uses the camera for progress photos."
+        "NSCameraUsageDescription": "Beast Tribe uses the camera for progress photos.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -29,8 +30,12 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE"
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -48,8 +53,16 @@
     },
     "extra": {
       "eas": {
-        "projectId": "your-eas-project-id"
-      }
+        "projectId": "b9a69ad8-8fff-4877-a53b-3c9162c431b7"
+      },
+      "router": {}
+    },
+    "owner": "ryo1987",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/b9a69ad8-8fff-4877-a53b-3c9162c431b7"
     }
   }
 }

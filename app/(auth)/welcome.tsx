@@ -38,20 +38,15 @@ export default function WelcomeScreen() {
 
           <View style={styles.buttons}>
             <Button
-              title="Join the Tribe"
+              title="Create account"
               onPress={() => router.push('/(auth)/sign-in?mode=signup')}
             />
-          </View>
-
-          <Text style={styles.signInText}>
-            Already a member?{' '}
-            <Text
-              style={styles.signInLink}
+            <Button
+              title="Sign in"
+              variant="secondary"
               onPress={() => router.push('/(auth)/sign-in')}
-            >
-              Sign in
-            </Text>
-          </Text>
+            />
+          </View>
         </View>
       </SafeAreaView>
     </LinearGradient>
@@ -105,16 +100,5 @@ const styles = StyleSheet.create({
   buttons: {
     width: '100%',
     gap: 8,
-  },
-  signInText: {
-    marginTop: 28,
-    fontSize: 16,
-    fontFamily: FONTS.body,
-    color: 'rgba(255,255,255,0.45)',
-  },
-  signInLink: {
-    color: COLORS.aqua,
-    fontFamily: FONTS.bodySemiBold,
-    fontSize: 16,
   },
 });

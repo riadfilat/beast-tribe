@@ -9,11 +9,11 @@ interface CalorieRingProps {
   size?: number;
 }
 
-export function CalorieRing({ current, goal, size = 100 }: CalorieRingProps) {
-  const strokeWidth = 6;
+export function CalorieRing({ current, goal, size = 160 }: CalorieRingProps) {
+  const strokeWidth = 8;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const progress = Math.min(1, current / goal);
+  const progress = goal > 0 ? Math.min(1, current / goal) : 0;
   const strokeDashoffset = circumference * (1 - progress);
 
   return (
@@ -24,7 +24,7 @@ export function CalorieRing({ current, goal, size = 100 }: CalorieRingProps) {
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="rgba(255,255,255,0.05)"
+          stroke="rgba(255,255,255,0.06)"
           strokeWidth={strokeWidth}
           fill="transparent"
         />
@@ -33,7 +33,7 @@ export function CalorieRing({ current, goal, size = 100 }: CalorieRingProps) {
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={COLORS.green}
+          stroke={COLORS.orange}
           strokeWidth={strokeWidth}
           fill="transparent"
           strokeDasharray={circumference}
@@ -44,7 +44,7 @@ export function CalorieRing({ current, goal, size = 100 }: CalorieRingProps) {
       </Svg>
       <View style={styles.textContainer}>
         <Text style={styles.value}>{current.toLocaleString()}</Text>
-        <Text style={styles.label}>/ {goal.toLocaleString()} cal</Text>
+        <Text style={styles.label}>OF {goal.toLocaleString()} CAL</Text>
       </View>
     </View>
   );
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
-    marginBottom: 10,
+    marginVertical: 16,
   },
   svg: {
     position: 'absolute',
@@ -64,13 +64,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   value: {
-    fontSize: 22,
+    fontSize: 36,
     fontFamily: FONTS.heading,
-    color: COLORS.white,
+    color: COLORS.textPrimary,
   },
   label: {
-    fontSize: 9,
-    fontFamily: FONTS.body,
+    fontSize: 11,
+    fontFamily: FONTS.bodySemiBold,
     color: COLORS.textTertiary,
+    letterSpacing: 1,
+    marginTop: 2,
   },
 });

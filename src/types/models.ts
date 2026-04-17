@@ -1,4 +1,5 @@
 import { Tier } from '../lib/constants';
+// Tier values: 'initiate' | 'vanguard' | 'apex' | 'prime' | 'beast'
 
 export interface Profile {
   id: string;
@@ -6,6 +7,9 @@ export interface Profile {
   display_name: string | null;
   avatar_url: string | null;
   gender: 'male' | 'female' | 'other' | null;
+  date_of_birth: string | null;
+  city: string | null;
+  experience_level: string | null;
   total_xp: number;
   level: number;
   tier: Tier;
@@ -14,7 +18,12 @@ export interface Profile {
   region: string;
   is_premium: boolean;
   onboarding_completed: boolean;
+  training_frequency: number;
+  beast_score: number;
   pack_id: string | null;
+  five_k_time_seconds: number | null;
+  max_bench_kg: number | null;
+  daily_steps_avg: number | null;
   created_at: string;
 }
 
@@ -144,6 +153,52 @@ export interface Badge {
   icon_name: string | null;
   color: string | null;
   earned_at?: string;
+}
+
+export interface HabitDefinition {
+  id: string;
+  key: string;
+  label: string;
+  description: string | null;
+  icon: string;
+  category: string;
+  frequency_type: 'daily' | 'weekly' | 'monthly';
+  default_target: number;
+  target_unit: string;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export interface UserHabit {
+  id: string;
+  user_id: string;
+  habit_definition_id: string;
+  target: number;
+  is_active: boolean;
+  created_at: string;
+  habit_definition?: HabitDefinition;
+}
+
+export interface HabitLog {
+  id: string;
+  user_id: string;
+  user_habit_id: string;
+  logged_date: string;
+  value: number;
+  created_at: string;
+}
+
+export interface BeastScoreRecord {
+  id: string;
+  user_id: string;
+  score: number;
+  workout_consistency: number;
+  nutrition_consistency: number;
+  step_consistency: number;
+  streak_bonus: number;
+  event_bonus: number;
+  perfect_days: number;
+  calculated_at: string;
 }
 
 export interface Pack {

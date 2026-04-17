@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(232,143,36,0.15)',
   },
   inactiveTab: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255,255,255,0.07)',
   },
   tabText: {
     fontFamily: FONTS.bodyMedium,
@@ -72,6 +72,6 @@ const styles = StyleSheet.create({
     color: COLORS.orange,
   },
   inactiveText: {
-    color: 'rgba(255,255,255,0.25)',
+    color: COLORS.textTertiary,
   },
 });

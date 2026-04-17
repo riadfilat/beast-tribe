@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 
 export async function createEvent(formData: FormData) {
   const admin = await requireAdmin();
@@ -49,6 +50,7 @@ export async function createEvent(formData: FormData) {
     details: { title },
   });
 
+  revalidatePath('/events');
   redirect('/events');
 }
 
@@ -80,6 +82,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
     details: updates,
   });
 
+  revalidatePath('/events');
   redirect('/events');
 }
 
@@ -97,5 +100,6 @@ export async function deleteEvent(eventId: string) {
     target_id: eventId,
   });
 
+  revalidatePath('/events');
   redirect('/events');
 }

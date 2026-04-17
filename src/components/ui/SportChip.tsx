@@ -1,15 +1,17 @@
 import React from 'react';
 import { TouchableOpacity, Text, View, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS } from '../../lib/constants';
 
 interface SportChipProps {
-  emoji: string;
+  emoji?: string;
+  icon?: string;
   name: string;
   selected: boolean;
   onPress: () => void;
 }
 
-export function SportChip({ emoji, name, selected, onPress }: SportChipProps) {
+export function SportChip({ emoji, icon, name, selected, onPress }: SportChipProps) {
   return (
     <TouchableOpacity
       style={[styles.chip, selected && styles.chipSelected]}
@@ -17,7 +19,17 @@ export function SportChip({ emoji, name, selected, onPress }: SportChipProps) {
       activeOpacity={0.7}
     >
       {selected && <View style={styles.dot} />}
-      <Text style={[styles.emoji, !selected && styles.emojiInactive]}>{emoji}</Text>
+      <View style={[styles.iconBox, selected && styles.iconBoxSelected]}>
+        {icon ? (
+          <Ionicons
+            name={icon as any}
+            size={22}
+            color={selected ? COLORS.orange : COLORS.textTertiary}
+          />
+        ) : (
+          <Text style={[styles.emoji, !selected && styles.emojiInactive]}>{emoji}</Text>
+        )}
+      </View>
       <Text style={[styles.name, selected && styles.nameSelected]}>{name}</Text>
     </TouchableOpacity>
   );
@@ -25,13 +37,16 @@ export function SportChip({ emoji, name, selected, onPress }: SportChipProps) {
 
 const styles = StyleSheet.create({
   chip: {
-    padding: 10,
+    paddingHorizontal: 10,
+    paddingTop: 8,
+    paddingBottom: 6,
     borderWidth: 1,
     borderColor: COLORS.inputBorder,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    minWidth: 68,
   },
   chipSelected: {
     borderColor: COLORS.orange,
@@ -46,21 +61,33 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: COLORS.orange,
   },
+  iconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(86,196,196,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  iconBoxSelected: {
+    backgroundColor: 'rgba(232,143,36,0.12)',
+  },
   emoji: {
     fontSize: 20,
-    marginBottom: 2,
   },
   emojiInactive: {
     opacity: 0.3,
   },
   name: {
-    fontSize: 10,
+    fontSize: 9,
     color: COLORS.textSecondary,
-    fontFamily: FONTS.body,
+    fontFamily: FONTS.bodySemiBold,
     textAlign: 'center',
     lineHeight: 12,
+    letterSpacing: 0.3,
   },
   nameSelected: {
-    color: COLORS.white,
+    color: COLORS.orange,
   },
 });

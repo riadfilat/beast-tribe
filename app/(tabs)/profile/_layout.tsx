@@ -8,6 +8,10 @@ export default function ProfileLayout() {
       <Stack.Screen name="pack" />
       <Stack.Screen name="pack-create" />
       <Stack.Screen name="pack-invite" />
+      <Stack.Screen name="pack-chat" />
+      <Stack.Screen name="settings" />
+      <Stack.Screen name="coach-dashboard" />
+      <Stack.Screen name="trainee-detail" />
     </Stack>
   );
 }

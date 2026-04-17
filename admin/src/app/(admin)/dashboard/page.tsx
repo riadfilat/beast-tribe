@@ -152,7 +152,7 @@ export default async function DashboardPage() {
           value={data.premiumUsers}
           sub={`${data.totalUsers > 0 ? Math.round((data.premiumUsers / data.totalUsers) * 100) : 0}% of users`}
           accent="bg-brand-orange"
-          href="/users?tier=premium"
+          href="/users?premium=true"
         />
         <MetricCard
           label="Events (month)"

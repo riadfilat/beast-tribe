@@ -10,11 +10,13 @@ export default function OnboardingLayout() {
         contentStyle: { backgroundColor: COLORS.background },
       }}
     >
+      <Stack.Screen name="about-you" />
       <Stack.Screen name="pick-sports" />
       <Stack.Screen name="baseline" />
       <Stack.Screen name="set-goals" />
-      <Stack.Screen name="beast-level" />
+      <Stack.Screen name="set-habits" />
       <Stack.Screen name="connect-devices" />
+      <Stack.Screen name="beast-level" />
     </Stack>
   );
 }

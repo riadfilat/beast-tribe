@@ -25,6 +25,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -100,9 +101,14 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                  Password
+                </label>
+                <a href="/forgot-password" className="text-xs text-brand-aqua hover:underline">
+                  Forgot?
+                </a>
+              </div>
               <input
                 type="password"
                 value={password}
@@ -112,6 +118,19 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 required
               />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="rounded border-gray-200"
+              />
+              <label htmlFor="rememberMe" className="text-sm text-gray-600">
+                Remember me
+              </label>
             </div>
 
             {error && (

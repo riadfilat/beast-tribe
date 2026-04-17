@@ -14,13 +14,15 @@ ALTER TABLE packs ADD COLUMN IF NOT EXISTS max_members INTEGER DEFAULT 20;
 UPDATE packs SET is_system = TRUE WHERE created_by IS NULL;
 
 -- Allow authenticated users to create packs
+DROP POLICY IF EXISTS "Users can create packs" ON packs;
 CREATE POLICY "Users can create packs" ON packs FOR INSERT WITH CHECK (auth.uid() = created_by);
+DROP POLICY IF EXISTS "Pack creator can update" ON packs;
 CREATE POLICY "Pack creator can update" ON packs FOR UPDATE USING (auth.uid() = created_by);
 
 -- ============================================
 -- PACK_MEMBERS
 -- ============================================
-CREATE TABLE pack_members (
+CREATE TABLE IF NOT EXISTS pack_members (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   pack_id UUID NOT NULL REFERENCES packs(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -30,17 +32,20 @@ CREATE TABLE pack_members (
 );
 
 -- One pack per user (user can only be in one friend pack)
-CREATE UNIQUE INDEX idx_pack_members_one_pack ON pack_members(user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_pack_members_one_pack ON pack_members(user_id);
 
 ALTER TABLE pack_members ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Pack members are public" ON pack_members;
 CREATE POLICY "Pack members are public" ON pack_members FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users can join packs" ON pack_members;
 CREATE POLICY "Users can join packs" ON pack_members FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can leave packs" ON pack_members;
 CREATE POLICY "Users can leave packs" ON pack_members FOR DELETE USING (auth.uid() = user_id);
 
 -- ============================================
 -- PACK_INVITES
 -- ============================================
-CREATE TABLE pack_invites (
+CREATE TABLE IF NOT EXISTS pack_invites (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   pack_id UUID NOT NULL REFERENCES packs(id) ON DELETE CASCADE,
   invited_by UUID NOT NULL REFERENCES profiles(id),
@@ -51,10 +56,13 @@ CREATE TABLE pack_invites (
 );
 
 ALTER TABLE pack_invites ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can see own invites" ON pack_invites;
 CREATE POLICY "Users can see own invites" ON pack_invites FOR SELECT
   USING (auth.uid() = invited_user_id OR auth.uid() = invited_by);
+DROP POLICY IF EXISTS "Pack members can invite" ON pack_invites;
 CREATE POLICY "Pack members can invite" ON pack_invites FOR INSERT
   WITH CHECK (auth.uid() = invited_by);
+DROP POLICY IF EXISTS "Invited user can respond" ON pack_invites;
 CREATE POLICY "Invited user can respond" ON pack_invites FOR UPDATE
   USING (auth.uid() = invited_user_id);
 

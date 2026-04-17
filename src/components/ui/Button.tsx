@@ -44,7 +44,7 @@ export function Button({
 const VARIANT_STYLES = {
   primary: {
     container: { backgroundColor: COLORS.orange, borderWidth: 0 } as ViewStyle,
-    textColor: COLORS.teal,
+    textColor: '#FFFFFF',       // Always white on orange button
   },
   secondary: {
     container: {

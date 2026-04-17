@@ -7,12 +7,22 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "channel": "development",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://doqpqzxqgszsybghgtfq.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvcXBxenhxZ3N6c3liZ2hndGZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MjU5OTEsImV4cCI6MjA5MDEwMTk5MX0.olG48Jq07iMwsChrDoXKdUr9eL1oamaSWMmjHCS_Y2A"
+      },
       "ios": {
         "simulator": true
       }
     },
     "preview": {
       "distribution": "internal",
+      "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://doqpqzxqgszsybghgtfq.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvcXBxenhxZ3N6c3liZ2hndGZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MjU5OTEsImV4cCI6MjA5MDEwMTk5MX0.olG48Jq07iMwsChrDoXKdUr9eL1oamaSWMmjHCS_Y2A"
+      },
       "ios": {
         "simulator": false
       },
@@ -21,15 +31,19 @@
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "channel": "production",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://doqpqzxqgszsybghgtfq.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvcXBxenhxZ3N6c3liZ2hndGZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MjU5OTEsImV4cCI6MjA5MDEwMTk5MX0.olG48Jq07iMwsChrDoXKdUr9eL1oamaSWMmjHCS_Y2A"
+      }
     }
   },
   "submit": {
     "production": {
       "ios": {
-        "appleId": "your-apple-id@email.com",
-        "ascAppId": "your-app-store-connect-app-id",
-        "appleTeamId": "your-apple-team-id"
+        "appleId": "riad.filatgaming@gmail.com",
+        "appleTeamId": "CYYSDSQ9VR"
       },
       "android": {
         "serviceAccountKeyPath": "./google-services.json",

@@ -26,6 +26,7 @@
     "expo-constants": "~55.0.9",
     "expo-font": "~55.0.4",
     "expo-haptics": "^55.0.9",
+    "expo-image-manipulator": "~55.0.13",
     "expo-image-picker": "~55.0.13",
     "expo-linear-gradient": "^55.0.9",
     "expo-linking": "~55.0.8",
@@ -33,6 +34,7 @@
     "expo-splash-screen": "~55.0.12",
     "expo-status-bar": "~55.0.4",
     "expo-symbols": "~55.0.5",
+    "expo-updates": "~55.0.20",
     "expo-web-browser": "~55.0.10",
     "react": "19.2.0",
     "react-dom": "19.2.0",
@@ -48,6 +50,7 @@
   "devDependencies": {
     "@types/react": "~19.2.2",
     "pg": "^8.20.0",
+    "supabase": "^2.92.0",
     "typescript": "~5.9.2"
   },
   "private": true

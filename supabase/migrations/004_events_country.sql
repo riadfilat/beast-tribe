@@ -6,4 +6,4 @@ UPDATE events SET country = 'SA' WHERE location_city ILIKE '%riyadh%' OR locatio
 UPDATE events SET country = 'AE' WHERE location_city ILIKE '%dubai%' OR location_city ILIKE '%abu dhabi%';
 
 -- Index for fast country-based lookups
-CREATE INDEX idx_events_country ON events(country);
+CREATE INDEX IF NOT EXISTS idx_events_country ON events(country);

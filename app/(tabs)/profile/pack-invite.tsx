@@ -91,7 +91,7 @@ export default function PackInviteScreen() {
           );
         })}
 
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/profile')} style={styles.backButton}>
           <Text style={styles.backText}>← Back to Pack</Text>
         </TouchableOpacity>
 
@@ -104,7 +104,7 @@ export default function PackInviteScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   scroll: { flex: 1, paddingHorizontal: 16 },
-  title: { fontSize: 22, fontFamily: FONTS.heading, color: COLORS.white, marginTop: 8, marginBottom: 16 },
+  title: { fontSize: 22, fontFamily: FONTS.heading, color: COLORS.textPrimary, marginTop: 8, marginBottom: 16 },
 
   // Code card
   codeCard: {
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   searchInput: {
     backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13,
-    fontFamily: FONTS.body, color: COLORS.white, marginBottom: 12,
+    fontFamily: FONTS.body, color: COLORS.textPrimary, marginBottom: 12,
   },
   noResults: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', marginVertical: 20 },
 

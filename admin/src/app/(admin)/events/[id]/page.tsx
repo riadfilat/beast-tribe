@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
 import { updateEvent, deleteEvent } from '../actions';
 import { notFound } from 'next/navigation';
+import { ConfirmButton } from '@/components/ConfirmSubmit';
 
 export default async function EditEventPage({ params }: { params: { id: string } }) {
   await requireAdmin();
@@ -32,10 +33,12 @@ export default async function EditEventPage({ params }: { params: { id: string }
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Edit Event</h1>
         <form action={deleteWithId}>
-          <button type="submit" className="px-4 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition"
-            onClick={(e) => { if (!confirm('Delete this event?')) e.preventDefault(); }}>
+          <ConfirmButton
+            confirmMessage="Delete this event?"
+            className="px-4 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition"
+          >
             Delete Event
-          </button>
+          </ConfirmButton>
         </form>
       </div>
 

@@ -1,35 +1,45 @@
 import { useFonts } from 'expo-font';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, useRouter, useSegments, useGlobalSearchParams } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { StatusBar } from 'react-native';
 import 'react-native-reanimated';
 import { AuthProvider, useAuth } from '../src/providers/AuthProvider';
+import { ThemeProvider, useTheme } from '../src/providers/ThemeProvider';
 
 export { ErrorBoundary } from 'expo-router';
 
 SplashScreen.preventAutoHideAsync();
 
 function AuthGate() {
-  const { session, profile, loading } = useAuth();
+  const { session, profile, loading, isEmailConfirmed } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const globalParams = useGlobalSearchParams<{ edit?: string }>();
 
   useEffect(() => {
     if (loading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
     const inOnboarding = segments[0] === '(onboarding)';
+    const onVerifyScreen = segments[1] === 'verify-email';
+
+    // Allow edit mode — user navigated to onboarding from Profile to edit settings
+    const isEditMode = globalParams.edit === '1';
 
     if (!session) {
       // Not signed in → auth screens
       if (!inAuthGroup) router.replace('/(auth)/welcome');
+    } else if (!isEmailConfirmed) {
+      // Signed up but hasn't clicked confirmation link yet
+      if (!onVerifyScreen) router.replace('/(auth)/verify-email');
     } else if (!profile?.onboarding_completed) {
-      if (!inOnboarding) router.replace('/(onboarding)/pick-sports');
+      if (!inOnboarding) router.replace('/(onboarding)/about-you');
     } else {
-      if (inAuthGroup || inOnboarding) router.replace('/(tabs)/home');
+      if (inAuthGroup) router.replace('/(tabs)/home');
+      if (inOnboarding && !isEditMode) router.replace('/(tabs)/home');
     }
-  }, [session, profile, loading, segments]);
+  }, [session, profile, loading, isEmailConfirmed, segments]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
@@ -66,8 +76,18 @@ export default function RootLayout() {
   if (!loaded) return null;
 
   return (
-    <AuthProvider>
-      <StatusBar barStyle="light-content" />
+    <ThemeProvider>
+      <ThemedApp />
+    </ThemeProvider>
+  );
+}
+
+function ThemedApp() {
+  const { isDark } = useTheme();
+  // Key forces full re-render when theme changes so all COLORS refs update
+  return (
+    <AuthProvider key={isDark ? 'dark' : 'light'}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <AuthGate />
     </AuthProvider>
   );

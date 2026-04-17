@@ -7,3 +7,4 @@ export { FilterTabs } from './FilterTabs';
 export { Input } from './Input';
 export { SportChip } from './SportChip';
 export { XPLabel } from './XPLabel';
+export { BeastIcon } from './BeastIcon';

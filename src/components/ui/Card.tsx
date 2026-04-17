@@ -21,18 +21,18 @@ const variantStyles: Record<CardVariant, ViewStyle> = {
     borderWidth: 1,
   },
   quest: {
-    backgroundColor: 'rgba(232,143,36,0.04)',
-    borderColor: 'rgba(232,143,36,0.2)',
+    backgroundColor: 'rgba(232,143,36,0.07)',
+    borderColor: 'rgba(232,143,36,0.28)',
     borderWidth: 1,
   },
   event: {
-    backgroundColor: 'rgba(232,143,36,0.03)',
-    borderColor: 'rgba(232,143,36,0.15)',
+    backgroundColor: 'rgba(232,143,36,0.05)',
+    borderColor: 'rgba(232,143,36,0.22)',
     borderWidth: 1,
   },
   stat: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderColor: 'rgba(86,196,196,0.08)',
+    backgroundColor: COLORS.statCardBg,
+    borderColor: COLORS.statCardBorder,
     borderWidth: 1,
   },
 };

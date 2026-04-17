@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS } from '../../lib/constants';
 
 interface WorkoutCardProps {
@@ -11,20 +12,54 @@ interface WorkoutCardProps {
   onPress?: () => void;
 }
 
+const SPORT_ICONS: Record<string, { icon: string; color: string }> = {
+  running: { icon: 'walk-outline', color: COLORS.orange },
+  gym: { icon: 'barbell-outline', color: COLORS.aqua },
+  crossfit: { icon: 'fitness-outline', color: '#EF8C86' },
+  cycling: { icon: 'bicycle-outline', color: COLORS.green },
+  yoga: { icon: 'body-outline', color: '#759CA9' },
+  swimming: { icon: 'water-outline', color: '#4A9EE0' },
+  hyrox: { icon: 'flash-outline', color: '#FFD700' },
+};
+
 export function WorkoutCard({ title, duration, difficulty, sport, xpReward, onPress }: WorkoutCardProps) {
+  const sportKey = sport.toLowerCase();
+  const { icon, color } = SPORT_ICONS[sportKey] || { icon: 'barbell-outline', color: COLORS.orange };
+
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
-      <View style={styles.imageArea}>
-        <View style={styles.xpBadge}>
-          <Text style={styles.xpText}>+{xpReward} XP</Text>
+      {/* Left accent */}
+      <View style={[styles.accent, { backgroundColor: color }]} />
+
+      <View style={styles.body}>
+        <View style={styles.topRow}>
+          <View style={[styles.iconWrap, { backgroundColor: `${color}18` }]}>
+            <Ionicons name={icon as any} size={20} color={color} />
+          </View>
+          <View style={styles.info}>
+            <Text style={styles.title} numberOfLines={1}>{title}</Text>
+            <View style={styles.metaRow}>
+              <View style={styles.metaChip}>
+                <Ionicons name="time-outline" size={11} color={COLORS.textTertiary} />
+                <Text style={styles.metaText}>{duration}</Text>
+              </View>
+              <View style={styles.metaChip}>
+                <Ionicons name="speedometer-outline" size={11} color={COLORS.textTertiary} />
+                <Text style={styles.metaText}>{difficulty}</Text>
+              </View>
+              <Text style={[styles.sportLabel, { color }]}>{sport}</Text>
+            </View>
+          </View>
         </View>
-        <Text style={styles.placeholder}>Workout preview</Text>
-      </View>
-      <Text style={styles.title}>{title}</Text>
-      <View style={styles.meta}>
-        <Text style={styles.metaText}>{duration}</Text>
-        <Text style={styles.metaText}>{difficulty}</Text>
-        <Text style={styles.metaText}>{sport}</Text>
+
+        {/* XP badge + arrow */}
+        <View style={styles.bottomRow}>
+          <View style={styles.xpBadge}>
+            <Ionicons name="flash" size={12} color={COLORS.orange} />
+            <Text style={styles.xpText}>+{xpReward} XP</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -32,54 +67,78 @@ export function WorkoutCard({ title, duration, difficulty, sport, xpReward, onPr
 
 const styles = StyleSheet.create({
   card: {
+    flexDirection: 'row',
     borderWidth: 1,
-    borderColor: COLORS.cardBorder,
+    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 14,
     overflow: 'hidden',
     marginBottom: 10,
+    backgroundColor: 'rgba(255,255,255,0.03)',
   },
-  imageArea: {
-    height: 60,
-    backgroundColor: 'rgba(86,196,196,0.04)',
+  accent: {
+    width: 4,
+  },
+  body: {
+    flex: 1,
+    padding: 14,
+  },
+  topRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 10,
+  },
+  iconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
   },
-  xpBadge: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    backgroundColor: COLORS.orange,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  xpText: {
-    fontSize: 9,
-    fontFamily: FONTS.bodySemiBold,
-    color: COLORS.teal,
-  },
-  placeholder: {
-    fontSize: 9,
-    color: COLORS.textMuted,
-    fontFamily: FONTS.body,
+  info: {
+    flex: 1,
   },
   title: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: FONTS.heading,
     color: COLORS.white,
-    paddingHorizontal: 12,
-    paddingTop: 8,
+    marginBottom: 4,
   },
-  meta: {
+  metaRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  },
+  metaChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
   },
   metaText: {
     fontSize: 10,
     fontFamily: FONTS.body,
     color: COLORS.textTertiary,
+  },
+  sportLabel: {
+    fontSize: 10,
+    fontFamily: FONTS.bodySemiBold,
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  xpBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(232,143,36,0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  xpText: {
+    fontSize: 11,
+    fontFamily: FONTS.heading,
+    color: COLORS.orange,
   },
 });

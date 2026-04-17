@@ -1,12 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { ProgressBar } from '../ui';
 import { COLORS, FONTS } from '../../lib/constants';
 
 interface MacroItem {
   label: string;
-  value: string;
-  progress: number; // 0-1
+  current: number;
+  goal: number;
+  unit: string;
   color: string;
+  icon: string;
 }
 
 interface MacroGridProps {
@@ -16,23 +20,21 @@ interface MacroGridProps {
 export function MacroGrid({ macros }: MacroGridProps) {
   return (
     <View style={styles.grid}>
-      {macros.map((macro) => (
-        <View key={macro.label} style={styles.item}>
-          <View style={styles.barBg}>
-            <View
-              style={[
-                styles.barFill,
-                {
-                  height: `${Math.min(100, macro.progress * 100)}%`,
-                  backgroundColor: macro.color,
-                },
-              ]}
-            />
+      {macros.map((macro) => {
+        const progress = macro.goal > 0 ? Math.min(1, macro.current / macro.goal) : 0;
+        return (
+          <View key={macro.label} style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Ionicons name={macro.icon as any} size={16} color={macro.color} />
+              <Text style={[styles.cardLabel, { color: macro.color }]}>{macro.label.toUpperCase()}</Text>
+            </View>
+            <Text style={styles.cardValue}>
+              {Math.round(macro.current)}<Text style={styles.cardGoal}> / {macro.goal}{macro.unit}</Text>
+            </Text>
+            <ProgressBar progress={progress} color={macro.color} height={3} />
           </View>
-          <Text style={styles.label}>{macro.label}</Text>
-          <Text style={styles.value}>{macro.value}</Text>
-        </View>
-      ))}
+        );
+      })}
     </View>
   );
 }
@@ -40,34 +42,38 @@ export function MacroGrid({ macros }: MacroGridProps) {
 const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
     marginVertical: 12,
   },
-  item: {
-    flex: 1,
+  card: {
+    width: '48%',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 14,
+    padding: 14,
+  },
+  cardHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+    marginBottom: 10,
   },
-  barBg: {
-    width: '100%',
-    height: 70,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 8,
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
-  },
-  barFill: {
-    width: '100%',
-    borderRadius: 8,
-  },
-  label: {
+  cardLabel: {
     fontSize: 9,
+    fontFamily: FONTS.bodySemiBold,
+    letterSpacing: 1,
+  },
+  cardValue: {
+    fontSize: 24,
+    fontFamily: FONTS.heading,
+    color: COLORS.white,
+    marginBottom: 10,
+  },
+  cardGoal: {
+    fontSize: 13,
     fontFamily: FONTS.body,
     color: COLORS.textTertiary,
-    marginTop: 4,
-  },
-  value: {
-    fontSize: 11,
-    fontFamily: FONTS.bodySemiBold,
-    color: COLORS.white,
   },
 });

@@ -4,11 +4,12 @@ import { requireAdmin } from '@/lib/auth';
 export const revalidate = 0;
 import { hidePost } from './actions';
 import Link from 'next/link';
+import { ConfirmButton } from '@/components/ConfirmSubmit';
 
 export default async function FeedPage({
   searchParams,
 }: {
-  searchParams: { page?: string };
+  searchParams: { page?: string; show_hidden?: string };
 }) {
   await requireAdmin();
   const db = createAdminClient();
@@ -16,11 +17,18 @@ export default async function FeedPage({
   const page = parseInt(searchParams.page || '1');
   const perPage = 20;
   const offset = (page - 1) * perPage;
+  const showHidden = searchParams.show_hidden === '1';
 
-  const { data: posts, count } = await db.from('feed_posts')
+  let query = db.from('feed_posts')
     .select('*, profile:profiles(full_name, display_name, tier), sport:sports(name, emoji), beast_count:beasts(count)', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(offset, offset + perPage - 1);
+
+  if (!showHidden) {
+    query = query.eq('is_hidden', false);
+  }
+
+  const { data: posts, count } = await query;
 
   const totalPages = Math.ceil((count || 0) / perPage);
 
@@ -31,9 +39,17 @@ export default async function FeedPage({
           <h1 className="text-2xl font-bold text-gray-900">Feed Management</h1>
           <p className="text-sm text-gray-500">{(count || 0).toLocaleString()} total posts</p>
         </div>
-        <Link href="/feed/comments" className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
-          Manage Comments
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={showHidden ? '/feed' : '/feed?show_hidden=1'}
+            className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
+          >
+            {showHidden ? 'Hide hidden' : 'Show hidden'}
+          </Link>
+          <Link href="/feed/comments" className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
+            Manage Comments
+          </Link>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -88,13 +104,12 @@ export default async function FeedPage({
 
                 {/* Actions */}
                 <form action={removeAction}>
-                  <button
-                    type="submit"
+                  <ConfirmButton
+                    confirmMessage="Hide this post?"
                     className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg transition"
-                    onClick={(e) => { if (!confirm('Remove this post?')) e.preventDefault(); }}
                   >
-                    Remove
-                  </button>
+                    {post.is_hidden ? 'Hidden' : 'Hide'}
+                  </ConfirmButton>
                 </form>
               </div>
             </div>
