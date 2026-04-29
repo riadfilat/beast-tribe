@@ -19,7 +19,7 @@ const ANIMAL_EMOJIS: Record<string, string> = {
   wolf: '🐺', eagle: '🦅', tiger: '🐯', rhino: '🦏',
 };
 
-const MAX_PACKS = 4;
+const MAX_PACKS = 20;
 
 export default function PackScreen() {
   const router = useRouter();
@@ -67,7 +67,7 @@ export default function PackScreen() {
   async function handleAcceptInvite(inviteId: string, packId: string) {
     const currentCount = memberships?.length || 0;
     if (currentCount >= MAX_PACKS) {
-      Alert.alert('Pack Limit Reached', 'You can join up to 4 packs. Leave one first to accept this invite.');
+      Alert.alert('Pack Limit Reached', `You can join up to ${MAX_PACKS} packs. Leave one first to accept this invite.`);
       return;
     }
     await respondToInvite(inviteId, packId, true);

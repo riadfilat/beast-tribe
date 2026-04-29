@@ -15,6 +15,7 @@ interface NavItem {
 const ADMIN_NAV: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: '📊' },
   { label: 'Users', href: '/users', icon: '👥' },
+  { label: 'Communities', href: '/communities', icon: '🏘️' },
   { label: 'Events', href: '/events', icon: '📅' },
   { label: 'Locations', href: '/locations', icon: '📍' },
   { label: 'Feed', href: '/feed', icon: '💬' },

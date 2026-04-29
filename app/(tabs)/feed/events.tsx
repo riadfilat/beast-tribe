@@ -34,6 +34,8 @@ interface MappedEvent {
   locationLabel?: string;
   imageUrl?: string;
   isWomenOnly?: boolean;
+  isPackOnly?: boolean;
+  packName?: string;
   localImage?: any;
 }
 
@@ -122,6 +124,8 @@ export default function EventsScreen() {
         gym: evt.gym_name,
         imageUrl: evt.image_url,
         isWomenOnly: evt.is_women_only,
+        isPackOnly: evt.visibility === 'pack',
+        packName: evt.pack?.name,
       };
     });
   }, [eventsData]);
@@ -265,6 +269,8 @@ export default function EventsScreen() {
                 })}
                 imageUrl={event.imageUrl}
                 isWomenOnly={event.isWomenOnly}
+                isPackOnly={event.isPackOnly}
+                packName={event.packName}
                 localImage={event.localImage}
               />
             );

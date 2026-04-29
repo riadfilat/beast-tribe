@@ -11,11 +11,18 @@ interface Location {
   sports?: string[];
   sort_order?: number;
   is_active?: boolean;
+  community_id?: string | null;
+}
+
+interface CommunityOption {
+  id: string;
+  name: string;
 }
 
 interface LocationFormProps {
   action: (formData: FormData) => Promise<void>;
   location?: Location;
+  communities?: CommunityOption[];
 }
 
 const COMMON_SPORTS = [
@@ -23,7 +30,7 @@ const COMMON_SPORTS = [
   'walking', 'padel', 'tennis', 'hiit', 'boxing', 'volleyball', 'basketball', 'hyrox',
 ];
 
-export default function LocationForm({ action, location }: LocationFormProps) {
+export default function LocationForm({ action, location, communities = [] }: LocationFormProps) {
   const isEdit = !!location?.id;
   const sportsValue = (location?.sports || []).join(', ');
 
@@ -158,6 +165,28 @@ export default function LocationForm({ action, location }: LocationFormProps) {
             <span className="text-sm text-gray-700">Visible to users</span>
           </label>
         </div>
+      </div>
+
+      {/* Community Scope */}
+      <div className="pt-2 border-t border-gray-100">
+        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+          Community Scope
+        </label>
+        <select
+          name="community_id"
+          defaultValue={location?.community_id || ''}
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-aqua focus:border-brand-aqua outline-none bg-white"
+        >
+          <option value="">🌍 Global (visible to all users)</option>
+          {communities.map((c) => (
+            <option key={c.id} value={c.id}>
+              🏘 {c.name}
+            </option>
+          ))}
+        </select>
+        <p className="text-[11px] text-gray-400 mt-1">
+          Global locations are visible to everyone. Community-scoped locations only show to members of that community.
+        </p>
       </div>
 
       {/* Actions */}

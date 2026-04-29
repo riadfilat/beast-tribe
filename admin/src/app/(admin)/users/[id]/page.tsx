@@ -3,17 +3,24 @@ import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
 import { notFound } from 'next/navigation';
 import UserActions from './UserActions';
+import CommunityAssign from './CommunityAssign';
 
 export default async function UserDetailPage({ params }: { params: { id: string } }) {
   await requireAdmin();
   const db = createAdminClient();
 
   const { data: user } = await db.from('profiles')
-    .select('*')
+    .select('*, community:communities(id, name)')
     .eq('id', params.id)
     .single();
 
   if (!user) notFound();
+
+  const { data: communities } = await db
+    .from('communities')
+    .select('id, name')
+    .eq('is_active', true)
+    .order('name', { ascending: true });
 
   // Check ban status via admin auth API
   let isBanned = false;
@@ -54,6 +61,14 @@ export default async function UserDetailPage({ params }: { params: { id: string 
     <div>
       <Link href="/users" className="text-sm text-brand-aqua hover:underline mb-4 inline-block">← Back to Users</Link>
 
+      {/* Community assignment */}
+      <CommunityAssign
+        userId={params.id}
+        currentCommunityId={user.community_id || null}
+        currentCommunityName={user.community?.name || null}
+        communities={communities || []}
+      />
+
       {/* Actions */}
       <UserActions userId={params.id} isBanned={isBanned} />
 
@@ -91,6 +106,20 @@ export default async function UserDetailPage({ params }: { params: { id: string 
             <span className="text-xs text-gray-400 ml-2">({packMembership.data.role})</span>
           </div>
         )}
+
+        <div className="mt-3 px-4 py-2 bg-brand-orange/5 rounded-lg">
+          <span className="text-xs text-gray-500">🏘 Community: </span>
+          {user.community?.name ? (
+            <Link
+              href={`/communities/${user.community.id}`}
+              className="text-sm font-medium text-brand-orange hover:underline"
+            >
+              {user.community.name}
+            </Link>
+          ) : (
+            <span className="text-sm text-gray-400">Not in any community</span>
+          )}
+        </div>
       </div>
 
       {/* Data sections */}

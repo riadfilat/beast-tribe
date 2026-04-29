@@ -1,10 +1,18 @@
 import { requireAdmin } from '@/lib/auth';
+import { createAdminClient } from '@/lib/supabase-server';
 import LocationForm from '../LocationForm';
 import { createLocation } from '../actions';
 import Link from 'next/link';
 
 export default async function NewLocationPage() {
   await requireAdmin();
+  const db = createAdminClient();
+
+  const { data: communities } = await db
+    .from('communities')
+    .select('id, name')
+    .eq('is_active', true)
+    .order('name', { ascending: true });
 
   return (
     <div className="max-w-3xl">
@@ -18,7 +26,7 @@ export default async function NewLocationPage() {
         </p>
       </div>
 
-      <LocationForm action={createLocation} />
+      <LocationForm action={createLocation} communities={communities || []} />
     </div>
   );
 }

@@ -18,6 +18,8 @@ interface EventCardProps {
   /** Remote image URL for the card background */
   imageUrl?: string;
   isWomenOnly?: boolean;
+  isPackOnly?: boolean;
+  packName?: string;
   /** Local require() image for the card background */
   localImage?: ImageSourcePropType;
 }
@@ -34,6 +36,8 @@ export function EventCard({
   onEnter,
   difficulty,
   isWomenOnly,
+  isPackOnly,
+  packName,
   imageUrl,
   localImage,
 }: EventCardProps) {
@@ -82,6 +86,12 @@ export function EventCard({
           {isWomenOnly && (
             <View style={[styles.difficultyBadge, { backgroundColor: 'rgba(232,114,154,0.15)', borderColor: 'rgba(232,114,154,0.3)' }]}>
               <Text style={[styles.difficultyText, { color: womenPink }]}>Women Only</Text>
+            </View>
+          )}
+          {isPackOnly && (
+            <View style={[styles.difficultyBadge, { backgroundColor: 'rgba(232,143,36,0.18)', borderColor: 'rgba(232,143,36,0.4)' }]}>
+              <Ionicons name="lock-closed" size={9} color={COLORS.orange} style={{ marginRight: 3 }} />
+              <Text style={[styles.difficultyText, { color: COLORS.orange }]}>{packName ? `${packName} Only` : 'Pack Only'}</Text>
             </View>
           )}
         </View>

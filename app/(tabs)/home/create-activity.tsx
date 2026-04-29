@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Button, SportChip } from '../../../src/components/ui';
-import { useCreateEvent, useCoachAvailability, useBookCoach } from '../../../src/hooks';
+import { useCreateEvent, useCoachAvailability, useBookCoach, useMyPacks } from '../../../src/hooks';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { supabase, isSupabaseConfigured } from '../../../src/lib/supabase';
 import { COLORS, FONTS, SPORTS } from '../../../src/lib/constants';
@@ -174,6 +174,10 @@ export default function CreateActivityScreen() {
   const [selectedCoachId, setSelectedCoachId] = useState('');
   const [showCoach, setShowCoach] = useState(false);
   const [isWomenOnly, setIsWomenOnly] = useState(false);
+  const [isPackOnly, setIsPackOnly] = useState(false);
+  const [selectedPackId, setSelectedPackId] = useState<string>('');
+  const { data: myPacksData } = useMyPacks();
+  const myPacks = (myPacksData || []).map((m: any) => m.pack).filter(Boolean);
 
   // Fetch coach availability when coach + date selected
   const { slots: coachSlots, loading: slotsLoading } = useCoachAvailability(
@@ -251,6 +255,20 @@ export default function CreateActivityScreen() {
       startsAt = parsed.toISOString();
     }
 
+    // Warn if event is in the past (more than 1 hour ago)
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
+    if (new Date(startsAt).getTime() < oneHourAgo) {
+      const localTime = new Date(startsAt).toLocaleString();
+      setError(`This activity is set to start in the past (${localTime}). Please pick a future date and time.`);
+      return;
+    }
+
+    // Validate pack-only events
+    if (isPackOnly && !selectedPackId) {
+      setError('Please select which pack this activity is for.');
+      return;
+    }
+
     try {
       const result = await createEvent({
         title: title.trim(),
@@ -264,6 +282,8 @@ export default function CreateActivityScreen() {
         is_women_only: isWomenOnly || undefined,
         country: profile?.region || 'SA',
         image_url: imageUri || undefined,
+        pack_id: isPackOnly ? selectedPackId : undefined,
+        visibility: isPackOnly ? 'pack' : 'public',
       });
       if (result) {
         // Book the coach if one was selected
@@ -287,10 +307,14 @@ export default function CreateActivityScreen() {
             } catch {}
           }
         }
-        router.replace('/(tabs)/home');
+        Alert.alert('Activity created!', `"${title.trim()}" is live. Your tribe can join now.`, [
+          { text: 'OK', onPress: () => router.replace('/(tabs)/home') },
+        ]);
       }
-    } catch (e) {
-      setError('Failed to create activity. Please try again.');
+    } catch (e: any) {
+      const detail = e?.message || e?.details || e?.hint || 'Please try again.';
+      setError(`Could not create activity: ${detail}`);
+      Alert.alert('Could not create activity', detail);
     }
   }
 
@@ -615,6 +639,65 @@ export default function CreateActivityScreen() {
           />
           <Text style={[styles.coachToggleText, isWomenOnly && { color: '#E8729A' }]}>Women only event</Text>
         </TouchableOpacity>
+        )}
+
+        {/* Pack Exclusive toggle — only shown if user belongs to at least 1 pack */}
+        {myPacks.length > 0 && (
+        <>
+          <TouchableOpacity
+            style={[styles.coachToggle, isPackOnly && { backgroundColor: 'rgba(232,143,36,0.08)', borderRadius: 12, paddingHorizontal: 12, borderWidth: 1, borderColor: 'rgba(232,143,36,0.3)' }]}
+            onPress={() => {
+              const next = !isPackOnly;
+              setIsPackOnly(next);
+              if (next && myPacks.length === 1) setSelectedPackId(myPacks[0].id);
+              if (!next) setSelectedPackId('');
+            }}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={isPackOnly ? 'checkbox' : 'square-outline'}
+              size={20}
+              color={isPackOnly ? COLORS.orange : COLORS.textMuted}
+            />
+            <Text style={[styles.coachToggleText, isPackOnly && { color: COLORS.orange }]}>Pack exclusive — only members can see & join</Text>
+          </TouchableOpacity>
+
+          {/* Pack picker — shown when toggle is on AND user has multiple packs */}
+          {isPackOnly && myPacks.length > 1 && (
+            <View style={{ marginTop: 8, marginBottom: 12 }}>
+              <Text style={[styles.label, { marginTop: 4 }]}>SELECT PACK</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 4 }}>
+                <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 2 }}>
+                  {myPacks.map((p: any) => {
+                    const selected = selectedPackId === p.id;
+                    return (
+                      <TouchableOpacity
+                        key={p.id}
+                        onPress={() => setSelectedPackId(p.id)}
+                        style={{
+                          paddingHorizontal: 14,
+                          paddingVertical: 8,
+                          borderRadius: 18,
+                          borderWidth: 1,
+                          borderColor: selected ? COLORS.orange : 'rgba(255,255,255,0.15)',
+                          backgroundColor: selected ? 'rgba(232,143,36,0.18)' : 'transparent',
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={{ color: selected ? COLORS.orange : COLORS.textMuted, fontFamily: FONTS.body, fontSize: 13, fontWeight: selected ? '600' : '400' }}>{p.name}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </ScrollView>
+            </View>
+          )}
+          {isPackOnly && myPacks.length === 1 && selectedPackId && (
+            <Text style={{ color: COLORS.orange, fontSize: 11, marginTop: 4, marginBottom: 8, marginLeft: 4 }}>
+              Will be visible only to {myPacks[0].name} members
+            </Text>
+          )}
+        </>
         )}
 
         <Text style={styles.label}>DESCRIPTION (OPTIONAL)</Text>

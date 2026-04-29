@@ -1,5 +1,7 @@
-// Local event store — persists in localStorage for web, AsyncStorage for native
-// Events created by the user show immediately without waiting for DB sync
+// Local event store — DISABLED for production go-live.
+// All events must persist to Supabase. Local-only fallbacks are removed
+// to prevent silent data loss and confusing UX.
+// Functions kept as no-ops for backwards compatibility with existing callers.
 
 export interface LocalEvent {
   id: string;
@@ -22,40 +24,26 @@ export interface LocalEvent {
 
 const STORAGE_KEY = 'beast_tribe_local_events';
 
-function saveToStorage(events: LocalEvent[]) {
-  try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-    }
-  } catch {}
-}
+// Clear any leftover local events from previous versions on first load
+try {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    window.localStorage.removeItem(STORAGE_KEY);
+  }
+} catch {}
 
-function loadFromStorage(): LocalEvent[] {
-  try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
-    }
-  } catch {}
-  return [];
-}
-
-// Initialize from storage
-let localEvents: LocalEvent[] = loadFromStorage();
-
-export function addLocalEvent(event: LocalEvent) {
-  localEvents.unshift(event);
-  saveToStorage(localEvents);
+export function addLocalEvent(_event: LocalEvent) {
+  // No-op — production app uses Supabase as source of truth
 }
 
 export function getLocalEvents(): LocalEvent[] {
-  // Re-read from storage in case another tab/navigation wrote to it
-  localEvents = loadFromStorage();
-  return [...localEvents];
+  return [];
 }
 
 export function clearLocalEvents() {
-  localEvents = [];
-  saveToStorage([]);
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.removeItem(STORAGE_KEY);
+    }
+  } catch {}
 }
 

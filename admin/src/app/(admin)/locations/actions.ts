@@ -27,6 +27,7 @@ export async function createLocation(formData: FormData) {
   const sortOrderRaw = formData.get('sort_order') as string;
   const sort_order = sortOrderRaw ? parseInt(sortOrderRaw, 10) : 0;
   const is_active = formData.get('is_active') !== 'off';
+  const community_id = ((formData.get('community_id') as string) || '').trim() || null;
 
   if (!name || !city) throw new Error('Name and city are required');
 
@@ -40,6 +41,7 @@ export async function createLocation(formData: FormData) {
     sports,
     sort_order: isNaN(sort_order) ? 0 : sort_order,
     is_active,
+    community_id,
   });
   if (error) throw new Error(error.message);
 
@@ -74,6 +76,8 @@ export async function updateLocation(locationId: string, formData: FormData) {
   updates.sort_order = sortOrderRaw ? parseInt(sortOrderRaw, 10) : 0;
   if (isNaN(updates.sort_order)) updates.sort_order = 0;
   updates.is_active = formData.get('is_active') !== 'off';
+  const communityIdRaw = ((formData.get('community_id') as string) || '').trim();
+  updates.community_id = communityIdRaw || null;
 
   const { error } = await db.from('popular_locations').update(updates).eq('id', locationId);
   if (error) throw new Error(error.message);

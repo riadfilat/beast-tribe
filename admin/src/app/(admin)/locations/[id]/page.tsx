@@ -12,11 +12,10 @@ export default async function EditLocationPage({ params }: { params: { id: strin
   await requireAdmin();
   const db = createAdminClient();
 
-  const { data: location } = await db
-    .from('popular_locations')
-    .select('*')
-    .eq('id', params.id)
-    .maybeSingle();
+  const [{ data: location }, { data: communities }] = await Promise.all([
+    db.from('popular_locations').select('*').eq('id', params.id).maybeSingle(),
+    db.from('communities').select('id, name').eq('is_active', true).order('name', { ascending: true }),
+  ]);
 
   if (!location) notFound();
 
@@ -38,6 +37,7 @@ export default async function EditLocationPage({ params }: { params: { id: strin
           await updateLocation(location.id, formData);
         }}
         location={location}
+        communities={communities || []}
       />
 
       {/* Danger zone */}

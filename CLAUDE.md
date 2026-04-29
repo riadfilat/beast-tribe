@@ -18,7 +18,7 @@ Gamified community fitness app for **Operation Beast** (Saudi activewear brand).
 ### Supabase
 - Project ref: `doqpqzxqgszsybghgtfq`
 - URL: `https://doqpqzxqgszsybghgtfq.supabase.co`
-- Access token (CLI): `sbp_9b6ae33ca6a0faace42d5bd4ee082a88f7784401`
+- Access token (CLI): `sbp_77c4e93cf53a8ed19229aecfabb753f4da7a4271`
 - Linked: yes (`npx supabase link --project-ref doqpqzxqgszsybghgtfq`)
 
 ### Apple / EAS
@@ -52,10 +52,10 @@ Takes ~60s. User closes/reopens app → change applies.
 ### 2. Database change — direct Supabase CLI
 ```bash
 # Quick SQL:
-cd ~/Desktop/OB/beast-tribe && echo "YOUR_SQL" | SUPABASE_ACCESS_TOKEN=sbp_9b6ae33ca6a0faace42d5bd4ee082a88f7784401 npx supabase db query --linked
+cd ~/Desktop/OB/beast-tribe && echo "YOUR_SQL" | SUPABASE_ACCESS_TOKEN=sbp_77c4e93cf53a8ed19229aecfabb753f4da7a4271 npx supabase db query --linked
 
 # Full migration:
-cd ~/Desktop/OB/beast-tribe && SUPABASE_ACCESS_TOKEN=sbp_9b6ae33ca6a0faace42d5bd4ee082a88f7784401 npx supabase db push --linked
+cd ~/Desktop/OB/beast-tribe && SUPABASE_ACCESS_TOKEN=sbp_77c4e93cf53a8ed19229aecfabb753f4da7a4271 npx supabase db push --linked
 ```
 Takes ~5s. No app update needed.
 
@@ -114,6 +114,18 @@ User wants to launch the app to limited public testers via TestFlight.
 ---
 
 ## Session Log (append-only — newest at top)
+
+### 2026-04-29 — Communities (forced-membership tribes) + 20-pack limit
+- Migration 026: communities table, profiles.community_id, popular_locations.community_id (NULL=global), packs.community_id + is_community_default
+- Triggers: auto-join community-default packs when user assigned to community OR when pack is marked default
+- RLS: locations + packs visible if global OR matches user's community OR pack member
+- Pack limit: bumped from 4 to 20 (display + 3 server-side checks in hooks)
+- Admin: full Communities CRUD with members section, default packs section, scoped locations
+- Admin: User detail page now has community assignment dropdown
+- Admin: LocationForm has community scope selector; locations list filterable by community
+- Sidebar: 🏘️ Communities entry between Users and Events
+- OTA pushed: `019dd966-1274-7d37-8845-dbeb829029cb` (pack limit)
+- Vercel: auto-deploys on push
 
 ### 2026-04-29 — Admin-managed Popular Locations
 - Applied migration 020_popular_locations.sql (table didn't exist) — 11 seed locations across SA + AE

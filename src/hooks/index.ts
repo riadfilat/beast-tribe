@@ -62,11 +62,12 @@ export function useActivePackChallenge() {
 }
 
 export function useUpcomingEvents(limit = 1) {
-  const now = new Date().toISOString();
+  // Include events that started up to 6 hours ago so freshly-created events still show
+  const cutoff = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
   return useSupabaseQuery<any[]>(
     () => supabase.from('events')
-      .select('*, sport:sports(*), rsvp_count:event_rsvps(count)')
-      .gte('starts_at', now)
+      .select('*, sport:sports(*), rsvp_count:event_rsvps(count), pack:packs(id, name)')
+      .gte('starts_at', cutoff)
       .order('starts_at', { ascending: true })
       .limit(limit),
     [],
@@ -404,12 +405,13 @@ export function useAwardStreakXP() {
 // EVENTS
 // ============================================
 export function useEvents(typeFilter?: string, searchQuery?: string, country?: string) {
-  const now = new Date().toISOString();
+  // Include events that started up to 6 hours ago so freshly-created events still show
+  const cutoff = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
   return useSupabaseQuery<any[]>(
     () => {
       let query = supabase.from('events')
-        .select('*, sport:sports(name, emoji), rsvp_count:event_rsvps(count)')
-        .gte('starts_at', now)
+        .select('*, sport:sports(name, emoji), rsvp_count:event_rsvps(count), pack:packs(id, name)')
+        .gte('starts_at', cutoff)
         .order('starts_at', { ascending: true });
 
       if (country) {
@@ -471,46 +473,41 @@ export function useCreateEvent() {
     is_women_only?: boolean;
     country?: string;
     image_url?: string;
+    pack_id?: string;
+    visibility?: 'public' | 'pack';
   }) => {
     const u = userRef.current;
     setLoading(true);
     try {
-      const sportName = SPORTS.find(s => s.id === event.event_type)?.name || event.event_type;
+      if (!isSupabaseConfigured) {
+        throw new Error('App is not connected to the server. Please check your internet connection.');
+      }
+      if (!u) {
+        throw new Error('You must be signed in to create an activity.');
+      }
 
-      // Always store locally so event shows immediately
-      const localEvt = {
-        id: `local-${Date.now()}`,
+      // Save to Supabase — server is the source of truth
+      const { data, error } = await supabase.from('events').insert({
         ...event,
-        sport: { name: sportName },
-        joined: true,
-        rsvp_count: [{ count: 1 }] as [{ count: number }],
-      };
-      addLocalEvent(localEvt);
+        created_by: u.id,
+      }).select().single();
 
-      if (!isSupabaseConfigured || !u) {
-        await new Promise(r => setTimeout(r, 400));
-        return localEvt;
+      if (error) {
+        console.warn('[createEvent] Supabase insert failed:', error.message, error.details, error.hint);
+        throw new Error(error.message || 'Failed to create activity');
+      }
+      if (!data) {
+        throw new Error('Activity was not created — no data returned.');
       }
 
-      // Also save to Supabase
-      try {
-        const { data, error } = await supabase.from('events').insert({
-          ...event,
-          created_by: u.id,
-        }).select().single();
-        if (!error && data) {
-          // Auto-RSVP the creator
-          await supabase.from('event_rsvps').upsert({
-            event_id: data.id,
-            user_id: u.id,
-            status: 'going',
-          });
-          return data;
-        }
-      } catch (dbErr) {
-        console.warn('Supabase insert failed, using local event:', dbErr);
-      }
-      return localEvt;
+      // Auto-RSVP the creator
+      await supabase.from('event_rsvps').upsert({
+        event_id: data.id,
+        user_id: u.id,
+        status: 'going',
+      });
+
+      return data;
     } finally {
       setLoading(false);
     }
@@ -994,13 +991,13 @@ export function useCreatePack() {
     if (!isSupabaseConfigured || !u) return null;
     setLoading(true);
     try {
-      // Check 4-pack limit
+      // Check pack limit (20 max)
       const { count: userPackCount, error: countErr } = await supabase.from('pack_members')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', u.id);
       if (countErr) throw new Error(countErr.message);
-      if (userPackCount !== null && userPackCount >= 4) {
-        throw new Error('You can only be in up to 4 packs at once.');
+      if (userPackCount !== null && userPackCount >= 20) {
+        throw new Error('You can only be in up to 20 packs at once.');
       }
 
       // Generate invite code client-side (6 char alphanumeric)
@@ -1066,12 +1063,12 @@ export function useJoinPackByCode() {
         return null;
       }
 
-      // Check user's pack limit (max 4 tribe packs)
+      // Check user's pack limit (max 20 packs)
       const { count: userPackCount } = await supabase.from('pack_members')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', u.id);
-      if (userPackCount !== null && userPackCount >= 4) {
-        setError('You can join up to 4 packs — leave one first');
+      if (userPackCount !== null && userPackCount >= 20) {
+        setError('You can join up to 20 packs — leave one first');
         return null;
       }
 
@@ -1174,12 +1171,12 @@ export function useRespondToInvite() {
         .update({ status: accept ? 'accepted' : 'declined' })
         .eq('id', inviteId);
 
-      // If accepted, check 4-pack limit then join
+      // If accepted, check pack limit (20 max) then join
       if (accept) {
         const { count: userPackCount } = await supabase.from('pack_members')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', u.id);
-        if (userPackCount !== null && userPackCount >= 4) {
+        if (userPackCount !== null && userPackCount >= 20) {
           // Already at max — decline instead
           await supabase.from('pack_invites')
             .update({ status: 'declined' })
