@@ -115,6 +115,13 @@ User wants to launch the app to limited public testers via TestFlight.
 
 ## Session Log (append-only — newest at top)
 
+### 2026-04-30 — Admin dashboard speed + loading UX
+- Top progress bar (`nprogress`) on every link click — orange, instant visual feedback
+- New `SubmitButton` (uses `useFormStatus`) replaces ~10 form submit buttons across admin/partner — shows spinner + disables during submit
+- New `loading.tsx` skeleton pages for 8 routes: communities, communities/[id], locations, locations/[id], users/[id], partners, partners/[id], events/[id]
+- Vercel Speed Insights + Analytics added to root layout
+- All forms now feel instant — no more "is it broken?" feeling
+
 ### 2026-04-30 — Direct image upload for locations
 - Created `location-images` Supabase Storage bucket (public, 5MB limit, JPG/PNG/WebP only)
 - LocationForm.tsx → client component with file upload UI (drag-drop area, preview, change/remove)

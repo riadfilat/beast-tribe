@@ -1,5 +1,6 @@
 import { requirePartner } from '@/lib/auth';
 import Sidebar from '@/components/layout/Sidebar';
+import NavigationProgress from '@/components/NavigationProgress';
 
 export default async function PartnerLayout({ children }: { children: React.ReactNode }) {
   const partner = await requirePartner();
@@ -12,6 +13,7 @@ export default async function PartnerLayout({ children }: { children: React.Reac
 
   return (
     <div className="flex min-h-screen">
+      <NavigationProgress />
       <Sidebar
         type="partner"
         userName={partner.business_name}

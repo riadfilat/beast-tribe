@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { requireAdmin } from '@/lib/auth';
 import { createPartner } from '../actions';
+import SubmitButton from '@/components/SubmitButton';
 
 export default async function NewPartnerPage() {
   await requireAdmin();
@@ -87,9 +88,12 @@ export default async function NewPartnerPage() {
           </div>
         </div>
 
-        <button type="submit" className="w-full py-2.5 bg-brand-orange text-white font-semibold rounded-lg hover:bg-orange-500 transition">
+        <SubmitButton
+          pendingLabel="Creating account…"
+          className="w-full py-2.5 bg-brand-orange text-white font-semibold rounded-lg hover:bg-orange-500 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center"
+        >
           Create Partner Account
-        </button>
+        </SubmitButton>
       </form>
     </div>
   );

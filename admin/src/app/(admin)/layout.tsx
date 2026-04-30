@@ -1,6 +1,7 @@
 import { requireAdmin } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import Sidebar from '@/components/layout/Sidebar';
+import NavigationProgress from '@/components/NavigationProgress';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const admin = await requireAdmin();
@@ -14,6 +15,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex min-h-screen">
+      <NavigationProgress />
       <Sidebar
         type="admin"
         userName={admin.full_name}

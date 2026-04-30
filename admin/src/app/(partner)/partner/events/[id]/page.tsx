@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { requirePartner } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import { updatePartnerEvent } from '../actions';
+import SubmitButton from '@/components/SubmitButton';
 import { notFound } from 'next/navigation';
 
 export default async function PartnerEventDetailPage({ params }: { params: { id: string } }) {
@@ -73,9 +74,12 @@ export default async function PartnerEventDetailPage({ params }: { params: { id:
           </div>
         </div>
 
-        <button type="submit" className="px-6 py-2 bg-brand-orange text-white font-medium rounded-lg text-sm hover:bg-orange-500 transition">
+        <SubmitButton
+          pendingLabel="Saving…"
+          className="px-6 py-2 bg-brand-orange text-white font-medium rounded-lg text-sm hover:bg-orange-500 transition disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center"
+        >
           Save Changes
-        </button>
+        </SubmitButton>
       </form>
 
       {/* Attendees */}

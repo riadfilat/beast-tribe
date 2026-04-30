@@ -2,6 +2,7 @@ import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
 import { createEvent } from '../actions';
 import Link from 'next/link';
+import SubmitButton from '@/components/SubmitButton';
 
 export default async function NewEventPage() {
   await requireAdmin();
@@ -74,9 +75,12 @@ export default async function NewEventPage() {
           <label htmlFor="is_women_only" className="text-sm text-gray-600">Women only event</label>
         </div>
 
-        <button type="submit" className="w-full py-2.5 bg-brand-orange text-white font-semibold rounded-lg hover:bg-orange-500 transition">
+        <SubmitButton
+          pendingLabel="Creating…"
+          className="w-full py-2.5 bg-brand-orange text-white font-semibold rounded-lg hover:bg-orange-500 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center"
+        >
           Create Event
-        </button>
+        </SubmitButton>
       </form>
     </div>
   );

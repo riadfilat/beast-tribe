@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import SubmitButton from '@/components/SubmitButton';
 
 interface Community {
   id?: string;
@@ -187,12 +188,9 @@ export default function CommunityForm({ action, community }: CommunityFormProps)
 
       {/* Actions */}
       <div className="flex gap-3 pt-3 border-t border-gray-100">
-        <button
-          type="submit"
-          className="px-5 py-2 bg-brand-orange text-white rounded-lg text-sm font-medium hover:bg-orange-500 transition"
-        >
+        <SubmitButton pendingLabel={isEdit ? 'Saving…' : 'Creating…'}>
           {isEdit ? 'Save Changes' : 'Create Community'}
-        </button>
+        </SubmitButton>
         <Link
           href="/communities"
           className="px-5 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition"

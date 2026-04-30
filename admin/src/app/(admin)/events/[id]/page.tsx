@@ -4,6 +4,7 @@ import { requireAdmin } from '@/lib/auth';
 import { updateEvent, deleteEvent } from '../actions';
 import { notFound } from 'next/navigation';
 import { ConfirmButton } from '@/components/ConfirmSubmit';
+import SubmitButton from '@/components/SubmitButton';
 
 export default async function EditEventPage({ params }: { params: { id: string } }) {
   await requireAdmin();
@@ -136,9 +137,12 @@ export default async function EditEventPage({ params }: { params: { id: string }
           <label htmlFor="is_women_only" className="text-sm text-gray-600">Women only</label>
         </div>
 
-        <button type="submit" className="w-full py-2.5 bg-brand-orange text-white font-semibold rounded-lg hover:bg-orange-500 transition">
+        <SubmitButton
+          pendingLabel="Saving…"
+          className="w-full py-2.5 bg-brand-orange text-white font-semibold rounded-lg hover:bg-orange-500 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center"
+        >
           Save Changes
-        </button>
+        </SubmitButton>
       </form>
 
       {/* RSVPs */}

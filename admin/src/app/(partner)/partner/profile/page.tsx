@@ -2,6 +2,7 @@ import { requirePartner } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import SubmitButton from '@/components/SubmitButton';
 
 async function updateProfile(formData: FormData) {
   'use server';
@@ -94,9 +95,12 @@ export default async function PartnerProfilePage() {
           </div>
         </div>
 
-        <button type="submit" className="w-full py-2.5 bg-brand-orange text-white font-semibold rounded-lg hover:bg-orange-500 transition">
+        <SubmitButton
+          pendingLabel="Saving…"
+          className="w-full py-2.5 bg-brand-orange text-white font-semibold rounded-lg hover:bg-orange-500 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center"
+        >
           Save Changes
-        </button>
+        </SubmitButton>
       </form>
     </div>
   );
