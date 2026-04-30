@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { useState, useRef } from 'react';
 
 interface Location {
   id?: string;
@@ -33,6 +36,45 @@ const COMMON_SPORTS = [
 export default function LocationForm({ action, location, communities = [] }: LocationFormProps) {
   const isEdit = !!location?.id;
   const sportsValue = (location?.sports || []).join(', ');
+
+  // File upload state
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string>('');
+  const [uploadMode, setUploadMode] = useState<'upload' | 'url'>('upload');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setFilePreview(null);
+      setFileName('');
+      return;
+    }
+    // Quick client-side validation
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image is too large. Max 5MB.');
+      e.target.value = '';
+      return;
+    }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      alert('Only JPG, PNG, or WebP images allowed.');
+      e.target.value = '';
+      return;
+    }
+    setFileName(file.name);
+    const reader = new FileReader();
+    reader.onloadend = () => setFilePreview(reader.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  function clearFile() {
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    setFilePreview(null);
+    setFileName('');
+  }
+
+  // What to show as preview
+  const previewSrc = filePreview || location?.image_url || '';
 
   return (
     <form action={action} className="space-y-5 bg-white rounded-xl border border-gray-100 shadow-sm p-6">
@@ -97,18 +139,109 @@ export default function LocationForm({ action, location, communities = [] }: Loc
         />
       </div>
 
-      {/* Image URL */}
+      {/* Cover Image — upload OR URL */}
       <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1.5">Cover Image URL</label>
-        <input
-          type="url"
-          name="image_url"
-          defaultValue={location?.image_url || ''}
-          placeholder="https://images.unsplash.com/..."
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-aqua focus:border-brand-aqua outline-none"
-        />
-        {location?.image_url && (
-          <div className="mt-2 h-32 rounded-lg bg-gray-100 bg-cover bg-center border border-gray-200" style={{ backgroundImage: `url(${location.image_url})` }} />
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="block text-xs font-medium text-gray-700">Cover Image</label>
+          <div className="flex gap-1 text-[10px]">
+            <button
+              type="button"
+              onClick={() => setUploadMode('upload')}
+              className={`px-2 py-1 rounded transition ${
+                uploadMode === 'upload'
+                  ? 'bg-brand-aqua text-white'
+                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}
+            >
+              📁 Upload
+            </button>
+            <button
+              type="button"
+              onClick={() => setUploadMode('url')}
+              className={`px-2 py-1 rounded transition ${
+                uploadMode === 'url'
+                  ? 'bg-brand-aqua text-white'
+                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}
+            >
+              🔗 URL
+            </button>
+          </div>
+        </div>
+
+        {uploadMode === 'upload' ? (
+          <div>
+            {!filePreview && !location?.image_url ? (
+              <label className="block w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-brand-aqua hover:bg-gray-50 transition flex flex-col items-center justify-center">
+                <span className="text-3xl mb-1">📷</span>
+                <span className="text-sm text-gray-600 font-medium">Click to upload image</span>
+                <span className="text-xs text-gray-400 mt-1">PNG, JPG, or WebP — max 5MB</span>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  name="image_file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleFileChange}
+                  className="sr-only"
+                />
+              </label>
+            ) : (
+              <div className="relative">
+                <div
+                  className="h-40 rounded-lg bg-gray-100 bg-cover bg-center border border-gray-200"
+                  style={{ backgroundImage: `url(${previewSrc})` }}
+                />
+                <div className="mt-2 flex items-center justify-between bg-gray-50 px-3 py-2 rounded-lg">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <span className="text-xs">📁</span>
+                    <span className="text-xs text-gray-600 truncate">
+                      {fileName || (location?.image_url ? 'Existing image' : '')}
+                    </span>
+                  </div>
+                  <div className="flex gap-2 flex-none ml-2">
+                    <label className="text-xs text-brand-aqua hover:underline cursor-pointer">
+                      Change
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        name="image_file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleFileChange}
+                        className="sr-only"
+                      />
+                    </label>
+                    {filePreview && (
+                      <button
+                        type="button"
+                        onClick={clearFile}
+                        className="text-xs text-red-500 hover:underline"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Hidden field carries the existing image_url unless replaced */}
+            <input type="hidden" name="existing_image_url" value={location?.image_url || ''} />
+          </div>
+        ) : (
+          <div>
+            <input
+              type="url"
+              name="image_url"
+              defaultValue={location?.image_url || ''}
+              placeholder="https://images.unsplash.com/..."
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-aqua focus:border-brand-aqua outline-none"
+            />
+            {location?.image_url && (
+              <div
+                className="mt-2 h-32 rounded-lg bg-gray-100 bg-cover bg-center border border-gray-200"
+                style={{ backgroundImage: `url(${location.image_url})` }}
+              />
+            )}
+          </div>
         )}
       </div>
 

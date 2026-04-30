@@ -926,6 +926,26 @@ export function useSaveGoals() {
 }
 
 // ============================================
+// COMMUNITY (Tribe membership)
+// ============================================
+
+/** Get the current user's community (the tribe they're forced into by admin) */
+export function useMyCommunity() {
+  const { profile } = useAuth();
+  return useSupabaseQuery<any>(
+    () => {
+      if (!profile?.community_id) return Promise.resolve({ data: null, error: null });
+      return supabase.from('communities')
+        .select('*')
+        .eq('id', profile.community_id)
+        .maybeSingle();
+    },
+    [profile?.community_id],
+    null
+  );
+}
+
+// ============================================
 // PACK (Friend Groups)
 // ============================================
 

@@ -100,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       training_frequency: 4,
       beast_score: 0,
       pack_id: null,
+      community_id: null,
       created_at: new Date().toISOString(),
       date_of_birth: null,
       city: null,

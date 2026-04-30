@@ -21,6 +21,7 @@ export interface Profile {
   training_frequency: number;
   beast_score: number;
   pack_id: string | null;
+  community_id: string | null;
   five_k_time_seconds: number | null;
   max_bench_kg: number | null;
   daily_steps_avg: number | null;

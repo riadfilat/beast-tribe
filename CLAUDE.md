@@ -115,6 +115,24 @@ User wants to launch the app to limited public testers via TestFlight.
 
 ## Session Log (append-only — newest at top)
 
+### 2026-04-30 — Direct image upload for locations
+- Created `location-images` Supabase Storage bucket (public, 5MB limit, JPG/PNG/WebP only)
+- LocationForm.tsx → client component with file upload UI (drag-drop area, preview, change/remove)
+- Toggle between "📁 Upload" and "🔗 URL" modes
+- Server actions: new `uploadLocationImage` helper that reads FormData file, validates size/type, uploads to bucket, returns public URL
+- Image precedence: uploaded file > pasted URL > existing image
+- `existing_image_url` hidden field preserves URL when admin edits without re-uploading
+- Vercel auto-deploys on push
+
+### 2026-04-30 — Community badge on mobile profile + auto-assign user
+- User asked: "where does it show I'm part of the pack/community"
+- Added `useMyCommunity` hook in src/hooks/index.ts
+- Profile screen now shows orange "🛡 Community Name" badge below the tier pill
+- Added `community_id` field to Profile type + AuthProvider demo profile
+- Diagnosed second issue: user's "ANDORAA" pack actually has 1 member (themselves as leader). Pack count display showing 0 may be a stale cache — force-quit + reopen should resolve
+- Manually assigned user (riad.filat) to "Andorra Sports Tribe" community via REST PATCH
+- OTA: `019ddd1e-92bf-74cc-8ceb-ff1d1218e84c`
+
 ### 2026-04-29 — Communities (forced-membership tribes) + 20-pack limit
 - Migration 026: communities table, profiles.community_id, popular_locations.community_id (NULL=global), packs.community_id + is_community_default
 - Triggers: auto-join community-default packs when user assigned to community OR when pack is marked default

@@ -8,7 +8,7 @@ import { Avatar, TierPill, ProgressBar, BeastIcon } from '../../../src/component
 import { HabitChecklist } from '../../../src/components/habits/HabitChecklist';
 import { BeastScoreCard } from '../../../src/components/habits/BeastScoreCard';
 import { ActivityCalendar } from '../../../src/components/profile/ActivityCalendar';
-import { useProfile, useUserGoals, useUserBadges, useUserSports, useWorkoutCount, useMyPack, usePackMembers, useUserHabits, useTodayHabitProgress, useBeastScore } from '../../../src/hooks';
+import { useProfile, useUserGoals, useUserBadges, useUserSports, useWorkoutCount, useMyPack, usePackMembers, useUserHabits, useTodayHabitProgress, useBeastScore, useMyCommunity } from '../../../src/hooks';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { useTheme } from '../../../src/providers/ThemeProvider';
 import { calculateLevel, calculateTier, levelProgress, xpForLevel } from '../../../src/lib/xp';
@@ -68,6 +68,7 @@ export default function ProfileScreen() {
   const { data: userHabits } = useUserHabits();
   const { data: todayHabitLogs } = useTodayHabitProgress();
   const { data: beastScoreData } = useBeastScore();
+  const { data: myCommunity } = useMyCommunity();
 
   const isLoading = profileLoading && goalsLoading;
 
@@ -147,6 +148,12 @@ export default function ProfileScreen() {
           <TierPill tier={tier} size="medium" showLevel level={level} />
           <Text style={styles.profileName}>{name.toUpperCase()}</Text>
           <Text style={styles.profileSubtitle}>ELITE ATHLETE</Text>
+          {myCommunity && (
+            <View style={styles.communityBadge}>
+              <Ionicons name="shield-checkmark" size={12} color={COLORS.orange} />
+              <Text style={styles.communityBadgeText}>{myCommunity.name}</Text>
+            </View>
+          )}
         </View>
 
         {/* Stats cards — streak + XP */}
@@ -465,6 +472,24 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     letterSpacing: 2,
     marginTop: 3,
+  },
+  communityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 10,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    borderRadius: 12,
+    backgroundColor: 'rgba(232,143,36,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(232,143,36,0.35)',
+  },
+  communityBadgeText: {
+    fontSize: 11,
+    fontFamily: FONTS.bodySemiBold,
+    color: COLORS.orange,
+    letterSpacing: 0.5,
   },
 
   /* Stats row */
