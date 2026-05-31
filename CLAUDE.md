@@ -315,3 +315,11 @@ Comprehensive audit of mobile + admin + database, then fixed every critical/high
 - Dashboard at `admin/` (Next.js 14) was never deployed
 - User deployed via Vercel web UI: imported GitHub repo, set root directory `admin`, added 4 env vars (Supabase + NextAuth)
 - Fixed Output Directory mistake (was "Next.js", should be empty)
+
+### 2026-05-31 — DB bulletproofing applied via stable pooler connection
+- Established STABLE db access: `aws-1-ap-south-1.pooler.supabase.com:5432` (Mumbai). Use `scripts/run-migration.js` with `PG_URL` env (connection string in ~/.claude memory). No more `sbp_` token expiry.
+- Applied migration 027 (events visibility RLS) + 028 (feed_comments/content_reports/image_moderation_queue policies — were silently dead; feed_posts update/delete own; events FK SET NULL, pack_invites FK CASCADE)
+- Applied previously-unapplied migrations 018/019/021 → created coach/program tables (coach_trainees, workout_programs, program_assignments, coach_notes, body_metrics, trainee_privacy) — Mission tab + coach features were querying non-existent tables
+- Fixed admin comment moderation: `is_visible`/`hidden_by` columns don't exist → use `status` enum (active/hidden/deleted/flagged)
+- feed_comments comment_status enum: active, hidden, deleted, flagged
+- Verified: all target tables have full RLS; FKs safe; coach tables have policies

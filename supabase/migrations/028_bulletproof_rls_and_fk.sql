@@ -5,9 +5,10 @@
 -- ============================================
 
 -- ---- C1: feed_comments had RLS enabled but ZERO policies (commenting silently dead) ----
+-- Schema uses a `status` column (not is_visible). Comments are public content.
 DO $$ BEGIN
   CREATE POLICY feed_comments_select ON feed_comments FOR SELECT
-    USING (is_visible = true OR user_id = auth.uid());
+    USING (status IS DISTINCT FROM 'hidden' OR user_id = auth.uid());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   CREATE POLICY feed_comments_insert ON feed_comments FOR INSERT

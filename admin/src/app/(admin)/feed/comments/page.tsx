@@ -27,7 +27,7 @@ export default async function CommentsPage() {
 
       <div className="space-y-2">
         {(comments || []).map((comment: any) => {
-          const isHidden = !comment.is_visible;
+          const isHidden = comment.status === 'hidden' || comment.status === 'deleted';
           const isReported = reportedIds.has(comment.id);
           const action = isHidden
             ? restoreComment.bind(null, comment.id)

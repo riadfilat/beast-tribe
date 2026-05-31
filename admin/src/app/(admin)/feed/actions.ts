@@ -28,7 +28,7 @@ export async function hideComment(commentId: string) {
   const db = createAdminClient();
 
   const { error } = await db.from('feed_comments')
-    .update({ is_visible: false, hidden_by: admin.id, hidden_reason: 'admin_removed' })
+    .update({ status: 'hidden' })
     .eq('id', commentId);
   if (error) throw new Error(`Hide comment error: ${error.message}`);
 
@@ -47,7 +47,7 @@ export async function restoreComment(commentId: string) {
   const db = createAdminClient();
 
   const { error } = await db.from('feed_comments')
-    .update({ is_visible: true, hidden_by: null, hidden_reason: null })
+    .update({ status: 'active' })
     .eq('id', commentId);
   if (error) throw new Error(`Restore comment error: ${error.message}`);
 
