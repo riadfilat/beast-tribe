@@ -100,7 +100,9 @@ export default function FeedScreen() {
     const content = postFeeling
       ? `${postFeeling} ${postContent.trim()}`
       : postContent.trim();
-    const success = await createPost(content, SPORT_TABS[sportTab]);
+    // Sport tabs are display-only filters (names, not UUIDs) — pass undefined
+    // so the insert doesn't fail on the sport_id UUID FK (Fix 8).
+    const success = await createPost(content, undefined);
     if (success) {
       setPostContent('');
       setPostImageUri(null);

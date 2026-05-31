@@ -16,7 +16,16 @@ async function updateProfile(formData: FormData) {
   });
   updates.updated_at = new Date().toISOString();
 
-  await db.from('partners').update(updates).eq('id', partner.partner_id);
+  const { error } = await db.from('partners').update(updates).eq('id', partner.partner_id);
+  if (error) throw new Error(error.message);
+
+  await db.from('admin_audit_log').insert({
+    admin_user_id: partner.id,
+    action: 'update_partner_profile',
+    target_table: 'partners',
+    target_id: partner.partner_id,
+  });
+
   revalidatePath('/partner/profile');
   redirect('/partner/profile');
 }

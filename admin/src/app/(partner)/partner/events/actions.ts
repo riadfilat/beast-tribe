@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase-server';
 import { requirePartner } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 
 export async function createPartnerEvent(formData: FormData) {
   const partner = await requirePartner();
@@ -24,7 +25,7 @@ export async function createPartnerEvent(formData: FormData) {
   const coach_name = partner.partner_type === 'coach' ? partner.business_name : (formData.get('coach_name') as string || null);
   const gym_name = partner.partner_type === 'gym' ? partner.business_name : (formData.get('gym_name') as string || null);
 
-  const { error } = await db.from('events').insert({
+  const { data: newEvent, error } = await db.from('events').insert({
     title,
     event_type,
     sport_id: sport_id || undefined,
@@ -40,29 +41,23 @@ export async function createPartnerEvent(formData: FormData) {
     is_women_only,
     created_by: partner.id,
     partner_id: partner.partner_id,
-  });
+  })
+    .select('id')
+    .single();
 
   if (error) throw new Error(error.message);
 
-  // Link in partner_events
-  // First get the event we just created
-  const { data: newEvent } = await db.from('events')
-    .select('id')
-    .eq('created_by', partner.id)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
+  // Link in partner_events using the id returned from the insert above
+  const role = partner.partner_type === 'coach' ? 'coach' :
+               partner.partner_type === 'gym' ? 'venue' : 'organizer';
+  const { error: linkError } = await db.from('partner_events').insert({
+    partner_id: partner.partner_id,
+    event_id: newEvent.id,
+    role,
+  });
+  if (linkError) throw new Error(linkError.message);
 
-  if (newEvent) {
-    const role = partner.partner_type === 'coach' ? 'coach' :
-                 partner.partner_type === 'gym' ? 'venue' : 'organizer';
-    await db.from('partner_events').insert({
-      partner_id: partner.partner_id,
-      event_id: newEvent.id,
-      role,
-    });
-  }
-
+  revalidatePath('/partner/events');
   redirect('/partner/events');
 }
 
@@ -91,6 +86,16 @@ export async function updatePartnerEvent(eventId: string, formData: FormData) {
   if (maxCap) updates.max_capacity = parseInt(maxCap as string) || null;
   updates.is_women_only = formData.get('is_women_only') === 'on';
 
-  await db.from('events').update(updates).eq('id', eventId);
+  const { error } = await db.from('events').update(updates).eq('id', eventId);
+  if (error) throw new Error(error.message);
+
+  await db.from('admin_audit_log').insert({
+    admin_user_id: partner.id,
+    action: 'update_partner_event',
+    target_table: 'events',
+    target_id: eventId,
+  });
+
+  revalidatePath('/partner/events');
   redirect('/partner/events');
 }

@@ -52,10 +52,7 @@ export async function resetUserPassword(userId: string) {
     throw new Error(`Fetch user error: ${fetchErr?.message || 'no email'}`);
   }
 
-  const { error } = await db.auth.admin.generateLink({
-    type: 'recovery',
-    email: userRes.user.email,
-  });
+  const { error } = await db.auth.resetPasswordForEmail(userRes.user.email);
   if (error) throw new Error(`Reset password error: ${error.message}`);
 
   await db.from('admin_audit_log').insert({

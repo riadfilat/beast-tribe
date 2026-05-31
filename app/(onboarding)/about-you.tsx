@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Modal, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Modal, NativeSyntheticEvent, NativeScrollEvent, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -325,16 +325,21 @@ export default function AboutYouScreen() {
     setSaving(true);
     try {
       if (user) {
-        await supabase.from('profiles').update({
+        const { error } = await supabase.from('profiles').update({
           region: country,
           city: city.trim() || null,
           date_of_birth: dob.trim() || null,
           gender: gender || null,
           experience_level: experience || null,
         }).eq('id', user.id);
+        if (error) {
+          Alert.alert('Could not save', error.message || 'Please try again.');
+          return; // Don't advance on failure — let the user retry
+        }
       }
-    } catch (e) {
-      console.warn('Failed to save about you:', e);
+    } catch (e: any) {
+      Alert.alert('Could not save', e?.message || 'Please try again.');
+      return;
     } finally {
       setSaving(false);
     }

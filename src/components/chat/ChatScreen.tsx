@@ -45,6 +45,8 @@ interface ChatScreenProps {
   statusButtons?: StatusButton[];
   attendees?: Attendee[];
   onBack: () => void;
+  /** Optional extra header action (rendered to the right, before the people icon) */
+  headerAction?: { icon: React.ComponentProps<typeof Ionicons>['name']; onPress: () => void; color?: string };
 }
 
 const DEFAULT_STATUS_BUTTONS: StatusButton[] = [
@@ -79,13 +81,15 @@ export function ChatScreen({
   statusButtons = DEFAULT_STATUS_BUTTONS,
   attendees,
   onBack,
+  headerAction,
 }: ChatScreenProps) {
   const [text, setText] = useState('');
   const [showMembers, setShowMembers] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const { user } = useAuth();
 
-  const membersList = attendees && attendees.length > 0 ? attendees : DEMO_ATTENDEES;
+  // If attendees prop is passed (even empty array), use it directly. Only fall back to demo when undefined.
+  const membersList = attendees !== undefined ? attendees : DEMO_ATTENDEES;
 
   useEffect(() => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
@@ -114,11 +118,20 @@ export function ChatScreen({
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>{title}</Text>
-          <Text style={styles.headerSubtitle}>{membersList.length} beasts joining</Text>
+          <Text style={styles.headerSubtitle}>
+            {membersList.length} {membersList.length === 1 ? 'beast' : 'beasts'} joining
+          </Text>
         </View>
-        <TouchableOpacity onPress={() => setShowMembers(true)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="people" size={20} color={COLORS.orange} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          {headerAction && (
+            <TouchableOpacity onPress={headerAction.onPress} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name={headerAction.icon} size={20} color={headerAction.color || COLORS.white} />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={() => setShowMembers(true)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Ionicons name="people" size={20} color={COLORS.orange} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Attendee avatar row */}

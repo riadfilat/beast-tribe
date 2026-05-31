@@ -45,6 +45,15 @@ export default async function UsersPage({
   const { data: users, count } = await query;
   const totalPages = Math.ceil((count || 0) / perPage);
 
+  function buildHref(targetPage: number): string {
+    const next: Record<string, string> = { page: String(targetPage) };
+    if (searchParams.q) next.q = searchParams.q;
+    if (searchParams.tier) next.tier = searchParams.tier;
+    if (searchParams.region) next.region = searchParams.region;
+    if (searchParams.premium) next.premium = searchParams.premium;
+    return `/users?${new URLSearchParams(next).toString()}`;
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -165,7 +174,7 @@ export default async function UsersPage({
         <div className="flex items-center justify-center gap-2 mt-4">
           {page > 1 && (
             <Link
-              href={`/users?page=${page - 1}&q=${searchParams.q || ''}&tier=${searchParams.tier || ''}&region=${searchParams.region || ''}`}
+              href={buildHref(page - 1)}
               className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition"
             >
               ← Prev
@@ -176,7 +185,7 @@ export default async function UsersPage({
           </span>
           {page < totalPages && (
             <Link
-              href={`/users?page=${page + 1}&q=${searchParams.q || ''}&tier=${searchParams.tier || ''}&region=${searchParams.region || ''}`}
+              href={buildHref(page + 1)}
               className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition"
             >
               Next →

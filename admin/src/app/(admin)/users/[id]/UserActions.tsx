@@ -47,7 +47,7 @@ export default function UserActions({ userId, isBanned }: Props) {
     startTransition(async () => {
       try {
         await resetUserPassword(userId);
-        alert('Password reset link generated (check audit log / user email).');
+        alert('Password reset email sent to the user.');
       } catch (e: any) {
         alert(`Error: ${e.message || e}`);
       }

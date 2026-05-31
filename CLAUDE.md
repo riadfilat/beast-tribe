@@ -18,7 +18,7 @@ Gamified community fitness app for **Operation Beast** (Saudi activewear brand).
 ### Supabase
 - Project ref: `doqpqzxqgszsybghgtfq`
 - URL: `https://doqpqzxqgszsybghgtfq.supabase.co`
-- Access token (CLI): `sbp_77c4e93cf53a8ed19229aecfabb753f4da7a4271`
+- Access token (CLI): stored ONLY in local `~/.claude` auto-memory (MEMORY.md) — NEVER commit the real `sbp_...` token to this repo (GitHub push protection blocks it). Reference it via the `SUPABASE_ACCESS_TOKEN` env var in commands below.
 - Linked: yes (`npx supabase link --project-ref doqpqzxqgszsybghgtfq`)
 
 ### Apple / EAS
@@ -52,10 +52,10 @@ Takes ~60s. User closes/reopens app → change applies.
 ### 2. Database change — direct Supabase CLI
 ```bash
 # Quick SQL:
-cd ~/Desktop/OB/beast-tribe && echo "YOUR_SQL" | SUPABASE_ACCESS_TOKEN=sbp_77c4e93cf53a8ed19229aecfabb753f4da7a4271 npx supabase db query --linked
+cd ~/Desktop/OB/beast-tribe && echo "YOUR_SQL" | SUPABASE_ACCESS_TOKEN=$SUPABASE_ACCESS_TOKEN npx supabase db query --linked
 
 # Full migration:
-cd ~/Desktop/OB/beast-tribe && SUPABASE_ACCESS_TOKEN=sbp_77c4e93cf53a8ed19229aecfabb753f4da7a4271 npx supabase db push --linked
+cd ~/Desktop/OB/beast-tribe && SUPABASE_ACCESS_TOKEN=$SUPABASE_ACCESS_TOKEN npx supabase db push --linked
 ```
 Takes ~5s. No app update needed.
 
@@ -114,6 +114,69 @@ User wants to launch the app to limited public testers via TestFlight.
 ---
 
 ## Session Log (append-only — newest at top)
+
+### 2026-04-30 — BULLETPROOFING PASS (4 parallel audits + systematic fixes)
+Comprehensive audit of mobile + admin + database, then fixed every critical/high issue.
+
+**Mobile (auth/onboarding/core):**
+- Fixed infinite-splash race (setLoading always clears via .finally, not blocked by fetchingRef)
+- Fixed new-signups-stuck-on-verify-email: verify-email re-authenticates with carried email+password; sign-in "Email not confirmed" routes to verify screen
+- completeOnboarding now throws on error (no false-complete loop); caller shows Alert
+- Onboarding steps surface DB write errors via Alert (no silent data loss)
+- Unregistered orphan onboarding routes (baseline/set-goals/connect-devices); single terminal screen
+- Fixed joinedEventIds module-scope leak across accounts (now useRef)
+- Chat: useChatRoom uses maybeSingle, no fake demo-room on failure, surfaces error+retry
+- createPost no longer passes sport NAME as UUID (was failing every post)
+- Coach Dashboard now reachable (card on profile when useIsCoach)
+- "Join a Pack" CTA hidden for existing pack members
+- "up to 4 packs" copy → 20; respondToInvite joins before marking accepted
+- Error banners + Retry on events/leaderboard instead of blank "no data"
+
+**Admin:**
+- CRITICAL: partner edit was writing/reading non-existent columns (every save threw) — rewired to real schema (business_name, partner_type, contact_email, etc.)
+- Fixed partners list invalid join (profiles.email doesn't exist)
+- updatePartnerEvent/moderation/feed-comment/profile actions now throw on error + audit + revalidate
+- createPartnerEvent uses insert().select().single() (no concurrency mislink)
+- Feed pagination prev/next; users pagination preserves premium filter
+- Middleware /login redirect → / (role dispatcher) not /dashboard
+- resetUserPassword now actually emails (resetPasswordForEmail)
+
+**Database (migration 028 — PENDING token recovery):**
+- feed_comments, content_reports, image_moderation_queue had RLS enabled but ZERO policies (silently broken) → added owner policies
+- feed_posts_update_own/delete_own (021 may have aborted)
+- events FK created_by/partner_id → ON DELETE SET NULL; pack_invites FK → CASCADE
+- Note: 027_events_visibility_rls.sql + 028 both need applying when Supabase token works
+
+### 2026-04-30 — Home card join state persistence + chat attendee count
+- Home page UpcomingEventCard already had join/joined/onPress logic (joined → tap goes to chat)
+- Added DB-backed RSVP fetch on screen focus → home card shows correct "Joined" badge after app reopens
+- New `useEventAttendees` hook fetches event_rsvps with profile join
+- activity-chat.tsx now passes real attendees → ChatScreen shows accurate "N beasts joining"
+- OTA: `019ddeee-7cd6-7795-b609-386490bb5102`
+
+### 2026-04-30 — Event join/leave UX (Joined label, leave from chat, persist state)
+- EventCard: button text "Enter" → "Joined" (more visible state)
+- New `useLeaveEvent` hook (deletes event_rsvps row)
+- ChatScreen: added optional `headerAction` prop for icon/onPress in header
+- activity-chat.tsx: added red exit-outline icon in header → confirms then leaves event + navigates back
+- events.tsx: pre-populates joinedIds from event_rsvps on screen focus — cards show "Joined" correctly when user already RSVP'd in a previous session
+- OTA: `019ddee5-4643-784e-947a-7f9be222b0c1`
+
+### 2026-04-30 — Event image upload + locations refresh on focus
+- User uploaded image to a community location ("Andoraa basketball court"); basketball event had broken `https://ibb.co/...` URL (gallery page, not direct image)
+- Fixed broken URL on the existing event; linked basketball event to the court image
+- Created `event-images` Supabase Storage bucket (public, 5MB, JPG/PNG/WebP)
+- Mobile create-activity now auto-uploads picked images: `file://...` URI → Supabase Storage → public URL saved
+- Replaced `useEffect` with `useFocusEffect` so popular locations refresh on every screen visit (newly-added admin locations appear immediately)
+- OTA: `019ddec6-f932-7f44-a9f3-e98741146bb1`
+
+### 2026-04-30 — Event type display fix (basketball not showing properly)
+- User reported: created basketball event, didn't appear in events tab
+- Root cause: event has `event_type='basketball'` but `sport_id=null`. Mapping used only `sport?.name` → fell back to "Event" label
+- Verified events RLS policy is correct: `events_select` allows pack-exclusive events for pack members
+- Fixed events.tsx + home/index.tsx to use `event_type` as fallback when sport relation is null
+- Now displays "Basketball" instead of generic "Event"
+- OTA: `019ddea8-4a39-7c1e-a64c-94b17d3769e2`
 
 ### 2026-04-30 — Admin dashboard speed + loading UX
 - Top progress bar (`nprogress`) on every link click — orange, instant visual feedback

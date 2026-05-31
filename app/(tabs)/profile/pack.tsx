@@ -70,14 +70,24 @@ export default function PackScreen() {
       Alert.alert('Pack Limit Reached', `You can join up to ${MAX_PACKS} packs. Leave one first to accept this invite.`);
       return;
     }
-    await respondToInvite(inviteId, packId, true);
+    try {
+      await respondToInvite(inviteId, packId, true);
+    } catch (e: any) {
+      Alert.alert('Could not join pack', e?.message || 'Please try again.');
+      return;
+    }
     refetchInvites();
     await refetchPacks();
     setSelectedPackId(packId);
   }
 
   async function handleDeclineInvite(inviteId: string, packId: string) {
-    await respondToInvite(inviteId, packId, false);
+    try {
+      await respondToInvite(inviteId, packId, false);
+    } catch (e: any) {
+      Alert.alert('Could not decline invite', e?.message || 'Please try again.');
+      return;
+    }
     refetchInvites();
   }
 
@@ -364,7 +374,7 @@ export default function PackScreen() {
       </View>
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>My Packs</Text>
-        <Text style={styles.subtitle}>Join up to 4 tribe packs and compete together</Text>
+        <Text style={styles.subtitle}>Join up to {MAX_PACKS} tribe packs and compete together</Text>
 
         {/* Create pack */}
         <TouchableOpacity

@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   TextInput, Alert, Platform, Image,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -126,43 +126,45 @@ export default function CreateActivityScreen() {
   const [coaches, setCoaches] = useState<{ id: string; name: string; sports?: string[] }[]>([]);
   const [popularLocations, setPopularLocations] = useState<PopularLocation[]>(FALLBACK_LOCATIONS);
 
-  // Fetch coaches and popular locations from database
-  React.useEffect(() => {
-    if (!isSupabaseConfigured) return;
-    // Fetch coaches
-    (async () => {
-      const { data } = await supabase.from('partners').select('*').eq('partner_type', 'coach');
-      if (data) setCoaches(data.map((c: any) => ({ id: c.id, name: c.name || c.business_name || 'Coach', sports: c.sports })));
-    })();
-    // Fetch popular locations filtered by user's country
-    (async () => {
-      const userCountry = profile?.region || 'SA';
-      const { data } = await supabase.from('popular_locations')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order');
-      if (data && data.length > 0) {
-        setPopularLocations(
-          data
-            .sort((a: any, b: any) => {
-              // User's country first
-              if (a.country === userCountry && b.country !== userCountry) return -1;
-              if (b.country === userCountry && a.country !== userCountry) return 1;
-              return 0;
-            })
-            .map((loc: any) => ({
-              id: loc.id,
-              name: loc.name,
-              city: loc.city,
-              country: loc.country,
-              sports: loc.sports || [],
-              description: loc.description || '',
-              imageUrl: loc.image_url || '',
-            }))
-        );
-      }
-    })();
-  }, [profile?.region]);
+  // Fetch coaches and popular locations from database — refresh on every screen focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!isSupabaseConfigured) return;
+      // Fetch coaches
+      (async () => {
+        const { data } = await supabase.from('partners').select('*').eq('partner_type', 'coach');
+        if (data) setCoaches(data.map((c: any) => ({ id: c.id, name: c.name || c.business_name || 'Coach', sports: c.sports })));
+      })();
+      // Fetch popular locations filtered by user's country
+      (async () => {
+        const userCountry = profile?.region || 'SA';
+        const { data } = await supabase.from('popular_locations')
+          .select('*')
+          .eq('is_active', true)
+          .order('sort_order');
+        if (data && data.length > 0) {
+          setPopularLocations(
+            data
+              .sort((a: any, b: any) => {
+                // User's country first
+                if (a.country === userCountry && b.country !== userCountry) return -1;
+                if (b.country === userCountry && a.country !== userCountry) return 1;
+                return 0;
+              })
+              .map((loc: any) => ({
+                id: loc.id,
+                name: loc.name,
+                city: loc.city,
+                country: loc.country,
+                sports: loc.sports || [],
+                description: loc.description || '',
+                imageUrl: loc.image_url || '',
+              }))
+          );
+        }
+      })();
+    }, [profile?.region])
+  );
 
   const [title, setTitle] = useState('');
   const [sport, setSport] = useState('');
@@ -270,6 +272,32 @@ export default function CreateActivityScreen() {
     }
 
     try {
+      // If image is a local file URI, upload it to Supabase Storage first
+      let finalImageUrl: string | undefined = imageUri || undefined;
+      if (imageUri && imageUri.startsWith('file://') && isSupabaseConfigured) {
+        try {
+          const fileExt = imageUri.split('.').pop()?.toLowerCase() || 'jpg';
+          const ext = ['jpg', 'jpeg', 'png', 'webp'].includes(fileExt) ? fileExt : 'jpg';
+          const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+          const fileResp = await fetch(imageUri);
+          const blob = await fileResp.blob();
+          const arrayBuffer = await new Response(blob).arrayBuffer();
+          const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+          const { error: upErr } = await supabase.storage
+            .from('event-images')
+            .upload(path, new Uint8Array(arrayBuffer), { contentType, upsert: false });
+          if (upErr) throw upErr;
+          const { data: pub } = supabase.storage.from('event-images').getPublicUrl(path);
+          finalImageUrl = pub.publicUrl;
+        } catch (uploadErr: any) {
+          console.warn('[create-activity] image upload failed, continuing without image:', uploadErr?.message);
+          finalImageUrl = undefined;
+        }
+      } else if (imageUri && !imageUri.startsWith('http')) {
+        // Reject any URL that's not http/https or file://
+        finalImageUrl = undefined;
+      }
+
       const result = await createEvent({
         title: title.trim(),
         event_type: sport,
@@ -281,7 +309,7 @@ export default function CreateActivityScreen() {
         difficulty: difficulty || undefined,
         is_women_only: isWomenOnly || undefined,
         country: profile?.region || 'SA',
-        image_url: imageUri || undefined,
+        image_url: finalImageUrl,
         pack_id: isPackOnly ? selectedPackId : undefined,
         visibility: isPackOnly ? 'pack' : 'public',
       });

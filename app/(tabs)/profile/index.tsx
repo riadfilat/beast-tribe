@@ -8,7 +8,7 @@ import { Avatar, TierPill, ProgressBar, BeastIcon } from '../../../src/component
 import { HabitChecklist } from '../../../src/components/habits/HabitChecklist';
 import { BeastScoreCard } from '../../../src/components/habits/BeastScoreCard';
 import { ActivityCalendar } from '../../../src/components/profile/ActivityCalendar';
-import { useProfile, useUserGoals, useUserBadges, useUserSports, useWorkoutCount, useMyPack, usePackMembers, useUserHabits, useTodayHabitProgress, useBeastScore, useMyCommunity } from '../../../src/hooks';
+import { useProfile, useUserGoals, useUserBadges, useUserSports, useWorkoutCount, useMyPack, usePackMembers, useUserHabits, useTodayHabitProgress, useBeastScore, useMyCommunity, useIsCoach } from '../../../src/hooks';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { useTheme } from '../../../src/providers/ThemeProvider';
 import { calculateLevel, calculateTier, levelProgress, xpForLevel } from '../../../src/lib/xp';
@@ -69,6 +69,7 @@ export default function ProfileScreen() {
   const { data: todayHabitLogs } = useTodayHabitProgress();
   const { data: beastScoreData } = useBeastScore();
   const { data: myCommunity } = useMyCommunity();
+  const { isCoach } = useIsCoach();
 
   const isLoading = profileLoading && goalsLoading;
 
@@ -327,6 +328,24 @@ export default function ProfileScreen() {
             </View>
           )}
         </View>
+
+        {/* COACH DASHBOARD — only visible to coaches (Fix 9) */}
+        {isCoach && (
+          <TouchableOpacity
+            style={styles.coachDashboardCard}
+            activeOpacity={0.7}
+            onPress={() => router.push('/(tabs)/profile/coach-dashboard')}
+          >
+            <View style={styles.coachDashboardIcon}>
+              <Ionicons name="clipboard-outline" size={20} color={COLORS.orange} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.coachDashboardTitle}>COACH DASHBOARD</Text>
+              <Text style={styles.coachDashboardSub}>Manage your trainees and bookings</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.textTertiary} />
+          </TouchableOpacity>
+        )}
 
         {/* ACCOUNT */}
         <View style={styles.section}>

@@ -127,7 +127,7 @@ export function EventCard({
                 color={joined ? COLORS.aqua : COLORS.dark}
               />
               <Text style={[styles.btnText, joined && styles.btnTextJoined]}>
-                {joined ? 'Enter' : buttonLabel}
+                {joined ? 'Joined' : buttonLabel}
               </Text>
             </View>
           )}

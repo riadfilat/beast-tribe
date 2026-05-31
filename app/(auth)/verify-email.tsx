@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../../src/components/ui';
 import { useAuth } from '../../src/providers/AuthProvider';
@@ -11,22 +12,57 @@ type Status = 'idle' | 'checking' | 'resending' | 'resent' | 'error';
 
 export default function VerifyEmailScreen() {
   const { user, signOut, refreshSession } = useAuth();
+  // email + password carried over from signup / sign-in so we can re-authenticate
+  const params = useLocalSearchParams<{ email?: string; password?: string }>();
   const [status, setStatus] = useState<Status>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const email = user?.email ?? '';
+  const email = user?.email ?? params.email ?? '';
+  const password = params.password ?? '';
 
   async function handleCheck() {
     setStatus('checking');
     setErrorMsg('');
     try {
-      await refreshSession();
-      // AuthGate will automatically redirect once isEmailConfirmed becomes true
+      // If we already have a session, just refresh it.
+      if (user) {
+        await refreshSession();
+        // AuthGate will redirect once isEmailConfirmed becomes true.
+        return;
+      }
+
+      // No session (the signup flow signs the user out). Re-authenticate with
+      // the carried email + password to pick up the now-confirmed account.
+      if (!email || !password) {
+        setStatus('error');
+        setErrorMsg('Please sign in again to continue.');
+        return;
+      }
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        if (error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')) {
+          setStatus('error');
+          setErrorMsg("Still not confirmed — please click the link in your inbox first.");
+        } else {
+          setStatus('error');
+          setErrorMsg(error.message || 'Could not sign in. Please try again.');
+        }
+        return;
+      }
+      const confirmed = !!data.user?.email_confirmed_at || !!data.user?.confirmed_at;
+      if (!confirmed) {
+        // Signed in but Supabase still reports unconfirmed — sign back out.
+        await supabase.auth.signOut();
+        setStatus('error');
+        setErrorMsg("Still not confirmed — please click the link in your inbox first.");
+        return;
+      }
+      // Confirmed + signed in → AuthGate proceeds automatically.
     } catch {
       setStatus('error');
       setErrorMsg('Could not refresh. Please try again.');
     } finally {
-      setStatus('idle');
+      setStatus((s) => (s === 'checking' ? 'idle' : s));
     }
   }
 

@@ -60,7 +60,7 @@ export default function EventsScreen() {
   const [rsvpBoosts, setRsvpBoosts] = useState<Record<string, number>>({});
   const { profile } = useAuth();
 
-  // Re-read local events when screen is focused
+  // Re-read local events when screen is focused — also re-fetch user's RSVPs
   const [refreshKey, setRefreshKey] = useState(0);
   useFocusEffect(useCallback(() => {
     setRefreshKey(k => k + 1);
@@ -68,8 +68,30 @@ export default function EventsScreen() {
 
   const typeFilter = getTypeFilter(activeFilter);
   const userCountry = profile?.region || 'SA';
-  const { data: eventsData, loading } = useEvents(typeFilter, searchQuery.trim() || undefined, userCountry);
+  const { data: eventsData, loading, error: eventsError, refetch: refetchEvents } = useEvents(typeFilter, searchQuery.trim() || undefined, userCountry);
   const { joinEvent } = useJoinEvent();
+
+  // Fetch user's existing RSVPs every time screen is focused so cards show "Joined" correctly
+  useFocusEffect(useCallback(() => {
+    const userId = profile?.id;
+    if (!userId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { supabase, isSupabaseConfigured } = await import('../../../src/lib/supabase');
+        if (!isSupabaseConfigured) return;
+        const { data } = await supabase
+          .from('event_rsvps')
+          .select('event_id')
+          .eq('user_id', userId)
+          .eq('status', 'going');
+        if (!cancelled && data) {
+          setJoinedIds(new Set((data as any[]).map((r) => r.event_id)));
+        }
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [profile?.id]));
 
   const handleJoin = async (eventId: string, eventTitle?: string) => {
     if (joinedIds.has(eventId) || joiningId === eventId) return;
@@ -95,13 +117,16 @@ export default function EventsScreen() {
   const mappedEvents: MappedEvent[] = useMemo(() => {
     if (!eventsData?.length) return [];
     return eventsData.map((evt: any) => {
-      const sportName = evt.sport?.name?.toLowerCase() || '';
+      // Fallback: use event_type if no sport relation
+      const sportName = (evt.sport?.name || evt.event_type || '').toLowerCase();
+      const sportLabel = evt.sport?.name
+        || (evt.event_type ? evt.event_type.charAt(0).toUpperCase() + evt.event_type.slice(1) : 'Event');
       const rsvpCount = evt.rsvp_count?.[0]?.count || 0;
       const dateStr = formatEventDate(evt.starts_at);
       const location = evt.gym_name || evt.location || '';
       const detailParts = [dateStr, location].filter(Boolean);
 
-      let type = evt.sport?.name || 'Event';
+      let type = sportLabel;
       if (evt.gym_name) type += ` · ${evt.gym_name}`;
 
       return {
@@ -236,6 +261,16 @@ export default function EventsScreen() {
         </View>
 
         <FilterTabs tabs={TYPE_TABS} activeIndex={activeFilter} onTabPress={setActiveFilter} size="small" />
+
+        {eventsError && !loading ? (
+          <View style={styles.errorBanner}>
+            <Ionicons name="alert-circle-outline" size={16} color="#EF5B5B" />
+            <Text style={styles.errorBannerText}>Couldn't load events.</Text>
+            <TouchableOpacity onPress={() => refetchEvents()} activeOpacity={0.7}>
+              <Text style={styles.errorBannerRetry}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
         {loading ? (
           <ActivityIndicator color={COLORS.aqua} style={{ marginTop: 40 }} />
@@ -391,6 +426,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: FONTS.body,
     color: COLORS.textPrimary,
+  },
+
+  /* Error banner */
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(239,91,91,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(239,91,91,0.25)',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 12,
+  },
+  errorBannerText: {
+    flex: 1,
+    fontSize: 12,
+    fontFamily: FONTS.body,
+    color: '#EF5B5B',
+  },
+  errorBannerRetry: {
+    fontSize: 12,
+    fontFamily: FONTS.bodySemiBold,
+    color: COLORS.aqua,
   },
 
   /* Empty state */

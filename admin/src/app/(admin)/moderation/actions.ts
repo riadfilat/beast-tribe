@@ -17,15 +17,17 @@ export async function approveImage(queueId: string) {
   if (!entry) return;
 
   // Update queue status
-  await db.from('image_moderation_queue')
+  const { error: queueError } = await db.from('image_moderation_queue')
     .update({ status: 'approved', reviewed_by: admin.id, reviewed_at: new Date().toISOString() })
     .eq('id', queueId);
+  if (queueError) throw new Error(queueError.message);
 
   // Update the source record
   if (entry.source_table === 'feed_posts') {
-    await db.from('feed_posts')
+    const { error: postError } = await db.from('feed_posts')
       .update({ image_status: 'approved' })
       .eq('id', entry.source_id);
+    if (postError) throw new Error(postError.message);
   }
 
   // Audit
@@ -53,7 +55,7 @@ export async function rejectImage(queueId: string) {
   if (!entry) return;
 
   // Update queue status
-  await db.from('image_moderation_queue')
+  const { error: queueError } = await db.from('image_moderation_queue')
     .update({
       status: 'rejected',
       reviewed_by: admin.id,
@@ -61,19 +63,22 @@ export async function rejectImage(queueId: string) {
       rejection_reason: reason || 'Inappropriate content',
     })
     .eq('id', queueId);
+  if (queueError) throw new Error(queueError.message);
 
   // Update the source record
   if (entry.source_table === 'feed_posts') {
-    await db.from('feed_posts')
+    const { error: postError } = await db.from('feed_posts')
       .update({ image_status: 'rejected' })
       .eq('id', entry.source_id);
+    if (postError) throw new Error(postError.message);
   }
 
   // Delete from storage
   if (entry.image_url) {
     const path = entry.image_url.split('/user-uploads/')[1];
     if (path) {
-      await db.storage.from('user-uploads').remove([path]);
+      const { error: storageError } = await db.storage.from('user-uploads').remove([path]);
+      if (storageError) throw new Error(storageError.message);
     }
   }
 

@@ -36,7 +36,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        // Always release the splash screen after the initial resolution,
+        // even if a concurrent fetch is in-flight (Fix 1: infinite splash race).
+        fetchProfile(session.user.id).finally(() => setLoading(false));
       } else {
         setLoading(false);
       }
@@ -48,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        fetchProfile(session.user.id).finally(() => setLoading(false));
       } else {
         setProfile(null);
         setLoading(false);
@@ -59,6 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function fetchProfile(userId: string) {
+    // Guard against concurrent fetches, but never block the caller's
+    // setLoading(false) — that always runs in the caller's .finally().
     if (fetchingRef.current) return;
     fetchingRef.current = true;
     try {
@@ -78,7 +82,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
     } finally {
       fetchingRef.current = false;
-      setLoading(false);
     }
   }
 
@@ -193,18 +196,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('id', session.user.id)
         .select();
 
+      // Throw on update error so the caller can surface it and NOT navigate
+      // (Fix 3: don't falsely mark onboarding complete then loop).
       if (updateErr) {
         console.error('Failed to complete onboarding:', updateErr);
+        throw updateErr;
       }
 
       // If no rows were updated (profile doesn't exist), create it
       if (!updateData || updateData.length === 0) {
-        await supabase.from('profiles').insert({
+        const { error: insertErr } = await supabase.from('profiles').insert({
           id: session.user.id,
           full_name: session.user.email?.split('@')[0] || 'Beast',
           display_name: session.user.email?.split('@')[0] || 'Beast',
           onboarding_completed: true,
         });
+        if (insertErr) {
+          console.error('Failed to create profile on onboarding:', insertErr);
+          throw insertErr;
+        }
       }
 
       // Force re-fetch (bypass fetchingRef guard)

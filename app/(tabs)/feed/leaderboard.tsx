@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { Avatar, TierPill, FilterTabs } from '../../../src/components/ui';
 import { COLORS, FONTS, Tier } from '../../../src/lib/constants';
 import { useLeaderboard, useMyPack } from '../../../src/hooks';
@@ -38,7 +39,7 @@ export default function LeaderboardScreen() {
   const { data: myPackData } = useMyPack();
   const myPackId = myPackData?.pack?.id;
 
-  const { data: leaderData, loading } = useLeaderboard(timeRange, myPackId);
+  const { data: leaderData, loading, error: leaderError, refetch: refetchLeaders } = useLeaderboard(timeRange, myPackId);
 
   // Map Supabase data to leaderboard entries
   let leaders: LeaderEntry[];
@@ -112,6 +113,16 @@ export default function LeaderboardScreen() {
 
         <FilterTabs tabs={TIME_TABS} activeIndex={timeTab} onTabPress={setTimeTab} size="small" />
 
+        {leaderError && !loading ? (
+          <View style={styles.errorBanner}>
+            <Ionicons name="alert-circle-outline" size={16} color="#EF5B5B" />
+            <Text style={styles.errorBannerText}>Couldn't load rankings.</Text>
+            <TouchableOpacity onPress={() => refetchLeaders()} activeOpacity={0.7}>
+              <Text style={styles.errorBannerRetry}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         {/* Your rank card */}
         {myEntry && (
           <View style={styles.myRankCard}>
@@ -135,10 +146,10 @@ export default function LeaderboardScreen() {
         ) : leaders.length === 0 ? (
           <View style={{ alignItems: 'center', paddingVertical: 40 }}>
             <Text style={{ fontSize: 14, fontFamily: FONTS.bodyMedium, color: COLORS.textSecondary }}>
-              No rankings yet for this sport
+              No rankings yet
             </Text>
             <Text style={{ fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 4 }}>
-              Be the first to earn XP here
+              Be the first to earn XP
             </Text>
           </View>
         ) : (
@@ -206,4 +217,18 @@ const styles = StyleSheet.create({
   xp: { fontSize: 12, fontFamily: FONTS.heading, color: COLORS.aqua },
   xpMe: { color: COLORS.orange },
   resetNote: { fontSize: 9, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center', marginTop: 12 },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(239,91,91,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(239,91,91,0.25)',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 12,
+  },
+  errorBannerText: { flex: 1, fontSize: 12, fontFamily: FONTS.body, color: '#EF5B5B' },
+  errorBannerRetry: { fontSize: 12, fontFamily: FONTS.bodySemiBold, color: COLORS.aqua },
 });

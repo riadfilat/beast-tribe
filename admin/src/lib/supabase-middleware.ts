@@ -38,11 +38,13 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Logged in on login page — redirect to dashboard,
-  // unless there's an error param (e.g. ?error=unauthorized) so the user can re-auth.
+  // Logged in on login page — redirect to root, which dispatches the user to the
+  // correct area based on their role (admin vs partner).
+  // Unless there's an error param (e.g. ?error=unauthorized) so the user can re-auth.
   if (user && isLoginPage && !request.nextUrl.searchParams.has('error')) {
     const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
+    url.pathname = '/';
+    url.search = '';
     return NextResponse.redirect(url);
   }
 

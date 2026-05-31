@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image, Modal, TextInput } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,6 +26,7 @@ import {
   useTodayHabitProgress,
   useLogHabit,
   useCheckPerfectDay,
+  useMyPacks,
 } from '../../../src/hooks';
 
 const OB_LOGO = require('../../../assets/images/ob-logo-icon.jpg');
@@ -54,17 +55,45 @@ const DEMO = {
   nutritionGoal: 2200,
 };
 
-// Track joined events across navigations (persists while app is open)
-const joinedEventIds = new Set<string>();
-
 export default function HomeScreen() {
   const router = useRouter();
+  // Track joined events across navigations within this mounted screen.
+  // Scoped to the component (via ref) so RSVP state never leaks across
+  // sign-out/sign-in (Fix 6). DB-backed rsvpedEventIds is the source of truth.
+  const joinedEventIdsRef = useRef<Set<string>>(new Set());
+  const joinedEventIds = joinedEventIdsRef.current;
   const [eventJoining, setEventJoining] = useState(false);
   // Refresh local events when screen is focused
   const [focusKey, setFocusKey] = useState(0);
   useFocusEffect(useCallback(() => { setFocusKey(k => k + 1); }, []));
   // Check if user already joined (persists across navigations)
-  const [eventJoined, setEventJoined] = useState(() => joinedEventIds.size > 0);
+  const [eventJoined, setEventJoined] = useState(false);
+  // Set of event IDs the user has actually RSVP'd to (from DB) — refreshed on focus
+  const [rsvpedEventIds, setRsvpedEventIds] = useState<Set<string>>(new Set());
+
+  // Re-fetch user's RSVPs every time home is focused
+  useFocusEffect(useCallback(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { supabase, isSupabaseConfigured } = await import('../../../src/lib/supabase');
+        if (!isSupabaseConfigured) return;
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase
+          .from('event_rsvps')
+          .select('event_id')
+          .eq('user_id', user.id)
+          .eq('status', 'going');
+        if (!cancelled && data) {
+          const ids = new Set((data as any[]).map((r) => r.event_id));
+          setRsvpedEventIds(ids);
+          ids.forEach((id) => joinedEventIds.add(id));
+        }
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, []));
 
   const { profile, loading: profileLoading } = useProfile();
   const { data: stepData, loading: stepsLoading } = useTodaySteps();
@@ -72,6 +101,8 @@ export default function HomeScreen() {
   const { data: packData } = useActivePackChallenge();
   const { data: eventsData } = useUpcomingEvents(10);
   const { data: nutritionLogs } = useTodayNutrition();
+  const { data: myPacks } = useMyPacks();
+  const isInPack = (myPacks?.length ?? 0) > 0;
   const { joinEvent } = useJoinEvent();
   const { data: userHabits } = useUserHabits();
   const { data: todayHabitLogs, refetch: refetchHabitLogs } = useTodayHabitProgress();
@@ -327,7 +358,8 @@ export default function HomeScreen() {
         .map((evt: any) => ({
           id: evt.id,
           title: evt.title,
-          sport: evt.sport?.name || 'Event',
+          sport: evt.sport?.name
+            || (evt.event_type ? evt.event_type.charAt(0).toUpperCase() + evt.event_type.slice(1) : 'Event'),
           time: new Date(evt.starts_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
         }));
 
@@ -472,6 +504,21 @@ export default function HomeScreen() {
             daysLeft={packDaysLeft}
             userPackIsA={userPackIsA}
           />
+        ) : isInPack ? (
+          // Member of a pack but no active challenge — link to their pack(s)
+          // instead of the misleading "Join a Pack" CTA (Fix 10).
+          <TouchableOpacity
+            style={styles.packCta}
+            activeOpacity={0.7}
+            onPress={() => router.push('/(tabs)/profile/pack')}
+          >
+            <View style={styles.packCtaIconWrap}>
+              <Ionicons name="people" size={24} color={COLORS.aqua} />
+            </View>
+            <Text style={styles.packCtaTitle}>YOUR PACK</Text>
+            <Text style={styles.packCtaSub}>No active challenge right now. Rally your tribe.</Text>
+            <Text style={styles.packCtaLink}>VIEW PACK</Text>
+          </TouchableOpacity>
         ) : (
           <View style={styles.packCta}>
             <View style={styles.packCtaIconWrap}>
@@ -492,7 +539,7 @@ export default function HomeScreen() {
           details={eventDetails}
           date={eventDate}
           location={eventLocation}
-          joined={eventJoined || upcomingEvent?.joined === true}
+          joined={eventJoined || upcomingEvent?.joined === true || !!(upcomingEvent?.id && rsvpedEventIds.has(upcomingEvent.id))}
           joining={eventJoining}
           imageUrl={upcomingEvent?.image_url || undefined}
           onJoin={async () => {

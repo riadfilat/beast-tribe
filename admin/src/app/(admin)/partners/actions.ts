@@ -103,37 +103,26 @@ export async function updatePartner(partnerId: string, formData: FormData) {
   const admin = await requireAdmin();
   const db = createAdminClient();
 
-  const display_name = (formData.get('display_name') as string) || '';
-  const type = (formData.get('type') as string) || 'coach';
-  const tier = (formData.get('tier') as string) || 'basic';
+  const business_name = (formData.get('business_name') as string) || '';
+  const partner_type = (formData.get('partner_type') as string) || 'coach';
   const contact_email = (formData.get('contact_email') as string) || null;
-  const whatsapp = (formData.get('whatsapp') as string) || '';
-  const instagram = (formData.get('instagram') as string) || '';
-  const tiktok = (formData.get('tiktok') as string) || '';
-  const website = (formData.get('website') as string) || null;
-  const address = (formData.get('address') as string) || null;
+  const website_url = (formData.get('website_url') as string) || null;
   const city = (formData.get('city') as string) || null;
+  const description = (formData.get('description') as string) || null;
+  const is_verified = formData.get('is_verified') === 'on';
   const is_active = formData.get('is_active') === 'on';
 
-  const social_links: Record<string, string> = {};
-  if (whatsapp) social_links.whatsapp = whatsapp;
-  if (instagram) social_links.instagram = instagram;
-  if (tiktok) social_links.tiktok = tiktok;
-
   const updates: Record<string, any> = {
-    type,
-    email: contact_email,
-    website_url: website,
-    address,
+    business_name,
+    partner_type,
+    contact_email,
+    website_url,
     city,
-    social_links,
-    status: is_active ? 'active' : 'inactive',
+    description,
+    is_verified,
+    is_active,
     updated_at: new Date().toISOString(),
   };
-
-  // Store "name" when present, plus tier via metadata (no tier column in schema).
-  if (display_name) updates.name = display_name;
-  updates.metadata = { tier };
 
   const { error } = await db.from('partners').update(updates).eq('id', partnerId);
   if (error) throw new Error(`Update partner error: ${error.message}`);

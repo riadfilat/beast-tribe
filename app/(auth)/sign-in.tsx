@@ -293,7 +293,12 @@ export default function SignInScreen() {
     } catch (e: any) {
       const msg: string = e.message || '';
       if (msg === 'CHECK_EMAIL_CONFIRMATION' || msg.includes('confirm') || msg.includes('Check your email')) {
-        setStep('email-sent');
+        // Carry email + password so the verify screen can re-authenticate
+        // once the user clicks the confirmation link (Fix 2: no dead-end).
+        router.replace({
+          pathname: '/(auth)/verify-email',
+          params: { email: email.trim(), password },
+        });
         return;
       }
       if (msg.includes('User already registered') || msg.includes('already been registered')) {
@@ -322,7 +327,13 @@ export default function SignInScreen() {
       if (msg.includes('Invalid login credentials') || msg.includes('invalid_credentials')) {
         setPasswordError('Incorrect password');
       } else if (msg.includes('Email not confirmed') || msg.includes('email_not_confirmed')) {
-        setServerError('Please confirm your email before signing in. Check your inbox for the confirmation link.');
+        // Route to verify-email carrying credentials so the user can confirm
+        // and re-authenticate instead of dead-ending on an inline error (Fix 2).
+        router.replace({
+          pathname: '/(auth)/verify-email',
+          params: { email: email.trim(), password },
+        });
+        return;
       } else if (msg.includes('rate limit') || msg.includes('too many')) {
         setServerError('Too many attempts. Please wait a moment and try again.');
       } else {

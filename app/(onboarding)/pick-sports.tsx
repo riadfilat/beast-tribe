@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -47,8 +47,9 @@ export default function PickSportsScreen() {
         saveSports(selected),
         saveFrequency(frequency),
       ]);
-    } catch (e) {
-      console.warn('Failed to save:', e);
+    } catch (e: any) {
+      Alert.alert('Could not save', e?.message || 'Please try again.');
+      return; // Don't advance on failure — let the user retry
     }
 
     if (isEditMode) {

@@ -334,15 +334,19 @@ export function useCreatePost() {
   userRef.current = user;
   const [loading, setLoading] = useState(false);
 
-  const createPost = useCallback(async (content: string, sportFilter?: string) => {
+  // `sportId` must be a real sports UUID (or undefined). The feed's sport tabs
+  // are display-only filters and pass undefined (Fix 8: don't pass a sport NAME
+  // into the sport_id UUID FK, which made every insert fail).
+  const createPost = useCallback(async (content: string, sportId?: string) => {
     const u = userRef.current;
     if (!isSupabaseConfigured || !u || !content.trim()) return false;
     setLoading(true);
     try {
+      const safeSportId = sportId || null;
       const { data: post, error } = await supabase.from('feed_posts').insert({
         user_id: u.id,
         content: content.trim(),
-        sport_id: sportFilter && sportFilter !== 'All' ? sportFilter : null,
+        sport_id: safeSportId,
         is_visible: true,
       }).select('id').single();
       if (error) throw error;
@@ -353,11 +357,12 @@ export function useCreatePost() {
         amount: 75,
         source: 'post_workout',
         source_id: post?.id,
-        sport_id: sportFilter && sportFilter !== 'All' ? sportFilter : null,
+        sport_id: safeSportId,
         description: 'Posted a workout to feed',
       });
       return true;
-    } catch {
+    } catch (err: any) {
+      console.warn('[useCreatePost] insert failed:', err?.message || err);
       return false;
     } finally {
       setLoading(false);
@@ -452,6 +457,46 @@ export function useJoinEvent() {
   }, []);
 
   return { joinEvent, loading };
+}
+
+/** Leave an event (remove RSVP). Used from inside the event chat / page. */
+export function useLeaveEvent() {
+  const { user } = useAuth();
+  const userRef = useRef(user);
+  userRef.current = user;
+  const [loading, setLoading] = useState(false);
+
+  const leaveEvent = useCallback(async (eventId: string) => {
+    const u = userRef.current;
+    if (!isSupabaseConfigured || !u) throw new Error('Not signed in');
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('event_rsvps')
+        .delete()
+        .eq('event_id', eventId)
+        .eq('user_id', u.id);
+      if (error) throw new Error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { leaveEvent, loading };
+}
+
+/** Fetch attendees of an event (RSVPs going) — used in event chat header */
+export function useEventAttendees(eventId?: string) {
+  return useSupabaseQuery<any[]>(
+    () => {
+      if (!eventId) return Promise.resolve({ data: [], error: null });
+      return supabase.from('event_rsvps')
+        .select('user_id, status, profile:profiles(id, display_name, full_name, tier, avatar_url)')
+        .eq('event_id', eventId)
+        .eq('status', 'going');
+    },
+    [eventId],
+    []
+  );
 }
 
 export function useCreateEvent() {
@@ -886,6 +931,9 @@ export function useSaveBaseline() {
     if (!isSupabaseConfigured || !u) return;
     setLoading(true);
     try {
+      // NOTE: `baselines` is a history table (no unique constraint on user_id),
+      // so a plain insert is correct here — upsert would fail with no conflict
+      // target. These onboarding baseline/goal routes are currently orphaned.
       const { error } = await supabase.from('baselines').insert({
         user_id: u.id,
         ...baseline,
@@ -968,7 +1016,7 @@ export function useMyPack() {
   );
 }
 
-/** Get ALL pack memberships for the current user (up to 4) */
+/** Get ALL pack memberships for the current user (up to 20) */
 export function useMyPacks() {
   const { user } = useAuth();
   return useSupabaseQuery<any[]>(
@@ -1186,29 +1234,41 @@ export function useRespondToInvite() {
     if (!isSupabaseConfigured || !u) return;
     setLoading(true);
     try {
-      // Update invite status
-      await supabase.from('pack_invites')
-        .update({ status: accept ? 'accepted' : 'declined' })
-        .eq('id', inviteId);
-
-      // If accepted, check pack limit (20 max) then join
-      if (accept) {
-        const { count: userPackCount } = await supabase.from('pack_members')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', u.id);
-        if (userPackCount !== null && userPackCount >= 20) {
-          // Already at max — decline instead
-          await supabase.from('pack_invites')
-            .update({ status: 'declined' })
-            .eq('id', inviteId);
-          return;
-        }
-        await supabase.from('pack_members').insert({
-          pack_id: packId,
-          user_id: u.id,
-          role: 'member',
-        });
+      // Decline path — just mark the invite declined.
+      if (!accept) {
+        const { error } = await supabase.from('pack_invites')
+          .update({ status: 'declined' })
+          .eq('id', inviteId);
+        if (error) throw error;
+        return;
       }
+
+      // Accept path: check pack limit (20 max) first.
+      const { count: userPackCount } = await supabase.from('pack_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', u.id);
+      if (userPackCount !== null && userPackCount >= 20) {
+        // Already at max — decline instead.
+        await supabase.from('pack_invites')
+          .update({ status: 'declined' })
+          .eq('id', inviteId);
+        throw new Error('You can join up to 20 packs — leave one first.');
+      }
+
+      // Attempt the join FIRST and check its error. Only mark the invite
+      // accepted if the join actually succeeded (Fix 12: no silent failure
+      // that accepts the invite but joins nothing).
+      const { error: joinErr } = await supabase.from('pack_members').insert({
+        pack_id: packId,
+        user_id: u.id,
+        role: 'member',
+      });
+      if (joinErr) throw joinErr;
+
+      const { error: inviteErr } = await supabase.from('pack_invites')
+        .update({ status: 'accepted' })
+        .eq('id', inviteId);
+      if (inviteErr) throw inviteErr;
     } finally {
       setLoading(false);
     }
@@ -1457,6 +1517,7 @@ const DEMO_CHAT_MESSAGES: any[] = [];
 export function useChatRoom(type: 'pack' | 'event', targetId?: string) {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!targetId) { setLoading(false); return; }
@@ -1466,34 +1527,47 @@ export function useChatRoom(type: 'pack' | 'event', targetId?: string) {
       return;
     }
 
+    let cancelled = false;
     async function fetchOrCreate() {
       setLoading(true);
+      setError(null);
       const column = type === 'pack' ? 'pack_id' : 'event_id';
-      // Try to find existing room
-      const { data, error } = await supabase.from('chat_rooms').select('id').eq(column, targetId).single();
+      // Try to find an existing room. Use maybeSingle() so the normal
+      // first-visit "no room yet" case doesn't throw PGRST116 (Fix 7).
+      const { data, error: findErr } = await supabase
+        .from('chat_rooms').select('id').eq(column, targetId).maybeSingle();
+      if (cancelled) return;
+      if (findErr) {
+        setError(findErr.message || 'Could not load chat.');
+        setLoading(false);
+        return;
+      }
       if (data) {
         setRoomId(data.id);
+        setLoading(false);
+        return;
+      }
+      // Create the room. If it genuinely can't be created, surface an error
+      // state instead of fabricating a fake demo room that saves nothing.
+      const { data: newRoom, error: createErr } = await supabase.from('chat_rooms').insert({
+        type,
+        [column]: targetId,
+        name: `${type} chat`,
+      }).select('id').maybeSingle();
+      if (cancelled) return;
+      if (newRoom) {
+        setRoomId(newRoom.id);
       } else {
-        // Create room
-        const { data: newRoom, error: createErr } = await supabase.from('chat_rooms').insert({
-          type,
-          [column]: targetId,
-          name: `${type} chat`,
-        }).select('id').single();
-        if (newRoom) {
-          setRoomId(newRoom.id);
-        } else {
-          // Fallback to demo room if DB fails
-          console.warn('Chat room create failed:', createErr?.message);
-          setRoomId(`demo-room-${type}-${targetId}`);
-        }
+        console.warn('Chat room create failed:', createErr?.message);
+        setError(createErr?.message || 'Could not open chat. Please try again.');
       }
       setLoading(false);
     }
     fetchOrCreate();
+    return () => { cancelled = true; };
   }, [type, targetId]);
 
-  return { roomId, loading };
+  return { roomId, loading, error };
 }
 
 /** Fetch chat messages for a room */

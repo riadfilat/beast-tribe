@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,35 +11,11 @@ import { useAuth } from '../../src/providers/AuthProvider';
 import { calculateLevel, xpForLevel, levelProgress } from '../../src/lib/xp';
 
 /**
- * Estimate starting operation from baseline fitness data.
+ * New users start at the lowest tier. We don't collect baseline fitness
+ * fields (5k time / bench / steps) during onboarding, so there's no real
+ * data to estimate from — everyone begins at 'initiate' and climbs via XP.
  */
-function estimateOperationFromBaseline(profile: any): Tier {
-  if (!profile) return 'initiate';
-  let score = 0;
-
-  const fiveK = profile.five_k_time_seconds;
-  if (fiveK && fiveK > 0) {
-    if (fiveK < 1500) score += 3;
-    else if (fiveK < 1800) score += 2;
-    else score += 1;
-  }
-
-  const bench = profile.max_bench_kg;
-  if (bench && bench > 0) {
-    if (bench >= 100) score += 3;
-    else if (bench >= 70) score += 2;
-    else score += 1;
-  }
-
-  const steps = profile.daily_steps_avg;
-  if (steps && steps > 0) {
-    if (steps >= 10000) score += 3;
-    else if (steps >= 6000) score += 2;
-    else score += 1;
-  }
-
-  if (score >= 8) return 'apex';
-  if (score >= 5) return 'vanguard';
+function startingTier(): Tier {
   return 'initiate';
 }
 
@@ -69,13 +45,16 @@ export default function BeastLevelScreen() {
     try {
       await completeOnboarding();
       router.replace('/(tabs)/home');
-    } catch (e) {
-      console.warn('Failed to complete onboarding:', e);
+    } catch (e: any) {
+      Alert.alert(
+        'Could not finish setup',
+        e?.message || 'We could not save your onboarding. Please check your connection and try again.'
+      );
     } finally {
       setLaunching(false);
     }
   }
-  const assignedTier: Tier = estimateOperationFromBaseline(profile);
+  const assignedTier: Tier = startingTier();
   const config = TIERS[assignedTier];
 
   const totalXP = profile?.total_xp ?? 0;

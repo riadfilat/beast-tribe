@@ -32,6 +32,12 @@ export default async function FeedPage({
 
   const totalPages = Math.ceil((count || 0) / perPage);
 
+  function buildHref(targetPage: number): string {
+    const next: Record<string, string> = { page: String(targetPage) };
+    if (showHidden) next.show_hidden = '1';
+    return `/feed?${new URLSearchParams(next).toString()}`;
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -118,8 +124,26 @@ export default async function FeedPage({
       </div>
 
       {totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-6">
-          <span className="px-3 py-1.5 text-sm text-gray-500">Page {page} of {totalPages}</span>
+        <div className="flex items-center justify-center gap-2 mt-6">
+          {page > 1 && (
+            <Link
+              href={buildHref(page - 1)}
+              className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+            >
+              ← Prev
+            </Link>
+          )}
+          <span className="px-3 py-1.5 text-sm text-gray-500 font-medium">
+            {page} / {totalPages}
+          </span>
+          {page < totalPages && (
+            <Link
+              href={buildHref(page + 1)}
+              className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+            >
+              Next →
+            </Link>
+          )}
         </div>
       )}
     </div>

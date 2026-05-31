@@ -21,15 +21,6 @@ export default async function EditPartnerPage({ params }: { params: { id: string
 
   const updateWithId = updatePartner.bind(null, params.id);
 
-  const social = (partner.social_links || {}) as Record<string, string>;
-  const metadata = (partner.metadata || {}) as Record<string, any>;
-
-  // Map schema to task form. Actual schema: name, type, status, email, website_url, address, city, social_links(jsonb).
-  const displayName = partner.name || partner.business_name || '';
-  const isActive = partner.status
-    ? partner.status === 'active'
-    : partner.is_active !== false;
-
   return (
     <div className="max-w-2xl">
       <Link href="/partners" className="text-sm text-brand-aqua hover:underline mb-4 inline-block">← Back to Partners</Link>
@@ -40,41 +31,26 @@ export default async function EditPartnerPage({ params }: { params: { id: string
 
       <form action={updateWithId} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-5">
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Display Name</label>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Business Name</label>
           <input
-            name="display_name"
-            defaultValue={displayName}
+            name="business_name"
+            defaultValue={partner.business_name || ''}
             required
             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Type</label>
-            <select
-              name="type"
-              defaultValue={partner.type || partner.partner_type || 'coach'}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-            >
-              <option value="gym">Gym</option>
-              <option value="coach">Coach</option>
-              <option value="event_organizer">Event Organizer</option>
-              <option value="event_company">Event Company</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Tier</label>
-            <select
-              name="tier"
-              defaultValue={metadata.tier || 'basic'}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-            >
-              <option value="basic">Basic</option>
-              <option value="premium">Premium</option>
-              <option value="featured">Featured</option>
-            </select>
-          </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Type</label>
+          <select
+            name="partner_type"
+            defaultValue={partner.partner_type || 'coach'}
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+          >
+            <option value="gym">Gym</option>
+            <option value="coach">Coach</option>
+            <option value="event_organizer">Event Organizer</option>
+          </select>
         </div>
 
         <div>
@@ -82,60 +58,19 @@ export default async function EditPartnerPage({ params }: { params: { id: string
           <input
             type="email"
             name="contact_email"
-            defaultValue={partner.email || partner.contact_email || ''}
+            defaultValue={partner.contact_email || ''}
             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">WhatsApp</label>
-            <input
-              name="whatsapp"
-              defaultValue={social.whatsapp || ''}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-              placeholder="+966..."
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Instagram</label>
-            <input
-              name="instagram"
-              defaultValue={social.instagram || ''}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-              placeholder="@handle"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">TikTok</label>
-            <input
-              name="tiktok"
-              defaultValue={social.tiktok || ''}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-              placeholder="@handle"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Website</label>
-            <input
-              type="url"
-              name="website"
-              defaultValue={partner.website_url || ''}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-              placeholder="https://..."
-            />
-          </div>
-        </div>
-
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Address</label>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Website</label>
           <input
-            name="address"
-            defaultValue={partner.address || ''}
+            type="url"
+            name="website_url"
+            defaultValue={partner.website_url || ''}
             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            placeholder="https://..."
           />
         </div>
 
@@ -148,14 +83,34 @@ export default async function EditPartnerPage({ params }: { params: { id: string
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="is_active"
-            name="is_active"
-            defaultChecked={isActive}
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+          <textarea
+            name="description"
+            defaultValue={partner.description || ''}
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none h-24"
           />
-          <label htmlFor="is_active" className="text-sm text-gray-600">Active</label>
+        </div>
+
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="is_verified"
+              name="is_verified"
+              defaultChecked={partner.is_verified !== false}
+            />
+            <label htmlFor="is_verified" className="text-sm text-gray-600">Verified</label>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="is_active"
+              name="is_active"
+              defaultChecked={partner.is_active !== false}
+            />
+            <label htmlFor="is_active" className="text-sm text-gray-600">Active</label>
+          </div>
         </div>
 
         <SubmitButton
