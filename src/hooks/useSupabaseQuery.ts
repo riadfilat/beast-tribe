@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { isSupabaseConfigured } from '../lib/supabase';
 
 interface QueryResult<T> {
@@ -49,6 +50,21 @@ export function useSupabaseQuery<T>(
   }, deps);
 
   useEffect(() => { doFetch(); }, [doFetch]);
+
+  // Auto-refetch whenever the screen regains focus (e.g. after creating /
+  // editing / deleting on another screen and navigating back), so lists are
+  // always fresh. Skips the very first focus since the mount effect above
+  // already fetched, avoiding a duplicate initial request.
+  const firstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) {
+        firstFocus.current = false;
+        return;
+      }
+      doFetch();
+    }, [doFetch])
+  );
 
   return { data, loading, error, refetch: doFetch };
 }
