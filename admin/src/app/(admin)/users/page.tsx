@@ -2,14 +2,13 @@ import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
 import SearchInput from '@/components/ui/SearchInput';
-import TierBadge from '@/components/ui/TierBadge';
 
 export const revalidate = 0;
 
 export default async function UsersPage({
   searchParams,
 }: {
-  searchParams: { q?: string; tier?: string; region?: string; page?: string; premium?: string };
+  searchParams: { q?: string; region?: string; page?: string; premium?: string };
 }) {
   await requireAdmin();
   const db = createAdminClient();
@@ -21,7 +20,7 @@ export default async function UsersPage({
   let query = db
     .from('profiles')
     .select(
-      'id, full_name, display_name, tier, total_xp, level, region, current_streak, is_premium, created_at',
+      'id, full_name, display_name, region, is_premium, created_at',
       { count: 'exact' }
     )
     .order('created_at', { ascending: false })
@@ -31,9 +30,6 @@ export default async function UsersPage({
     query = query.or(
       `full_name.ilike.%${searchParams.q}%,display_name.ilike.%${searchParams.q}%`
     );
-  }
-  if (searchParams.tier && searchParams.tier !== 'all') {
-    query = query.eq('tier', searchParams.tier);
   }
   if (searchParams.region && searchParams.region !== 'all') {
     query = query.eq('region', searchParams.region);
@@ -48,7 +44,6 @@ export default async function UsersPage({
   function buildHref(targetPage: number): string {
     const next: Record<string, string> = { page: String(targetPage) };
     if (searchParams.q) next.q = searchParams.q;
-    if (searchParams.tier) next.tier = searchParams.tier;
     if (searchParams.region) next.region = searchParams.region;
     if (searchParams.premium) next.premium = searchParams.premium;
     return `/users?${new URLSearchParams(next).toString()}`;
@@ -72,16 +67,6 @@ export default async function UsersPage({
         />
         <form className="contents">
           <input type="hidden" name="q" value={searchParams.q || ''} />
-          <select
-            name="tier"
-            defaultValue={searchParams.tier || 'all'}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-aqua outline-none"
-          >
-            <option value="all">All tiers</option>
-            <option value="raw">Raw</option>
-            <option value="forged">Forged</option>
-            <option value="untamed">Untamed</option>
-          </select>
           <select
             name="region"
             defaultValue={searchParams.region || 'all'}
@@ -108,10 +93,6 @@ export default async function UsersPage({
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
               <th className="text-left px-5 py-3 font-medium text-gray-500">Name</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-500">Tier</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-500">XP</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-500">Lvl</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-500">Streak</th>
               <th className="text-left px-5 py-3 font-medium text-gray-500">Region</th>
               <th className="text-left px-5 py-3 font-medium text-gray-500">Joined</th>
               <th className="px-5 py-3" />
@@ -130,20 +111,6 @@ export default async function UsersPage({
                     )}
                   </div>
                 </td>
-                <td className="px-5 py-3">
-                  <TierBadge tier={user.tier} />
-                </td>
-                <td className="px-5 py-3 text-gray-600 tabular-nums">
-                  {(user.total_xp || 0).toLocaleString()}
-                </td>
-                <td className="px-5 py-3 text-gray-600">{user.level}</td>
-                <td className="px-5 py-3 text-gray-600">
-                  {user.current_streak > 0 ? (
-                    <span className="text-brand-orange font-medium">{user.current_streak}🔥</span>
-                  ) : (
-                    '—'
-                  )}
-                </td>
                 <td className="px-5 py-3 text-gray-500 text-xs">{user.region || '—'}</td>
                 <td className="px-5 py-3 text-gray-400 text-xs tabular-nums">
                   {new Date(user.created_at).toLocaleDateString()}
@@ -160,7 +127,7 @@ export default async function UsersPage({
             ))}
             {(!users || users.length === 0) && (
               <tr>
-                <td colSpan={8} className="px-5 py-10 text-center text-gray-400 text-sm">
+                <td colSpan={4} className="px-5 py-10 text-center text-gray-400 text-sm">
                   No users found
                 </td>
               </tr>

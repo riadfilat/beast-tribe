@@ -32,7 +32,6 @@ export default function ActivityChatScreen() {
     .map((r: any) => ({
       id: r.profile.id,
       name: r.profile.display_name || r.profile.full_name || 'Beast',
-      tier: r.profile.tier,
       avatar_url: r.profile.avatar_url,
     }));
 

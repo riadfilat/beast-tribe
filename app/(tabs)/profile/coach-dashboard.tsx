@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Activi
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Avatar, TierPill } from '../../../src/components/ui';
+import { Avatar } from '../../../src/components/ui';
 import { useIsCoach, useCoachTrainees, useAddTrainee } from '../../../src/hooks';
 import { COLORS, FONTS } from '../../../src/lib/constants';
 
@@ -78,16 +78,10 @@ export default function CoachDashboardScreen() {
                   params: { traineeId: t.id, coachId, traineeName: t.display_name || t.full_name },
                 })}
               >
-                <Avatar name={t.display_name || t.full_name || 'T'} size={44} tier={t.tier || 'initiate'} backgroundColor={COLORS.dark} />
+                <Avatar name={t.display_name || t.full_name || 'T'} size={44} backgroundColor={COLORS.dark} />
                 <View style={styles.traineeInfo}>
                   <Text style={styles.traineeName}>{t.display_name || t.full_name}</Text>
-                  <View style={styles.traineeMetaRow}>
-                    <Text style={styles.traineeMeta}>🔥 {t.current_streak || 0}d streak</Text>
-                    <Text style={styles.traineeMeta}>⚡ {(t.total_xp || 0).toLocaleString()} XP</Text>
-                    <Text style={styles.traineeMeta}>Lv {t.level || 1}</Text>
-                  </View>
                 </View>
-                <TierPill tier={t.tier || 'initiate'} size="small" />
                 <Ionicons name="chevron-forward" size={16} color={COLORS.textTertiary} />
               </TouchableOpacity>
             );

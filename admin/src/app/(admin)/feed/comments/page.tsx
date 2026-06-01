@@ -8,7 +8,7 @@ export default async function CommentsPage() {
 
   // Get all comments (including hidden ones for admin)
   const { data: comments } = await db.from('feed_comments')
-    .select('*, profile:profiles(full_name, display_name, tier), post:feed_posts(content)')
+    .select('*, profile:profiles(full_name, display_name), post:feed_posts(content)')
     .order('created_at', { ascending: false })
     .limit(50);
 

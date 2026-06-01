@@ -35,16 +35,11 @@ export default async function UserDetailPage({ params }: { params: { id: string 
   }
 
   // Parallel data fetching
-  const [workoutLogs, xpHistory, eventRsvps, packMembership] = await Promise.all([
+  const [workoutLogs, eventRsvps, packMembership] = await Promise.all([
     db.from('workout_logs')
       .select('*, sport:sports(name, emoji)')
       .eq('user_id', params.id)
       .order('completed_at', { ascending: false })
-      .limit(10),
-    db.from('xp_transactions')
-      .select('*')
-      .eq('user_id', params.id)
-      .order('created_at', { ascending: false })
       .limit(10),
     db.from('event_rsvps')
       .select('*, event:events(title, starts_at)')
@@ -80,21 +75,11 @@ export default async function UserDetailPage({ params }: { params: { id: string 
             <p className="text-sm text-gray-500">@{user.display_name || user.full_name}</p>
           </div>
           <div className="flex gap-2">
-            <span className={`text-xs font-medium px-3 py-1 rounded-full ${
-              user.tier === 'untamed' ? 'bg-yellow-100 text-yellow-700' :
-              user.tier === 'forged' ? 'bg-cyan-100 text-cyan-700' :
-              'bg-gray-100 text-gray-600'
-            }`}>
-              {user.tier}
-            </span>
             {user.is_premium && <span className="text-xs font-medium px-3 py-1 rounded-full bg-orange-100 text-orange-700">Premium</span>}
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-5">
-          <Stat label="Total XP" value={(user.total_xp || 0).toLocaleString()} />
-          <Stat label="Level" value={user.level} />
-          <Stat label="Streak" value={`${user.current_streak}d`} />
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-5">
           <Stat label="Region" value={user.region || 'SA'} />
           <Stat label="Joined" value={new Date(user.created_at).toLocaleDateString()} />
         </div>
@@ -141,27 +126,6 @@ export default async function UserDetailPage({ params }: { params: { id: string 
             ))}
             {(!workoutLogs.data || workoutLogs.data.length === 0) && (
               <p className="px-5 py-4 text-sm text-gray-400">No workout logs</p>
-            )}
-          </div>
-        </div>
-
-        {/* XP History */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
-          <div className="px-5 py-4 border-b border-gray-50">
-            <h2 className="font-semibold text-gray-900">XP History</h2>
-          </div>
-          <div className="divide-y divide-gray-50">
-            {(xpHistory.data || []).map((tx: any) => (
-              <div key={tx.id} className="px-5 py-3 flex justify-between">
-                <div>
-                  <p className="text-sm text-gray-800">{tx.description}</p>
-                  <p className="text-xs text-gray-400">{tx.source}</p>
-                </div>
-                <p className="text-sm font-medium text-brand-green">+{tx.amount}</p>
-              </div>
-            ))}
-            {(!xpHistory.data || xpHistory.data.length === 0) && (
-              <p className="px-5 py-4 text-sm text-gray-400">No XP transactions</p>
             )}
           </div>
         </div>

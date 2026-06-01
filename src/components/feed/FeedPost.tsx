@@ -1,18 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ImageSourcePropType } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Avatar, TierPill } from '../ui';
-import { COLORS, FONTS, Tier } from '../../lib/constants';
+import { Avatar } from '../ui';
+import { COLORS, FONTS } from '../../lib/constants';
 
 interface FeedPostProps {
   name: string;
-  tier: Tier;
   content: string;
   timeAgo: string;
   beastCount: number;
   hasBeasted: boolean;
   onBeast: () => void;
-  xpEarned?: number;
   commentCount?: number;
   imageUrl?: string;
   localImage?: ImageSourcePropType;
@@ -27,13 +25,11 @@ interface FeedPostProps {
 
 export function FeedPost({
   name,
-  tier,
   content,
   timeAgo,
   beastCount,
   hasBeasted,
   onBeast,
-  xpEarned,
   commentCount = 0,
   imageUrl,
   localImage,
@@ -69,20 +65,13 @@ export function FeedPost({
     <View style={styles.card}>
       {/* Header row */}
       <View style={styles.header}>
-        <Avatar name={name} size={42} tier={tier} imageUrl={avatarUrl} localImage={avatarLocalImage} />
+        <Avatar name={name} size={42} imageUrl={avatarUrl} localImage={avatarLocalImage} />
         <View style={styles.headerInfo}>
           <View style={styles.nameRow}>
             <Text style={styles.name}>{name}</Text>
-            <TierPill tier={tier} size="small" />
           </View>
           <View style={styles.metaRow}>
             <Text style={styles.time}>{timeAgo}</Text>
-            {xpEarned ? (
-              <>
-                <Text style={styles.metaDot}> · </Text>
-                <Text style={styles.xpBadge}>+{xpEarned} XP</Text>
-              </>
-            ) : null}
           </View>
         </View>
         <TouchableOpacity

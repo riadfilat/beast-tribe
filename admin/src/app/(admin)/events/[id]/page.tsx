@@ -14,7 +14,7 @@ export default async function EditEventPage({ params }: { params: { id: string }
     db.from('events').select('*').eq('id', params.id).single(),
     db.from('sports').select('id, name, emoji').order('name'),
     db.from('event_rsvps')
-      .select('*, profile:profiles(full_name, display_name, tier, total_xp)')
+      .select('*, profile:profiles(full_name, display_name)')
       .eq('event_id', params.id)
       .order('created_at', { ascending: false }),
   ]);
@@ -155,7 +155,6 @@ export default async function EditEventPage({ params }: { params: { id: string }
             <div key={rsvp.id} className="px-5 py-3 flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-800">{rsvp.profile?.display_name || rsvp.profile?.full_name || 'User'}</p>
-                <p className="text-xs text-gray-400">{(rsvp.profile?.total_xp || 0).toLocaleString()} XP · {rsvp.profile?.tier}</p>
               </div>
               <span className="text-xs text-gray-400">{new Date(rsvp.created_at).toLocaleDateString()}</span>
             </div>

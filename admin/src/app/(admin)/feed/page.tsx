@@ -20,7 +20,7 @@ export default async function FeedPage({
   const showHidden = searchParams.show_hidden === '1';
 
   let query = db.from('feed_posts')
-    .select('*, profile:profiles(full_name, display_name, tier), sport:sports(name, emoji), beast_count:beasts(count)', { count: 'exact' })
+    .select('*, profile:profiles(full_name, display_name), sport:sports(name, emoji), beast_count:beasts(count)', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(offset, offset + perPage - 1);
 
@@ -69,13 +69,6 @@ export default async function FeedPage({
                 <div className="flex-1">
                   {/* Author */}
                   <div className="flex items-center gap-2 mb-2">
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                      post.profile?.tier === 'untamed' ? 'bg-yellow-100 text-yellow-700' :
-                      post.profile?.tier === 'forged' ? 'bg-cyan-100 text-cyan-700' :
-                      'bg-gray-100 text-gray-600'
-                    }`}>
-                      {post.profile?.tier}
-                    </span>
                     <span className="text-sm font-medium text-gray-800">
                       {post.profile?.display_name || post.profile?.full_name}
                     </span>

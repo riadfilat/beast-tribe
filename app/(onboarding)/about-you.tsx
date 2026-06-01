@@ -364,7 +364,7 @@ export default function AboutYouScreen() {
           <View style={{ width: 22 }} />
         </View>
       ) : (
-        <StepIndicator currentStep={1} totalSteps={4} />
+        <StepIndicator currentStep={1} totalSteps={2} />
       )}
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>

@@ -23,7 +23,6 @@ export default function SettingsScreen() {
   // Privacy settings
   const [privateProfile, setPrivateProfile] = useState(false);
   const [showActivity, setShowActivity] = useState(true);
-  const [showOnLeaderboard, setShowOnLeaderboard] = useState(true);
   const [packOnly, setPackOnly] = useState(false);
 
   // Notification settings
@@ -85,11 +84,7 @@ export default function SettingsScreen() {
             <Toggle value={packOnly} onToggle={() => setPackOnly(!packOnly)} />
           </SettingRow>
 
-          <SettingRow icon="bar-chart-outline" label="Show on Leaderboard" description="Appear in Beast Rank public leaderboard">
-            <Toggle value={showOnLeaderboard} onToggle={() => setShowOnLeaderboard(!showOnLeaderboard)} />
-          </SettingRow>
-
-          <SettingRow icon="calendar-outline" label="Show Activity Calendar" description="Let others see your workout streaks and activity">
+          <SettingRow icon="calendar-outline" label="Show Activity" description="Let others see your workouts and events">
             <Toggle value={showActivity} onToggle={() => setShowActivity(!showActivity)} />
           </SettingRow>
         </View>
@@ -161,18 +156,7 @@ export default function SettingsScreen() {
             </View>
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>Edit Disciplines</Text>
-              <Text style={styles.settingDesc}>Sports and training frequency</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={COLORS.textTertiary} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.settingRow} onPress={() => router.push('/(onboarding)/set-habits?edit=1')} activeOpacity={0.7}>
-            <View style={styles.settingIconWrap}>
-              <Ionicons name="checkbox-outline" size={18} color={COLORS.orange} />
-            </View>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Edit Habits</Text>
-              <Text style={styles.settingDesc}>Daily habits and targets</Text>
+              <Text style={styles.settingDesc}>Sports you train in</Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color={COLORS.textTertiary} />
           </TouchableOpacity>

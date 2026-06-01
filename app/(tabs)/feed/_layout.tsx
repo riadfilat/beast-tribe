@@ -6,7 +6,6 @@ export default function FeedLayout() {
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: COLORS.background } }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="events" />
-      <Stack.Screen name="leaderboard" />
     </Stack>
   );
 }

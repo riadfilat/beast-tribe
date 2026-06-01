@@ -6,7 +6,7 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Avatar, TierPill, Button } from '../../../src/components/ui';
+import { Avatar, Button } from '../../../src/components/ui';
 import { COLORS, FONTS } from '../../../src/lib/constants';
 import {
   useMyPacks, usePackMembers, useJoinPackByCode, useLeavePack,
@@ -447,8 +447,6 @@ export default function PackScreen() {
 function PackMembersSection({ packId, userId }: { packId?: string; userId?: string }) {
   const { data: members, loading } = usePackMembers(packId);
 
-  const totalXP = (members || []).reduce((sum: number, m: any) => sum + (m.profile?.total_xp || 0), 0);
-
   return (
     <>
       <Text style={styles.sectionLabel}>PACK MEMBERS ({members?.length || 0})</Text>
@@ -460,15 +458,13 @@ function PackMembersSection({ packId, userId }: { packId?: string; userId?: stri
           if (!p) return null;
           return (
             <View key={m.id} style={styles.memberRow}>
-              <Avatar name={p.display_name || p.full_name || 'Beast'} size={32} tier={p.tier} />
+              <Avatar name={p.display_name || p.full_name || 'Beast'} size={32} />
               <View style={styles.memberInfo}>
                 <Text style={styles.memberName}>
                   {p.display_name || p.full_name}
                   {p.id === userId && <Text style={styles.youTag}> (you)</Text>}
                 </Text>
-                <Text style={styles.memberXP}>{(p.total_xp || 0).toLocaleString()} XP</Text>
               </View>
-              <TierPill tier={p.tier || 'initiate'} size="small" />
               {m.role === 'leader' && <Text style={styles.leaderTag}>Leader</Text>}
             </View>
           );
@@ -480,10 +476,6 @@ function PackMembersSection({ packId, userId }: { packId?: string; userId?: stri
         <View style={styles.statItem}>
           <Text style={styles.statValue}>{members?.length || 0}</Text>
           <Text style={styles.statLabel}>Members</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{totalXP.toLocaleString()}</Text>
-          <Text style={styles.statLabel}>Total XP</Text>
         </View>
       </View>
     </>

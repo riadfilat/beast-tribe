@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
-import TierBadge from '@/components/ui/TierBadge';
 
 export const revalidate = 0;
 
@@ -27,7 +26,6 @@ async function getMetrics() {
     pendingModeration,
     totalWorkouts,
     recentSignups,
-    topUsers,
   ] = await Promise.all([
     db.from('profiles').select('*', { count: 'exact', head: true }),
     db.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', startOfMonth),
@@ -41,12 +39,8 @@ async function getMetrics() {
     db.from('image_moderation_queue').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     db.from('workout_logs').select('*', { count: 'exact', head: true }),
     db.from('profiles')
-      .select('id, full_name, display_name, tier, total_xp, created_at')
+      .select('id, full_name, display_name, created_at')
       .order('created_at', { ascending: false })
-      .limit(8),
-    db.from('profiles')
-      .select('id, full_name, display_name, tier, total_xp')
-      .order('total_xp', { ascending: false })
       .limit(8),
   ]);
 
@@ -62,7 +56,6 @@ async function getMetrics() {
     pendingModeration: pendingModeration.count || 0,
     totalWorkouts: totalWorkouts.count || 0,
     recentSignups: recentSignups.data || [],
-    topUsers: topUsers.data || [],
   };
 }
 
@@ -180,9 +173,8 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* Two-column layout */}
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Recent Signups */}
+      {/* Recent Signups */}
+      <div>
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
           <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
             <h2 className="font-semibold text-gray-900">Recent Signups</h2>
@@ -208,44 +200,11 @@ export default async function DashboardPage() {
                     })}
                   </p>
                 </div>
-                <TierBadge tier={user.tier} />
               </Link>
             ))}
             {data.recentSignups.length === 0 && (
               <p className="px-5 py-6 text-sm text-gray-400 text-center">No users yet</p>
             )}
-          </div>
-        </div>
-
-        {/* Top Users by XP */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
-          <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">Top Users by XP</h2>
-            <Link href="/users" className="text-xs text-brand-aqua hover:underline">
-              View all →
-            </Link>
-          </div>
-          <div className="divide-y divide-gray-50">
-            {data.topUsers.map((user: any, i: number) => (
-              <Link
-                key={user.id}
-                href={`/users/${user.id}`}
-                className="flex items-center justify-between px-5 py-3 hover:bg-gray-50/50 transition group"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-bold text-gray-300 w-5 tabular-nums">#{i + 1}</span>
-                  <div>
-                    <p className="text-sm font-medium text-gray-800 group-hover:text-brand-teal transition">
-                      {user.display_name || user.full_name}
-                    </p>
-                    <p className="text-xs text-gray-400 tabular-nums">
-                      {(user.total_xp || 0).toLocaleString()} XP
-                    </p>
-                  </div>
-                </div>
-                <TierBadge tier={user.tier} />
-              </Link>
-            ))}
           </div>
         </div>
       </div>

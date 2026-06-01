@@ -12,8 +12,6 @@ export default function OnboardingLayout() {
     >
       <Stack.Screen name="about-you" />
       <Stack.Screen name="pick-sports" />
-      <Stack.Screen name="set-habits" />
-      <Stack.Screen name="beast-level" />
     </Stack>
   );
 }

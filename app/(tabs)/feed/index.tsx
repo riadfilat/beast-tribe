@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { FilterTabs, Button, BeastIcon } from '../../../src/components/ui';
 import { FeedPost } from '../../../src/components/feed/FeedPost';
-import { COLORS, FONTS, Tier } from '../../../src/lib/constants';
+import { COLORS, FONTS } from '../../../src/lib/constants';
 
 // Local placeholder images from Operation Beast assets
 const OB_LOGO = require('../../../assets/images/ob-logo-mark.png');
@@ -25,13 +25,11 @@ const RHINO_IMG = require('../../../assets/images/animals/Rhino/1.png');
 interface DemoPost {
   id: string;
   name: string;
-  tier: Tier;
   content: string;
   workoutName?: string;
   timeAgo: string;
   beastCount: number;
   hasBeasted: boolean;
-  xpEarned: number;
   commentCount: number;
   imageUrl?: string;
   localImage?: any;
@@ -124,13 +122,11 @@ export default function FeedScreen() {
     ? feedData.map((post: any) => ({
         id: post.id,
         name: post.author?.display_name || post.author?.full_name || 'Beast',
-        tier: (post.author?.tier || 'initiate') as Tier,
         avatarUrl: post.author?.avatar_url,
         content: post.content || '',
         timeAgo: formatRelativeTime(post.created_at),
         beastCount: post.beast_count?.[0]?.count || 0,
         hasBeasted: beastedPostIds.has(post.id),
-        xpEarned: post.xp_earned || 0,
         commentCount: post.comment_count || 0,
         imageUrl: post.image_url,
         workoutName: post.workout_name,
@@ -189,31 +185,7 @@ export default function FeedScreen() {
         {/* Sport filter pills */}
         <FilterTabs tabs={SPORT_TABS} activeIndex={sportTab} onTabPress={setSportTab} size="small" />
 
-        {/* Beast Roar leaderboard banner */}
-        <TouchableOpacity
-          style={styles.roarBanner}
-          activeOpacity={0.7}
-          onPress={() => router.push('/(tabs)/feed/leaderboard')}
-        >
-          <View style={styles.roarContent}>
-            <View style={styles.roarLeft}>
-              <View style={styles.roarTitleRow}>
-                <Ionicons name="trophy" size={18} color={COLORS.orange} />
-                <Text style={styles.roarTitle}>BEAST ROAR</Text>
-              </View>
-              <Text style={styles.roarSeason}>Leaderboard · Season 4</Text>
-              <View style={styles.roarButton}>
-                <Text style={styles.roarButtonText}>VIEW RANKINGS</Text>
-              </View>
-            </View>
-            {/* Visual bars on right side */}
-            <View style={styles.roarBars}>
-              <View style={[styles.roarBar, { height: 40, backgroundColor: 'rgba(86,196,196,0.3)' }]} />
-              <View style={[styles.roarBar, { height: 56, backgroundColor: 'rgba(86,196,196,0.5)' }]} />
-              <View style={[styles.roarBar, { height: 32, backgroundColor: 'rgba(86,196,196,0.2)' }]} />
-            </View>
-          </View>
-        </TouchableOpacity>
+        <View style={{ height: 6 }} />
 
         {/* Feed posts */}
         {loading ? (
@@ -223,12 +195,10 @@ export default function FeedScreen() {
             <FeedPost
               key={post.id}
               name={post.name}
-              tier={post.tier}
               content={post.content}
               timeAgo={post.timeAgo}
               beastCount={post.beastCount}
               hasBeasted={post.hasBeasted}
-              xpEarned={post.xpEarned}
               commentCount={post.commentCount}
               imageUrl={post.imageUrl}
               localImage={post.localImage}
@@ -435,68 +405,6 @@ const styles = StyleSheet.create({
     height: 2.5,
     backgroundColor: COLORS.orange,
     borderRadius: 2,
-  },
-
-  /* Beast Roar banner */
-  roarBanner: {
-    backgroundColor: 'rgba(86,196,196,0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(86,196,196,0.18)',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    overflow: 'hidden',
-  },
-  roarContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  roarLeft: {
-    flex: 1,
-  },
-  roarTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  roarTitle: {
-    fontSize: 18,
-    fontFamily: FONTS.heading,
-    color: COLORS.orange,
-    letterSpacing: 1,
-  },
-  roarSeason: {
-    fontSize: 12,
-    fontFamily: FONTS.body,
-    color: COLORS.textSecondary,
-    marginTop: 4,
-  },
-  roarButton: {
-    marginTop: 12,
-    alignSelf: 'flex-start',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: COLORS.orange,
-    backgroundColor: 'transparent',
-  },
-  roarButtonText: {
-    fontSize: 11,
-    fontFamily: FONTS.bodySemiBold,
-    color: COLORS.orange,
-    letterSpacing: 1,
-  },
-  roarBars: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 6,
-    marginLeft: 16,
-  },
-  roarBar: {
-    width: 18,
-    borderRadius: 4,
   },
 
   /* Compose FAB */

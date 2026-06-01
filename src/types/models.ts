@@ -10,16 +10,18 @@ export interface Profile {
   date_of_birth: string | null;
   city: string | null;
   experience_level: string | null;
-  total_xp: number;
-  level: number;
-  tier: Tier;
-  current_streak: number;
-  longest_streak: number;
+  // Gamification fields — being dropped from the DB. Optional so nothing
+  // breaks while they are removed; nothing in the UI should render them.
+  total_xp?: number;
+  level?: number;
+  tier?: Tier;
+  current_streak?: number;
+  longest_streak?: number;
+  training_frequency?: number;
+  beast_score?: number;
   region: string;
   is_premium: boolean;
   onboarding_completed: boolean;
-  training_frequency: number;
-  beast_score: number;
   pack_id: string | null;
   community_id: string | null;
   five_k_time_seconds: number | null;

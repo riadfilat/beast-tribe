@@ -29,9 +29,9 @@ export default async function EditCommunityPage({ params }: { params: { id: stri
   const [membersRes, defaultPacksRes, locationsRes, availablePacksRes] = await Promise.all([
     db
       .from('profiles')
-      .select('id, display_name, full_name, total_xp, created_at')
+      .select('id, display_name, full_name, created_at')
       .eq('community_id', community.id)
-      .order('total_xp', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(200),
     db
       .from('packs')
@@ -122,11 +122,7 @@ export default async function EditCommunityPage({ params }: { params: { id: stri
                       {m.full_name || m.display_name || 'Unnamed'}
                     </Link>
                     <p className="text-xs text-gray-400">
-                      @{m.display_name || '—'} ·{' '}
-                      <span className="font-medium text-gray-500">
-                        {(m.total_xp || 0).toLocaleString()} XP
-                      </span>{' '}
-                      · joined {new Date(m.created_at).toLocaleDateString()}
+                      @{m.display_name || '—'} · joined {new Date(m.created_at).toLocaleDateString()}
                     </p>
                   </div>
                   <form

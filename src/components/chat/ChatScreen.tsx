@@ -25,7 +25,6 @@ interface ChatMessage {
 interface Attendee {
   id: string;
   name: string;
-  tier: string;
   avatar_url?: string;
 }
 
@@ -142,7 +141,6 @@ export function ChatScreen({
               <Avatar
                 name={a.name}
                 size={28}
-                tier={a.tier as any}
                 backgroundColor={COLORS.dark}
               />
             </View>
@@ -211,7 +209,6 @@ export function ChatScreen({
                 <Avatar
                   name={msg.author?.full_name || authorName}
                   size={30}
-                  tier={(msg.author?.tier || 'initiate') as any}
                   backgroundColor={COLORS.dark}
                 />
               )}
@@ -266,12 +263,10 @@ export function ChatScreen({
                   <Avatar
                     name={member.name}
                     size={40}
-                    tier={member.tier as any}
                     backgroundColor={COLORS.dark}
                   />
                   <View style={styles.memberInfo}>
                     <Text style={styles.memberName}>{member.name}</Text>
-                    <Text style={styles.memberTier}>{member.tier.toUpperCase()}</Text>
                   </View>
                   <View style={[styles.memberStatus, { backgroundColor: 'rgba(98,183,151,0.12)' }]}>
                     <Text style={styles.memberStatusText}>Going</Text>

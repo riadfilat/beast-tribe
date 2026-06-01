@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Share, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Avatar, TierPill } from '../../../src/components/ui';
+import { Avatar } from '../../../src/components/ui';
 import { COLORS, FONTS } from '../../../src/lib/constants';
 import { useMyPack, useSearchUsers, useInviteToPack } from '../../../src/hooks';
 import { useAuth } from '../../../src/providers/AuthProvider';
@@ -73,11 +73,10 @@ export default function PackInviteScreen() {
           const isInvited = invited.has(profile.id);
           return (
             <View key={profile.id} style={styles.userRow}>
-              <Avatar name={profile.display_name || profile.full_name || 'Beast'} size={32} tier={profile.tier} />
+              <Avatar name={profile.display_name || profile.full_name || 'Beast'} size={32} />
               <View style={styles.userInfo}>
                 <Text style={styles.userName}>{profile.display_name || profile.full_name}</Text>
               </View>
-              <TierPill tier={profile.tier || 'raw'} size="small" />
               <TouchableOpacity
                 style={[styles.inviteButton, isInvited && styles.invitedButton]}
                 onPress={() => handleInvite(profile.id)}

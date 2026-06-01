@@ -11,8 +11,6 @@ export default function HomeLayout() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="nutrition" />
-      <Stack.Screen name="analytics" />
-      <Stack.Screen name="levels" />
       <Stack.Screen name="create-activity" />
       <Stack.Screen name="activity-chat" />
     </Stack>

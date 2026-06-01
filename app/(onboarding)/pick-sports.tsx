@@ -5,11 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Button, SportChip } from '../../src/components/ui';
 import { StepIndicator } from '../../src/components/onboarding/StepIndicator';
-import { useSaveSports, useSaveTrainingFrequency, useUserSports } from '../../src/hooks';
+import { useSaveSports, useUserSports } from '../../src/hooks';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { COLORS, FONTS, SPORTS } from '../../src/lib/constants';
-
-const FREQUENCY_OPTIONS = [2, 3, 4, 5, 6, 7];
 
 export default function PickSportsScreen() {
   const router = useRouter();
@@ -17,12 +15,11 @@ export default function PickSportsScreen() {
   const isEditMode = params.edit === '1';
 
   const [selected, setSelected] = useState<string[]>([]);
-  const [frequency, setFrequency] = useState(4);
+  const [finishing, setFinishing] = useState(false);
   const { saveSports, loading: savingSports } = useSaveSports();
-  const { saveFrequency, loading: savingFreq } = useSaveTrainingFrequency();
-  const { profile } = useAuth();
+  const { completeOnboarding } = useAuth();
 
-  // In edit mode, pre-load current sports and frequency
+  // In edit mode, pre-load current sports
   const { data: userSportsData } = useUserSports();
 
   useEffect(() => {
@@ -33,29 +30,23 @@ export default function PickSportsScreen() {
     }
   }, [isEditMode, userSportsData]);
 
-  useEffect(() => {
-    if (isEditMode && profile?.training_frequency) {
-      setFrequency(profile.training_frequency);
-    }
-  }, [isEditMode, profile]);
-
-  const saving = savingSports || savingFreq;
+  const saving = savingSports || finishing;
 
   async function handleContinue() {
+    setFinishing(true);
     try {
-      await Promise.all([
-        saveSports(selected),
-        saveFrequency(frequency),
-      ]);
+      await saveSports(selected);
+      if (isEditMode) {
+        router.canGoBack() ? router.back() : router.replace('/(tabs)/profile');
+        return;
+      }
+      // Final onboarding step — mark complete and enter the app.
+      await completeOnboarding();
+      router.replace('/(tabs)/home');
     } catch (e: any) {
       Alert.alert('Could not save', e?.message || 'Please try again.');
-      return; // Don't advance on failure — let the user retry
-    }
-
-    if (isEditMode) {
-      router.canGoBack() ? router.back() : router.replace('/(tabs)/profile');
-    } else {
-      router.push({ pathname: '/(onboarding)/set-habits', params: { sports: selected.join(','), frequency: String(frequency) } });
+    } finally {
+      setFinishing(false);
     }
   }
 
@@ -76,7 +67,7 @@ export default function PickSportsScreen() {
           <View style={{ width: 22 }} />
         </View>
       ) : (
-        <StepIndicator currentStep={2} totalSteps={4} />
+        <StepIndicator currentStep={2} totalSteps={2} />
       )}
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>{isEditMode ? 'Your disciplines' : 'Pick your disciplines'}</Text>
@@ -95,27 +86,8 @@ export default function PickSportsScreen() {
           ))}
         </View>
 
-        {/* Training frequency */}
-        <Text style={styles.frequencyTitle}>How many days per week?</Text>
-        <Text style={styles.frequencySubtitle}>Set your weekly training target</Text>
-
-        <View style={styles.frequencyRow}>
-          {FREQUENCY_OPTIONS.map((num) => (
-            <TouchableOpacity
-              key={num}
-              style={[styles.frequencyPill, frequency === num && styles.frequencyPillActive]}
-              onPress={() => setFrequency(num)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.frequencyText, frequency === num && styles.frequencyTextActive]}>
-                {num}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
         <Button
-          title={saving ? "Saving..." : isEditMode ? "Save Changes" : "Continue"}
+          title={saving ? "Saving..." : isEditMode ? "Save Changes" : "Enter Beast Tribe"}
           onPress={handleContinue}
           disabled={selected.length === 0 || saving}
         />
@@ -164,43 +136,5 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     marginBottom: 28,
-  },
-  frequencyTitle: {
-    fontSize: 18,
-    fontFamily: FONTS.heading,
-    color: COLORS.white,
-    marginBottom: 4,
-  },
-  frequencySubtitle: {
-    fontSize: 12,
-    fontFamily: FONTS.body,
-    color: COLORS.textSecondary,
-    marginBottom: 14,
-  },
-  frequencyRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 28,
-  },
-  frequencyPill: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    alignItems: 'center',
-  },
-  frequencyPillActive: {
-    backgroundColor: 'rgba(232,143,36,0.15)',
-    borderColor: COLORS.orange,
-  },
-  frequencyText: {
-    fontSize: 18,
-    fontFamily: FONTS.heading,
-    color: COLORS.textTertiary,
-  },
-  frequencyTextActive: {
-    color: COLORS.orange,
   },
 });

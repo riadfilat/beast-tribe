@@ -18,7 +18,7 @@ export default async function PartnerEventDetailPage({ params }: { params: { id:
 
   // Get RSVPs with user details
   const { data: rsvps } = await db.from('event_rsvps')
-    .select('*, profile:profiles(full_name, display_name, tier, total_xp, region)')
+    .select('*, profile:profiles(full_name, display_name, region)')
     .eq('event_id', params.id)
     .order('created_at', { ascending: false });
 
@@ -95,7 +95,7 @@ export default async function PartnerEventDetailPage({ params }: { params: { id:
                   {rsvp.profile?.display_name || rsvp.profile?.full_name || 'User'}
                 </p>
                 <p className="text-xs text-gray-400">
-                  {rsvp.profile?.tier} · {(rsvp.profile?.total_xp || 0).toLocaleString()} XP · {rsvp.profile?.region || 'SA'}
+                  {rsvp.profile?.region || 'SA'}
                 </p>
               </div>
               <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
