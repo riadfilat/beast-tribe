@@ -6,6 +6,7 @@ import { StatusBar } from 'react-native';
 import 'react-native-reanimated';
 import { AuthProvider, useAuth } from '../src/providers/AuthProvider';
 import { ThemeProvider, useTheme } from '../src/providers/ThemeProvider';
+import { useOtaUpdates } from '../src/lib/useOtaUpdates';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -51,6 +52,9 @@ function AuthGate() {
 }
 
 export default function RootLayout() {
+  // Auto-download + apply OTA updates on launch and on every foreground.
+  useOtaUpdates();
+
   const [loaded, error] = useFonts({
     'Montserrat-Light': require('../assets/fonts/Montserrat-Light.otf'),
     'Montserrat-Regular': require('../assets/fonts/Montserrat-Regular.otf'),
