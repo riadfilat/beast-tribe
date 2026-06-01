@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useMyEvents } from '../../../src/hooks';
+import { useMyEvents, useLeaveEvent } from '../../../src/hooks';
 import { COLORS, FONTS } from '../../../src/lib/constants';
 
 function formatWhen(iso?: string): string {
@@ -15,7 +15,30 @@ function formatWhen(iso?: string): string {
 
 export default function MyEventsScreen() {
   const router = useRouter();
-  const { data, loading } = useMyEvents();
+  const { data, loading, refetch } = useMyEvents();
+  const { leaveEvent } = useLeaveEvent();
+
+  function removeFromMyEvents(e: any) {
+    Alert.alert(
+      'Remove from My Events?',
+      `"${e.title}" will be removed from your events. This only affects your list — it won't delete the event for anyone else.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await leaveEvent(e.id);
+              await refetch();
+            } catch (err: any) {
+              Alert.alert('Could not remove', err?.message || 'Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  }
 
   // Flatten RSVP rows -> events, drop any missing event, sort newest-first.
   const events = (data || [])
@@ -62,9 +85,22 @@ export default function MyEventsScreen() {
             <Text style={styles.cardCount}>{count} joined</Text>
           </View>
         </View>
-        <View style={styles.chatBtn}>
+        <TouchableOpacity
+          style={styles.chatBtn}
+          activeOpacity={0.7}
+          onPress={() => openChat(e)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
           <Ionicons name="chatbubbles-outline" size={18} color={COLORS.aqua} />
-        </View>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.removeBtn}
+          activeOpacity={0.7}
+          onPress={() => removeFromMyEvents(e)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="trash-outline" size={17} color="#EF5350" />
+        </TouchableOpacity>
       </TouchableOpacity>
     );
   }
@@ -146,6 +182,11 @@ const styles = StyleSheet.create({
   chatBtn: {
     width: 34, height: 34, borderRadius: 17,
     backgroundColor: 'rgba(86,196,196,0.1)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  removeBtn: {
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: 'rgba(239,83,80,0.1)',
     alignItems: 'center', justifyContent: 'center',
   },
 });

@@ -44,12 +44,12 @@ export default function ActivityChatScreen() {
   function handleLeave() {
     if (leaving || !eventId) return;
     Alert.alert(
-      'Leave this activity?',
-      `You'll be removed from "${eventTitle || 'this activity'}". You can rejoin from the events list anytime.`,
+      'Remove from My Events?',
+      `"${eventTitle || 'This activity'}" will be removed from your events. This only affects your list — it won't delete the event for anyone else.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Leave',
+          text: 'Remove',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -57,7 +57,7 @@ export default function ActivityChatScreen() {
               if (router.canGoBack()) router.back();
               else router.replace('/(tabs)/events');
             } catch (e: any) {
-              Alert.alert('Could not leave activity', e?.message || 'Please try again.');
+              Alert.alert('Could not remove', e?.message || 'Please try again.');
             }
           },
         },
