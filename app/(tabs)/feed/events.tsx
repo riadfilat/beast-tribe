@@ -247,6 +247,18 @@ export default function EventsScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* My Events shortcut */}
+        <TouchableOpacity
+          style={styles.myEventsBtn}
+          activeOpacity={0.8}
+          onPress={() => router.push('/(tabs)/home/my-events' as any)}
+        >
+          <Ionicons name="bookmark" size={15} color={COLORS.orange} />
+          <Text style={styles.myEventsBtnText}>My Events</Text>
+          <Text style={styles.myEventsBtnHint}>events you joined + chats</Text>
+          <Ionicons name="chevron-forward" size={15} color={COLORS.textTertiary} />
+        </TouchableOpacity>
+
         {/* Search bar */}
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={16} color={COLORS.textTertiary} style={styles.searchIcon} />
@@ -407,6 +419,29 @@ const styles = StyleSheet.create({
   },
 
   /* Search */
+  myEventsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(232,143,36,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(232,143,36,0.22)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    marginBottom: 12,
+  },
+  myEventsBtnText: {
+    fontSize: 13,
+    fontFamily: FONTS.bodySemiBold,
+    color: COLORS.white,
+  },
+  myEventsBtnHint: {
+    flex: 1,
+    fontSize: 11,
+    fontFamily: FONTS.body,
+    color: COLORS.textTertiary,
+  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
