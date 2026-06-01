@@ -246,7 +246,7 @@ export function useFeedPosts(sportFilter?: string) {
         return supabase.from('feed_posts')
           .select(`
             *,
-            author:profiles!user_id(display_name, full_name, tier, avatar_url),
+            author:profiles!user_id(display_name, full_name, avatar_url),
             sport:sports!inner(name),
             beast_count:beasts(count)
           `)
@@ -260,7 +260,7 @@ export function useFeedPosts(sportFilter?: string) {
       return supabase.from('feed_posts')
         .select(`
           *,
-          author:profiles!user_id(display_name, full_name, tier, avatar_url),
+          author:profiles!user_id(display_name, full_name, avatar_url),
           sport:sports(name),
           beast_count:beasts(count)
         `)
@@ -311,14 +311,6 @@ export function useToggleBeast() {
       } else {
         const { error } = await supabase.from('beasts').insert({ post_id: postId, user_id: u.id });
         if (error) throw error;
-        // Award XP to the giver for engaging with the tribe
-        await supabase.from('xp_transactions').insert({
-          user_id: u.id,
-          amount: 10,
-          source: 'beast_given',
-          source_id: postId,
-          description: 'Gave a Beast reaction',
-        });
       }
     } finally {
       setLoading(false);
@@ -350,16 +342,6 @@ export function useCreatePost() {
         is_visible: true,
       }).select('id').single();
       if (error) throw error;
-
-      // Award XP for posting a workout to the feed
-      await supabase.from('xp_transactions').insert({
-        user_id: u.id,
-        amount: 75,
-        source: 'post_workout',
-        source_id: post?.id,
-        sport_id: safeSportId,
-        description: 'Posted a workout to feed',
-      });
       return true;
     } catch (err: any) {
       console.warn('[useCreatePost] insert failed:', err?.message || err);
@@ -484,13 +466,29 @@ export function useLeaveEvent() {
   return { leaveEvent, loading };
 }
 
+/** All events the current user has joined (RSVP'd "going") — past AND upcoming. */
+export function useMyEvents() {
+  const { user } = useAuth();
+  return useSupabaseQuery<any[]>(
+    () => {
+      if (!user?.id) return Promise.resolve({ data: [], error: null });
+      return supabase.from('event_rsvps')
+        .select('status, event:events(*, sport:sports(name, emoji), pack:packs(id, name), rsvp_count:event_rsvps(count))')
+        .eq('user_id', user.id)
+        .eq('status', 'going');
+    },
+    [user?.id],
+    []
+  );
+}
+
 /** Fetch attendees of an event (RSVPs going) — used in event chat header */
 export function useEventAttendees(eventId?: string) {
   return useSupabaseQuery<any[]>(
     () => {
       if (!eventId) return Promise.resolve({ data: [], error: null });
       return supabase.from('event_rsvps')
-        .select('user_id, status, profile:profiles(id, display_name, full_name, tier, avatar_url)')
+        .select('user_id, status, profile:profiles(id, display_name, full_name, avatar_url)')
         .eq('event_id', eventId)
         .eq('status', 'going');
     },
@@ -580,7 +578,7 @@ export function useLeaderboard(timeRange: string = 'all', packId?: string, sport
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
         let query = supabase.from('xp_transactions')
-          .select('user_id, amount, sport_id, profile:profiles!user_id(id, display_name, full_name, tier, total_xp, avatar_url)')
+          .select('user_id, amount, sport_id, profile:profiles!user_id(id, display_name, full_name, avatar_url)')
           .gte('created_at', weekAgo.toISOString());
         if (sportId) query = query.eq('sport_id', sportId);
         return query.order('amount', { ascending: false }).limit(100);
@@ -590,14 +588,14 @@ export function useLeaderboard(timeRange: string = 'all', packId?: string, sport
         // Pack leaderboard — if sport selected, sum sport XP from xp_transactions
         if (sportId) {
           return supabase.from('xp_transactions')
-            .select('user_id, amount, profile:profiles!user_id(id, display_name, full_name, tier, total_xp, avatar_url, pack_members!inner(pack_id))')
+            .select('user_id, amount, profile:profiles!user_id(id, display_name, full_name, avatar_url, pack_members!inner(pack_id))')
             .eq('sport_id', sportId)
             .eq('profile.pack_members.pack_id', packId)
             .order('amount', { ascending: false })
             .limit(100);
         }
         return supabase.from('pack_members')
-          .select('*, profile:profiles(id, display_name, full_name, tier, total_xp, avatar_url)')
+          .select('*, profile:profiles(id, display_name, full_name, avatar_url)')
           .eq('pack_id', packId)
           .order('profile->total_xp', { ascending: false });
       }
@@ -605,13 +603,13 @@ export function useLeaderboard(timeRange: string = 'all', packId?: string, sport
       // 'all' — if sport selected, aggregate from xp_transactions; otherwise use profiles.total_xp
       if (sportId) {
         return supabase.from('xp_transactions')
-          .select('user_id, amount, profile:profiles!user_id(id, display_name, full_name, tier, total_xp, avatar_url)')
+          .select('user_id, amount, profile:profiles!user_id(id, display_name, full_name, avatar_url)')
           .eq('sport_id', sportId)
           .order('amount', { ascending: false })
           .limit(100);
       }
       return supabase.from('profiles')
-        .select('id, display_name, full_name, tier, total_xp, avatar_url')
+        .select('id, display_name, full_name, avatar_url')
         .order('total_xp', { ascending: false })
         .limit(20);
     },
@@ -776,7 +774,7 @@ export function usePackWeekActivity(packId?: string) {
       if (!packId) return Promise.resolve({ data: [], error: null });
       // Get pack members' IDs, then their workout logs
       return supabase.from('pack_members')
-        .select('user_id, profile:profiles(id, display_name, full_name, avatar_url, tier)')
+        .select('user_id, profile:profiles(id, display_name, full_name, avatar_url)')
         .eq('pack_id', packId);
     },
     [packId],
@@ -1038,7 +1036,7 @@ export function usePackMembers(packId?: string) {
     () => {
       if (!packId) return Promise.resolve({ data: [], error: null });
       return supabase.from('pack_members')
-        .select('*, profile:profiles(id, display_name, full_name, tier, total_xp, avatar_url)')
+        .select('*, profile:profiles(id, display_name, full_name, avatar_url)')
         .eq('pack_id', packId)
         .order('joined_at', { ascending: true });
     },
@@ -1284,7 +1282,7 @@ export function useSearchUsers(query: string) {
       if (!query || query.length < 2) return Promise.resolve({ data: [], error: null });
       const safe = sanitizeSearch(query);
       return supabase.from('profiles')
-        .select('id, display_name, full_name, tier, avatar_url')
+        .select('id, display_name, full_name, avatar_url')
         .ilike('display_name', `%${safe}%`)
         .limit(10);
     },
@@ -1592,7 +1590,7 @@ export function useChatMessages(roomId?: string | null) {
       setLoading(true);
       const { data } = await supabase
         .from('chat_messages')
-        .select('id, user_id, content, message_type, created_at, author:profiles(display_name, full_name, tier, avatar_url)')
+        .select('id, user_id, content, message_type, created_at, author:profiles(display_name, full_name, avatar_url)')
         .eq('room_id', roomId)
         .order('created_at', { ascending: true })
         .limit(100);
@@ -1622,7 +1620,7 @@ export function useSendMessage() {
           content: content.trim(),
           message_type: messageType,
           created_at: new Date().toISOString(),
-          author: { display_name: profile?.display_name || 'You', full_name: profile?.full_name || 'You', tier: profile?.tier || 'initiate' },
+          author: { display_name: profile?.display_name || 'You', full_name: profile?.full_name || 'You' },
         };
       }
       const { data, error } = await supabase.from('chat_messages').insert({
@@ -1630,7 +1628,7 @@ export function useSendMessage() {
         user_id: user.id,
         content: content.trim(),
         message_type: messageType,
-      }).select('id, user_id, content, message_type, created_at, author:profiles(display_name, full_name, tier, avatar_url)').single();
+      }).select('id, user_id, content, message_type, created_at, author:profiles(display_name, full_name, avatar_url)').single();
       if (error) throw error;
       return data;
     } finally {
@@ -1898,7 +1896,7 @@ export function useCoachTrainees(coachId?: string | null) {
     if (!coachId || !isSupabaseConfigured) { setLoading(false); return; }
     (async () => {
       const { data } = await supabase.from('coach_trainees')
-        .select('*, trainee:profiles!trainee_id(id, display_name, full_name, tier, total_xp, current_streak, level, beast_score, avatar_url, last_active_date)')
+        .select('*, trainee:profiles!trainee_id(id, display_name, full_name, avatar_url, last_active_date)')
         .eq('coach_id', coachId)
         .eq('status', 'active')
         .order('started_at', { ascending: false });

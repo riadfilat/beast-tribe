@@ -192,6 +192,14 @@ export default function ProfileScreen() {
         {/* ACCOUNT */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>ACCOUNT</Text>
+          <TouchableOpacity style={styles.accountRow} activeOpacity={0.7} onPress={() => router.push('/(tabs)/home/my-events' as any)}>
+            <View style={[styles.accountIconWrap, { backgroundColor: 'rgba(232,143,36,0.1)' }]}>
+              <Ionicons name="calendar-outline" size={18} color={COLORS.orange} />
+            </View>
+            <Text style={styles.accountRowText}>MY EVENTS</Text>
+            <Ionicons name="chevron-forward" size={16} color={COLORS.textTertiary} />
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.accountRow} activeOpacity={0.7} onPress={() => router.push('/(tabs)/profile/settings')}>
             <View style={styles.accountIconWrap}>
               <Ionicons name="settings-outline" size={18} color={COLORS.textSecondary} />

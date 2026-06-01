@@ -13,6 +13,7 @@ export default function HomeLayout() {
       <Stack.Screen name="nutrition" />
       <Stack.Screen name="create-activity" />
       <Stack.Screen name="activity-chat" />
+      <Stack.Screen name="my-events" />
     </Stack>
   );
 }
