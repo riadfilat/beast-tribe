@@ -323,3 +323,10 @@ Comprehensive audit of mobile + admin + database, then fixed every critical/high
 - Fixed admin comment moderation: `is_visible`/`hidden_by` columns don't exist → use `status` enum (active/hidden/deleted/flagged)
 - feed_comments comment_status enum: active, hidden, deleted, flagged
 - Verified: all target tables have full RLS; FKs safe; coach tables have policies
+
+### 2026-05-31 — SIMPLIFIED: removed ALL gamification (UI + DB)
+- User wanted a simpler app — stripped XP, levels, tier titles, Beast Score, streaks, badges, leaderboard, Missions tab, habits/quests
+- Mobile: tab bar now Home · Tribe · Events · Profile (4 tabs). Home/Profile/Feed/onboarding simplified. Gamification Profile fields made optional. OTA 019e8466.
+- Admin: removed XP/tier/streak/beast-score columns, filters, XP-history, Top-Users-by-XP; deleted TierBadge. Pushed dcd5950 (Vercel).
+- DB migration 029: dropped tables xp_transactions, badges, user_badges, quests, user_quests, beast_scores, habit_definitions, user_habits, habit_logs; dropped profiles columns total_xp, level, tier, current_streak, longest_streak, beast_score, training_frequency; dropped recalculate_level_and_tier() + trg_xp_recalc. Kept chat/community/comment/admin triggers.
+- Orphan dead files left in place (leaderboard, workouts/Mission, set-habits, beast-level) + their hooks — unrouted, harmless. Can delete later.
