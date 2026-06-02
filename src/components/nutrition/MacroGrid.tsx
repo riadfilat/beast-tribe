@@ -48,9 +48,9 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '48%',
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: COLORS.cardBg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: COLORS.cardBorder,
     borderRadius: 14,
     padding: 14,
   },
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   cardValue: {
     fontSize: 24,
     fontFamily: FONTS.heading,
-    color: COLORS.white,
+    color: COLORS.textPrimary,
     marginBottom: 10,
   },
   cardGoal: {

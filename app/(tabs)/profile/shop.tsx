@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', marginTop: 20, marginBottom: 12,
   },
   logoCircle: { width: 20, height: 20, borderRadius: 10, backgroundColor: COLORS.orange },
-  title: { fontSize: 18, fontFamily: FONTS.heading, color: COLORS.white },
+  title: { fontSize: 18, fontFamily: FONTS.heading, color: COLORS.textPrimary },
   subtitle: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textSecondary, marginBottom: 16 },
   collectionCard: {
     width: '100%', backgroundColor: 'rgba(232,143,36,0.06)',

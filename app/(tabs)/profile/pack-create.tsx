@@ -49,7 +49,7 @@ export default function PackCreateScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/profile')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+          <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <BeastIcon size={22} color={COLORS.orange} />
         <View style={{ width: 22 }} />

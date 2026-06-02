@@ -134,7 +134,7 @@ export default function NutritionScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/home')}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+          <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Nutrition</Text>
         <View style={{ width: 22 }} />
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 12,
   },
-  headerTitle: { fontSize: 16, fontFamily: FONTS.heading, color: COLORS.white },
+  headerTitle: { fontSize: 16, fontFamily: FONTS.heading, color: COLORS.textPrimary },
   scroll: { flex: 1, paddingHorizontal: 16 },
 
   emptyState: { alignItems: 'center', paddingVertical: 24, gap: 8 },

@@ -215,7 +215,7 @@ export default function FeedScreen() {
             <Text style={styles.brandName}>BEAST TRIBE</Text>
           </View>
           <TouchableOpacity style={styles.notificationBtn} activeOpacity={0.7}>
-            <Ionicons name="notifications-outline" size={22} color={COLORS.white} />
+            <Ionicons name="notifications-outline" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
         </View>
 

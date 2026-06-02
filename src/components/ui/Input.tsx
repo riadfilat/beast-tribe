@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.inputBorder,
     borderRadius: 10,
     fontSize: 13,
-    color: COLORS.white,
+    color: COLORS.textPrimary,
     fontFamily: FONTS.body,
   },
   inputError: {

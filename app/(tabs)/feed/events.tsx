@@ -254,7 +254,7 @@ export default function EventsScreen() {
               }
             }}
           >
-            <Ionicons name="notifications-outline" size={22} color={COLORS.white} />
+            <Ionicons name="notifications-outline" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
         </View>
 
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
   myEventsBtnText: {
     fontSize: 13,
     fontFamily: FONTS.bodySemiBold,
-    color: COLORS.white,
+    color: COLORS.textPrimary,
   },
   myEventsBtnHint: {
     flex: 1,

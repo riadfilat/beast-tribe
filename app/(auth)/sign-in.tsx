@@ -160,9 +160,9 @@ const field = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: COLORS.inputBg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: COLORS.inputBorder,
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -175,7 +175,7 @@ const field = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontFamily: FONTS.body,
-    color: COLORS.white,
+    color: COLORS.textPrimary,
   },
   errorRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
   errorText: { fontSize: 12, fontFamily: FONTS.body, color: '#EF5B5B' },
@@ -475,7 +475,7 @@ export default function SignInScreen() {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.kav}>
           <View style={s.stepWrap}>
             <TouchableOpacity style={s.backBtn} onPress={() => { setShowForgot(false); clearErrors(); }}>
-              <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+              <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
             </TouchableOpacity>
 
             <Text style={s.heading}>Forgot password?</Text>
@@ -529,7 +529,7 @@ export default function SignInScreen() {
           <View style={s.headerRow}>
             {canGoBack ? (
               <TouchableOpacity style={s.backBtn} onPress={goBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+                <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
               </TouchableOpacity>
             ) : (
               <View style={{ width: 36 }} />
@@ -715,7 +715,9 @@ const s = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: COLORS.cardBg,
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -727,7 +729,7 @@ const s = StyleSheet.create({
   heading: {
     fontSize: 28,
     fontFamily: FONTS.heading,
-    color: COLORS.white,
+    color: COLORS.textPrimary,
     marginBottom: 8,
     lineHeight: 34,
   },
@@ -759,7 +761,7 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(86,196,196,0.2)',
     alignItems: 'center', justifyContent: 'center', marginBottom: 8,
   },
-  sentTitle: { fontSize: 24, fontFamily: FONTS.heading, color: COLORS.white },
+  sentTitle: { fontSize: 24, fontFamily: FONTS.heading, color: COLORS.textPrimary },
   sentBody:  { fontSize: 14, fontFamily: FONTS.body, color: COLORS.textSecondary, textAlign: 'center' },
   sentEmail: { fontSize: 14, fontFamily: FONTS.bodySemiBold, color: COLORS.aqua, textAlign: 'center' },
   sentSub:   { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textTertiary, textAlign: 'center', lineHeight: 18, marginBottom: 8 },

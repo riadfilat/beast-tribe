@@ -110,7 +110,7 @@ export default function MyEventsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/profile')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+          <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Events</Text>
         <View style={{ width: 22 }} />
@@ -153,10 +153,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingVertical: 14,
   },
-  headerTitle: { fontSize: 17, fontFamily: FONTS.heading, color: COLORS.white },
+  headerTitle: { fontSize: 17, fontFamily: FONTS.heading, color: COLORS.textPrimary },
   scroll: { flex: 1, paddingHorizontal: 16 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40, gap: 8 },
-  emptyTitle: { fontSize: 16, fontFamily: FONTS.heading, color: COLORS.white, marginTop: 6 },
+  emptyTitle: { fontSize: 16, fontFamily: FONTS.heading, color: COLORS.textPrimary, marginTop: 6 },
   emptySub: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textSecondary, textAlign: 'center' },
   browseBtn: { marginTop: 14, backgroundColor: COLORS.orange, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
   browseBtnText: { color: '#FFF', fontFamily: FONTS.heading, fontSize: 13 },
@@ -166,14 +166,14 @@ const styles = StyleSheet.create({
   },
   card: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: COLORS.cardBg,
+    borderWidth: 1, borderColor: COLORS.cardBorder,
     borderRadius: 14, padding: 10, marginBottom: 8,
   },
   thumb: { width: 54, height: 54, borderRadius: 10, backgroundColor: COLORS.dark },
   thumbFallback: { alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(232,143,36,0.08)' },
   cardBody: { flex: 1 },
-  cardTitle: { fontSize: 14, fontFamily: FONTS.bodySemiBold, color: COLORS.white },
+  cardTitle: { fontSize: 14, fontFamily: FONTS.bodySemiBold, color: COLORS.textPrimary },
   cardMeta: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textSecondary, marginTop: 2 },
   cardTagRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 5 },
   cardTag: { fontSize: 10, fontFamily: FONTS.bodySemiBold, color: COLORS.aqua, textTransform: 'capitalize' },

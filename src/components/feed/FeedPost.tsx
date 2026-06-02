@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 14,
     fontFamily: FONTS.heading,
-    color: COLORS.white,
+    color: COLORS.textPrimary,
   },
   metaRow: {
     flexDirection: 'row',
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
   content: {
     fontSize: 15,
     fontFamily: FONTS.bodySemiBold,
-    color: COLORS.white,
+    color: COLORS.textPrimary,
     lineHeight: 22,
     fontStyle: 'italic',
   },

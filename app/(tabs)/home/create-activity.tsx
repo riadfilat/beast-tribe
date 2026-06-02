@@ -355,7 +355,7 @@ export default function CreateActivityScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/home')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+          <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Create Activity</Text>
         <View style={{ width: 22 }} />

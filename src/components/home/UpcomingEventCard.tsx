@@ -44,6 +44,13 @@ export function UpcomingEventCard({
     }
   }
 
+  // When there's no image, the card sits on the light screen background in light
+  // theme, so text must be theme-adaptive (not hardcoded white).
+  const onImage = !!imageSource;
+  const titleColor = onImage ? '#FFFFFF' : COLORS.textPrimary;
+  const subColor = onImage ? 'rgba(255,255,255,0.7)' : COLORS.textSecondary;
+  const watermarkColor = onImage ? 'rgba(255,255,255,0.08)' : COLORS.textMuted;
+
   const content = (
     <>
       {/* Date tag */}
@@ -54,19 +61,19 @@ export function UpcomingEventCard({
       )}
 
       {/* Type watermark */}
-      {type ? <Text style={styles.typeWatermark}>{type}</Text> : null}
+      {type ? <Text style={[styles.typeWatermark, { color: watermarkColor }]}>{type}</Text> : null}
 
       {/* Title + button row */}
       <View style={styles.bottomRow}>
         <View style={styles.titleArea}>
-          {title ? <Text style={styles.title}>{title}</Text> : null}
+          {title ? <Text style={[styles.title, { color: titleColor }]}>{title}</Text> : null}
           {location ? (
             <View style={styles.locationRow}>
               <Ionicons name="location-sharp" size={12} color={COLORS.green} />
-              <Text style={styles.locationText}>{location}</Text>
+              <Text style={[styles.locationText, { color: subColor }]}>{location}</Text>
             </View>
           ) : null}
-          {!location && details ? <Text style={styles.details}>{details}</Text> : null}
+          {!location && details ? <Text style={[styles.details, { color: subColor }]}>{details}</Text> : null}
         </View>
         <View style={[joined ? styles.statusBadge : styles.joinBtn]}>
           {joining ? (
@@ -130,9 +137,9 @@ const styles = StyleSheet.create({
     minHeight: 160,
   },
   cardNoImage: {
-    backgroundColor: 'rgba(232,143,36,0.04)',
+    backgroundColor: COLORS.cardBg,
     borderWidth: 1,
-    borderColor: 'rgba(232,143,36,0.15)',
+    borderColor: 'rgba(232,143,36,0.25)',
     padding: 16,
     justifyContent: 'flex-end',
   },

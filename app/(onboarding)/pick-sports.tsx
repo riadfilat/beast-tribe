@@ -61,7 +61,7 @@ export default function PickSportsScreen() {
       {isEditMode ? (
         <View style={styles.editHeader}>
           <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/profile')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+            <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.editHeaderTitle}>Edit Disciplines</Text>
           <View style={{ width: 22 }} />
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   editHeaderTitle: {
     fontSize: 16,
     fontFamily: FONTS.heading,
-    color: COLORS.white,
+    color: COLORS.textPrimary,
   },
   scroll: {
     flex: 1,
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontFamily: FONTS.heading,
-    color: COLORS.white,
+    color: COLORS.textPrimary,
     marginBottom: 4,
   },
   subtitle: {

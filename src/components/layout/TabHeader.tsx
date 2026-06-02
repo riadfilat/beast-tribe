@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontFamily: FONTS.heading,
-    color: COLORS.white,
+    color: COLORS.textPrimary,
     letterSpacing: 0.5,
   },
   notificationBtn: {

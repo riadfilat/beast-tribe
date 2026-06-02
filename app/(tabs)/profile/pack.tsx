@@ -150,7 +150,7 @@ export default function PackScreen() {
         {/* Header with back button */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/profile')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+            <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>My Packs</Text>
           <View style={{ width: 22 }} />
@@ -367,7 +367,7 @@ export default function PackScreen() {
       {/* Header with back button */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/profile')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+          <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Packs</Text>
         <View style={{ width: 22 }} />
@@ -639,7 +639,7 @@ const calStyles = StyleSheet.create({
   dayCol: { flex: 1, alignItems: 'center' },
   dayLabel: { fontSize: 9, fontFamily: FONTS.body, color: COLORS.textTertiary },
   memberRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
-  memberName: { fontSize: 11, fontFamily: FONTS.bodyMedium, color: COLORS.white },
+  memberName: { fontSize: 11, fontFamily: FONTS.bodyMedium, color: COLORS.textPrimary },
   dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.06)' },
   dotActive: { backgroundColor: COLORS.green },
 });
@@ -652,7 +652,7 @@ const evtStyles = StyleSheet.create({
   title: { fontSize: 9, fontFamily: FONTS.bodySemiBold, color: COLORS.textSecondary, letterSpacing: 1, marginBottom: 10 },
   eventRow: { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' },
   eventInfo: { marginBottom: 6 },
-  eventTitle: { fontSize: 13, fontFamily: FONTS.bodyMedium, color: COLORS.white },
+  eventTitle: { fontSize: 13, fontFamily: FONTS.bodyMedium, color: COLORS.textPrimary },
   eventMeta: { fontSize: 10, fontFamily: FONTS.body, color: COLORS.textSecondary, marginTop: 2 },
   attendees: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   attendeePill: { backgroundColor: 'rgba(232,143,36,0.12)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
@@ -665,7 +665,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 12,
   },
-  headerTitle: { fontSize: 16, fontFamily: FONTS.heading, color: COLORS.white },
+  headerTitle: { fontSize: 16, fontFamily: FONTS.heading, color: COLORS.textPrimary },
   scroll: { flex: 1, paddingHorizontal: 16 },
   title: { fontSize: 22, fontFamily: FONTS.heading, color: COLORS.textPrimary, marginTop: 8, marginBottom: 4 },
   subtitle: { fontSize: 12, fontFamily: FONTS.body, color: COLORS.textSecondary, marginBottom: 20 },
@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
   packTabName: {
     fontSize: 12, fontFamily: FONTS.bodyMedium, color: COLORS.textSecondary, maxWidth: 90,
   },
-  packTabNameActive: { color: COLORS.white },
+  packTabNameActive: { color: COLORS.textPrimary },
   leaderDot: {
     width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.orange,
   },
@@ -722,7 +722,7 @@ const styles = StyleSheet.create({
   },
   ctaEmoji: { fontSize: 32 },
   ctaIconWrap: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(232,143,36,0.12)', alignItems: 'center', justifyContent: 'center' },
-  ctaTitle: { fontSize: 14, fontFamily: FONTS.heading, color: COLORS.white },
+  ctaTitle: { fontSize: 14, fontFamily: FONTS.heading, color: COLORS.textPrimary },
   ctaSub: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textSecondary, marginTop: 2 },
   ctaArrow: { fontSize: 18, color: COLORS.orange },
 
@@ -749,7 +749,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(86,196,196,0.06)', borderWidth: 1, borderColor: 'rgba(86,196,196,0.15)',
     borderRadius: 12, padding: 12, marginBottom: 8,
   },
-  invitePack: { fontSize: 13, fontFamily: FONTS.heading, color: COLORS.white },
+  invitePack: { fontSize: 13, fontFamily: FONTS.heading, color: COLORS.textPrimary },
   inviteFrom: { fontSize: 10, fontFamily: FONTS.body, color: COLORS.textSecondary },
   acceptButton: { backgroundColor: COLORS.orange, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 6 },
   acceptText: { fontSize: 11, fontFamily: FONTS.bodySemiBold, color: COLORS.teal },
@@ -795,7 +795,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)',
   },
   memberInfo: { flex: 1 },
-  memberName: { fontSize: 13, fontFamily: FONTS.bodyMedium, color: COLORS.white },
+  memberName: { fontSize: 13, fontFamily: FONTS.bodyMedium, color: COLORS.textPrimary },
   youTag: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textMuted },
   memberXP: { fontSize: 10, fontFamily: FONTS.body, color: COLORS.textSecondary },
   leaderTag: { fontSize: 9, fontFamily: FONTS.bodySemiBold, color: COLORS.orange },

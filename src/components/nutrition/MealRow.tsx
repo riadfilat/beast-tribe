@@ -28,7 +28,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     padding: 10,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: COLORS.cardBg,
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
     borderRadius: 10,
     marginBottom: 6,
   },
@@ -43,7 +45,7 @@ const styles = StyleSheet.create({
   type: {
     fontSize: 12,
     fontFamily: FONTS.bodyMedium,
-    color: COLORS.white,
+    color: COLORS.textPrimary,
   },
   desc: {
     fontSize: 10,

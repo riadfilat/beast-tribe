@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)',
   },
   userInfo: { flex: 1 },
-  userName: { fontSize: 13, fontFamily: FONTS.bodyMedium, color: COLORS.white },
+  userName: { fontSize: 13, fontFamily: FONTS.bodyMedium, color: COLORS.textPrimary },
   inviteButton: {
     backgroundColor: COLORS.orange, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 6,
   },

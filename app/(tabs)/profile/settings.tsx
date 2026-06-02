@@ -86,7 +86,7 @@ export default function SettingsScreen() {
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           style={styles.backBtn}
         >
-          <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+          <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings & Privacy</Text>
         <View style={{ width: 22 }} />
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 12,
   },
-  headerTitle: { fontSize: 16, fontFamily: FONTS.heading, color: COLORS.white },
+  headerTitle: { fontSize: 16, fontFamily: FONTS.heading, color: COLORS.textPrimary },
   backBtn: { padding: 8 },
   scroll: { flex: 1, paddingHorizontal: 16 },
 
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   settingInfo: { flex: 1 },
-  settingLabel: { fontSize: 13, fontFamily: FONTS.bodyMedium, color: COLORS.white },
+  settingLabel: { fontSize: 13, fontFamily: FONTS.bodyMedium, color: COLORS.textPrimary },
   settingDesc: { fontSize: 10, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 1 },
 
   toggle: {
@@ -403,10 +403,10 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', marginBottom: 16,
   },
   modalTitle: {
-    fontSize: 20, fontFamily: FONTS.heading, color: COLORS.textPrimary, marginBottom: 8,
+    fontSize: 20, fontFamily: FONTS.heading, color: '#FFFFFF', marginBottom: 8,
   },
   modalSubtitle: {
-    fontSize: 13, fontFamily: FONTS.body, color: COLORS.textSecondary,
+    fontSize: 13, fontFamily: FONTS.body, color: 'rgba(255,255,255,0.7)',
     textAlign: 'center', lineHeight: 20, marginBottom: 28, maxWidth: 300,
   },
   modalDeleteBtn: {
@@ -421,6 +421,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center',
   },
   modalCancelText: {
-    fontSize: 15, fontFamily: FONTS.bodySemiBold, color: COLORS.textSecondary,
+    fontSize: 15, fontFamily: FONTS.bodySemiBold, color: 'rgba(255,255,255,0.7)',
   },
 });

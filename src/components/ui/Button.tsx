@@ -48,11 +48,11 @@ const VARIANT_STYLES = {
   },
   secondary: {
     container: {
-      backgroundColor: 'rgba(255,255,255,0.05)',
+      backgroundColor: COLORS.cardBg,
       borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.12)',
+      borderColor: COLORS.cardBorder,
     } as ViewStyle,
-    textColor: COLORS.white,
+    textColor: COLORS.textPrimary,
   },
   ghost: {
     container: { backgroundColor: 'transparent', borderWidth: 0 } as ViewStyle,

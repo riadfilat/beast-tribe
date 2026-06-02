@@ -113,7 +113,7 @@ export function ChatScreen({
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+          <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>{title}</Text>
@@ -124,7 +124,7 @@ export function ChatScreen({
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
           {headerAction && (
             <TouchableOpacity onPress={headerAction.onPress} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name={headerAction.icon} size={20} color={headerAction.color || COLORS.white} />
+              <Ionicons name={headerAction.icon} size={20} color={headerAction.color || COLORS.textPrimary} />
             </TouchableOpacity>
           )}
           <TouchableOpacity onPress={() => setShowMembers(true)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   headerCenter: { flex: 1 },
-  headerTitle: { fontSize: 15, fontFamily: FONTS.heading, color: COLORS.white },
+  headerTitle: { fontSize: 15, fontFamily: FONTS.heading, color: COLORS.textPrimary },
   headerSubtitle: { fontSize: 10, fontFamily: FONTS.body, color: COLORS.textTertiary, marginTop: 1 },
 
   // Attendee avatar row
@@ -376,14 +376,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statusAuthor: { fontSize: 9, fontFamily: FONTS.bodySemiBold, color: COLORS.orange, letterSpacing: 0.5, lineHeight: 13 },
-  statusContent: { fontSize: 12, fontFamily: FONTS.bodyMedium, color: COLORS.white, marginTop: 2, lineHeight: 17 },
+  statusContent: { fontSize: 12, fontFamily: FONTS.bodyMedium, color: COLORS.textPrimary, marginTop: 2, lineHeight: 17 },
   statusTime: { fontSize: 8, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 3 },
 
   // Regular messages
   messageBubbleWrap: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginBottom: 10 },
   messageBubbleWrapMe: { flexDirection: 'row-reverse' },
   messageBubble: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: COLORS.cardBg,
     borderRadius: 16,
     borderBottomLeftRadius: 4,
     paddingHorizontal: 14,
@@ -396,8 +396,8 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
   },
   messageAuthor: { fontSize: 10, fontFamily: FONTS.bodySemiBold, color: COLORS.aqua, marginBottom: 3 },
-  messageText: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.white, lineHeight: 18 },
-  messageTextMe: { color: COLORS.white },
+  messageText: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textPrimary, lineHeight: 18 },
+  messageTextMe: { color: COLORS.textPrimary },
   messageTime: { fontSize: 8, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 4, alignSelf: 'flex-end' },
   messageTimeMe: { color: 'rgba(232,143,36,0.5)' },
 
@@ -413,13 +413,15 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: COLORS.inputBg,
+    borderWidth: 1,
+    borderColor: COLORS.inputBorder,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 14,
     fontFamily: FONTS.body,
-    color: COLORS.white,
+    color: COLORS.textPrimary,
     maxHeight: 100,
   },
   sendBtn: {
@@ -458,7 +460,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontFamily: FONTS.heading,
-    color: COLORS.white,
+    color: COLORS.textPrimary,
     textAlign: 'center',
   },
   modalSubtitle: {
@@ -481,7 +483,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255,255,255,0.04)',
   },
   memberInfo: { flex: 1 },
-  memberName: { fontSize: 14, fontFamily: FONTS.bodyMedium, color: COLORS.white },
+  memberName: { fontSize: 14, fontFamily: FONTS.bodyMedium, color: COLORS.textPrimary },
   memberTier: { fontSize: 9, fontFamily: FONTS.body, color: COLORS.textMuted, letterSpacing: 0.5, marginTop: 1 },
   memberStatus: {
     paddingHorizontal: 10,

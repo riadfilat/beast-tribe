@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontFamily: FONTS.heading,
-    color: COLORS.white,
+    color: COLORS.textPrimary,
   },
   link: {
     marginTop: 15,
