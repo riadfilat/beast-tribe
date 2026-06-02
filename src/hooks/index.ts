@@ -62,14 +62,15 @@ export function useActivePackChallenge() {
 }
 
 export function useUpcomingEvents(limit = 1) {
-  // Include events that started up to 6 hours ago so freshly-created events still show
-  const cutoff = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+  // Fetch events that started up to 4h ago (to cover ones still running) — the
+  // caller filters out finished events via isEventOver(). Order soonest-first.
+  const cutoff = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
   return useSupabaseQuery<any[]>(
     () => supabase.from('events')
       .select('*, sport:sports(*), rsvp_count:event_rsvps(count), pack:packs(id, name)')
       .gte('starts_at', cutoff)
       .order('starts_at', { ascending: true })
-      .limit(limit),
+      .limit(Math.max(limit, 10)),
     [],
     []
   );
@@ -392,8 +393,9 @@ export function useAwardStreakXP() {
 // EVENTS
 // ============================================
 export function useEvents(typeFilter?: string, searchQuery?: string, country?: string) {
-  // Include events that started up to 6 hours ago so freshly-created events still show
-  const cutoff = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+  // Fetch events that started up to 4h ago (to cover ones still running) — the
+  // caller filters out finished events via isEventOver().
+  const cutoff = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
   return useSupabaseQuery<any[]>(
     () => {
       let query = supabase.from('events')
@@ -508,6 +510,7 @@ export function useCreateEvent() {
     sport_id?: string;
     event_type: string;
     starts_at: string;
+    ends_at?: string;
     location_name?: string;
     location_city?: string;
     coach_name?: string;

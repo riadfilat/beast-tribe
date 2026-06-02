@@ -10,6 +10,7 @@ import { useEvents, useJoinEvent } from '../../../src/hooks';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { formatEventDate } from '../../../src/utils/format';
 import { getLocalEvents } from '../../../src/lib/localEventStore';
+import { isEventOver } from '../../../src/lib/eventTime';
 
 const OB_LOGO = require('../../../assets/images/ob-logo-mark.png');
 const WOLF_IMG = require('../../../assets/images/animals/Wolf/1.png');
@@ -116,7 +117,8 @@ export default function EventsScreen() {
 
   const mappedEvents: MappedEvent[] = useMemo(() => {
     if (!eventsData?.length) return [];
-    return eventsData.map((evt: any) => {
+    // Drop events that have already finished so passed events don't linger.
+    return eventsData.filter((evt: any) => !isEventOver(evt)).map((evt: any) => {
       // Fallback: use event_type if no sport relation
       const sportName = (evt.sport?.name || evt.event_type || '').toLowerCase();
       const sportLabel = evt.sport?.name

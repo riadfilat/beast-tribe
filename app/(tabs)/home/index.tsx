@@ -8,6 +8,7 @@ import { UpcomingEventCard } from '../../../src/components/home/UpcomingEventCar
 import { WeeklyEventCalendar } from '../../../src/components/home/WeeklyEventCalendar';
 import { COLORS, FONTS } from '../../../src/lib/constants';
 import { getLocalEvents } from '../../../src/lib/localEventStore';
+import { isEventOver } from '../../../src/lib/eventTime';
 import {
   useProfile,
   useUpcomingEvents,
@@ -66,12 +67,13 @@ export default function HomeScreen() {
   const displayName = profile?.display_name ?? profile?.full_name ?? 'Beast';
   const fullName = profile?.full_name ?? '';
 
-  // Show locally created events first (newest), then DB events
-  // Hide women-only events from male users
+  // Show locally created events first (newest), then DB events.
+  // Hide women-only events from male users, and drop events that have already
+  // finished so a passed run no longer lingers on the home screen.
   const isMale = profile?.gender === 'male';
-  const localEvts = getLocalEvents().filter(e => !isMale || !e.is_women_only);
+  const localEvts = getLocalEvents().filter(e => (!isMale || !e.is_women_only) && !isEventOver(e));
   const firstLocalEvent = localEvts[0];
-  const dbEvents = (eventsData || []).filter((e: any) => !isMale || !e.is_women_only);
+  const dbEvents = (eventsData || []).filter((e: any) => (!isMale || !e.is_women_only) && !isEventOver(e));
   const dbEvent = dbEvents.length > 0 ? dbEvents[0] : null;
   // Prioritize local events so user sees what they just created
   const upcomingEvent = firstLocalEvent || dbEvent || null;

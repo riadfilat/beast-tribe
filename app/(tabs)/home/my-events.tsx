@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useMyEvents, useLeaveEvent } from '../../../src/hooks';
 import { COLORS, FONTS } from '../../../src/lib/constants';
+import { isEventOver } from '../../../src/lib/eventTime';
 
 function formatWhen(iso?: string): string {
   if (!iso) return '';
@@ -46,10 +47,10 @@ export default function MyEventsScreen() {
     .filter(Boolean)
     .sort((a: any, b: any) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
 
-  const now = Date.now();
-  const upcoming = events.filter((e: any) => new Date(e.starts_at).getTime() >= now)
+  // Upcoming = not yet finished (includes events happening right now).
+  const upcoming = events.filter((e: any) => !isEventOver(e))
     .sort((a: any, b: any) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
-  const past = events.filter((e: any) => new Date(e.starts_at).getTime() < now);
+  const past = events.filter((e: any) => isEventOver(e));
 
   function openChat(e: any) {
     router.push({

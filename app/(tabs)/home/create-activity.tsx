@@ -190,6 +190,7 @@ export default function CreateActivityScreen() {
   const [difficulty, setDifficulty] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [showLocations, setShowLocations] = useState(false);
+  const [durationMin, setDurationMin] = useState(60); // default 1 hour
 
   function selectLocation(loc: PopularLocation) {
     setLocation(loc.name);
@@ -257,13 +258,16 @@ export default function CreateActivityScreen() {
       startsAt = parsed.toISOString();
     }
 
-    // Warn if event is in the past (more than 1 hour ago)
-    const oneHourAgo = Date.now() - 60 * 60 * 1000;
-    if (new Date(startsAt).getTime() < oneHourAgo) {
+    // Warn if event is in the past (more than 15 min ago — allow "starting now")
+    const graceAgo = Date.now() - 15 * 60 * 1000;
+    if (new Date(startsAt).getTime() < graceAgo) {
       const localTime = new Date(startsAt).toLocaleString();
-      setError(`This activity is set to start in the past (${localTime}). Please pick a future date and time.`);
+      setError(`This activity is set to start in the past (${localTime}). Please pick the current or a later time.`);
       return;
     }
+
+    // End time = start + chosen duration
+    const endsAt = new Date(new Date(startsAt).getTime() + durationMin * 60 * 1000).toISOString();
 
     // Validate pack-only events
     if (isPackOnly && !selectedPackId) {
@@ -302,6 +306,7 @@ export default function CreateActivityScreen() {
         title: title.trim(),
         event_type: sport,
         starts_at: startsAt,
+        ends_at: endsAt,
         location_name: location.trim() || undefined,
         location_city: city.trim() || undefined,
         coach_name: showCoach && coachName.trim() ? coachName.trim() : undefined,
@@ -439,30 +444,62 @@ export default function CreateActivityScreen() {
           </View>
         </ScrollView>
 
-        {/* Time — common time slots */}
+        {/* Time — common time slots (past times disabled when Today is selected) */}
         <Text style={styles.label}>TIME</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.timeScroll}>
           <View style={styles.timeRow}>
             {['05:00', '05:30', '06:00', '06:30', '07:00', '07:30', '08:00', '09:00', '10:00',
-              '12:00', '14:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'].map((t) => {
+              '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'].map((t) => {
               const isSelected = time === t;
               const [h, m] = t.split(':');
               const hour = parseInt(h);
               const ampm = hour >= 12 ? 'PM' : 'AM';
               const display = `${hour > 12 ? hour - 12 : hour}:${m} ${ampm}`;
+              // Disable times already past for today (15-min grace)
+              const todayStr = new Date().toISOString().split('T')[0];
+              let isPast = false;
+              if (date === todayStr) {
+                const slot = new Date(`${date}T${t}:00`).getTime();
+                isPast = slot < Date.now() - 15 * 60 * 1000;
+              }
               return (
                 <TouchableOpacity
                   key={t}
-                  style={[styles.timeChip, isSelected && styles.timeChipActive]}
-                  onPress={() => setTime(t)}
+                  style={[styles.timeChip, isSelected && styles.timeChipActive, isPast && styles.timeChipDisabled]}
+                  onPress={() => { if (!isPast) setTime(t); }}
+                  disabled={isPast}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.timeChipText, isSelected && styles.timeChipTextActive]}>{display}</Text>
+                  <Text style={[styles.timeChipText, isSelected && styles.timeChipTextActive, isPast && styles.timeChipTextDisabled]}>{display}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
         </ScrollView>
+
+        {/* Duration — so the activity disappears once it's over */}
+        <Text style={styles.label}>DURATION</Text>
+        <View style={styles.durationRow}>
+          {[
+            { min: 30, label: '30 min' },
+            { min: 60, label: '1 hour' },
+            { min: 90, label: '1.5 hrs' },
+            { min: 120, label: '2 hrs' },
+            { min: 180, label: '3 hrs' },
+          ].map((d) => {
+            const isSelected = durationMin === d.min;
+            return (
+              <TouchableOpacity
+                key={d.min}
+                style={[styles.durationChip, isSelected && styles.durationChipActive]}
+                onPress={() => setDurationMin(d.min)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.durationChipText, isSelected && styles.durationChipTextActive]}>{d.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
         {/* Location */}
         <Text style={styles.label}>LOCATION</Text>
@@ -905,6 +942,16 @@ const styles = StyleSheet.create({
   timeChipActive: { borderColor: COLORS.orange, backgroundColor: 'rgba(232,143,36,0.12)' },
   timeChipText: { fontSize: 12, fontFamily: FONTS.bodyMedium, color: COLORS.textTertiary },
   timeChipTextActive: { color: COLORS.orange },
+  timeChipDisabled: { opacity: 0.3 },
+  timeChipTextDisabled: { textDecorationLine: 'line-through' },
+  durationRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  durationChip: {
+    paddingVertical: 9, paddingHorizontal: 14, borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+  },
+  durationChipActive: { borderColor: COLORS.orange, backgroundColor: 'rgba(232,143,36,0.12)' },
+  durationChipText: { fontSize: 12, fontFamily: FONTS.bodyMedium, color: COLORS.textTertiary },
+  durationChipTextActive: { color: COLORS.orange },
   timeChipBooked: { backgroundColor: 'rgba(239,83,80,0.06)', borderColor: 'rgba(239,83,80,0.15)', opacity: 0.6 },
   timeChipTextBooked: { color: COLORS.textMuted, textDecorationLine: 'line-through' as const },
 
