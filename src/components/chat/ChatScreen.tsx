@@ -345,17 +345,18 @@ const styles = StyleSheet.create({
     color: COLORS.orange,
   },
 
-  statusBar: { maxHeight: 44, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' },
-  statusBarContent: { paddingHorizontal: 12, paddingVertical: 8, gap: 8, flexDirection: 'row' },
+  statusBar: { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' },
+  statusBarContent: { paddingHorizontal: 12, paddingVertical: 10, gap: 8, flexDirection: 'row', alignItems: 'center' },
   statusBtn: {
     backgroundColor: 'rgba(232,143,36,0.1)',
     borderWidth: 1,
     borderColor: 'rgba(232,143,36,0.2)',
     borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    justifyContent: 'center',
   },
-  statusBtnText: { fontSize: 11, fontFamily: FONTS.bodyMedium, color: COLORS.orange },
+  statusBtnText: { fontSize: 12, fontFamily: FONTS.bodyMedium, color: COLORS.orange, lineHeight: 18 },
 
   messageList: { flex: 1 },
   messageListContent: { paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8 },
@@ -374,8 +375,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     alignItems: 'center',
   },
-  statusAuthor: { fontSize: 9, fontFamily: FONTS.bodySemiBold, color: COLORS.orange, letterSpacing: 0.5 },
-  statusContent: { fontSize: 12, fontFamily: FONTS.bodyMedium, color: COLORS.white, marginTop: 2 },
+  statusAuthor: { fontSize: 9, fontFamily: FONTS.bodySemiBold, color: COLORS.orange, letterSpacing: 0.5, lineHeight: 13 },
+  statusContent: { fontSize: 12, fontFamily: FONTS.bodyMedium, color: COLORS.white, marginTop: 2, lineHeight: 17 },
   statusTime: { fontSize: 8, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 3 },
 
   // Regular messages
