@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { savePushToken } from '../lib/notifications';
 import { Profile } from '../types/models';
 
 interface AuthContextType {
@@ -24,6 +25,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const fetchingRef = useRef(false);
+  // Ensures we only register the device's push token once per signed-in user.
+  const pushRegisteredForRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -59,6 +62,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Once the user is authenticated, register + save their push token (once per user).
+  useEffect(() => {
+    const userId = session?.user?.id;
+    if (!userId || userId === 'demo') return;
+    if (pushRegisteredForRef.current === userId) return;
+    pushRegisteredForRef.current = userId;
+    savePushToken(userId);
+  }, [session?.user?.id]);
 
   async function fetchProfile(userId: string) {
     // Guard against concurrent fetches, but never block the caller's

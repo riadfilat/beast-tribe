@@ -46,7 +46,13 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-image-picker"
+      "expo-image-picker",
+      [
+        "expo-notifications",
+        {
+          "color": "#E88F24"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

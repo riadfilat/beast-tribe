@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, ActivityIndicator, TouchableOpacity, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,10 @@ import { useAuth } from '../../../src/providers/AuthProvider';
 import { formatEventDate } from '../../../src/utils/format';
 import { getLocalEvents } from '../../../src/lib/localEventStore';
 import { isEventOver } from '../../../src/lib/eventTime';
+import {
+  registerForPushNotificationsAsync,
+  scheduleEventReminder,
+} from '../../../src/lib/notifications';
 
 const OB_LOGO = require('../../../assets/images/ob-logo-mark.png');
 const WOLF_IMG = require('../../../assets/images/animals/Wolf/1.png');
@@ -102,6 +106,15 @@ export default function EventsScreen() {
         await new Promise((resolve) => setTimeout(resolve, 500));
       } else {
         await joinEvent(eventId);
+        // Schedule a local reminder 15 min before the event starts.
+        const joinedEvt = (eventsData || []).find((e: any) => e.id === eventId);
+        if (joinedEvt?.starts_at) {
+          scheduleEventReminder({
+            id: eventId,
+            title: joinedEvt.title || eventTitle || 'Event',
+            starts_at: joinedEvt.starts_at,
+          });
+        }
       }
       setJoinedIds((prev) => new Set(prev).add(eventId));
       setRsvpBoosts((prev) => ({ ...prev, [eventId]: (prev[eventId] || 0) + 1 }));
@@ -223,7 +236,24 @@ export default function EventsScreen() {
             <BeastIcon size={28} color={COLORS.orange} />
             <Text style={styles.brandName}>BEAST TRIBE</Text>
           </View>
-          <TouchableOpacity style={styles.notificationBtn} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.notificationBtn}
+            activeOpacity={0.7}
+            onPress={async () => {
+              const token = await registerForPushNotificationsAsync();
+              if (token) {
+                Alert.alert(
+                  'Notifications on',
+                  "You'll get reminders 15 min before your events, and updates when people join."
+                );
+              } else {
+                Alert.alert(
+                  'Notifications off',
+                  'Enable notifications in your phone Settings to get event reminders.'
+                );
+              }
+            }}
+          >
             <Ionicons name="notifications-outline" size={22} color={COLORS.white} />
           </TouchableOpacity>
         </View>

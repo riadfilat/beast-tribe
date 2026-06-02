@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,10 +10,16 @@ import { COLORS, FONTS } from '../../../src/lib/constants';
 import { getLocalEvents } from '../../../src/lib/localEventStore';
 import { isEventOver } from '../../../src/lib/eventTime';
 import {
+  registerForPushNotificationsAsync,
+  scheduleEventReminder,
+  syncEventReminders,
+} from '../../../src/lib/notifications';
+import {
   useProfile,
   useUpcomingEvents,
   useJoinEvent,
   useMyPacks,
+  useMyEvents,
 } from '../../../src/hooks';
 
 export default function HomeScreen() {
@@ -59,8 +65,34 @@ export default function HomeScreen() {
   const { profile, loading: profileLoading } = useProfile();
   const { data: eventsData } = useUpcomingEvents(10);
   const { data: myPacks } = useMyPacks();
+  const { data: myEvents } = useMyEvents();
   const isInPack = (myPacks?.length ?? 0) > 0;
   const { joinEvent } = useJoinEvent();
+
+  // Re-schedule local reminders (15 min before) for all upcoming joined events.
+  useFocusEffect(useCallback(() => {
+    const reminders = (myEvents || [])
+      .map((r: any) => r.event)
+      .filter((e: any) => e && e.id && e.title && e.starts_at)
+      .map((e: any) => ({ id: e.id, title: e.title, starts_at: e.starts_at }));
+    if (reminders.length) syncEventReminders(reminders);
+  }, [myEvents]));
+
+  // Bell button → ask for / confirm notification permissions.
+  const handleBellPress = useCallback(async () => {
+    const token = await registerForPushNotificationsAsync();
+    if (token) {
+      Alert.alert(
+        'Notifications on',
+        "You'll get reminders 15 min before your events, and updates when people join."
+      );
+    } else {
+      Alert.alert(
+        'Notifications off',
+        'Enable notifications in your phone Settings to get event reminders.'
+      );
+    }
+  }, []);
 
   const isLoading = profileLoading;
 
@@ -173,7 +205,7 @@ export default function HomeScreen() {
             </View>
             <Avatar name={fullName} size={38} backgroundColor={COLORS.dark} />
           </View>
-          <TouchableOpacity style={styles.bellBtn} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.bellBtn} activeOpacity={0.7} onPress={handleBellPress}>
             <Ionicons name="notifications" size={20} color={COLORS.orange} />
           </TouchableOpacity>
         </View>
@@ -248,6 +280,13 @@ export default function HomeScreen() {
             try {
               if (upcomingEvent?.id) {
                 await joinEvent(upcomingEvent.id);
+                if (upcomingEvent.starts_at) {
+                  scheduleEventReminder({
+                    id: upcomingEvent.id,
+                    title: upcomingEvent.title,
+                    starts_at: upcomingEvent.starts_at,
+                  });
+                }
               } else {
                 await new Promise(r => setTimeout(r, 500));
               }
