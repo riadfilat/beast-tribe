@@ -1,9 +1,8 @@
 // Beast Tribe — Design System Constants
 
 // ─── Legal / hosted pages ───────────────────────────────────────────────────
-// NOTE: replace the placeholder below with the real Vercel admin domain
-// (e.g. https://beast-tribe-admin.vercel.app) before shipping to the App Store.
-export const LEGAL_BASE_URL = 'https://REPLACE_WITH_ADMIN_DOMAIN';
+// Hosted on the admin (Vercel) deployment — public /legal/* routes.
+export const LEGAL_BASE_URL = 'https://beast-tribe.vercel.app';
 export const TERMS_URL = `${LEGAL_BASE_URL}/legal/terms`;
 export const PRIVACY_URL = `${LEGAL_BASE_URL}/legal/privacy`;
 
