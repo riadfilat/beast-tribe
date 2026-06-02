@@ -34,7 +34,9 @@ export async function updateSession(request: NextRequest) {
   // Public legal pages (Privacy Policy / Terms / EULA) must be reachable without
   // auth — App Store Connect requires a public Privacy Policy URL and the EULA
   // must be linkable from the app's signup screen.
-  const isPublicPage = request.nextUrl.pathname.startsWith('/legal');
+  const isPublicPage =
+    request.nextUrl.pathname.startsWith('/legal') ||
+    request.nextUrl.pathname.startsWith('/support');
   if (isPublicPage) {
     return supabaseResponse;
   }
