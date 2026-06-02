@@ -2110,3 +2110,85 @@ export function useTraineePrivacy(traineeId?: string, coachId?: string | null) {
 
   return { privacy, loading, updatePrivacy };
 }
+
+// ============================================
+// MODERATION (Report content & Block users)
+// Required by Apple App Store Guideline 1.2 (UGC)
+// ============================================
+
+/** Report a piece of content (e.g. a feed post) for moderation review */
+export function useReportContent() {
+  const { user } = useAuth();
+  const userRef = useRef(user);
+  userRef.current = user;
+  const [loading, setLoading] = useState(false);
+
+  const report = useCallback(async (
+    targetTable: string,
+    targetId: string,
+    reason: string,
+    details?: string,
+  ) => {
+    const u = userRef.current;
+    if (!isSupabaseConfigured || !u) throw new Error('You must be signed in to report content.');
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('content_reports').insert({
+        reporter_id: u.id,
+        target_table: targetTable,
+        target_id: targetId,
+        reason,
+        details: details?.trim() || null,
+      });
+      if (error) throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { report, loading };
+}
+
+/** Block another user — hides their content from the current user */
+export function useBlockUser() {
+  const { user } = useAuth();
+  const userRef = useRef(user);
+  userRef.current = user;
+  const [loading, setLoading] = useState(false);
+
+  const block = useCallback(async (blockedUserId: string) => {
+    const u = userRef.current;
+    if (!isSupabaseConfigured || !u) throw new Error('You must be signed in to block a user.');
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('blocked_users').insert({
+        blocker_id: u.id,
+        blocked_id: blockedUserId,
+      });
+      // Ignore duplicate-key errors (already blocked); throw on anything else.
+      if (error && error.code !== '23505') throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { block, loading };
+}
+
+/** Fetch the IDs of users the current user has blocked */
+export function useBlockedUserIds() {
+  const { user } = useAuth();
+  const { data, loading, refetch } = useSupabaseQuery<any[]>(
+    () => {
+      if (!user?.id) return Promise.resolve({ data: [], error: null });
+      return supabase.from('blocked_users')
+        .select('blocked_id')
+        .eq('blocker_id', user.id);
+    },
+    [user?.id],
+    []
+  );
+
+  const blockedIds = (data || []).map((row: any) => row.blocked_id);
+  return { blockedIds, loading, refetch };
+}

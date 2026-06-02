@@ -13,7 +13,7 @@ const OB_LOGO = require('../../../assets/images/ob-logo-mark.png');
 const WOLF_IMG = require('../../../assets/images/animals/Wolf/1.png');
 const EAGLE_IMG = require('../../../assets/images/animals/Eagle/1.png');
 const TIGER_IMG = require('../../../assets/images/animals/Tiger/1.png');
-import { useFeedPosts, useToggleBeast, useUserBeasts, useCreatePost } from '../../../src/hooks';
+import { useFeedPosts, useToggleBeast, useUserBeasts, useCreatePost, useReportContent, useBlockUser, useBlockedUserIds } from '../../../src/hooks';
 import { formatRelativeTime } from '../../../src/utils/format';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { supabase } from '../../../src/lib/supabase';
@@ -50,9 +50,75 @@ export default function FeedScreen() {
   const { data: feedData, loading, refetch: refetchFeed } = useFeedPosts(SPORT_TABS[sportTab]);
   const { toggleBeast } = useToggleBeast();
   const { createPost, loading: posting } = useCreatePost();
+  const { report, loading: reporting } = useReportContent();
+  const { block } = useBlockUser();
+  const { blockedIds, refetch: refetchBlocked } = useBlockedUserIds();
+
+  // Locally-blocked author ids — lets the UI hide a blocked user's posts
+  // immediately, before the blockedIds query refetches.
+  const [localBlockedIds, setLocalBlockedIds] = useState<string[]>([]);
+  const allBlockedIds = new Set([...(blockedIds || []), ...localBlockedIds]);
 
   // Post menu state
-  const [menuPost, setMenuPost] = useState<{ id: string; isOwn: boolean } | null>(null);
+  const [menuPost, setMenuPost] = useState<{ id: string; isOwn: boolean; authorId?: string } | null>(null);
+
+  // Report modal state
+  const [reportPostId, setReportPostId] = useState<string | null>(null);
+  const [reportReason, setReportReason] = useState<string | null>(null);
+  const [reportDetails, setReportDetails] = useState('');
+
+  const REPORT_REASONS: { value: string; label: string }[] = [
+    { value: 'inappropriate', label: 'Inappropriate' },
+    { value: 'spam', label: 'Spam' },
+    { value: 'harassment', label: 'Harassment' },
+    { value: 'nudity', label: 'Nudity' },
+    { value: 'other', label: 'Other' },
+  ];
+
+  function openReport(postId: string) {
+    setMenuPost(null);
+    setReportReason(null);
+    setReportDetails('');
+    setReportPostId(postId);
+  }
+
+  async function submitReport() {
+    if (!reportPostId || !reportReason || reporting) return;
+    try {
+      await report('feed_posts', reportPostId, reportReason, reportDetails);
+      setReportPostId(null);
+      setReportReason(null);
+      setReportDetails('');
+      Alert.alert('Report received', 'Thanks — our team will review this within 24 hours.');
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Could not submit report. Please try again.');
+    }
+  }
+
+  function confirmBlock(authorId: string) {
+    setMenuPost(null);
+    Alert.alert(
+      'Block User',
+      "Block this user? You'll no longer see their posts.",
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Block',
+          style: 'destructive',
+          onPress: async () => {
+            // Hide their posts right away.
+            setLocalBlockedIds(prev => (prev.includes(authorId) ? prev : [...prev, authorId]));
+            try {
+              await block(authorId);
+              refetchBlocked();
+            } catch (e: any) {
+              Alert.alert('Error', e?.message || 'Could not block this user. Please try again.');
+            }
+          },
+        },
+      ],
+    );
+  }
 
   async function handleDeletePost(postId: string) {
     if (!postId.startsWith('demo-')) {
@@ -117,22 +183,26 @@ export default function FeedScreen() {
   const { data: userBeastsData } = useUserBeasts(postIds);
   const beastedPostIds = new Set((userBeastsData || []).map((b: any) => b.post_id));
 
-  // Map Supabase data to component format, fallback to demo
-  const posts: DemoPost[] = feedData?.length
-    ? feedData.map((post: any) => ({
-        id: post.id,
-        name: post.author?.display_name || post.author?.full_name || 'Beast',
-        avatarUrl: post.author?.avatar_url,
-        content: post.content || '',
-        timeAgo: formatRelativeTime(post.created_at),
-        beastCount: post.beast_count?.[0]?.count || 0,
-        hasBeasted: beastedPostIds.has(post.id),
-        commentCount: post.comment_count || 0,
-        imageUrl: post.image_url,
-        workoutName: post.workout_name,
-        stats: post.stats,
-        reactorNames: [],
-      }))
+  // Map Supabase data to component format, fallback to demo.
+  // Exclude posts authored by users the current user has blocked.
+  const posts: (DemoPost & { authorId?: string })[] = feedData?.length
+    ? feedData
+        .filter((post: any) => !allBlockedIds.has(post.user_id))
+        .map((post: any) => ({
+          id: post.id,
+          authorId: post.user_id,
+          name: post.author?.display_name || post.author?.full_name || 'Beast',
+          avatarUrl: post.author?.avatar_url,
+          content: post.content || '',
+          timeAgo: formatRelativeTime(post.created_at),
+          beastCount: post.beast_count?.[0]?.count || 0,
+          hasBeasted: beastedPostIds.has(post.id),
+          commentCount: post.comment_count || 0,
+          imageUrl: post.image_url,
+          workoutName: post.workout_name,
+          stats: post.stats,
+          reactorNames: [],
+        }))
     : DEMO_POSTS;
 
   return (
@@ -214,8 +284,10 @@ export default function FeedScreen() {
                 }
               }}
               onMenu={() => {
-                const isOwnPost = post.name === (profile?.display_name || profile?.full_name);
-                setMenuPost({ id: post.id, isOwn: isOwnPost });
+                const isOwnPost = post.authorId
+                  ? post.authorId === user?.id
+                  : post.name === (profile?.display_name || profile?.full_name);
+                setMenuPost({ id: post.id, isOwn: isOwnPost, authorId: post.authorId });
               }}
             />
           ))
@@ -243,15 +315,70 @@ export default function FeedScreen() {
                 <Text style={styles.menuItemTextDanger}>Delete Post</Text>
               </TouchableOpacity>
             )}
-            <TouchableOpacity style={styles.menuItem} onPress={() => setMenuPost(null)}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => menuPost && openReport(menuPost.id)}>
               <Ionicons name="flag-outline" size={18} color={COLORS.textSecondary} />
               <Text style={styles.menuItemText}>Report</Text>
             </TouchableOpacity>
+            {!menuPost?.isOwn && menuPost?.authorId && (
+              <TouchableOpacity style={styles.menuItem} onPress={() => menuPost?.authorId && confirmBlock(menuPost.authorId)}>
+                <Ionicons name="ban-outline" size={18} color="#EF5350" />
+                <Text style={styles.menuItemTextDanger}>Block User</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity style={styles.menuItemCancel} onPress={() => setMenuPost(null)}>
               <Text style={styles.menuItemTextCancel}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
+      </Modal>
+
+      {/* Report Modal */}
+      <Modal visible={!!reportPostId} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Report Post</Text>
+            <Text style={styles.reportSubtitle}>Why are you reporting this post?</Text>
+
+            <View style={{ gap: 8, marginBottom: 14 }}>
+              {REPORT_REASONS.map(r => (
+                <TouchableOpacity
+                  key={r.value}
+                  style={[styles.reasonRow, reportReason === r.value && styles.reasonRowActive]}
+                  onPress={() => setReportReason(r.value)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={reportReason === r.value ? 'radio-button-on' : 'radio-button-off'}
+                    size={20}
+                    color={reportReason === r.value ? COLORS.orange : COLORS.textTertiary}
+                  />
+                  <Text style={[styles.reasonText, reportReason === r.value && styles.reasonTextActive]}>{r.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TextInput
+              style={styles.composeInput}
+              placeholder="Add details (optional)"
+              placeholderTextColor={COLORS.textMuted}
+              value={reportDetails}
+              onChangeText={setReportDetails}
+              multiline
+              maxLength={500}
+            />
+
+            <View style={{ height: 12 }} />
+
+            <Button
+              title={reporting ? 'Submitting...' : 'Submit Report'}
+              onPress={submitReport}
+              disabled={reporting || !reportReason}
+            />
+            <TouchableOpacity onPress={() => setReportPostId(null)} style={styles.cancelButton}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
 
       {/* Compose Post Modal */}
@@ -466,6 +593,11 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginBottom: 12,
   },
+  reportSubtitle: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textSecondary, marginBottom: 14 },
+  reasonRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: COLORS.inputBorder, backgroundColor: COLORS.inputBg },
+  reasonRowActive: { borderColor: COLORS.orange, backgroundColor: 'rgba(232,143,36,0.1)' },
+  reasonText: { fontSize: 14, fontFamily: FONTS.bodyMedium, color: COLORS.textSecondary },
+  reasonTextActive: { color: COLORS.textPrimary },
   cancelButton: { alignItems: 'center', marginTop: 10 },
   cancelText: { fontSize: 13, fontFamily: FONTS.bodyMedium, color: COLORS.textTertiary },
   feelingChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },

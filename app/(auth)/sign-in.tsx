@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  KeyboardAvoidingView, Platform, TextInput, Animated,
+  KeyboardAvoidingView, Platform, TextInput, Animated, Linking,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../../src/components/ui';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { supabase } from '../../src/lib/supabase';
-import { COLORS, FONTS } from '../../src/lib/constants';
+import { COLORS, FONTS, TERMS_URL, PRIVACY_URL } from '../../src/lib/constants';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -201,6 +201,77 @@ const se = StyleSheet.create({
   text: { flex: 1, fontSize: 13, fontFamily: FONTS.body, color: '#EF5B5B', lineHeight: 18 },
 });
 
+function TermsAcceptance({
+  accepted, onToggle,
+}: {
+  accepted: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      style={terms.row}
+      onPress={onToggle}
+      activeOpacity={0.7}
+    >
+      <View style={[terms.box, accepted && terms.boxChecked]}>
+        {accepted ? <Ionicons name="checkmark" size={14} color={COLORS.white} /> : null}
+      </View>
+      <Text style={terms.text}>
+        I agree to the{' '}
+        <Text
+          style={terms.link}
+          onPress={() => Linking.openURL(TERMS_URL)}
+        >
+          Terms of Service
+        </Text>
+        {' '}and{' '}
+        <Text
+          style={terms.link}
+          onPress={() => Linking.openURL(PRIVACY_URL)}
+        >
+          Privacy Policy
+        </Text>
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+const terms = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 20,
+  },
+  box: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  boxChecked: {
+    backgroundColor: COLORS.orange,
+    borderColor: COLORS.orange,
+  },
+  text: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: FONTS.body,
+    color: COLORS.textSecondary,
+    lineHeight: 19,
+  },
+  link: {
+    color: COLORS.aqua,
+    fontFamily: FONTS.bodyMedium,
+    textDecorationLine: 'underline',
+  },
+});
+
 function EmailSentScreen({
   email, title, body, buttonLabel, onBack,
 }: {
@@ -241,6 +312,7 @@ export default function SignInScreen() {
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Errors
   const [emailError, setEmailError] = useState('');
@@ -286,6 +358,7 @@ export default function SignInScreen() {
     const { score } = getStrength(password);
     if (!password) { setPasswordError('Create a password'); return; }
     if (score < 2) { setPasswordError('Password is too weak — meet at least 2 requirements'); return; }
+    if (!termsAccepted) { setServerError('Please agree to the Terms of Service and Privacy Policy to continue.'); return; }
 
     setLoading(true);
     try {
@@ -443,6 +516,7 @@ export default function SignInScreen() {
   function switchMode() {
     clearErrors();
     setPassword(''); setFullName(''); setShowPassword(false);
+    setTermsAccepted(false);
     router.setParams({ mode: isSignUp ? undefined : 'signup' });
   }
 
@@ -561,11 +635,15 @@ export default function SignInScreen() {
                 <RequirementsList password={password} />
               </View>
               <ServerError message={serverError} />
+              <TermsAcceptance
+                accepted={termsAccepted}
+                onToggle={() => { setTermsAccepted((v) => !v); setServerError(''); }}
+              />
               <Button
                 title="Create account"
                 onPress={handleSignUp}
                 loading={loading}
-                disabled={loading || getStrength(password).score < 2}
+                disabled={loading || getStrength(password).score < 2 || !termsAccepted}
               />
             </>
           )}

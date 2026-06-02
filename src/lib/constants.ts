@@ -1,5 +1,13 @@
 // Beast Tribe — Design System Constants
 
+// ─── Legal / hosted pages ───────────────────────────────────────────────────
+// NOTE: replace the placeholder below with the real Vercel admin domain
+// (e.g. https://beast-tribe-admin.vercel.app) before shipping to the App Store.
+export const LEGAL_BASE_URL = 'https://REPLACE_WITH_ADMIN_DOMAIN';
+export const TERMS_URL = `${LEGAL_BASE_URL}/legal/terms`;
+export const PRIVACY_URL = `${LEGAL_BASE_URL}/legal/privacy`;
+
+
 // Dark theme (default)
 export const DARK_COLORS = {
   teal: '#023C3C',

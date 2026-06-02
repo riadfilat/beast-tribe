@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,8 +17,29 @@ interface SettingToggle {
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { profile } = useAuth();
+  const { profile, deleteAccount } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+
+  // Account deletion (Apple Guideline 5.1.1(v))
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      // AuthGate routes to auth automatically on session clear; fallback below.
+      router.replace('/(auth)/sign-in');
+    } catch (err: any) {
+      setShowDeleteModal(false);
+      Alert.alert(
+        'Could not delete account',
+        err?.message || 'Something went wrong. Please try again.'
+      );
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   // Privacy settings
   const [privateProfile, setPrivateProfile] = useState(false);
@@ -226,8 +247,64 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* DANGER ZONE */}
+        <Text style={[styles.sectionLabel, styles.dangerLabel]}>DANGER ZONE</Text>
+        <View style={styles.dangerCard}>
+          <TouchableOpacity
+            style={styles.dangerRow}
+            activeOpacity={0.7}
+            onPress={() => setShowDeleteModal(true)}
+          >
+            <View style={styles.dangerIconWrap}>
+              <Ionicons name="trash-outline" size={18} color={'#EF5350'} />
+            </View>
+            <View style={styles.settingInfo}>
+              <Text style={styles.dangerLabelText}>Delete Account</Text>
+              <Text style={styles.dangerDesc}>Permanently delete your account and all data</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={'#EF5350'} />
+          </TouchableOpacity>
+        </View>
+
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Delete Account Confirmation Modal */}
+      <Modal visible={showDeleteModal} transparent animationType="fade">
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => !deleting && setShowDeleteModal(false)}
+        >
+          <View style={styles.modalSheet}>
+            <View style={styles.modalIconWrap}>
+              <Ionicons name="warning-outline" size={32} color={'#EF5350'} />
+            </View>
+            <Text style={styles.modalTitle}>Delete Account?</Text>
+            <Text style={styles.modalSubtitle}>
+              This permanently deletes your account, profile, posts, and event history. This cannot be undone.
+            </Text>
+            <TouchableOpacity
+              style={styles.modalDeleteBtn}
+              activeOpacity={0.8}
+              onPress={handleDeleteAccount}
+              disabled={deleting}
+            >
+              <Text style={styles.modalDeleteText}>
+                {deleting ? 'Deleting...' : 'Delete Forever'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.modalCancelBtn}
+              activeOpacity={0.7}
+              onPress={() => setShowDeleteModal(false)}
+              disabled={deleting}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -290,4 +367,60 @@ const styles = StyleSheet.create({
   guidelineContent: { flex: 1 },
   guidelineTitle: { fontSize: 13, fontFamily: FONTS.heading, color: COLORS.textPrimary, marginBottom: 2 },
   guidelineText: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textSecondary, lineHeight: 16 },
+
+  // Danger Zone
+  dangerLabel: { color: '#EF5350' },
+  dangerCard: {
+    backgroundColor: 'rgba(239,83,80,0.06)', borderWidth: 1, borderColor: 'rgba(239,83,80,0.25)',
+    borderRadius: 14, overflow: 'hidden',
+  },
+  dangerRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingHorizontal: 14, paddingVertical: 14,
+  },
+  dangerIconWrap: {
+    width: 36, height: 36, borderRadius: 10,
+    backgroundColor: 'rgba(239,83,80,0.1)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  dangerLabelText: { fontSize: 13, fontFamily: FONTS.bodyMedium, color: '#EF5350' },
+  dangerDesc: { fontSize: 10, fontFamily: FONTS.body, color: 'rgba(239,83,80,0.7)', marginTop: 1 },
+
+  // Delete Account Modal
+  modalOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: '#012A2A',
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    paddingHorizontal: 24, paddingTop: 28, paddingBottom: 40,
+    alignItems: 'center',
+    borderWidth: 1, borderBottomWidth: 0, borderColor: 'rgba(239,83,80,0.15)',
+  },
+  modalIconWrap: {
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: 'rgba(239,83,80,0.1)',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20, fontFamily: FONTS.heading, color: COLORS.textPrimary, marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontSize: 13, fontFamily: FONTS.body, color: COLORS.textSecondary,
+    textAlign: 'center', lineHeight: 20, marginBottom: 28, maxWidth: 300,
+  },
+  modalDeleteBtn: {
+    width: '100%', paddingVertical: 14, borderRadius: 14,
+    backgroundColor: '#EF5350', alignItems: 'center', marginBottom: 10,
+  },
+  modalDeleteText: {
+    fontSize: 15, fontFamily: FONTS.bodySemiBold, color: COLORS.white,
+  },
+  modalCancelBtn: {
+    width: '100%', paddingVertical: 14, borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center',
+  },
+  modalCancelText: {
+    fontSize: 15, fontFamily: FONTS.bodySemiBold, color: COLORS.textSecondary,
+  },
 });

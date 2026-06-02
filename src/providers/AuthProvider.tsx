@@ -13,6 +13,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   refreshSession: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
@@ -188,6 +189,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
   }
 
+  // Permanently deletes the signed-in user's account via the
+  // `delete_my_account` RPC (removes auth.users row → cascades to profile
+  // and all related data), then clears the local session so the app
+  // returns to the auth screen.
+  async function deleteAccount() {
+    if (!isSupabaseConfigured) {
+      setSession(null);
+      setProfile(null);
+      return;
+    }
+    const { error } = await supabase.rpc('delete_my_account');
+    if (error) throw error;
+    // Local sign-out cleanup → AuthGate routes back to auth.
+    await supabase.auth.signOut();
+    setProfile(null);
+    setSession(null);
+  }
+
   async function completeOnboarding() {
     if (!isSupabaseConfigured) {
       setProfile((prev) => prev ? { ...prev, onboarding_completed: true } : prev);
@@ -265,6 +284,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUp,
         signIn,
         signOut,
+        deleteAccount,
         refreshProfile,
         refreshSession,
         completeOnboarding,

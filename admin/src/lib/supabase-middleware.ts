@@ -31,6 +31,14 @@ export async function updateSession(request: NextRequest) {
 
   const isLoginPage = request.nextUrl.pathname === '/login';
 
+  // Public legal pages (Privacy Policy / Terms / EULA) must be reachable without
+  // auth — App Store Connect requires a public Privacy Policy URL and the EULA
+  // must be linkable from the app's signup screen.
+  const isPublicPage = request.nextUrl.pathname.startsWith('/legal');
+  if (isPublicPage) {
+    return supabaseResponse;
+  }
+
   // Not logged in — redirect to login
   if (!user && !isLoginPage) {
     const url = request.nextUrl.clone();
