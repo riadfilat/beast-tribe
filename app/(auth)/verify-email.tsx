@@ -1,261 +1,113 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { Button } from '../../src/components/ui';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { makeStyles, useKit } from '../../src/theme';
+import { useI18n } from '../../src/i18n';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { supabase } from '../../src/lib/supabase';
-import { COLORS, FONTS } from '../../src/lib/constants';
+import { Txt } from '../../src/components/board/Txt';
+import { Icon } from '../../src/components/board/Icon';
+import { Sun } from '../../src/components/board/marks';
+import { MarkerButton, TextButton } from '../../src/components/board/controls';
 
 type Status = 'idle' | 'checking' | 'resending' | 'resent' | 'error';
 
 export default function VerifyEmailScreen() {
+  const s = useStyles();
+  const { p } = useKit();
+  const { t } = useI18n();
   const { user, signOut, refreshSession } = useAuth();
-  // email + password carried over from signup / sign-in so we can re-authenticate
+  // Email + password carried from sign-up / sign-in so we can sign in once confirmed.
   const params = useLocalSearchParams<{ email?: string; password?: string }>();
   const [status, setStatus] = useState<Status>('idle');
-  const [errorMsg, setErrorMsg] = useState('');
-
+  const [error, setError] = useState('');
   const email = user?.email ?? params.email ?? '';
   const password = params.password ?? '';
 
-  async function handleCheck() {
+  async function check() {
     setStatus('checking');
-    setErrorMsg('');
+    setError('');
     try {
-      // If we already have a session, just refresh it.
       if (user) {
         await refreshSession();
-        // AuthGate will redirect once isEmailConfirmed becomes true.
         return;
       }
-
-      // No session (the signup flow signs the user out). Re-authenticate with
-      // the carried email + password to pick up the now-confirmed account.
       if (!email || !password) {
         setStatus('error');
-        setErrorMsg('Please sign in again to continue.');
+        setError(t('auth.verify.signInAgain'));
         return;
       }
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        if (error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')) {
-          setStatus('error');
-          setErrorMsg("Still not confirmed — please click the link in your inbox first.");
-        } else {
-          setStatus('error');
-          setErrorMsg(error.message || 'Could not sign in. Please try again.');
-        }
+      const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
+      if (err) {
+        setStatus('error');
+        setError(err.message.includes('not confirmed') || err.message.includes('email_not_confirmed') ? t('auth.verify.notYet') : err.message);
         return;
       }
-      const confirmed = !!data.user?.email_confirmed_at || !!data.user?.confirmed_at;
-      if (!confirmed) {
-        // Signed in but Supabase still reports unconfirmed — sign back out.
+      if (!data.user?.email_confirmed_at && !data.user?.confirmed_at) {
         await supabase.auth.signOut();
         setStatus('error');
-        setErrorMsg("Still not confirmed — please click the link in your inbox first.");
-        return;
+        setError(t('auth.verify.notYet'));
       }
-      // Confirmed + signed in → AuthGate proceeds automatically.
     } catch {
       setStatus('error');
-      setErrorMsg('Could not refresh. Please try again.');
+      setError(t('auth.verify.failed'));
     } finally {
-      setStatus((s) => (s === 'checking' ? 'idle' : s));
+      setStatus((x) => (x === 'checking' ? 'idle' : x));
     }
   }
 
-  async function handleResend() {
+  async function resend() {
     if (!email) return;
     setStatus('resending');
-    setErrorMsg('');
+    setError('');
     try {
-      const { error } = await supabase.auth.resend({ type: 'signup', email });
-      if (error) throw error;
+      const { error: err } = await supabase.auth.resend({ type: 'signup', email });
+      if (err) throw err;
       setStatus('resent');
     } catch (e: any) {
       setStatus('error');
-      setErrorMsg(e.message || 'Failed to resend. Please try again.');
+      setError(e?.message || t('auth.verify.failed'));
     }
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-
-        {/* Icon */}
-        <View style={styles.iconWrap}>
-          <Ionicons name="mail-unread-outline" size={56} color={COLORS.aqua} />
-        </View>
-
-        <Text style={styles.title}>Confirm your email</Text>
-        <Text style={styles.body}>
-          We sent a confirmation link to
-        </Text>
-        <Text style={styles.email}>{email}</Text>
-        <Text style={styles.sub}>
-          Click the link in the email to verify your account. Check your spam folder if you don't see it.
-        </Text>
-
-        {/* Status feedback */}
-        {status === 'resent' && (
-          <View style={styles.successBanner}>
-            <Ionicons name="checkmark-circle-outline" size={16} color={COLORS.green} />
-            <Text style={styles.successText}>Confirmation email resent!</Text>
-          </View>
-        )}
-        {status === 'error' && errorMsg ? (
-          <View style={styles.errorBanner}>
-            <Ionicons name="alert-circle-outline" size={16} color="#EF5B5B" />
-            <Text style={styles.errorText}>{errorMsg}</Text>
-          </View>
+    <SafeAreaView style={s.screen}>
+      <View style={s.body}>
+        <Sun size={96}>
+          <Icon name="mail" size={34} color={p.onMarker} />
+        </Sun>
+        <Txt v="title" size={28} align="center" style={{ marginTop: 18 }} accessibilityRole="header">
+          {t('auth.verify.title')}
+        </Txt>
+        <Txt v="body" color={p.inkSoft} align="center">
+          {t('auth.verify.body')}
+        </Txt>
+        <Txt v="headline" color={p.aqua} align="center">
+          {email}
+        </Txt>
+        <Txt v="meta" align="center" style={{ marginBottom: 8 }}>
+          {t('auth.verify.sub')} {t('auth.spamHint')}
+        </Txt>
+        {status === 'error' && error ? (
+          <Txt v="meta" color={p.danger} align="center">
+            {error}
+          </Txt>
         ) : null}
-
-        {/* Primary CTA — check if confirmed */}
-        <Button
-          title={status === 'checking' ? 'Checking…' : "I've confirmed my email"}
-          onPress={handleCheck}
-          loading={status === 'checking'}
-        />
-
-        {/* Resend */}
-        <TouchableOpacity
-          style={styles.resendRow}
-          onPress={handleResend}
+        <MarkerButton label={status === 'checking' ? t('auth.verify.checking') : t('auth.verify.check')} onPress={check} loading={status === 'checking'} style={{ alignSelf: 'stretch', marginTop: 8 }} />
+        <TextButton
+          label={status === 'resent' ? t('auth.verify.resent') : t('auth.verify.resend')}
+          onPress={resend}
           disabled={status === 'resending' || status === 'resent'}
-          activeOpacity={0.7}
-        >
-          {status === 'resending' ? (
-            <ActivityIndicator size="small" color={COLORS.aqua} />
-          ) : (
-            <Text style={[styles.resendText, status === 'resent' && styles.resendTextDone]}>
-              {status === 'resent' ? 'Email sent ✓' : 'Resend confirmation email'}
-            </Text>
-          )}
-        </TouchableOpacity>
-
-        {/* Sign out */}
-        <TouchableOpacity style={styles.signOutRow} onPress={signOut} activeOpacity={0.7}>
-          <Ionicons name="log-out-outline" size={14} color={COLORS.textMuted} />
-          <Text style={styles.signOutText}>Use a different account</Text>
-        </TouchableOpacity>
-
+          style={{ alignSelf: 'center' }}
+        />
+        <TextButton label={t('auth.verify.otherAccount')} onPress={signOut} color={p.inkSoft} style={{ alignSelf: 'center' }} />
       </View>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-    gap: 10,
-  },
-
-  iconWrap: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: 'rgba(86,196,196,0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(86,196,196,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-
-  title: {
-    fontSize: 24,
-    fontFamily: FONTS.heading,
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
-  body: {
-    fontSize: 14,
-    fontFamily: FONTS.body,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-  },
-  email: {
-    fontSize: 14,
-    fontFamily: FONTS.bodySemiBold,
-    color: COLORS.aqua,
-    textAlign: 'center',
-  },
-  sub: {
-    fontSize: 12,
-    fontFamily: FONTS.body,
-    color: COLORS.textTertiary,
-    textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 8,
-  },
-
-  successBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(98,183,151,0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(98,183,151,0.25)',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    width: '100%',
-  },
-  successText: {
-    fontSize: 12,
-    fontFamily: FONTS.bodyMedium,
-    color: COLORS.green,
-  },
-
-  errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(239,91,91,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(239,91,91,0.25)',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    width: '100%',
-  },
-  errorText: {
-    flex: 1,
-    fontSize: 12,
-    fontFamily: FONTS.body,
-    color: '#EF5B5B',
-  },
-
-  resendRow: {
-    marginTop: 4,
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  resendText: {
-    fontSize: 13,
-    fontFamily: FONTS.bodyMedium,
-    color: COLORS.aqua,
-  },
-  resendTextDone: {
-    color: COLORS.green,
-  },
-
-  signOutRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 16,
-    paddingVertical: 8,
-  },
-  signOutText: {
-    fontSize: 12,
-    fontFamily: FONTS.body,
-    color: COLORS.textMuted,
-  },
-});
+const useStyles = makeStyles(({ p }) => ({
+  screen: { flex: 1, backgroundColor: p.board },
+  body: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, gap: 8 },
+}));

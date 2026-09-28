@@ -1,14 +1,10 @@
 import { Stack } from 'expo-router';
-import { COLORS } from '../../../src/lib/constants';
+import { useKit } from '../../../src/theme';
 
-export default function EventsLayout() {
+export default function ExploreLayout() {
+  const { p } = useKit();
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: COLORS.background },
-      }}
-    >
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: p.board } }}>
       <Stack.Screen name="index" />
     </Stack>
   );

@@ -115,6 +115,32 @@ User wants to launch the app to limited public testers via TestFlight.
 
 ## Session Log (append-only — newest at top)
 
+### 2026-09-28 — UPLIFT IN PROGRESS (branch uplift/box-board, not shipped)
+- Visual world "The Box Board" chosen by user; contract in .impeccable/surfaces/app-tabs-home-index-tsx.md; product truth in PRODUCT.md.
+- Built: theme kit (src/theme), i18n EN/AR + RTL (src/i18n), board components (src/components/board), data layer (src/data), screens: Board, Explore, Session sheet + chat, Host, Inbox, My sessions, Tribe feed, Packs (+create/invite), You, Settings, Welcome, Sign-in, Verify, About-you, Pick-sports.
+- DB applied: 032 (waitlist/capacity/cancel/notifications/recaps/stats), 033 (all 22 sports), 034 (partners admin columns), 035 (realtime chat + inbox).
+- LEFT: migrate nutrition, coach-dashboard, trainee-detail, +not-found to kit + i18n; QA Arabic RTL + Whiteboard; finish review + DESIGN.md; public /s/[id] invite page on admin; OTA with EXPO_TOKEN; next native build (push capability needs ASC API key).
+- Preview: workspace launcher "Beast Tribe Preview" (EXPO_PUBLIC_PREVIEW=1, synthetic data, web).
+
+### 2026-06-02 — App Store submission prep: compliance fixes + CI + notifications build
+**Goal:** ship Beast Tribe to the public App Store without rejection; move builds to cloud (no local commands).
+- **CI pipeline** added (`.github/workflows/eas-update.yml` + `eas-build.yml`) — OTA on every push, native build on native changes / manual. **NOT yet pushed** (needs a GitHub token with `workflow` scope). Files exist on disk, untracked.
+- **App Store compliance fixes (migration 031 + UI):**
+  - In-app **account deletion** — `delete_my_account()` SECURITY DEFINER RPC (deletes auth.users → cascades). UI: Settings danger zone + confirm modal. (AuthProvider.deleteAccount)
+  - **Report content** — wired feed 3-dot Report → modal (reason picker) → inserts content_reports. Hooks: useReportContent.
+  - **Block users** — `blocked_users` table + RLS; block action in feed menu; feed filters blocked authors. Hooks: useBlockUser, useBlockedUserIds.
+  - **Terms/Privacy acceptance** at signup (required checkbox + links). Public legal pages live: https://beast-tribe.vercel.app/legal/privacy and /legal/terms. constants.ts: LEGAL_BASE_URL/TERMS_URL/PRIVACY_URL.
+  - Pushed (commits a7ca1f7, 52086d2) + OTA `019e882d` (preview).
+- **Reviewer demo account** created: `appreview@operationbeast.com` / `BeastReview2026!` (profile id 07835314-aa73-4f1e-8d13-a7048aae304b, onboarding_completed=true). For App Review notes.
+- **BLOCKER:** iOS native build (push notifications capability) needs an **App Store Connect API key** (.p8 + Key ID + Issuer ID) so EAS can regen the push-enabled provisioning profile non-interactively. Waiting on user to generate it. Also optional: Expo access token + workflow-scoped GitHub token for full CI.
+- Vercel admin domain confirmed: **beast-tribe.vercel.app**.
+- **Support page** live: https://beast-tribe.vercel.app/support (Apple Support URL). /support added to middleware public paths.
+- **Light-theme contrast bug fixed** (was: white titles invisible on light bg). Swept app/ + src/components/ — white text on light surfaces → COLORS.textPrimary; translucent-white cards → COLORS.cardBg. Delete-account modal forced light text on its dark sheet. OTA `019e88ee`.
+- **App Store metadata pack** (copy-paste ready) given to user. Support URL: /support, Privacy: /legal/privacy. Demo acct in review notes.
+- **Screenshots:** user's first batch showed the contrast bug (pre-fix) + wrong pixel dims (uploaded to 6.3" slot). Plan: user retakes after OTA, drops PNG files in ~/Desktop/OB/screenshots/, I resize via `sips` to exact 1290x2796 (6.9" slot).
+
+
+
 ### 2026-04-30 — BULLETPROOFING PASS (4 parallel audits + systematic fixes)
 Comprehensive audit of mobile + admin + database, then fixed every critical/high issue.
 

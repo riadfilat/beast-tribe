@@ -1,496 +1,299 @@
-import React, { useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Image, RefreshControl, ScrollView, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { Avatar, BeastIcon } from '../../../src/components/ui';
-import { UpcomingEventCard } from '../../../src/components/home/UpcomingEventCard';
-import { WeeklyEventCalendar } from '../../../src/components/home/WeeklyEventCalendar';
-import { COLORS, FONTS } from '../../../src/lib/constants';
-import { getLocalEvents } from '../../../src/lib/localEventStore';
-import { isEventOver } from '../../../src/lib/eventTime';
-import {
-  registerForPushNotificationsAsync,
-  scheduleEventReminder,
-  syncEventReminders,
-} from '../../../src/lib/notifications';
-import {
-  useProfile,
-  useUpcomingEvents,
-  useJoinEvent,
-  useMyPacks,
-  useMyEvents,
-} from '../../../src/hooks';
+import { makeStyles, useKit } from '../../../src/theme';
+import { useI18n } from '../../../src/i18n';
+import { dayOffset, fmtBoardDate } from '../../../src/i18n/format';
+import { useAuth } from '../../../src/providers/AuthProvider';
+import { useBoardSessions, useSessionActions, SessionError } from '../../../src/data/sessions';
+import { useUnreadCount } from '../../../src/data/inbox';
+import { usePopularSpots } from '../../../src/data/member';
+import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
+import type { Session } from '../../../src/data/model';
+import { Txt } from '../../../src/components/board/Txt';
+import { Press } from '../../../src/components/board/Press';
+import { Icon } from '../../../src/components/board/Icon';
+import { IconButton, MarkerButton, TextButton } from '../../../src/components/board/controls';
+import { DayHeading, NowMarker, SessionRow, useNow } from '../../../src/components/board/session';
+import { toast } from '../../../src/components/board/toast';
+import { haptic } from '../../../src/lib/haptics';
+import { syncEventReminders } from '../../../src/lib/notifications';
 
-export default function HomeScreen() {
+const MARK = require('../../../assets/images/mark-sun.png');
+
+export default function BoardScreen() {
+  const s = useStyles();
+  const { p, lang } = useKit();
+  const { t } = useI18n();
   const router = useRouter();
-  // Track joined events across navigations within this mounted screen.
-  // Scoped to the component (via ref) so RSVP state never leaks across
-  // sign-out/sign-in. DB-backed rsvpedEventIds is the source of truth.
-  const joinedEventIdsRef = useRef<Set<string>>(new Set());
-  const joinedEventIds = joinedEventIdsRef.current;
-  const [eventJoining, setEventJoining] = useState(false);
-  // Refresh local events when screen is focused
-  const [, setFocusKey] = useState(0);
-  useFocusEffect(useCallback(() => { setFocusKey(k => k + 1); }, []));
-  // Check if user already joined (persists across navigations)
-  const [eventJoined, setEventJoined] = useState(false);
-  // Set of event IDs the user has actually RSVP'd to (from DB) — refreshed on focus
-  const [rsvpedEventIds, setRsvpedEventIds] = useState<Set<string>>(new Set());
+  const { user, profile } = useAuth();
+  const meId = PREVIEW ? PREVIEW_ME : user?.id;
+  const board = useBoardSessions(8);
+  const unread = useUnreadCount();
+  const now = useNow();
+  const country = profile?.region || 'SA';
+  const spots = usePopularSpots(country);
+  const { join } = useSessionActions();
+  const [joiningId, setJoiningId] = useState<string | null>(null);
+  const [justJoined, setJustJoined] = useState<string | null>(null);
 
-  // Re-fetch user's RSVPs every time home is focused
-  useFocusEffect(useCallback(() => {
-    let cancelled = false;
-    (async () => {
+  const sessions = useMemo(
+    () => (board.data ?? []).filter((x) => x.state === 'upcoming' || x.state === 'live' || (x.state === 'cancelled' && x.isMine)),
+    [board.data, now],
+  );
+
+  // Day buckets
+  const today = sessions.filter((x) => dayOffset(x.startsAt, new Date(now)) <= 0);
+  const tomorrow = sessions.filter((x) => dayOffset(x.startsAt, new Date(now)) === 1);
+  const later = sessions.filter((x) => dayOffset(x.startsAt, new Date(now)) > 1);
+  const live = today.filter((x) => x.state === 'live');
+  const todayAhead = today.filter((x) => x.state !== 'live');
+
+  // Hierarchy by size alone: your next session is set largest; otherwise the soonest.
+  const upcoming = sessions.filter((x) => x.state === 'upcoming');
+  const heroId = (upcoming.find((x) => x.myStatus === 'going' || x.isHost) ?? upcoming[0])?.id;
+
+  // Local 15-minute reminders for sessions you're in (no-op on builds without notifications).
+  useEffect(() => {
+    const mine = sessions.filter((x) => x.state === 'upcoming' && (x.myStatus === 'going' || x.isHost));
+    if (!mine.length) return;
+    Promise.resolve()
+      .then(() => syncEventReminders(mine.map((x) => ({ id: x.id, title: x.title, starts_at: x.startsAt.toISOString() }))))
+      .catch(() => {});
+  }, [board.data]);
+
+  const onJoin = useCallback(
+    async (x: Session) => {
+      if (joiningId) return;
+      setJoiningId(x.id);
       try {
-        const { supabase, isSupabaseConfigured } = await import('../../../src/lib/supabase');
-        if (!isSupabaseConfigured) return;
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        const { data } = await supabase
-          .from('event_rsvps')
-          .select('event_id')
-          .eq('user_id', user.id)
-          .eq('status', 'going');
-        if (!cancelled && data) {
-          const ids = new Set((data as any[]).map((r) => r.event_id));
-          setRsvpedEventIds(ids);
-          ids.forEach((id) => joinedEventIds.add(id));
-        }
-      } catch {}
-    })();
-    return () => { cancelled = true; };
-  }, []));
-
-  const { profile, loading: profileLoading } = useProfile();
-  const { data: eventsData } = useUpcomingEvents(10);
-  const { data: myPacks } = useMyPacks();
-  const { data: myEvents } = useMyEvents();
-  const isInPack = (myPacks?.length ?? 0) > 0;
-  const { joinEvent } = useJoinEvent();
-
-  // Re-schedule local reminders (15 min before) for all upcoming joined events.
-  useFocusEffect(useCallback(() => {
-    const reminders = (myEvents || [])
-      .map((r: any) => r.event)
-      .filter((e: any) => e && e.id && e.title && e.starts_at)
-      .map((e: any) => ({ id: e.id, title: e.title, starts_at: e.starts_at }));
-    if (reminders.length) syncEventReminders(reminders);
-  }, [myEvents]));
-
-  // Bell button → ask for / confirm notification permissions.
-  const handleBellPress = useCallback(async () => {
-    const token = await registerForPushNotificationsAsync();
-    if (token) {
-      Alert.alert(
-        'Notifications on',
-        "You'll get reminders 15 min before your events, and updates when people join."
-      );
-    } else {
-      Alert.alert(
-        'Notifications off',
-        'Enable notifications in your phone Settings to get event reminders.'
-      );
-    }
-  }, []);
-
-  const isLoading = profileLoading;
-
-  const displayName = profile?.display_name ?? profile?.full_name ?? 'Beast';
-  const fullName = profile?.full_name ?? '';
-
-  // Show locally created events first (newest), then DB events.
-  // Hide women-only events from male users, and drop events that have already
-  // finished so a passed run no longer lingers on the home screen.
-  const isMale = profile?.gender === 'male';
-  const localEvts = getLocalEvents().filter(e => (!isMale || !e.is_women_only) && !isEventOver(e));
-  const firstLocalEvent = localEvts[0];
-  const dbEvents = (eventsData || []).filter((e: any) => (!isMale || !e.is_women_only) && !isEventOver(e));
-  const dbEvent = dbEvents.length > 0 ? dbEvents[0] : null;
-  // Prioritize local events so user sees what they just created
-  const upcomingEvent = firstLocalEvent || dbEvent || null;
-
-  const eventType = upcomingEvent?.sport?.name || upcomingEvent?.event_type || '';
-  const eventTitle = upcomingEvent?.title || '';
-  const eventDetails = upcomingEvent?.starts_at
-    ? [
-        new Date(upcomingEvent.starts_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-        new Date(upcomingEvent.starts_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-        upcomingEvent.location_name || upcomingEvent.gym_name,
-      ].filter(Boolean).join(' · ')
-    : '';
-  const eventDate = upcomingEvent?.starts_at
-    ? new Date(upcomingEvent.starts_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }).toUpperCase() +
-      ' · ' + new Date(upcomingEvent.starts_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-    : '';
-  const eventLocation = upcomingEvent?.location_name || upcomingEvent?.gym_name || '';
-
-  // Build weekly calendar data
-  const weekDays = (() => {
-    const today = new Date();
-    const dayOfWeek = today.getDay(); // 0=Sun
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - ((dayOfWeek + 6) % 7)); // Monday start
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 7);
-
-    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const dbEvts = eventsData || [];
-    const locals = getLocalEvents();
-    const allEvents = [...dbEvts, ...locals];
-
-    // If the user joined the home event, show it on today
-    const joinedEvent = eventJoined ? {
-      id: upcomingEvent?.id || 'demo-joined',
-      title: eventTitle.replace('\n', ' '),
-      sport: eventType,
-      time: eventDate?.split('·')[1]?.trim() || '6:00 AM',
-    } : null;
-
-    return dayLabels.map((label, i) => {
-      const date = new Date(startOfWeek);
-      date.setDate(startOfWeek.getDate() + i);
-      const dateStr = date.toISOString().split('T')[0];
-      const isToday = dateStr === today.toISOString().split('T')[0];
-
-      // Real events from DB for this day
-      const dayEvents = allEvents
-        .filter((evt: any) => {
-          const evtDate = new Date(evt.starts_at).toISOString().split('T')[0];
-          return evtDate === dateStr;
-        })
-        .map((evt: any) => ({
-          id: evt.id,
-          title: evt.title,
-          sport: evt.sport?.name
-            || (evt.event_type ? evt.event_type.charAt(0).toUpperCase() + evt.event_type.slice(1) : 'Event'),
-          time: new Date(evt.starts_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-        }));
-
-      const events = [...dayEvents];
-
-      // Add joined event on today
-      if (isToday && joinedEvent && !events.find(e => e.id === joinedEvent.id)) {
-        events.push(joinedEvent);
+        const result = await join(x.id);
+        haptic(result === 'going' ? 'success' : 'warning');
+        board.setData((prev) =>
+          prev?.map((y) =>
+            y.id !== x.id
+              ? y
+              : {
+                  ...y,
+                  myStatus: result,
+                  isMine: true,
+                  goingCount: result === 'going' ? y.goingCount + 1 : y.goingCount,
+                  roster:
+                    result === 'going' && meId
+                      ? [...y.roster, { id: meId, name: profile?.display_name || profile?.full_name || '', avatarUrl: profile?.avatar_url ?? null }]
+                      : y.roster,
+                },
+          ),
+        );
+        if (result === 'going') setJustJoined(x.id);
+        toast.show(result === 'going' ? t('session.joinedToast') : t('session.waitlistToast'), result === 'going' ? 'yours' : 'info');
+      } catch (e: any) {
+        haptic('error');
+        const code = e instanceof SessionError ? e.code : 'generic';
+        toast.show(t(`session.errors.${code}`), 'error');
+      } finally {
+        setJoiningId(null);
       }
+    },
+    [joiningId, join, meId, profile],
+  );
 
-      return {
-        dayLabel: label,
-        dateNum: date.getDate(),
-        isToday,
-        events,
-      };
-    });
-  })();
+  const open = (x: Session) => router.push({ pathname: '/session/[id]', params: { id: x.id } });
 
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.orange} />
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const row = (x: Session, i: number, list: Session[], opts: { showDay?: boolean; compact?: boolean } = {}) => (
+    <SessionRow
+      key={x.id}
+      s={x}
+      now={now}
+      meId={meId}
+      size={x.id === heroId ? 'hero' : opts.compact ? 'compact' : 'normal'}
+      showDay={opts.showDay}
+      last={i === list.length - 1}
+      onPress={() => open(x)}
+      onJoin={() => onJoin(x)}
+      joining={joiningId === x.id}
+      justJoined={justJoined === x.id}
+    />
+  );
+
+  const city = profile?.city || t(`onboarding.countries.${country}`);
+  const count = upcoming.length + live.length;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* App Header */}
-        <View style={styles.appHeader}>
-          <View style={styles.headerLeft}>
-            <View style={styles.brandRow}>
-              <BeastIcon size={24} color={COLORS.orange} />
-              <Text style={styles.appTitle}>BEAST TRIBE</Text>
-            </View>
-            <Avatar name={fullName} size={38} backgroundColor={COLORS.dark} />
-          </View>
-          <TouchableOpacity style={styles.bellBtn} activeOpacity={0.7} onPress={handleBellPress}>
-            <Ionicons name="notifications" size={20} color={COLORS.orange} />
-          </TouchableOpacity>
+    <SafeAreaView style={s.screen} edges={['top']}>
+      <ScrollView
+        contentContainerStyle={s.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={board.refreshing} onRefresh={board.refetch} tintColor={p.ink} />}
+      >
+        {/* Masthead */}
+        <View style={s.masthead}>
+          <Image source={MARK} style={s.mark} accessibilityIgnoresInvertColors />
+          <Txt v="label" size={13} color={p.inkSoft} style={{ flex: 1 }}>
+            {fmtBoardDate(new Date(now), lang)}
+          </Txt>
+          <IconButton name="bell" label={t('board.inboxA11y')} dot={unread > 0} onPress={() => router.push('/inbox')} />
+          <Press onPress={() => router.push('/host')} feedback="light" accessibilityLabel={t('board.hostA11y')} style={s.hostChip}>
+            <Icon name="plus" size={15} color={p.ink} weight="bold" />
+            <Txt v="button" size={13}>
+              {t('board.host')}
+            </Txt>
+          </Press>
         </View>
 
-        {/* Welcome */}
-        <Text style={styles.welcomeLine1}>Welcome back,</Text>
-        <Text style={styles.welcomeLine2}>{displayName}</Text>
+        {/* Hero */}
+        <View style={s.hero}>
+          <Txt v="hero" accessibilityRole="header">
+            {lang === 'ar' ? t('board.today') : t('board.today').toUpperCase()}
+          </Txt>
+          {count > 0 ? (
+            <Txt v="meta" style={{ marginTop: 2 }}>
+              {city} · {countLabel(count, lang)}
+            </Txt>
+          ) : null}
+        </View>
 
-        {/* Weekly Event Calendar */}
-        <WeeklyEventCalendar
-          days={weekDays}
-          onEventPress={(eventId) => {
-            router.push({
-              pathname: '/(tabs)/home/activity-chat',
-              params: { eventId, eventTitle: weekDays.flatMap(d => d.events).find(e => e.id === eventId)?.title || 'Event' },
-            });
-          }}
-        />
-
-        {/* Nutrition Tracker */}
-        <TouchableOpacity
-          style={styles.trackerRow}
-          onPress={() => router.push('/(tabs)/home/nutrition')}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="nutrition-outline" size={22} color={COLORS.green} />
-          <Text style={styles.trackerTitle}>NUTRITION TRACKER</Text>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.textTertiary} />
-        </TouchableOpacity>
-
-        {/* Pack section */}
-        {isInPack ? (
-          <TouchableOpacity
-            style={styles.packCta}
-            activeOpacity={0.7}
-            onPress={() => router.push('/(tabs)/profile/pack')}
-          >
-            <View style={styles.packCtaIconWrap}>
-              <Ionicons name="people" size={24} color={COLORS.aqua} />
-            </View>
-            <Text style={styles.packCtaTitle}>YOUR PACK</Text>
-            <Text style={styles.packCtaSub}>Stay connected with your tribe.</Text>
-            <Text style={styles.packCtaLink}>VIEW PACK</Text>
-          </TouchableOpacity>
+        {board.loading && !board.data ? (
+          <BoardSkeleton />
+        ) : board.error && !board.data ? (
+          <View style={s.center}>
+            <Txt v="headline" align="center">
+              {t('board.loadError')}
+            </Txt>
+            <TextButton label={t('common.retry')} onPress={board.refetch} />
+          </View>
+        ) : sessions.length === 0 ? (
+          <EmptyBoard spots={spots.data ?? []} onHost={(spotId) => router.push(spotId ? { pathname: '/host', params: { spot: spotId } } : '/host')} />
         ) : (
-          <View style={styles.packCta}>
-            <View style={styles.packCtaIconWrap}>
-              <Ionicons name="people-outline" size={24} color={COLORS.textTertiary} />
-            </View>
-            <Text style={styles.packCtaTitle}>JOIN A PACK</Text>
-            <Text style={styles.packCtaSub}>Train better with a tribe. Shared goals, shared glory.</Text>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/profile/pack')} activeOpacity={0.7}>
-              <Text style={styles.packCtaLink}>BROWSE PACKS</Text>
-            </TouchableOpacity>
+          <View>
+            {live.map((x, i) => row(x, i, [...live, ...todayAhead]))}
+            <NowMarker now={now} />
+            {todayAhead.length ? (
+              todayAhead.map((x, i) => row(x, i, todayAhead))
+            ) : (
+              <View style={s.nothingLeft}>
+                <Txt v="meta" style={{ flex: 1 }}>
+                  {t('board.nothingLeft')}
+                </Txt>
+                <TextButton label={t('board.hostThisSlot')} onPress={() => router.push('/host')} />
+              </View>
+            )}
+
+            {tomorrow.length ? (
+              <View style={s.section}>
+                <DayHeading label={t('board.tomorrow')} />
+                {tomorrow.map((x, i) => row(x, i, tomorrow))}
+              </View>
+            ) : null}
+
+            {later.length ? (
+              <View style={s.section}>
+                <DayHeading label={t('board.laterThisWeek')} />
+                {later.map((x, i) => row(x, i, later, { showDay: true, compact: true }))}
+              </View>
+            ) : null}
+
+            <Press onPress={() => router.push('/(tabs)/events')} feedback="selection" style={s.fullSchedule}>
+              <Txt v="button" size={14} color={p.aqua}>
+                {t('board.fullSchedule')}
+              </Txt>
+              <Icon name="chevron" size={13} color={p.aqua} weight="bold" />
+            </Press>
           </View>
         )}
-
-        {/* Upcoming Event — only show if real event exists */}
-        {(upcomingEvent || eventTitle) ? <UpcomingEventCard
-          type={eventType}
-          title={eventTitle}
-          details={eventDetails}
-          date={eventDate}
-          location={eventLocation}
-          joined={eventJoined || upcomingEvent?.joined === true || !!(upcomingEvent?.id && rsvpedEventIds.has(upcomingEvent.id))}
-          joining={eventJoining}
-          imageUrl={upcomingEvent?.image_url || undefined}
-          onJoin={async () => {
-            if (eventJoined || eventJoining) return;
-            const eid = upcomingEvent?.id || 'demo-event';
-            setEventJoining(true);
-            try {
-              if (upcomingEvent?.id) {
-                await joinEvent(upcomingEvent.id);
-                if (upcomingEvent.starts_at) {
-                  scheduleEventReminder({
-                    id: upcomingEvent.id,
-                    title: upcomingEvent.title,
-                    starts_at: upcomingEvent.starts_at,
-                  });
-                }
-              } else {
-                await new Promise(r => setTimeout(r, 500));
-              }
-              setEventJoined(true);
-              joinedEventIds.add(eid);
-              router.push({
-                pathname: '/(tabs)/home/activity-chat',
-                params: { eventId: eid, eventTitle: eventTitle.replace('\n', ' ') },
-              });
-            } finally {
-              setEventJoining(false);
-            }
-          }}
-          onPress={() => router.push({
-            pathname: '/(tabs)/home/activity-chat',
-            params: {
-              eventId: upcomingEvent?.id || 'demo-event',
-              eventTitle: eventTitle,
-            },
-          })}
-        /> : null}
-
-        {/* Create Activity CTA */}
-        <TouchableOpacity
-          style={styles.createActivityCard}
-          activeOpacity={0.7}
-          onPress={() => router.push('/(tabs)/home/create-activity')}
-        >
-          <View style={styles.createActivityIcon}>
-            <Ionicons name="add" size={22} color={COLORS.orange} />
-          </View>
-          <View style={styles.createActivityText}>
-            <Text style={styles.createActivityTitle}>Organize a Tribe Activity</Text>
-            <Text style={styles.createActivitySub}>Rally the tribe for a workout, run, or find a coach</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.textTertiary} />
-        </TouchableOpacity>
-
-        <View style={{ height: 24 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  scroll: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+function countLabel(n: number, lang: string) {
+  if (lang === 'ar') {
+    if (n === 1) return 'تمرين واحد';
+    if (n === 2) return 'تمرينان';
+    if (n % 100 >= 3 && n % 100 <= 10) return `${n} تمارين`;
+    return `${n} تمرينًا`;
+  }
+  return `${n} session${n === 1 ? '' : 's'}`;
+}
 
-  /* App Header */
-  appHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 4,
-    marginBottom: 16,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  brandRow: {
+// ─── Empty board: the cold start ────────────────────────────────────────────
+function EmptyBoard({ spots, onHost }: { spots: { id: string; name: string; city: string; imageUrl: string | null }[]; onHost: (spotId?: string) => void }) {
+  const s = useStyles();
+  const { p } = useKit();
+  const { t } = useI18n();
+  return (
+    <View style={s.empty}>
+      <NowMarker now={Date.now()} />
+      <View style={{ paddingHorizontal: 28, gap: 12 }}>
+        <Txt v="title" size={26}>
+          {t('board.emptyTitle')}
+        </Txt>
+        <Txt v="body" color={p.inkSoft}>
+          {t('board.emptyBody')}
+        </Txt>
+        <MarkerButton label={t('board.hostA11y')} icon="plus" onPress={() => onHost()} style={{ marginTop: 6 }} />
+      </View>
+      {spots.length ? (
+        <View style={{ marginTop: 28 }}>
+          <Txt v="title" size={18} style={{ paddingHorizontal: 28, marginBottom: 12 }}>
+            {t('board.popularSpots')}
+          </Txt>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 28, gap: 12 }}>
+            {spots.slice(0, 8).map((spot) => (
+              <Press key={spot.id} onPress={() => onHost(spot.id)} feedback="selection" style={s.spot}>
+                {spot.imageUrl ? <Image source={{ uri: spot.imageUrl }} style={s.spotImg} /> : <View style={[s.spotImg, { backgroundColor: p.wash }]} />}
+                <Txt v="label" size={14} numberOfLines={1} style={{ marginTop: 8 }}>
+                  {spot.name}
+                </Txt>
+                <Txt v="caption">{spot.city}</Txt>
+              </Press>
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function BoardSkeleton() {
+  const { p } = useKit();
+  return (
+    <View style={{ paddingStart: 28, paddingEnd: 16, gap: 22, paddingTop: 16 }} accessibilityElementsHidden>
+      {[0, 1, 2].map((i) => (
+        <View key={i} style={{ flexDirection: 'row', gap: 14 }}>
+          <View style={{ width: 62, height: 26, borderRadius: 4, backgroundColor: p.wash }} />
+          <View style={{ flex: 1, gap: 8 }}>
+            <View style={{ width: '70%', height: 16, borderRadius: 4, backgroundColor: p.wash }} />
+            <View style={{ width: '45%', height: 12, borderRadius: 4, backgroundColor: p.wash }} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const useStyles = makeStyles(({ p }) => ({
+  screen: { flex: 1, backgroundColor: p.board },
+  content: { paddingBottom: 40 },
+  masthead: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingStart: 16, paddingEnd: 12, paddingTop: 4 },
+  mark: { width: 30, height: 30 },
+  hostChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-  },
-  appTitle: {
-    fontSize: 15,
-    fontFamily: FONTS.heading,
-    color: COLORS.orange,
-    fontStyle: 'italic',
-    letterSpacing: 1,
-  },
-  bellBtn: {
-    width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(232,143,36,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  /* Welcome */
-  welcomeLine1: {
-    fontSize: 26,
-    fontFamily: FONTS.heading,
-    color: COLORS.textPrimary,
-    fontStyle: 'italic',
-  },
-  welcomeLine2: {
-    fontSize: 26,
-    fontFamily: FONTS.heading,
-    color: COLORS.orange,
-    fontStyle: 'italic',
-    marginBottom: 16,
-  },
-
-  /* Tracker rows */
-  trackerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    marginBottom: 10,
-  },
-  trackerTitle: {
-    flex: 1,
-    fontSize: 13,
-    fontFamily: FONTS.heading,
-    color: COLORS.textPrimary,
-    letterSpacing: 0.5,
-  },
-
-  /* Pack CTA */
-  packCta: {
+    paddingHorizontal: 12,
+    borderRadius: 8,
     borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    marginBottom: 16,
-    marginTop: 4,
+    borderColor: p.ruleStrong,
   },
-  packCtaIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  packCtaTitle: {
-    fontSize: 14,
-    fontFamily: FONTS.heading,
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
-  packCtaSub: {
-    fontSize: 11,
-    fontFamily: FONTS.body,
-    color: COLORS.textTertiary,
-    textAlign: 'center',
-    lineHeight: 16,
-    marginBottom: 10,
-    maxWidth: 240,
-  },
-  packCtaLink: {
-    fontSize: 12,
-    fontFamily: FONTS.heading,
-    color: COLORS.aqua,
-    letterSpacing: 0.5,
-  },
-
-  /* Create Activity CTA */
-  createActivityCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.cardBg,
-    borderWidth: 1,
-    borderColor: COLORS.cardBorder,
-    borderRadius: 14,
-    padding: 14,
-    marginTop: 12,
-    gap: 12,
-  },
-  createActivityIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: 'rgba(232,143,36,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  createActivityText: {
-    flex: 1,
-  },
-  createActivityTitle: {
-    fontSize: 13,
-    fontFamily: FONTS.heading,
-    color: COLORS.textPrimary,
-    letterSpacing: 0.3,
-  },
-  createActivitySub: {
-    fontSize: 10,
-    fontFamily: FONTS.body,
-    color: COLORS.textTertiary,
-    marginTop: 2,
-  },
-});
+  hero: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 14 },
+  center: { alignItems: 'center', gap: 8, paddingVertical: 48, paddingHorizontal: 32 },
+  nothingLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingStart: 28, paddingEnd: 16, paddingVertical: 10 },
+  section: {},
+  fullSchedule: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 48, marginTop: 16 },
+  empty: { paddingBottom: 16 },
+  spot: { width: 168 },
+  spotImg: { width: 168, height: 104, borderRadius: 8 },
+}));

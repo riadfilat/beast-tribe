@@ -1,104 +1,56 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Image, View, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button } from '../../src/components/ui';
-import { COLORS, FONTS } from '../../src/lib/constants';
+import { makeStyles, useKit } from '../../src/theme';
+import { useI18n } from '../../src/i18n';
+import { Txt } from '../../src/components/board/Txt';
+import { MarkerButton, OutlineButton, TextButton } from '../../src/components/board/controls';
+
+const WOLF = require('../../assets/images/animals/Wolf/1.png');
+const MARK = require('../../assets/images/mark-sun.png');
 
 export default function WelcomeScreen() {
+  const s = useStyles();
+  const { p, lang } = useKit();
+  const { t, setLanguage } = useI18n();
   const router = useRouter();
+  const { width, height } = useWindowDimensions();
+  const art = Math.min(width * 0.82, height * 0.4, 360);
 
   return (
-    <LinearGradient
-      colors={[COLORS.teal, COLORS.teal, '#011E1E']}
-      locations={[0, 0.45, 1]}
-      start={{ x: 0.3, y: 0 }}
-      end={{ x: 0.7, y: 1 }}
-      style={styles.gradient}
-    >
-      <SafeAreaView style={styles.container}>
-        <View style={styles.content}>
-          {/* Operation Beast Logo */}
-          <Image
-            source={require('../../assets/images/ob-logo-stacked-teal.jpg')}
-            style={styles.obLogo}
-            resizeMode="contain"
-          />
+    <SafeAreaView style={s.screen}>
+      <View style={s.top}>
+        <Image source={MARK} style={{ width: 30, height: 30 }} accessibilityLabel="Operation Beast" />
+        <TextButton label={t('auth.langSwitch')} onPress={() => setLanguage(lang === 'ar' ? 'en' : 'ar')} color={p.ink} />
+      </View>
 
-          <View style={styles.divider} />
-
-          <Text style={styles.title}>
-            Beast <Text style={styles.titleAccent}>Tribe</Text>
-          </Text>
-
-          <Text style={styles.subtitle}>
-            Your fitness tribe awaits.{'\n'}Set goals. Train together.{'\n'}Unleash the beast.
-          </Text>
-
-          <View style={styles.buttons}>
-            <Button
-              title="Create account"
-              onPress={() => router.push('/(auth)/sign-in?mode=signup')}
-            />
-            <Button
-              title="Sign in"
-              variant="secondary"
-              onPress={() => router.push('/(auth)/sign-in')}
-            />
-          </View>
+      <View style={s.stage}>
+        <View style={[s.spot, { width: art, height: art, borderRadius: art / 2 }]}>
+          <Image source={WOLF} style={{ width: art * 0.96, height: art * 0.96 }} resizeMode="contain" accessibilityIgnoresInvertColors />
         </View>
-      </SafeAreaView>
-    </LinearGradient>
+      </View>
+
+      <View style={s.bottom}>
+        <Txt v="hero" size={58} accessibilityRole="header">
+          {lang === 'ar' ? t('auth.tagline') : t('auth.tagline').toUpperCase()}
+        </Txt>
+        <Txt v="body" size={17} color={p.inkSoft} style={{ marginTop: 10 }}>
+          {t('auth.welcomeBody')}
+        </Txt>
+        <View style={{ gap: 10, marginTop: 26 }}>
+          <MarkerButton label={t('auth.createAccount')} onPress={() => router.push({ pathname: '/(auth)/sign-in', params: { mode: 'signup' } })} />
+          <OutlineButton label={t('auth.signIn')} onPress={() => router.push('/(auth)/sign-in')} />
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  gradient: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  content: {
-    alignItems: 'center',
-  },
-  obLogo: {
-    width: 220,
-    height: 220,
-    marginBottom: 16,
-    borderRadius: 24,
-  },
-  divider: {
-    width: 48,
-    height: 2,
-    backgroundColor: COLORS.orange,
-    marginBottom: 20,
-    borderRadius: 1,
-  },
-  title: {
-    fontSize: 44,
-    fontFamily: FONTS.heading,
-    color: COLORS.white,
-    letterSpacing: -1,
-  },
-  titleAccent: {
-    color: COLORS.orange,
-  },
-  subtitle: {
-    fontSize: 15,
-    fontFamily: FONTS.body,
-    color: 'rgba(255,255,255,0.5)',
-    textAlign: 'center',
-    maxWidth: 280,
-    lineHeight: 24,
-    marginTop: 10,
-    marginBottom: 40,
-  },
-  buttons: {
-    width: '100%',
-    gap: 8,
-  },
-});
+const useStyles = makeStyles(({ p }) => ({
+  screen: { flex: 1, backgroundColor: p.board },
+  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4 },
+  stage: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  spot: { backgroundColor: '#023C3C', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: p.isDark ? p.ruleStrong : 'transparent', overflow: 'hidden' },
+  bottom: { paddingHorizontal: 24, paddingBottom: 18 },
+}));

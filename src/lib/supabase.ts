@@ -4,9 +4,12 @@ import { Platform } from 'react-native';
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://your-project.supabase.co';
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'your-anon-key';
 
-/** True when real Supabase credentials are configured */
+/** Local design-QA mode with synthetic data (web preview only; never set in EAS builds). */
+const PREVIEW = process.env.EXPO_PUBLIC_PREVIEW === '1';
+
+/** True when real Supabase credentials are configured (always false in preview mode) */
 export const isSupabaseConfigured =
-  SUPABASE_URL !== 'https://your-project.supabase.co' && SUPABASE_ANON_KEY !== 'your-anon-key';
+  !PREVIEW && SUPABASE_URL !== 'https://your-project.supabase.co' && SUPABASE_ANON_KEY !== 'your-anon-key';
 
 let _supabase: SupabaseClient | null = null;
 

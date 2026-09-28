@@ -1,108 +1,54 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS } from '../../src/lib/constants';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Icon, IconName } from '../../src/components/board/Icon';
+import { useKit } from '../../src/theme';
+import { useI18n } from '../../src/i18n';
+import { useInboxLive } from '../../src/data/inbox';
 
-type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
-
-interface TabIconProps {
-  name: IoniconName;
-  nameFocused: IoniconName;
-  focused: boolean;
-  size?: number;
-}
-
-function TabIcon({ name, nameFocused, focused, size = 22 }: TabIconProps) {
-  return (
-    <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
-      <Ionicons
-        name={focused ? nameFocused : name}
-        size={size}
-        color={focused ? COLORS.orange : COLORS.aqua}
-      />
-    </View>
-  );
+function TabIcon({ name, color }: { name: IconName; color: string }) {
+  return <Icon name={name} size={22} color={color} weight="semibold" />;
 }
 
 export default function TabLayout() {
+  const { p, f } = useKit();
+  const { t } = useI18n();
+  const insets = useSafeAreaInsets();
+  useInboxLive();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: COLORS.orange,
-        tabBarInactiveTintColor: COLORS.aqua,
-        tabBarLabelStyle: styles.tabLabel,
+        tabBarActiveTintColor: p.ink,
+        tabBarInactiveTintColor: p.inkFaint,
+        tabBarStyle: {
+          backgroundColor: p.boardDeep,
+          borderTopColor: p.rule,
+          borderTopWidth: 1,
+          height: 58 + insets.bottom,
+          paddingTop: 6,
+          paddingBottom: insets.bottom > 0 ? insets.bottom - 2 : 8,
+        },
+        tabBarLabelStyle: { ...f.uiSemibold, fontSize: 11 },
+        sceneStyle: { backgroundColor: p.board },
       }}
     >
       <Tabs.Screen
         name="home"
-        options={{
-          title: 'HOME',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name="home-outline" nameFocused="home" focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="feed"
-        options={{
-          title: 'TRIBE',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name="people-outline" nameFocused="people" focused={focused} />
-          ),
-        }}
+        options={{ title: t('tabs.board'), tabBarIcon: ({ color }) => <TabIcon name="board" color={color} /> }}
       />
       <Tabs.Screen
         name="events"
-        options={{
-          title: 'EVENTS',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name="calendar-outline" nameFocused="calendar" focused={focused} size={21} />
-          ),
-        }}
+        options={{ title: t('tabs.explore'), tabBarIcon: ({ color }) => <TabIcon name="explore" color={color} /> }}
       />
       <Tabs.Screen
-        name="workouts"
-        options={{ href: null }}
+        name="feed"
+        options={{ title: t('tabs.tribe'), tabBarIcon: ({ color }) => <TabIcon name="tribe" color={color} /> }}
       />
       <Tabs.Screen
         name="profile"
-        options={{
-          title: 'PROFILE',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name="person-outline" nameFocused="person" focused={focused} />
-          ),
-        }}
+        options={{ title: t('tabs.you'), tabBarIcon: ({ color }) => <TabIcon name="you" color={color} /> }}
       />
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: COLORS.tabBarBg,
-    borderTopColor: COLORS.tabBarBorder,
-    borderTopWidth: 1,
-    height: 72,
-    paddingTop: 6,
-    paddingBottom: 10,
-  },
-  tabLabel: {
-    fontFamily: FONTS.bodySemiBold,
-    fontSize: 8,
-    letterSpacing: 0.8,
-  },
-  iconWrap: {
-    width: 40,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-  },
-  iconWrapActive: {
-    backgroundColor: 'rgba(232,143,36,0.14)',
-  },
-});

@@ -1,616 +1,447 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput, Alert, Image } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { ActionSheetIOS, Alert, Image, KeyboardAvoidingView, Modal, Platform, RefreshControl, ScrollView, TextInput, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { FilterTabs, Button, BeastIcon } from '../../../src/components/ui';
-import { FeedPost } from '../../../src/components/feed/FeedPost';
-import { COLORS, FONTS } from '../../../src/lib/constants';
-
-// Local placeholder images from Operation Beast assets
-const OB_LOGO = require('../../../assets/images/ob-logo-mark.png');
-const WOLF_IMG = require('../../../assets/images/animals/Wolf/1.png');
-const EAGLE_IMG = require('../../../assets/images/animals/Eagle/1.png');
-const TIGER_IMG = require('../../../assets/images/animals/Tiger/1.png');
-import { useFeedPosts, useToggleBeast, useUserBeasts, useCreatePost, useReportContent, useBlockUser, useBlockedUserIds } from '../../../src/hooks';
-import { formatRelativeTime } from '../../../src/utils/format';
+import { makeStyles, useKit } from '../../../src/theme';
+import { useI18n } from '../../../src/i18n';
+import { fmtAgo } from '../../../src/i18n/format';
 import { useAuth } from '../../../src/providers/AuthProvider';
-import { supabase } from '../../../src/lib/supabase';
+import { useFeed, toggleBeast, createPost, deletePost, reportPost, blockMember, Post } from '../../../src/data/feed';
+import { useMyPackList, PackSummary } from '../../../src/data/member';
+import { useMySessions } from '../../../src/data/sessions';
+import { useMyCommunity } from '../../../src/hooks';
+import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
+import { Txt } from '../../../src/components/board/Txt';
+import { Icon } from '../../../src/components/board/Icon';
+import { Press } from '../../../src/components/board/Press';
+import { Magnet } from '../../../src/components/board/people';
+import { Chip, IconButton, MarkerButton, OutlineButton, Segmented, TextButton } from '../../../src/components/board/controls';
+import { toast } from '../../../src/components/board/toast';
+import { haptic } from '../../../src/lib/haptics';
+import { compressImage } from '../../../src/lib/imageUtils';
+import { patchFor } from '../../../src/components/board/patches';
 
-const SPORT_TABS = ['All', 'Running', 'Gym', 'Yoga', 'Swimming'];
+const CLAW = require('../../../assets/images/beast-icon.png');
 
-const RHINO_IMG = require('../../../assets/images/animals/Rhino/1.png');
+type Tab = 'feed' | 'packs';
+const REASONS = ['inappropriate', 'spam', 'harassment', 'nudity', 'other'] as const;
 
-interface DemoPost {
-  id: string;
-  name: string;
-  content: string;
-  workoutName?: string;
-  timeAgo: string;
-  beastCount: number;
-  hasBeasted: boolean;
-  commentCount: number;
-  imageUrl?: string;
-  localImage?: any;
-  avatarLocalImage?: any;
-  stats?: { label: string; value: string }[];
-  reactorNames: string[];
-}
-
-// Empty — real posts come from Supabase. Will be populated at launch.
-const DEMO_POSTS: DemoPost[] = [];
-
-export default function FeedScreen() {
+export default function TribeScreen() {
+  const s = useStyles();
+  const { p } = useKit();
+  const { t } = useI18n();
   const router = useRouter();
-  const [viewTab, setViewTab] = useState(0); // 0 = Feed, 1 = Events
-  const [sportTab, setSportTab] = useState(0);
-
+  const params = useLocalSearchParams<{ compose?: string }>();
   const { user, profile } = useAuth();
-  const { data: feedData, loading, refetch: refetchFeed } = useFeedPosts(SPORT_TABS[sportTab]);
-  const { toggleBeast } = useToggleBeast();
-  const { createPost, loading: posting } = useCreatePost();
-  const { report, loading: reporting } = useReportContent();
-  const { block } = useBlockUser();
-  const { blockedIds, refetch: refetchBlocked } = useBlockedUserIds();
+  const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
+  const feed = useFeed();
+  const packs = useMyPackList();
+  const community = useMyCommunity().data as any;
+  const [tab, setTab] = useState<Tab>('feed');
+  const [composeFor, setComposeFor] = useState<string | null | undefined>(undefined); // undefined = closed
+  const [reporting, setReporting] = useState<Post | null>(null);
 
-  // Locally-blocked author ids — lets the UI hide a blocked user's posts
-  // immediately, before the blockedIds query refetches.
-  const [localBlockedIds, setLocalBlockedIds] = useState<string[]>([]);
-  const allBlockedIds = new Set([...(blockedIds || []), ...localBlockedIds]);
+  // A recap handed over from a finished session opens the composer tagged to it.
+  useEffect(() => {
+    if (params.compose) setComposeFor(params.compose);
+  }, [params.compose]);
 
-  // Post menu state
-  const [menuPost, setMenuPost] = useState<{ id: string; isOwn: boolean; authorId?: string } | null>(null);
-
-  // Report modal state
-  const [reportPostId, setReportPostId] = useState<string | null>(null);
-  const [reportReason, setReportReason] = useState<string | null>(null);
-  const [reportDetails, setReportDetails] = useState('');
-
-  const REPORT_REASONS: { value: string; label: string }[] = [
-    { value: 'inappropriate', label: 'Inappropriate' },
-    { value: 'spam', label: 'Spam' },
-    { value: 'harassment', label: 'Harassment' },
-    { value: 'nudity', label: 'Nudity' },
-    { value: 'other', label: 'Other' },
-  ];
-
-  function openReport(postId: string) {
-    setMenuPost(null);
-    setReportReason(null);
-    setReportDetails('');
-    setReportPostId(postId);
-  }
-
-  async function submitReport() {
-    if (!reportPostId || !reportReason || reporting) return;
-    try {
-      await report('feed_posts', reportPostId, reportReason, reportDetails);
-      setReportPostId(null);
-      setReportReason(null);
-      setReportDetails('');
-      Alert.alert('Report received', 'Thanks — our team will review this within 24 hours.');
-    } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Could not submit report. Please try again.');
-    }
-  }
-
-  function confirmBlock(authorId: string) {
-    setMenuPost(null);
-    Alert.alert(
-      'Block User',
-      "Block this user? You'll no longer see their posts.",
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Block',
-          style: 'destructive',
-          onPress: async () => {
-            // Hide their posts right away.
-            setLocalBlockedIds(prev => (prev.includes(authorId) ? prev : [...prev, authorId]));
-            try {
-              await block(authorId);
-              refetchBlocked();
-            } catch (e: any) {
-              Alert.alert('Error', e?.message || 'Could not block this user. Please try again.');
-            }
-          },
-        },
-      ],
+  async function onBeast(post: Post) {
+    if (!meId) return;
+    haptic(post.beasted ? 'selection' : 'medium');
+    feed.setData((prev) =>
+      prev?.map((x) => (x.id === post.id ? { ...x, beasted: !x.beasted, beastCount: x.beastCount + (x.beasted ? -1 : 1) } : x)),
     );
-  }
-
-  async function handleDeletePost(postId: string) {
-    if (!postId.startsWith('demo-')) {
-      await supabase.from('feed_posts').delete().eq('id', postId);
-    }
-    setMenuPost(null);
-    refetchFeed();
-  }
-
-  // Compose modal state
-  const [showCompose, setShowCompose] = useState(false);
-  const [postContent, setPostContent] = useState('');
-  const [postImageUri, setPostImageUri] = useState<string | null>(null);
-  const [postFeeling, setPostFeeling] = useState('');
-
-  const FEELINGS = [
-    { emoji: '💪', label: 'Beast Mode' },
-    { emoji: '🔥', label: 'On Fire' },
-    { emoji: '😤', label: 'Pushed Hard' },
-    { emoji: '😊', label: 'Feeling Good' },
-    { emoji: '🥵', label: 'Exhausted' },
-    { emoji: '🏆', label: 'New PR' },
-  ];
-
-  async function pickPostImage() {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') return;
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
-    });
-    if (!result.canceled && result.assets[0]) {
-      const { compressImage } = require('../../../src/lib/imageUtils');
-      const compressed = await compressImage(result.assets[0].uri, 'post');
-      setPostImageUri(compressed);
+    try {
+      await toggleBeast(meId, post.id, post.beasted);
+    } catch {
+      feed.setData((prev) => prev?.map((x) => (x.id === post.id ? { ...x, beasted: post.beasted, beastCount: post.beastCount } : x)));
     }
   }
 
-  async function handlePost() {
-    if (!postContent.trim() || posting) return;
-    const content = postFeeling
-      ? `${postFeeling} ${postContent.trim()}`
-      : postContent.trim();
-    // Sport tabs are display-only filters (names, not UUIDs) — pass undefined
-    // so the insert doesn't fail on the sport_id UUID FK (Fix 8).
-    const success = await createPost(content, undefined);
-    if (success) {
-      setPostContent('');
-      setPostImageUri(null);
-      setPostFeeling('');
-      setShowCompose(false);
-      refetchFeed();
+  function onMore(post: Post) {
+    const own = post.author.id === meId;
+    const options: { label: string; destructive?: boolean; run: () => void }[] = own
+      ? [{ label: t('tribe.deletePost'), destructive: true, run: () => confirmDelete(post) }]
+      : [
+          { label: t('tribe.report'), run: () => setReporting(post) },
+          { label: `${t('tribe.block')} ${post.author.name.split(' ')[0]}`, destructive: true, run: () => confirmBlock(post) },
+        ];
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: [...options.map((o) => o.label), t('common.cancel')],
+          destructiveButtonIndex: options.findIndex((o) => o.destructive),
+          cancelButtonIndex: options.length,
+        },
+        (i) => options[i]?.run(),
+      );
     } else {
-      Alert.alert('Error', 'Could not create post. Please try again.');
+      Alert.alert('', undefined, [...options.map((o) => ({ text: o.label, style: (o.destructive ? 'destructive' : 'default') as any, onPress: o.run })), { text: t('common.cancel'), style: 'cancel' as const }]);
     }
   }
 
-  // Get post IDs for beast-check query
-  const postIds = (feedData || []).map((p: any) => p.id).filter(Boolean);
-  const { data: userBeastsData } = useUserBeasts(postIds);
-  const beastedPostIds = new Set((userBeastsData || []).map((b: any) => b.post_id));
+  function confirmDelete(post: Post) {
+    Alert.alert(t('tribe.deleteConfirm'), undefined, [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'),
+        style: 'destructive',
+        onPress: async () => {
+          feed.setData((prev) => prev?.filter((x) => x.id !== post.id));
+          await deletePost(post.id).catch(() => toast.show(t('common.somethingWrong'), 'error'));
+        },
+      },
+    ]);
+  }
 
-  // Map Supabase data to component format, fallback to demo.
-  // Exclude posts authored by users the current user has blocked.
-  const posts: (DemoPost & { authorId?: string })[] = feedData?.length
-    ? feedData
-        .filter((post: any) => !allBlockedIds.has(post.user_id))
-        .map((post: any) => ({
-          id: post.id,
-          authorId: post.user_id,
-          name: post.author?.display_name || post.author?.full_name || 'Beast',
-          avatarUrl: post.author?.avatar_url,
-          content: post.content || '',
-          timeAgo: formatRelativeTime(post.created_at),
-          beastCount: post.beast_count?.[0]?.count || 0,
-          hasBeasted: beastedPostIds.has(post.id),
-          commentCount: post.comment_count || 0,
-          imageUrl: post.image_url,
-          workoutName: post.workout_name,
-          stats: post.stats,
-          reactorNames: [],
-        }))
-    : DEMO_POSTS;
+  function confirmBlock(post: Post) {
+    Alert.alert(t('tribe.blockTitle', { name: post.author.name }), t('tribe.blockBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('tribe.block'),
+        style: 'destructive',
+        onPress: async () => {
+          feed.setData((prev) => prev?.filter((x) => x.author.id !== post.author.id));
+          if (meId) await blockMember(meId, post.author.id).catch(() => toast.show(t('common.somethingWrong'), 'error'));
+        },
+      },
+    ]);
+  }
+
+  const me = { id: meId || 'me', name: profile?.display_name || profile?.full_name || '', avatarUrl: profile?.avatar_url ?? null };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* App header */}
-        <View style={styles.appHeader}>
-          <View style={styles.brandRow}>
-            <BeastIcon size={28} color={COLORS.orange} />
-            <Text style={styles.brandName}>BEAST TRIBE</Text>
-          </View>
-          <TouchableOpacity style={styles.notificationBtn} activeOpacity={0.7}>
-            <Ionicons name="notifications-outline" size={22} color={COLORS.textPrimary} />
-          </TouchableOpacity>
-        </View>
+    <SafeAreaView style={s.screen} edges={['top']}>
+      <View style={s.header}>
+        <Txt v="title" size={32} style={{ flex: 1 }} accessibilityRole="header">
+          {t('tribe.title')}
+        </Txt>
+        {tab === 'feed' ? <IconButton name="plus" label={t('tribe.composeTitle')} onPress={() => setComposeFor(null)} /> : null}
+      </View>
+      <Segmented
+        value={tab}
+        onChange={setTab}
+        style={{ marginHorizontal: 16, marginBottom: 6 }}
+        options={[
+          { value: 'feed', label: t('tribe.feed') },
+          { value: 'packs', label: t('tribe.packs') },
+        ]}
+      />
 
-        {/* Page title + Community Hub label */}
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>TRIBE</Text>
-          <Text style={styles.communityLabel}>COMMUNITY HUB</Text>
-        </View>
-
-        {/* Underline tabs: Feed / Events */}
-        <View style={styles.underlineTabs}>
-          <TouchableOpacity
-            style={styles.underlineTab}
-            onPress={() => setViewTab(0)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.underlineTabText, viewTab === 0 && styles.underlineTabTextActive]}>
-              Feed
-            </Text>
-            {viewTab === 0 && <View style={styles.underlineIndicator} />}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.underlineTab}
-            onPress={() => {
-              setViewTab(1);
-              router.push('/(tabs)/feed/events');
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.underlineTabText, viewTab === 1 && styles.underlineTabTextActive]}>
-              Events
-            </Text>
-            {viewTab === 1 && <View style={styles.underlineIndicator} />}
-          </TouchableOpacity>
-        </View>
-
-        {/* Sport filter pills */}
-        <FilterTabs tabs={SPORT_TABS} activeIndex={sportTab} onTabPress={setSportTab} size="small" />
-
-        <View style={{ height: 6 }} />
-
-        {/* Feed posts */}
-        {loading ? (
-          <ActivityIndicator color={COLORS.aqua} style={{ marginTop: 40 }} />
-        ) : (
-          posts.map((post) => (
-            <FeedPost
+      {tab === 'feed' ? (
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={feed.refreshing} onRefresh={feed.refetch} tintColor={p.ink} />}
+        >
+          <Press onPress={() => setComposeFor(null)} feedback="selection" depress={0.99} style={s.prompt}>
+            <Magnet person={me} size={36} yours />
+            <Txt v="body" color={p.inkFaint} style={{ flex: 1 }}>
+              {t('tribe.composePlaceholder')}
+            </Txt>
+            <Icon name="camera" size={18} color={p.inkFaint} />
+          </Press>
+          {!feed.loading && (feed.data ?? []).length === 0 ? (
+            <Txt v="body" color={p.inkSoft} align="center" style={{ padding: 32 }}>
+              {t('tribe.feedEmpty')}
+            </Txt>
+          ) : null}
+          {(feed.data ?? []).map((post) => (
+            <PostItem
               key={post.id}
-              name={post.name}
-              content={post.content}
-              timeAgo={post.timeAgo}
-              beastCount={post.beastCount}
-              hasBeasted={post.hasBeasted}
-              commentCount={post.commentCount}
-              imageUrl={post.imageUrl}
-              localImage={post.localImage}
-              workoutName={post.workoutName}
-              stats={post.stats}
-              reactorNames={post.reactorNames}
-              avatarUrl={(post as any).avatarUrl}
-              avatarLocalImage={post.avatarLocalImage}
-              onBeast={async () => {
-                if (post.id && !post.id.startsWith('demo-')) {
-                  await toggleBeast(post.id, post.hasBeasted);
-                  refetchFeed();
-                }
-              }}
-              onMenu={() => {
-                const isOwnPost = post.authorId
-                  ? post.authorId === user?.id
-                  : post.name === (profile?.display_name || profile?.full_name);
-                setMenuPost({ id: post.id, isOwn: isOwnPost, authorId: post.authorId });
-              }}
+              post={post}
+              meId={meId}
+              onBeast={() => onBeast(post)}
+              onMore={() => onMore(post)}
+              onOpenEvent={() => post.event && router.push({ pathname: '/session/[id]', params: { id: post.event.id } })}
             />
-          ))
-        )}
+          ))}
+        </ScrollView>
+      ) : (
+        <PacksPane
+          packs={packs.data ?? []}
+          loading={packs.loading}
+          community={community?.name ?? null}
+          onOpen={(pk) => router.push({ pathname: '/(tabs)/feed/pack', params: { packId: pk.id } })}
+          onCreate={() => router.push('/(tabs)/feed/pack-create')}
+          onJoin={() => router.push('/(tabs)/feed/pack')}
+        />
+      )}
 
-        <View style={{ height: 20 }} />
-      </ScrollView>
-
-      {/* Compose FAB */}
-      <TouchableOpacity
-        style={styles.fab}
-        activeOpacity={0.8}
-        onPress={() => setShowCompose(true)}
-      >
-        <Ionicons name="add" size={28} color={COLORS.dark} />
-      </TouchableOpacity>
-
-      {/* Post Menu Modal */}
-      <Modal visible={!!menuPost} transparent animationType="fade">
-        <TouchableOpacity style={styles.menuOverlay} activeOpacity={1} onPress={() => setMenuPost(null)}>
-          <View style={styles.menuSheet}>
-            {menuPost?.isOwn && (
-              <TouchableOpacity style={styles.menuItem} onPress={() => menuPost && handleDeletePost(menuPost.id)}>
-                <Ionicons name="trash-outline" size={18} color="#EF5350" />
-                <Text style={styles.menuItemTextDanger}>Delete Post</Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity style={styles.menuItem} onPress={() => menuPost && openReport(menuPost.id)}>
-              <Ionicons name="flag-outline" size={18} color={COLORS.textSecondary} />
-              <Text style={styles.menuItemText}>Report</Text>
-            </TouchableOpacity>
-            {!menuPost?.isOwn && menuPost?.authorId && (
-              <TouchableOpacity style={styles.menuItem} onPress={() => menuPost?.authorId && confirmBlock(menuPost.authorId)}>
-                <Ionicons name="ban-outline" size={18} color="#EF5350" />
-                <Text style={styles.menuItemTextDanger}>Block User</Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity style={styles.menuItemCancel} onPress={() => setMenuPost(null)}>
-              <Text style={styles.menuItemTextCancel}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* Report Modal */}
-      <Modal visible={!!reportPostId} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Report Post</Text>
-            <Text style={styles.reportSubtitle}>Why are you reporting this post?</Text>
-
-            <View style={{ gap: 8, marginBottom: 14 }}>
-              {REPORT_REASONS.map(r => (
-                <TouchableOpacity
-                  key={r.value}
-                  style={[styles.reasonRow, reportReason === r.value && styles.reasonRowActive]}
-                  onPress={() => setReportReason(r.value)}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons
-                    name={reportReason === r.value ? 'radio-button-on' : 'radio-button-off'}
-                    size={20}
-                    color={reportReason === r.value ? COLORS.orange : COLORS.textTertiary}
-                  />
-                  <Text style={[styles.reasonText, reportReason === r.value && styles.reasonTextActive]}>{r.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <TextInput
-              style={styles.composeInput}
-              placeholder="Add details (optional)"
-              placeholderTextColor={COLORS.textMuted}
-              value={reportDetails}
-              onChangeText={setReportDetails}
-              multiline
-              maxLength={500}
-            />
-
-            <View style={{ height: 12 }} />
-
-            <Button
-              title={reporting ? 'Submitting...' : 'Submit Report'}
-              onPress={submitReport}
-              disabled={reporting || !reportReason}
-            />
-            <TouchableOpacity onPress={() => setReportPostId(null)} style={styles.cancelButton}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Compose Post Modal */}
-      <Modal visible={showCompose} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Share with the tribe</Text>
-
-            {/* Feelings */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12, maxHeight: 40 }}>
-              <View style={{ flexDirection: 'row', gap: 6 }}>
-                {FEELINGS.map(f => (
-                  <TouchableOpacity key={f.label}
-                    onPress={() => setPostFeeling(postFeeling === `${f.emoji} ${f.label}` ? '' : `${f.emoji} ${f.label}`)}
-                    style={[styles.feelingChip, postFeeling === `${f.emoji} ${f.label}` && styles.feelingChipActive]}>
-                    <Text style={styles.feelingText}>{f.emoji} {f.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
-
-            <TextInput
-              style={styles.composeInput}
-              placeholder="What did you crush today?"
-              placeholderTextColor={COLORS.textMuted}
-              value={postContent}
-              onChangeText={setPostContent}
-              multiline
-              maxLength={500}
-              autoFocus
-            />
-
-            {/* Image attachment */}
-            {postImageUri ? (
-              <View style={{ position: 'relative', marginBottom: 10 }}>
-                <Image source={{ uri: postImageUri }} style={{ width: '100%', height: 160, borderRadius: 12 }} resizeMode="cover" />
-                <TouchableOpacity onPress={() => setPostImageUri(null)}
-                  style={{ position: 'absolute', top: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 12, padding: 4 }}>
-                  <Ionicons name="close" size={16} color="#FFFFFF" />
-                </TouchableOpacity>
-              </View>
-            ) : null}
-
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-              <TouchableOpacity onPress={pickPostImage} style={styles.attachBtn}>
-                <Ionicons name="camera-outline" size={20} color={COLORS.orange} />
-                <Text style={{ color: COLORS.orange, fontSize: 12, marginLeft: 6 }}>Add Photo</Text>
-              </TouchableOpacity>
-              <Text style={[styles.charCount, { flex: 1, textAlign: 'right' }]}>{postContent.length}/500</Text>
-            </View>
-
-            <Button
-              title={posting ? 'Posting...' : 'Post'}
-              onPress={handlePost}
-              disabled={posting || !postContent.trim()}
-            />
-            <TouchableOpacity onPress={() => { setShowCompose(false); setPostImageUri(null); setPostFeeling(''); }} style={styles.cancelButton}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <ComposeSheet
+        visible={composeFor !== undefined}
+        eventId={composeFor ?? null}
+        meId={meId}
+        onClose={() => {
+          setComposeFor(undefined);
+          if (params.compose) router.setParams({ compose: undefined });
+        }}
+        onPosted={() => feed.refetch()}
+      />
+      <ReportSheet post={reporting} meId={meId} onClose={() => setReporting(null)} />
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  scroll: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
+// ─── A post ─────────────────────────────────────────────────────────────────
+function PostItem({ post, meId, onBeast, onMore, onOpenEvent }: { post: Post; meId: string | null; onBeast: () => void; onMore: () => void; onOpenEvent: () => void }) {
+  const s = useStyles();
+  const { p, lang } = useKit();
+  const { t, tn } = useI18n();
+  return (
+    <View style={s.post}>
+      <View style={s.postHead}>
+        <Magnet person={post.author} size={36} yours={post.author.id === meId} />
+        <View style={{ flex: 1 }}>
+          <Txt v="headline" size={15}>
+            {post.author.id === meId ? t('common.you') : post.author.name}
+          </Txt>
+          <Txt v="caption">{fmtAgo(post.createdAt, lang)}</Txt>
+        </View>
+        <IconButton name="more" label={t('tribe.report')} size={18} color={p.inkSoft} onPress={onMore} />
+      </View>
+      {post.event ? (
+        <Press onPress={onOpenEvent} feedback="selection" style={s.recap}>
+          <Icon name="calendar" size={12} color={p.aqua} />
+          <Txt v="label" size={12} color={p.aqua}>
+            {t('tribe.recapOf', { event: post.event.title })}
+          </Txt>
+        </Press>
+      ) : null}
+      {post.content ? (
+        <Txt v="body" style={{ marginTop: 8 }}>
+          {post.content}
+        </Txt>
+      ) : null}
+      {post.imageUrl ? <Image source={{ uri: post.imageUrl }} style={s.postImg} accessibilityIgnoresInvertColors /> : null}
+      <View style={s.actions}>
+        <Press onPress={onBeast} feedback={null} depress={0.9} accessibilityLabel={t('tribe.beast')} accessibilityState={{ selected: post.beasted }} style={[s.beast, post.beasted ? { backgroundColor: p.marker, borderColor: p.marker } : null]}>
+          <Image source={CLAW} style={{ width: 18, height: 18, tintColor: post.beasted ? p.onMarker : p.ink }} />
+          <Txt v="label" size={13} color={post.beasted ? p.onMarker : p.ink}>
+            {post.beastCount > 0 ? tn('tribe.beasts', post.beastCount) : t('tribe.beast')}
+          </Txt>
+        </Press>
+        {post.commentCount > 0 ? <Txt v="meta">{tn('tribe.comments', post.commentCount)}</Txt> : null}
+      </View>
+    </View>
+  );
+}
 
-  /* App header */
-  appHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 4,
-    marginBottom: 16,
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  brandLogo: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-  },
-  brandName: {
-    fontSize: 16,
-    fontFamily: FONTS.display,
-    color: COLORS.orange,
-    letterSpacing: 1,
-  },
-  notificationBtn: {
-    padding: 4,
-  },
+// ─── Packs ──────────────────────────────────────────────────────────────────
+function PacksPane({ packs, loading, community, onOpen, onCreate, onJoin }: { packs: PackSummary[]; loading: boolean; community: string | null; onOpen: (p: PackSummary) => void; onCreate: () => void; onJoin: () => void }) {
+  const s = useStyles();
+  const { p } = useKit();
+  const { t, tn } = useI18n();
+  return (
+    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 12 }}>
+      {community ? (
+        <View style={s.community}>
+          <Icon name="shield" size={16} color={p.aqua} />
+          <Txt v="label" size={14} color={p.aqua}>
+            {t('tribe.yourCommunity')} · {community}
+          </Txt>
+        </View>
+      ) : null}
+      {!loading && !packs.length ? (
+        <Txt v="body" color={p.inkSoft} style={{ marginVertical: 8 }}>
+          {t('tribe.packsEmpty')}
+        </Txt>
+      ) : null}
+      {packs.map((pk) => (
+        <Press key={pk.id} onPress={() => onOpen(pk)} feedback="selection" depress={0.99} style={s.packRow}>
+          <View style={s.patch}>
+            <Image source={patchFor(pk.animal)} style={{ width: 56, height: 56 }} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Txt v="row" size={16}>
+              {pk.name}
+            </Txt>
+            <Txt v="meta">{[tn('tribe.members', pk.members), pk.community].filter(Boolean).join(' · ')}</Txt>
+          </View>
+          <Icon name="chevron" size={14} color={p.inkFaint} weight="bold" />
+        </Press>
+      ))}
+      <View style={{ gap: 10, marginTop: 8 }}>
+        <MarkerButton label={t('tribe.startPack')} icon="plus" onPress={onCreate} />
+        <OutlineButton label={t('tribe.joinWithCode')} icon="key" onPress={onJoin} />
+      </View>
+    </ScrollView>
+  );
+}
 
-  /* Title row */
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  title: {
-    fontSize: 28,
-    fontFamily: FONTS.heading,
-    color: COLORS.textPrimary,
-    letterSpacing: 1,
-  },
-  communityLabel: {
-    fontSize: 10,
-    fontFamily: FONTS.bodySemiBold,
-    color: COLORS.orange,
-    letterSpacing: 1.5,
-  },
+// ─── Compose ────────────────────────────────────────────────────────────────
+function ComposeSheet({ visible, eventId, meId, onClose, onPosted }: { visible: boolean; eventId: string | null; meId: string | null; onClose: () => void; onPosted: () => void }) {
+  const s = useStyles();
+  const { p, lang } = useKit();
+  const { t } = useI18n();
+  const mine = useMySessions().data ?? [];
+  const recent = mine.filter((x) => x.state === 'finished' && x.myStatus === 'going').slice(-6).reverse();
+  const [text, setText] = useState('');
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [tag, setTag] = useState<string | null>(eventId);
+  const [busy, setBusy] = useState(false);
 
-  /* Underline tabs */
-  underlineTabs: {
-    flexDirection: 'row',
-    gap: 24,
-    marginBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
-    paddingBottom: 0,
-  },
-  underlineTab: {
-    paddingBottom: 10,
-    position: 'relative',
-  },
-  underlineTabText: {
-    fontSize: 15,
-    fontFamily: FONTS.bodySemiBold,
-    color: COLORS.textTertiary,
-  },
-  underlineTabTextActive: {
-    color: COLORS.orange,
-  },
-  underlineIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 2.5,
-    backgroundColor: COLORS.orange,
-    borderRadius: 2,
-  },
+  useEffect(() => {
+    if (visible) setTag(eventId);
+  }, [visible, eventId]);
 
-  /* Compose FAB */
-  fab: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: COLORS.orange,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 6,
-  },
+  async function pick() {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (perm.status !== 'granted') return;
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.85 });
+    if (!res.canceled && res.assets[0]) setPhoto(await compressImage(res.assets[0].uri, 'post'));
+  }
 
-  /* Compose Modal */
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: COLORS.background,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: 40,
-    borderWidth: 1,
-    borderColor: COLORS.cardBorder,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontFamily: FONTS.heading,
-    color: COLORS.textPrimary,
-    marginBottom: 14,
-  },
-  composeInput: {
-    backgroundColor: COLORS.inputBg,
-    borderWidth: 1,
-    borderColor: COLORS.inputBorder,
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 14,
-    fontFamily: FONTS.body,
-    color: COLORS.textPrimary,
-    minHeight: 100,
-    textAlignVertical: 'top',
-    marginBottom: 4,
-  },
-  charCount: {
-    fontSize: 10,
-    fontFamily: FONTS.body,
-    color: COLORS.textMuted,
-    textAlign: 'right',
-    marginBottom: 12,
-  },
-  reportSubtitle: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textSecondary, marginBottom: 14 },
-  reasonRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: COLORS.inputBorder, backgroundColor: COLORS.inputBg },
-  reasonRowActive: { borderColor: COLORS.orange, backgroundColor: 'rgba(232,143,36,0.1)' },
-  reasonText: { fontSize: 14, fontFamily: FONTS.bodyMedium, color: COLORS.textSecondary },
-  reasonTextActive: { color: COLORS.textPrimary },
-  cancelButton: { alignItems: 'center', marginTop: 10 },
-  cancelText: { fontSize: 13, fontFamily: FONTS.bodyMedium, color: COLORS.textTertiary },
-  feelingChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-  feelingChipActive: { borderColor: COLORS.orange, backgroundColor: 'rgba(232,143,36,0.1)' },
-  feelingText: { fontSize: 11, color: COLORS.textSecondary },
-  attachBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
+  async function post() {
+    if (!meId || (!text.trim() && !photo) || busy) return;
+    setBusy(true);
+    try {
+      await createPost(meId, { content: text, imageUri: photo, eventId: tag });
+      haptic('success');
+      setText('');
+      setPhoto(null);
+      onPosted();
+      onClose();
+    } catch {
+      haptic('error');
+      toast.show(t('tribe.postError'), 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
 
-  // Post menu
-  menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  menuSheet: { width: '75%', backgroundColor: COLORS.background, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-  menuItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' },
-  menuItemText: { fontSize: 14, fontFamily: FONTS.bodyMedium, color: COLORS.textPrimary },
-  menuItemTextDanger: { fontSize: 14, fontFamily: FONTS.bodyMedium, color: '#EF5350' },
-  menuItemCancel: { paddingVertical: 14, alignItems: 'center' },
-  menuItemTextCancel: { fontSize: 14, fontFamily: FONTS.bodyMedium, color: COLORS.textTertiary },
-});
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <KeyboardAvoidingView style={[s.sheet]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={s.sheetHeader}>
+          <TextButton label={t('common.cancel')} onPress={onClose} color={p.inkSoft} />
+          <Txt v="headline" style={{ flex: 1 }} align="center">
+            {t('tribe.composeTitle')}
+          </Txt>
+          <TextButton label={busy ? t('tribe.posting') : t('tribe.post')} onPress={post} disabled={busy || (!text.trim() && !photo)} color={p.markerText} />
+        </View>
+        <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }} keyboardShouldPersistTaps="handled">
+          <TextInput
+            value={text}
+            onChangeText={setText}
+            placeholder={t('tribe.composePlaceholder')}
+            placeholderTextColor={p.inkFaint}
+            selectionColor={p.marker}
+            multiline
+            autoFocus
+            maxLength={500}
+            style={[s.composeInput, { textAlign: lang === 'ar' ? 'right' : 'left' }]}
+          />
+          {photo ? (
+            <View>
+              <Image source={{ uri: photo }} style={s.postImg} />
+              <TextButton label={t('common.remove')} onPress={() => setPhoto(null)} color={p.danger} />
+            </View>
+          ) : (
+            <OutlineButton label={t('tribe.photo')} icon="photo" onPress={pick} />
+          )}
+          {recent.length ? (
+            <View style={{ gap: 8 }}>
+              <Txt v="label" color={p.inkSoft}>
+                {t('tribe.tagSession')}
+              </Txt>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                <Chip label={t('tribe.untag')} selected={!tag} onPress={() => setTag(null)} />
+                {recent.map((x) => (
+                  <Chip key={x.id} sport={x.sport} label={x.title} selected={tag === x.id} onPress={() => setTag(x.id)} />
+                ))}
+              </View>
+            </View>
+          ) : null}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+// ─── Report ─────────────────────────────────────────────────────────────────
+function ReportSheet({ post, meId, onClose }: { post: Post | null; meId: string | null; onClose: () => void }) {
+  const s = useStyles();
+  const { p, lang } = useKit();
+  const { t } = useI18n();
+  const [reason, setReason] = useState<string | null>(null);
+  const [details, setDetails] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setReason(null);
+    setDetails('');
+  }, [post?.id]);
+
+  async function send() {
+    if (!post || !meId || !reason) return;
+    setBusy(true);
+    try {
+      await reportPost(meId, post.id, reason, details);
+      onClose();
+      toast.show(t('tribe.reportThanks'), 'info');
+    } catch {
+      toast.show(t('common.somethingWrong'), 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal visible={!!post} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <View style={s.sheet}>
+        <View style={s.sheetHeader}>
+          <TextButton label={t('common.cancel')} onPress={onClose} color={p.inkSoft} />
+          <Txt v="headline" style={{ flex: 1 }} align="center">
+            {t('tribe.report')}
+          </Txt>
+          <View style={{ width: 60 }} />
+        </View>
+        <ScrollView contentContainerStyle={{ padding: 16, gap: 10 }}>
+          <Txt v="title" size={20}>
+            {t('tribe.reportTitle')}
+          </Txt>
+          {REASONS.map((r) => (
+            <Press key={r} onPress={() => setReason(r)} feedback="selection" style={[s.reason, reason === r ? { borderColor: p.ink, backgroundColor: p.wash } : null]} accessibilityState={{ selected: reason === r }}>
+              <View style={[s.radio, reason === r ? { borderColor: p.ink } : null]}>{reason === r ? <View style={s.radioDot} /> : null}</View>
+              <Txt v="body">{t(`tribe.reasons.${r}`)}</Txt>
+            </Press>
+          ))}
+          <TextInput
+            value={details}
+            onChangeText={setDetails}
+            placeholder={t('tribe.reportDetails')}
+            placeholderTextColor={p.inkFaint}
+            multiline
+            maxLength={500}
+            style={[s.composeInput, { minHeight: 90, textAlign: lang === 'ar' ? 'right' : 'left' }]}
+          />
+          <MarkerButton label={t('tribe.reportSend')} onPress={send} loading={busy} disabled={!reason} />
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
+
+const useStyles = makeStyles(({ p, f }) => ({
+  screen: { flex: 1, backgroundColor: p.board },
+  header: { flexDirection: 'row', alignItems: 'center', paddingStart: 16, paddingEnd: 8, paddingTop: 6, paddingBottom: 8 },
+  prompt: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 16, marginTop: 8, marginBottom: 4, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: p.rule },
+  post: { paddingHorizontal: 16, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: p.rule },
+  postHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  recap: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 10, minHeight: 28, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1.5, borderColor: p.aqua },
+  postImg: { width: '100%', aspectRatio: 4 / 3, borderRadius: 10, marginTop: 10, backgroundColor: p.wash },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 12 },
+  beast: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 36, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1.5, borderColor: p.ruleStrong },
+  community: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
+  packRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: p.rule },
+  patch: { width: 56, height: 56, borderRadius: 28, overflow: 'hidden', backgroundColor: '#023C3C' },
+  sheet: { flex: 1, backgroundColor: p.board },
+  sheetHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: p.rule },
+  composeInput: { minHeight: 140, borderRadius: 10, borderWidth: 1.5, borderColor: p.ruleStrong, backgroundColor: p.wash, padding: 14, color: p.ink, fontSize: 17, textAlignVertical: 'top', ...f.ui },
+  reason: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 50, paddingHorizontal: 14, borderRadius: 10, borderWidth: 1.5, borderColor: p.rule },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: p.ruleStrong, alignItems: 'center', justifyContent: 'center' },
+  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: p.ink },
+}));

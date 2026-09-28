@@ -1,19 +1,12 @@
 import { Stack } from 'expo-router';
-import { COLORS } from '../../../src/lib/constants';
+import { useKit } from '../../../src/theme';
 
 export default function HomeLayout() {
+  const { p } = useKit();
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: COLORS.background },
-      }}
-    >
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: p.board } }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="nutrition" />
-      <Stack.Screen name="create-activity" />
-      <Stack.Screen name="activity-chat" />
-      <Stack.Screen name="my-events" />
     </Stack>
   );
 }

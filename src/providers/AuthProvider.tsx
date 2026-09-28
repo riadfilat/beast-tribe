@@ -1,8 +1,21 @@
 import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
+import { Platform } from 'react-native';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { savePushToken } from '../lib/notifications';
 import { Profile } from '../types/models';
+import { PREVIEW, previewProfile } from '../data/preview';
+import { registerLanguageListener } from '../i18n';
+import { saveLocale } from '../data/locale';
+
+/** Preview starts signed in unless the web URL asks for the auth screens (?auth=1). */
+function previewStartsSignedIn() {
+  if (!PREVIEW) return false;
+  try {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location.search.includes('auth=1')) return false;
+  } catch {}
+  return true;
+}
 
 interface AuthContextType {
   session: Session | null;
@@ -31,7 +44,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
-      // Skip network calls when using placeholder credentials
+      // Preview (design QA) signs in a synthetic member; otherwise demo mode starts signed out.
+      if (previewStartsSignedIn()) {
+        setSession({ user: { id: previewProfile.id, email: 'preview@beasttribe.test', email_confirmed_at: new Date().toISOString() } } as unknown as Session);
+        setProfile(previewProfile as unknown as Profile);
+      }
       setLoading(false);
       return;
     }
@@ -67,10 +84,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Once the user is authenticated, register + save their push token (once per user).
   useEffect(() => {
     const userId = session?.user?.id;
-    if (!userId || userId === 'demo') return;
+    if (!userId || userId === 'demo' || !isSupabaseConfigured) return;
     if (pushRegisteredForRef.current === userId) return;
     pushRegisteredForRef.current = userId;
-    savePushToken(userId);
+    Promise.resolve()
+      .then(() => savePushToken(userId))
+      .catch(() => {});
+  }, [session?.user?.id]);
+
+  // Language switches are saved on the profile so push notifications arrive in it.
+  useEffect(() => {
+    const userId = session?.user?.id;
+    registerLanguageListener((lang) => saveLocale(userId, lang));
   }, [session?.user?.id]);
 
   async function fetchProfile(userId: string) {

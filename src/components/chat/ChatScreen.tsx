@@ -1,508 +1,187 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, Modal,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Avatar } from '../ui';
-import { useAuth } from '../../providers/AuthProvider';
-import { COLORS, FONTS } from '../../lib/constants';
+import React, { useEffect, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { makeStyles, useKit } from '../../theme';
+import { useI18n } from '../../i18n';
+import { fmtClock } from '../../i18n/format';
+import type { ChatMessage } from '../../data/chat';
+import { Txt } from '../board/Txt';
+import { Press } from '../board/Press';
+import { Icon } from '../board/Icon';
+import { IconButton } from '../board/controls';
+import { MagnetRow, Person } from '../board/people';
 
-interface ChatMessage {
-  id: string;
-  user_id: string;
-  content: string;
-  message_type: 'text' | 'status' | 'ping';
-  created_at: string;
-  author?: {
-    display_name?: string;
-    full_name?: string;
-    tier?: string;
-    avatar_url?: string;
-  };
-}
-
-interface Attendee {
-  id: string;
-  name: string;
-  avatar_url?: string;
-}
-
-interface StatusButton {
-  label: string;
-  icon: string;
-  type: 'status' | 'ping';
-}
-
-interface ChatScreenProps {
-  title: string;
-  subtitle?: string;
-  messages: ChatMessage[];
-  loading: boolean;
-  onSend: (content: string, type: 'text' | 'status' | 'ping') => void;
-  sending?: boolean;
-  statusButtons?: StatusButton[];
-  attendees?: Attendee[];
-  onBack: () => void;
-  /** Optional extra header action (rendered to the right, before the people icon) */
-  headerAction?: { icon: React.ComponentProps<typeof Ionicons>['name']; onPress: () => void; color?: string };
-}
-
-const DEFAULT_STATUS_BUTTONS: StatusButton[] = [
-  { label: "I'm here! 📍", icon: 'location', type: 'status' },
-  { label: 'On my way! 🏃', icon: 'walk', type: 'status' },
-  { label: 'Running late ⏰', icon: 'time', type: 'status' },
-  { label: "Who's coming? 👋", icon: 'hand-left', type: 'ping' },
+const QUICK: { code: 'onMyWay' | 'arrived' | 'late' | 'whosComing'; kind: 'status' | 'ping' }[] = [
+  { code: 'onMyWay', kind: 'status' },
+  { code: 'arrived', kind: 'status' },
+  { code: 'late', kind: 'status' },
+  { code: 'whosComing', kind: 'ping' },
 ];
 
-// Empty — real attendees from event RSVPs
-const DEMO_ATTENDEES: Attendee[] = [];
-
-function formatTime(dateStr: string): string {
-  const d = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+interface Props {
+  title: string;
+  subtitle?: string;
+  people?: Person[];
+  peopleTotal?: number;
+  messages: ChatMessage[];
+  meId: string | null;
+  loading: boolean;
+  sending?: boolean;
+  onSend: (content: string, kind: 'text' | 'status' | 'ping') => void;
+  onBack: () => void;
+  onTitlePress?: () => void;
+  quick?: boolean;
 }
 
-export function ChatScreen({
-  title,
-  subtitle,
-  messages,
-  loading,
-  onSend,
-  sending,
-  statusButtons = DEFAULT_STATUS_BUTTONS,
-  attendees,
-  onBack,
-  headerAction,
-}: ChatScreenProps) {
-  const [text, setText] = useState('');
-  const [showMembers, setShowMembers] = useState(false);
-  const scrollRef = useRef<ScrollView>(null);
-  const { user } = useAuth();
+/** Quick statuses travel as codes and render in each reader's language. */
+function useRenderContent() {
+  const { t } = useI18n();
+  return (content: string) => (content.startsWith('status:') ? t(`chat.quick.${content.slice(7)}`) : content);
+}
 
-  // If attendees prop is passed (even empty array), use it directly. Only fall back to demo when undefined.
-  const membersList = attendees !== undefined ? attendees : DEMO_ATTENDEES;
+export function ChatScreen({ title, subtitle, people, peopleTotal, messages, meId, loading, sending, onSend, onBack, onTitlePress, quick = true }: Props) {
+  const s = useStyles();
+  const { p, lang } = useKit();
+  const { t } = useI18n();
+  const render = useRenderContent();
+  const [text, setText] = useState('');
+  const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+    const id = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 60);
+    return () => clearTimeout(id);
   }, [messages.length]);
 
-  function handleSend() {
-    if (!text.trim()) return;
+  function send() {
+    if (!text.trim() || sending) return;
     onSend(text.trim(), 'text');
     setText('');
   }
 
-  function handleStatusSend(btn: StatusButton) {
-    onSend(btn.label, btn.type);
-  }
-
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={90}
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>{title}</Text>
-          <Text style={styles.headerSubtitle}>
-            {membersList.length} {membersList.length === 1 ? 'beast' : 'beasts'} joining
-          </Text>
+    <SafeAreaView style={s.screen} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {/* Header */}
+        <View style={s.header}>
+          <IconButton name="back" label={t('common.back')} onPress={onBack} />
+          <Press onPress={onTitlePress} disabled={!onTitlePress} feedback="selection" depress={0.98} style={{ flex: 1 }}>
+            <Txt v="row" size={16} numberOfLines={1}>
+              {title}
+            </Txt>
+            {subtitle ? (
+              <Txt v="caption" numberOfLines={1}>
+                {subtitle}
+              </Txt>
+            ) : null}
+          </Press>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-          {headerAction && (
-            <TouchableOpacity onPress={headerAction.onPress} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name={headerAction.icon} size={20} color={headerAction.color || COLORS.textPrimary} />
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity onPress={() => setShowMembers(true)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons name="people" size={20} color={COLORS.orange} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Attendee avatar row */}
-      <View style={styles.attendeeBar}>
-        <View style={styles.attendeeAvatars}>
-          {membersList.slice(0, 6).map((a, i) => (
-            <View key={a.id} style={[styles.attendeeAvatarWrap, { marginLeft: i === 0 ? 0 : -8 }]}>
-              <Avatar
-                name={a.name}
-                size={28}
-                backgroundColor={COLORS.dark}
-              />
-            </View>
-          ))}
-          {membersList.length > 6 && (
-            <View style={[styles.attendeeMore, { marginLeft: -8 }]}>
-              <Text style={styles.attendeeMoreText}>+{membersList.length - 6}</Text>
-            </View>
-          )}
-        </View>
-        <TouchableOpacity onPress={() => setShowMembers(true)} activeOpacity={0.7}>
-          <Text style={styles.attendeeSeeAll}>See all</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Quick status buttons */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statusBar} contentContainerStyle={styles.statusBarContent}>
-        {statusButtons.map((btn, i) => (
-          <TouchableOpacity
-            key={i}
-            style={styles.statusBtn}
-            onPress={() => handleStatusSend(btn)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.statusBtnText}>{btn.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Messages */}
-      <ScrollView
-        ref={scrollRef}
-        style={styles.messageList}
-        contentContainerStyle={styles.messageListContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {loading && (
-          <Text style={styles.loadingText}>Loading messages...</Text>
-        )}
-        {!loading && messages.length === 0 && (
-          <View style={styles.emptyState}>
-            <Ionicons name="chatbubbles-outline" size={40} color={COLORS.textMuted} />
-            <Text style={styles.emptyText}>No messages yet. Be the first!</Text>
+        {people && people.length ? (
+          <View style={s.people}>
+            <MagnetRow people={people} total={peopleTotal} max={7} size={26} meId={meId} />
           </View>
-        )}
-        {messages.map((msg) => {
-          const isMe = msg.user_id === user?.id || msg.user_id === 'me';
-          const authorName = msg.author?.display_name || msg.author?.full_name || 'Beast';
-          const isStatus = msg.message_type === 'status' || msg.message_type === 'ping';
+        ) : null}
 
-          if (isStatus) {
-            return (
-              <View key={msg.id} style={styles.statusMessage}>
-                <View style={styles.statusBubble}>
-                  <Text style={styles.statusAuthor}>{isMe ? 'You' : authorName}</Text>
-                  <Text style={styles.statusContent}>{msg.content}</Text>
+        {/* Messages */}
+        <ScrollView ref={scrollRef} style={{ flex: 1 }} contentContainerStyle={s.list} keyboardDismissMode="interactive" showsVerticalScrollIndicator={false}>
+          {!loading && messages.length === 0 ? (
+            <View style={s.empty}>
+              <Icon name="chat" size={30} color={p.inkFaint} />
+              <Txt v="meta" align="center">
+                {t('chat.empty')}
+              </Txt>
+            </View>
+          ) : null}
+          {messages.map((m, i) => {
+            const mine = m.userId === meId;
+            const prev = messages[i - 1];
+            const firstOfRun = !prev || prev.userId !== m.userId || prev.kind !== 'text';
+            if (m.kind !== 'text') {
+              return (
+                <View key={m.id} style={s.noteRow}>
+                  <View style={[s.note, m.kind === 'ping' ? { borderColor: p.aqua } : null]}>
+                    <View style={[s.noteDot, { backgroundColor: mine ? p.marker : p.aqua }]} />
+                    <Txt v="label" size={13}>
+                      {mine ? t('chat.you') : m.authorName.split(' ')[0]} · {render(m.content)}
+                    </Txt>
+                  </View>
+                  <Txt v="caption" size={11}>
+                    {fmtClock(m.createdAt, lang)}
+                  </Txt>
                 </View>
-                <Text style={styles.statusTime}>{formatTime(msg.created_at)}</Text>
+              );
+            }
+            return (
+              <View key={m.id} style={[s.bubbleRow, mine ? s.bubbleRowMine : null, firstOfRun ? { marginTop: 10 } : null]}>
+                <View style={[s.bubble, mine ? s.bubbleMine : s.bubbleTheirs]}>
+                  {!mine && firstOfRun ? (
+                    <Txt v="label" size={12} color={p.aqua} style={{ marginBottom: 2 }}>
+                      {m.authorName}
+                    </Txt>
+                  ) : null}
+                  <Txt v="body" size={16} color={mine ? p.onMarker : p.ink}>
+                    {m.content}
+                  </Txt>
+                  <Txt v="caption" size={11} color={mine ? p.onMarker : p.inkFaint} style={{ alignSelf: 'flex-end', marginTop: 2, opacity: mine ? 0.8 : 1 }}>
+                    {fmtClock(m.createdAt, lang)}
+                  </Txt>
+                </View>
               </View>
             );
-          }
+          })}
+        </ScrollView>
 
-          return (
-            <View key={msg.id} style={[styles.messageBubbleWrap, isMe && styles.messageBubbleWrapMe]}>
-              {!isMe && (
-                <Avatar
-                  name={msg.author?.full_name || authorName}
-                  size={30}
-                  backgroundColor={COLORS.dark}
-                />
-              )}
-              <View style={[styles.messageBubble, isMe && styles.messageBubbleMe]}>
-                {!isMe && <Text style={styles.messageAuthor}>{authorName}</Text>}
-                <Text style={[styles.messageText, isMe && styles.messageTextMe]}>{msg.content}</Text>
-                <Text style={[styles.messageTime, isMe && styles.messageTimeMe]}>{formatTime(msg.created_at)}</Text>
-              </View>
-            </View>
-          );
-        })}
-      </ScrollView>
+        {/* Quick statuses */}
+        {quick ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.quickBar} contentContainerStyle={s.quickRow} keyboardShouldPersistTaps="handled">
+            {QUICK.map((q) => (
+              <Press key={q.code} onPress={() => onSend(`status:${q.code}`, q.kind)} feedback="light" style={s.quick}>
+                <Txt v="label" size={13}>
+                  {t(`chat.quick.${q.code}`)}
+                </Txt>
+              </Press>
+            ))}
+          </ScrollView>
+        ) : null}
 
-      {/* Input */}
-      <View style={styles.inputBar}>
-        <TextInput
-          style={styles.input}
-          placeholder="Type a message..."
-          placeholderTextColor={COLORS.textMuted}
-          value={text}
-          onChangeText={setText}
-          multiline
-          maxLength={500}
-          onSubmitEditing={handleSend}
-          returnKeyType="send"
-        />
-        <TouchableOpacity
-          style={[styles.sendBtn, (!text.trim() || sending) && styles.sendBtnDisabled]}
-          onPress={handleSend}
-          disabled={!text.trim() || sending}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="send" size={18} color={text.trim() ? COLORS.dark : COLORS.textMuted} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Members Modal */}
-      <Modal visible={showMembers} transparent animationType="slide">
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowMembers(false)}
-        >
-          <View style={styles.modalSheet} onStartShouldSetResponder={() => true}>
-            <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>Who's Joining</Text>
-            <Text style={styles.modalSubtitle}>{membersList.length} beasts</Text>
-
-            <ScrollView style={styles.modalList} showsVerticalScrollIndicator={false}>
-              {membersList.map((member) => (
-                <View key={member.id} style={styles.memberRow}>
-                  <Avatar
-                    name={member.name}
-                    size={40}
-                    backgroundColor={COLORS.dark}
-                  />
-                  <View style={styles.memberInfo}>
-                    <Text style={styles.memberName}>{member.name}</Text>
-                  </View>
-                  <View style={[styles.memberStatus, { backgroundColor: 'rgba(98,183,151,0.12)' }]}>
-                    <Text style={styles.memberStatusText}>Going</Text>
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
-
-            <TouchableOpacity
-              style={styles.modalClose}
-              onPress={() => setShowMembers(false)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.modalCloseText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-    </KeyboardAvoidingView>
+        {/* Composer */}
+        <View style={s.composer}>
+          <TextInput
+            style={[s.input, { textAlign: lang === 'ar' ? 'right' : 'left' }]}
+            value={text}
+            onChangeText={setText}
+            placeholder={t('chat.placeholder')}
+            placeholderTextColor={p.inkFaint}
+            selectionColor={p.marker}
+            multiline
+            maxLength={1000}
+          />
+          <Press onPress={send} disabled={!text.trim() || sending} feedback="light" accessibilityLabel={t('chat.send')} style={[s.send, { backgroundColor: text.trim() ? p.marker : p.wash }]}>
+            <Icon name="send" size={18} color={text.trim() ? p.onMarker : p.inkFaint} weight="bold" />
+          </Press>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
-    gap: 12,
-  },
-  headerCenter: { flex: 1 },
-  headerTitle: { fontSize: 15, fontFamily: FONTS.heading, color: COLORS.textPrimary },
-  headerSubtitle: { fontSize: 10, fontFamily: FONTS.body, color: COLORS.textTertiary, marginTop: 1 },
-
-  // Attendee avatar row
-  attendeeBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.04)',
-  },
-  attendeeAvatars: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  attendeeAvatarWrap: {
-    borderWidth: 2,
-    borderColor: COLORS.background,
-    borderRadius: 16,
-  },
-  attendeeMore: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(232,143,36,0.2)',
-    borderWidth: 2,
-    borderColor: COLORS.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  attendeeMoreText: {
-    fontSize: 9,
-    fontFamily: FONTS.heading,
-    color: COLORS.orange,
-  },
-  attendeeSeeAll: {
-    fontSize: 11,
-    fontFamily: FONTS.bodyMedium,
-    color: COLORS.orange,
-  },
-
-  statusBar: { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' },
-  statusBarContent: { paddingHorizontal: 12, paddingVertical: 10, gap: 8, flexDirection: 'row', alignItems: 'center' },
-  statusBtn: {
-    backgroundColor: 'rgba(232,143,36,0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(232,143,36,0.2)',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    justifyContent: 'center',
-  },
-  statusBtnText: { fontSize: 12, fontFamily: FONTS.bodyMedium, color: COLORS.orange, lineHeight: 18 },
-
-  messageList: { flex: 1 },
-  messageListContent: { paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8 },
-  loadingText: { textAlign: 'center', color: COLORS.textMuted, fontFamily: FONTS.body, fontSize: 12, marginTop: 40 },
-  emptyState: { alignItems: 'center', marginTop: 60, gap: 12 },
-  emptyText: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textMuted, textAlign: 'center' },
-
-  // Status/ping messages
-  statusMessage: { alignItems: 'center', marginVertical: 8 },
-  statusBubble: {
-    backgroundColor: 'rgba(232,143,36,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(232,143,36,0.15)',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  statusAuthor: { fontSize: 9, fontFamily: FONTS.bodySemiBold, color: COLORS.orange, letterSpacing: 0.5, lineHeight: 13 },
-  statusContent: { fontSize: 12, fontFamily: FONTS.bodyMedium, color: COLORS.textPrimary, marginTop: 2, lineHeight: 17 },
-  statusTime: { fontSize: 8, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 3 },
-
-  // Regular messages
-  messageBubbleWrap: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginBottom: 10 },
-  messageBubbleWrapMe: { flexDirection: 'row-reverse' },
-  messageBubble: {
-    backgroundColor: COLORS.cardBg,
-    borderRadius: 16,
-    borderBottomLeftRadius: 4,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    maxWidth: '75%',
-  },
-  messageBubbleMe: {
-    backgroundColor: 'rgba(232,143,36,0.15)',
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 4,
-  },
-  messageAuthor: { fontSize: 10, fontFamily: FONTS.bodySemiBold, color: COLORS.aqua, marginBottom: 3 },
-  messageText: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textPrimary, lineHeight: 18 },
-  messageTextMe: { color: COLORS.textPrimary },
-  messageTime: { fontSize: 8, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 4, alignSelf: 'flex-end' },
-  messageTimeMe: { color: 'rgba(232,143,36,0.5)' },
-
-  // Input bar
-  inputBar: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
-    gap: 8,
-  },
-  input: {
-    flex: 1,
-    backgroundColor: COLORS.inputBg,
-    borderWidth: 1,
-    borderColor: COLORS.inputBorder,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 14,
-    fontFamily: FONTS.body,
-    color: COLORS.textPrimary,
-    maxHeight: 100,
-  },
-  sendBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: COLORS.orange,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendBtnDisabled: { backgroundColor: 'rgba(255,255,255,0.08)' },
-
-  // Members Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'flex-end',
-  },
-  modalSheet: {
-    backgroundColor: COLORS.background,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 30,
-    maxHeight: '70%',
-  },
-  modalHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontFamily: FONTS.heading,
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-  },
-  modalSubtitle: {
-    fontSize: 11,
-    fontFamily: FONTS.body,
-    color: COLORS.textTertiary,
-    textAlign: 'center',
-    marginTop: 2,
-    marginBottom: 16,
-  },
-  modalList: {
-    flex: 1,
-  },
-  memberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.04)',
-  },
-  memberInfo: { flex: 1 },
-  memberName: { fontSize: 14, fontFamily: FONTS.bodyMedium, color: COLORS.textPrimary },
-  memberTier: { fontSize: 9, fontFamily: FONTS.body, color: COLORS.textMuted, letterSpacing: 0.5, marginTop: 1 },
-  memberStatus: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  memberStatusText: {
-    fontSize: 10,
-    fontFamily: FONTS.bodySemiBold,
-    color: COLORS.green,
-  },
-  modalClose: {
-    alignItems: 'center',
-    paddingVertical: 14,
-    marginTop: 8,
-  },
-  modalCloseText: {
-    fontSize: 14,
-    fontFamily: FONTS.bodyMedium,
-    color: COLORS.textTertiary,
-  },
-});
+const useStyles = makeStyles(({ p, f }) => ({
+  screen: { flex: 1, backgroundColor: p.board },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingEnd: 16, paddingStart: 4, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: p.rule },
+  people: { paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: p.rule },
+  list: { paddingHorizontal: 14, paddingVertical: 12 },
+  empty: { alignItems: 'center', gap: 10, marginTop: 60 },
+  noteRow: { alignItems: 'center', gap: 4, marginVertical: 10 },
+  note: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderColor: p.ruleStrong, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  noteDot: { width: 8, height: 8, borderRadius: 4 },
+  bubbleRow: { flexDirection: 'row', marginTop: 3 },
+  bubbleRowMine: { justifyContent: 'flex-end' },
+  bubble: { maxWidth: '80%', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 },
+  bubbleMine: { backgroundColor: p.marker, borderBottomEndRadius: 4 },
+  bubbleTheirs: { backgroundColor: p.wash, borderWidth: 1, borderColor: p.rule, borderBottomStartRadius: 4 },
+  quickBar: { flexGrow: 0, borderTopWidth: 1, borderTopColor: p.rule },
+  quickRow: { paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
+  quick: { minHeight: 36, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 8, borderWidth: 1.5, borderColor: p.ruleStrong },
+  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingHorizontal: 12, paddingVertical: 8, borderTopWidth: 1, borderTopColor: p.rule },
+  input: { flex: 1, minHeight: 42, maxHeight: 120, borderRadius: 21, borderWidth: 1.5, borderColor: p.ruleStrong, backgroundColor: p.wash, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10, color: p.ink, fontSize: 16, ...f.ui },
+  send: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
+}));

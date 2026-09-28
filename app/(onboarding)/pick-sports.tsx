@@ -1,140 +1,109 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { Button, SportChip } from '../../src/components/ui';
-import { StepIndicator } from '../../src/components/onboarding/StepIndicator';
-import { useSaveSports, useUserSports } from '../../src/hooks';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { makeStyles, useKit } from '../../src/theme';
+import { useI18n } from '../../src/i18n';
 import { useAuth } from '../../src/providers/AuthProvider';
-import { COLORS, FONTS, SPORTS } from '../../src/lib/constants';
+import { useSaveSports } from '../../src/hooks';
+import { useMySports } from '../../src/data/member';
+import { invalidate } from '../../src/data/query';
+import { SPORT_LIST } from '../../src/lib/sports';
+import { Txt } from '../../src/components/board/Txt';
+import { Icon } from '../../src/components/board/Icon';
+import { Press } from '../../src/components/board/Press';
+import { IconButton, MarkerButton } from '../../src/components/board/controls';
+import { toast } from '../../src/components/board/toast';
 
 export default function PickSportsScreen() {
+  const s = useStyles();
+  const { p } = useKit();
+  const { t } = useI18n();
   const router = useRouter();
-  const params = useLocalSearchParams<{ edit?: string }>();
-  const isEditMode = params.edit === '1';
-
-  const [selected, setSelected] = useState<string[]>([]);
-  const [finishing, setFinishing] = useState(false);
-  const { saveSports, loading: savingSports } = useSaveSports();
+  const insets = useSafeAreaInsets();
+  const { edit } = useLocalSearchParams<{ edit?: string }>();
+  const editing = edit === '1';
   const { completeOnboarding } = useAuth();
-
-  // In edit mode, pre-load current sports
-  const { data: userSportsData } = useUserSports();
+  const { saveSports } = useSaveSports();
+  const current = useMySports().data;
+  const [picked, setPicked] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (isEditMode && userSportsData && userSportsData.length > 0) {
-      const currentSportNames = userSportsData.map((us: any) => us.sport?.name).filter(Boolean);
-      const matchedIds = SPORTS.filter(s => currentSportNames.includes(s.name)).map(s => s.id);
-      if (matchedIds.length > 0) setSelected(matchedIds);
-    }
-  }, [isEditMode, userSportsData]);
+    if (current && current.length && !picked.length) setPicked(current);
+  }, [current]);
 
-  const saving = savingSports || finishing;
+  const toggle = (id: string) => setPicked((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
-  async function handleContinue() {
-    setFinishing(true);
+  async function done() {
+    setBusy(true);
     try {
-      await saveSports(selected);
-      if (isEditMode) {
+      await saveSports(picked);
+      invalidate('member:sports');
+      if (editing) {
         router.canGoBack() ? router.back() : router.replace('/(tabs)/profile');
         return;
       }
-      // Final onboarding step — mark complete and enter the app.
       await completeOnboarding();
       router.replace('/(tabs)/home');
-    } catch (e: any) {
-      Alert.alert('Could not save', e?.message || 'Please try again.');
+    } catch {
+      toast.show(t('onboarding.saveError'), 'error');
     } finally {
-      setFinishing(false);
+      setBusy(false);
     }
   }
 
-  function toggleSport(id: string) {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
-    );
-  }
-
   return (
-    <SafeAreaView style={styles.container}>
-      {isEditMode ? (
-        <View style={styles.editHeader}>
-          <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/profile')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.editHeaderTitle}>Edit Disciplines</Text>
-          <View style={{ width: 22 }} />
+    <SafeAreaView style={s.screen} edges={['top']}>
+      <View style={s.topRow}>
+        <IconButton name="back" label={t('common.back')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/profile'))} />
+        <Txt v="label" color={p.inkSoft}>
+          {editing ? t('you.mySports') : t('onboarding.step', { n: 2, total: 2 })}
+        </Txt>
+        <View style={{ width: 44 }} />
+      </View>
+      <ScrollView contentContainerStyle={s.body} showsVerticalScrollIndicator={false}>
+        <Txt v="title" size={30} accessibilityRole="header">
+          {t('onboarding.sportsTitle')}
+        </Txt>
+        <Txt v="body" color={p.inkSoft} style={{ marginTop: 6, marginBottom: 20 }}>
+          {t('onboarding.sportsSub')}
+        </Txt>
+        <View style={s.grid}>
+          {SPORT_LIST.map((sp) => {
+            const on = picked.includes(sp.id);
+            return (
+              <Press
+                key={sp.id}
+                onPress={() => toggle(sp.id)}
+                feedback="selection"
+                depress={0.96}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: on }}
+                style={[s.tile, on ? { backgroundColor: p.ink, borderColor: p.ink } : null]}
+              >
+                <Icon sport={sp.id} size={24} color={on ? p.board : p.ink} />
+                <Txt v="label" size={15} color={on ? p.board : p.ink} style={{ flex: 1 }} numberOfLines={1}>
+                  {t(`sports.${sp.id}`)}
+                </Txt>
+                {on ? <Icon name="check" size={14} color={p.board} weight="bold" /> : null}
+              </Press>
+            );
+          })}
         </View>
-      ) : (
-        <StepIndicator currentStep={2} totalSteps={2} />
-      )}
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>{isEditMode ? 'Your disciplines' : 'Pick your disciplines'}</Text>
-        <Text style={styles.subtitle}>Select 1 or more sports you train in.</Text>
-
-        <View style={styles.grid}>
-          {SPORTS.map((sport) => (
-            <SportChip
-              key={sport.id}
-              icon={sport.icon}
-              emoji={sport.emoji}
-              name={sport.name}
-              selected={selected.includes(sport.id)}
-              onPress={() => toggleSport(sport.id)}
-            />
-          ))}
-        </View>
-
-        <Button
-          title={saving ? "Saving..." : isEditMode ? "Save Changes" : "Enter Beast Tribe"}
-          onPress={handleContinue}
-          disabled={selected.length === 0 || saving}
-        />
-
-        <View style={{ height: 20 }} />
       </ScrollView>
+      <View style={[s.bar, { paddingBottom: 12 + insets.bottom }]}>
+        <MarkerButton label={editing ? t('common.save') : t('onboarding.enter')} onPress={done} loading={busy} disabled={!picked.length} />
+      </View>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  editHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  editHeaderTitle: {
-    fontSize: 16,
-    fontFamily: FONTS.heading,
-    color: COLORS.textPrimary,
-  },
-  scroll: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  title: {
-    fontSize: 22,
-    fontFamily: FONTS.heading,
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 12,
-    fontFamily: FONTS.body,
-    color: COLORS.textSecondary,
-    marginBottom: 16,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 28,
-  },
-});
+const useStyles = makeStyles(({ p }) => ({
+  screen: { flex: 1, backgroundColor: p.board },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 6 },
+  body: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 32 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  tile: { width: '48%', flexGrow: 1, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, paddingHorizontal: 14, borderRadius: 10, borderWidth: 1.5, borderColor: p.rule },
+  bar: { paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1, borderTopColor: p.rule, backgroundColor: p.boardDeep },
+}));

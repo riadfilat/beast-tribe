@@ -1,10 +1,8 @@
 export { Button } from './Button';
 export { Card } from './Card';
-export { TierPill } from './TierPill';
 export { Avatar } from './Avatar';
 export { ProgressBar } from './ProgressBar';
 export { FilterTabs } from './FilterTabs';
 export { Input } from './Input';
 export { SportChip } from './SportChip';
-export { XPLabel } from './XPLabel';
 export { BeastIcon } from './BeastIcon';

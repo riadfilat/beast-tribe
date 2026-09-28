@@ -7,16 +7,19 @@ import { supabase, isSupabaseConfigured } from './supabase';
 // Hardcoded fallback — keep in sync with app.json `extra.eas.projectId`.
 const EAS_PROJECT_ID = 'b9a69ad8-8fff-4877-a53b-3c9162c431b7';
 
-// Show notifications while the app is foregrounded.
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+// Show notifications while the app is foregrounded. Guarded: the installed
+// build predates expo-notifications, so this must never throw at import.
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+} catch {}
 
 /**
  * Register the device for push notifications and return the Expo push token.

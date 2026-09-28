@@ -1,4 +1,5 @@
 // Beast Tribe — Design System Constants
+import { SLATE, WHITEBOARD, legacyColors } from '../theme/palette';
 
 // ─── Legal / hosted pages ───────────────────────────────────────────────────
 // Hosted on the admin (Vercel) deployment — public /legal/* routes.
@@ -7,79 +8,24 @@ export const TERMS_URL = `${LEGAL_BASE_URL}/legal/terms`;
 export const PRIVACY_URL = `${LEGAL_BASE_URL}/legal/privacy`;
 
 
-// Dark theme (default)
-export const DARK_COLORS = {
-  teal: '#023C3C',
-  tealLight: '#034E4E',
-  orange: '#E88F24',
-  aqua: '#56C4C4',
-  dark: '#011E1E',
-  background: '#012A2A',
-  gray: '#F2F0EE',
-  coral: '#EF8C86',
-  green: '#62B797',
-  blueGray: '#759CA9',
-  white: '#FFFFFF',
-  cardBg: 'rgba(255,255,255,0.07)',
-  cardBorder: 'rgba(86,196,196,0.18)',
-  inputBg: 'rgba(255,255,255,0.08)',
-  inputBorder: 'rgba(86,196,196,0.22)',
-  statCardBg: 'rgba(86,196,196,0.08)',
-  statCardBorder: 'rgba(86,196,196,0.25)',
-  textPrimary: '#FFFFFF',
-  textSecondary: 'rgba(255,255,255,0.65)',
-  textTertiary: 'rgba(255,255,255,0.5)',
-  textMuted: 'rgba(255,255,255,0.3)',
-  tabBarBg: '#011E1E',
-  tabBarBorder: 'rgba(86,196,196,0.12)',
-  tabInactive: 'rgba(255,255,255,0.2)',
-} as const;
+// ─── Links ──────────────────────────────────────────────────────────────────
+export const SUPPORT_URL = `${LEGAL_BASE_URL}/support`;
+/** Public session invite page (opens the app via beasttribe://session/<id>). */
+export const SESSION_LINK_BASE = `${LEGAL_BASE_URL}/s/`;
+/** Operation Beast Shopify store. Empty = the Shop entry stays hidden until the store is live. */
+export const SHOP_URL = '';
 
-// Light theme — maximum contrast, fully readable
-export const LIGHT_COLORS = {
-  teal: '#023C3C',
-  tealLight: '#034E4E',
-  orange: '#C06A00',            // Deep amber — strong on white
-  aqua: '#1A7A7A',              // Deep teal — high contrast
-  dark: '#111111',
-  background: '#F2F0ED',
-  gray: '#E8E5E1',
-  coral: '#C44840',
-  green: '#2D7558',
-  blueGray: '#4A6A78',
-  white: '#FFFFFF',             // Always actual white — used on dark/colored backgrounds
-  cardBg: '#FFFFFF',
-  cardBorder: 'rgba(0,0,0,0.12)',
-  inputBg: '#FFFFFF',
-  inputBorder: 'rgba(0,0,0,0.20)',
-  statCardBg: '#FFFFFF',
-  statCardBorder: 'rgba(0,0,0,0.10)',
-  textPrimary: '#111111',
-  textSecondary: '#333333',
-  textTertiary: '#555555',
-  textMuted: '#777777',
-  tabBarBg: '#FFFFFF',
-  tabBarBorder: 'rgba(0,0,0,0.12)',
-  tabInactive: '#666666',
-} as const;
+// ─── Legacy colors ──────────────────────────────────────────────────────────
+// Screens built on the board kit use useKit()/makeStyles (src/theme). These
+// mutable COLORS remain for any screen not yet migrated, and follow the board.
 
-// Read theme at module load — BEFORE any StyleSheet.create() uses COLORS
-function _getInitialTheme(): boolean {
-  try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      return window.localStorage.getItem('beast_tribe_theme') !== 'light';
-    }
-  } catch {}
-  return true;
-}
+export const DARK_COLORS = legacyColors(SLATE);
+export const LIGHT_COLORS = legacyColors(WHITEBOARD);
+export let COLORS = { ...DARK_COLORS };
 
-// Initialize COLORS with the correct theme immediately
-export let COLORS = { ...(_getInitialTheme() ? DARK_COLORS : LIGHT_COLORS) };
-
-/** Called by ThemeProvider to switch theme globally */
+/** Called by ThemeProvider when the board appearance changes. */
 export function setThemeColors(isDark: boolean) {
-  const newColors = isDark ? DARK_COLORS : LIGHT_COLORS;
-  Object.assign(COLORS, newColors);
+  Object.assign(COLORS, isDark ? DARK_COLORS : LIGHT_COLORS);
 }
 
 // Operation levels — Beast Tribe gamification system

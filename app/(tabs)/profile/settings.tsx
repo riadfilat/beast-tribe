@@ -1,426 +1,131 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal } from 'react-native';
+import React, { useState } from 'react';
+import { Alert, Linking, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
+import { makeStyles, useTheme } from '../../../src/theme';
+import { useI18n, Lang } from '../../../src/i18n';
 import { useAuth } from '../../../src/providers/AuthProvider';
-import { useTheme } from '../../../src/providers/ThemeProvider';
-import { COLORS, FONTS } from '../../../src/lib/constants';
-
-interface SettingToggle {
-  key: string;
-  icon: string;
-  label: string;
-  description: string;
-  value: boolean;
-}
+import { PRIVACY_URL, SUPPORT_URL, TERMS_URL } from '../../../src/lib/constants';
+import { Txt } from '../../../src/components/board/Txt';
+import { IconButton, Segmented } from '../../../src/components/board/controls';
+import { Group, GroupRow } from '../../../src/components/board/list';
+import { toast } from '../../../src/components/board/toast';
 
 export default function SettingsScreen() {
+  const s = useStyles();
+  const { p, appearance, setAppearance } = useTheme();
+  const { t, lang, setLanguage } = useI18n();
   const router = useRouter();
-  const { profile, deleteAccount } = useAuth();
-  const { isDark, toggleTheme } = useTheme();
-
-  // Account deletion (Apple Guideline 5.1.1(v))
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const { signOut, deleteAccount } = useAuth();
   const [deleting, setDeleting] = useState(false);
 
-  async function handleDeleteAccount() {
-    setDeleting(true);
-    try {
-      await deleteAccount();
-      // AuthGate routes to auth automatically on session clear; fallback below.
-      router.replace('/(auth)/sign-in');
-    } catch (err: any) {
-      setShowDeleteModal(false);
-      Alert.alert(
-        'Could not delete account',
-        err?.message || 'Something went wrong. Please try again.'
-      );
-    } finally {
-      setDeleting(false);
-    }
+  const back = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/profile'));
+
+  function switchLanguage(next: Lang) {
+    if (next === lang) return;
+    // Native apps restart to flip layout direction; say so before it happens.
+    Alert.alert(next === 'ar' ? 'العربية' : 'English', t('settings.languageNote'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.continue'), onPress: () => setLanguage(next) },
+    ]);
   }
 
-  // Privacy settings
-  const [privateProfile, setPrivateProfile] = useState(false);
-  const [showActivity, setShowActivity] = useState(true);
-  const [packOnly, setPackOnly] = useState(false);
-
-  // Notification settings
-  const [notifyEvents, setNotifyEvents] = useState(true);
-  const [notifyChat, setNotifyChat] = useState(true);
-  const [notifyBeasts, setNotifyBeasts] = useState(true);
-
-  function Toggle({ value, onToggle, color = COLORS.orange }: { value: boolean; onToggle: () => void; color?: string }) {
-    return (
-      <TouchableOpacity
-        style={[styles.toggle, value && { backgroundColor: `${color}30` }]}
-        onPress={onToggle}
-        activeOpacity={0.7}
-      >
-        <View style={[styles.toggleDot, value && { alignSelf: 'flex-end', backgroundColor: color }]} />
-      </TouchableOpacity>
-    );
+  function confirmSignOut() {
+    Alert.alert(t('settings.signOutTitle'), undefined, [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('settings.signOut'), style: 'destructive', onPress: () => signOut().catch(() => toast.show(t('common.somethingWrong'), 'error')) },
+    ]);
   }
 
-  function SettingRow({ icon, label, description, children }: { icon: string; label: string; description: string; children: React.ReactNode }) {
-    return (
-      <View style={styles.settingRow}>
-        <View style={styles.settingIconWrap}>
-          <Ionicons name={icon as any} size={18} color={COLORS.orange} />
-        </View>
-        <View style={styles.settingInfo}>
-          <Text style={styles.settingLabel}>{label}</Text>
-          <Text style={styles.settingDesc}>{description}</Text>
-        </View>
-        {children}
-      </View>
-    );
+  function confirmDelete() {
+    Alert.alert(t('settings.deleteTitle'), t('settings.deleteBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('settings.deleteConfirm'),
+        style: 'destructive',
+        onPress: async () => {
+          setDeleting(true);
+          try {
+            await deleteAccount();
+          } catch (e: any) {
+            toast.show(e?.message || t('common.somethingWrong'), 'error');
+          } finally {
+            setDeleting(false);
+          }
+        },
+      },
+    ]);
   }
+
+  const version = Constants.expoConfig?.version ?? '1.0.0';
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/profile')}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          style={styles.backBtn}
-        >
-          <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings & Privacy</Text>
-        <View style={{ width: 22 }} />
+    <SafeAreaView style={s.screen} edges={['top']}>
+      <View style={s.header}>
+        <IconButton name="back" label={t('common.back')} onPress={back} />
+        <Txt v="title" size={22} accessibilityRole="header">
+          {t('settings.title')}
+        </Txt>
       </View>
+      <ScrollView contentContainerStyle={s.content}>
+        <Txt v="label" color={p.inkSoft} style={s.groupTitle}>
+          {t('settings.language')}
+        </Txt>
+        <Segmented
+          value={lang}
+          onChange={switchLanguage}
+          options={[
+            { value: 'en', label: t('settings.english') },
+            { value: 'ar', label: t('settings.arabic') },
+          ]}
+        />
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+        <Txt v="label" color={p.inkSoft} style={s.groupTitle}>
+          {t('settings.appearance')}
+        </Txt>
+        <Segmented
+          value={appearance}
+          onChange={setAppearance}
+          options={[
+            { value: 'slate', label: t('settings.slate') },
+            { value: 'whiteboard', label: t('settings.whiteboard') },
+          ]}
+        />
 
-        {/* PRIVACY */}
-        <Text style={styles.sectionLabel}>PRIVACY</Text>
-        <View style={styles.card}>
-          <SettingRow icon="eye-off-outline" label="Private Profile" description="Only your pack members can see your profile and activity">
-            <Toggle value={privateProfile} onToggle={() => setPrivateProfile(!privateProfile)} />
-          </SettingRow>
+        <Txt v="label" color={p.inkSoft} style={s.groupTitle}>
+          {t('settings.account')}
+        </Txt>
+        <Group>
+          <GroupRow icon="edit" label={t('settings.editProfile')} onPress={() => router.push({ pathname: '/(onboarding)/about-you', params: { edit: '1' } })} />
+          <GroupRow icon="bell" label={t('settings.notifications')} sub={t('settings.remindersSub')} onPress={() => Linking.openSettings().catch(() => {})} />
+        </Group>
 
-          <SettingRow icon="people-outline" label="Pack Only Mode" description="Only interact with your tribe — hide from public feed">
-            <Toggle value={packOnly} onToggle={() => setPackOnly(!packOnly)} />
-          </SettingRow>
+        <Group style={{ marginTop: 20 }}>
+          <GroupRow icon="shield" label={t('settings.privacy')} onPress={() => Linking.openURL(PRIVACY_URL)} />
+          <GroupRow icon="doc" label={t('settings.terms')} onPress={() => Linking.openURL(TERMS_URL)} />
+          <GroupRow icon="help" label={t('settings.support')} onPress={() => Linking.openURL(SUPPORT_URL)} />
+          <GroupRow icon="people" label={t('settings.guidelines')} onPress={() => Alert.alert(t('settings.guidelines'), t('settings.guidelinesBody'))} />
+        </Group>
 
-          <SettingRow icon="calendar-outline" label="Show Activity" description="Let others see your workouts and events">
-            <Toggle value={showActivity} onToggle={() => setShowActivity(!showActivity)} />
-          </SettingRow>
-        </View>
+        <Group style={{ marginTop: 20 }}>
+          <GroupRow icon="signOut" label={t('settings.signOut')} chevron={false} onPress={confirmSignOut} />
+        </Group>
+        <Group style={{ marginTop: 20 }}>
+          <GroupRow icon="trash" label={deleting ? t('settings.deleting') : t('settings.deleteAccount')} tone="danger" chevron={false} onPress={deleting ? undefined : confirmDelete} />
+        </Group>
 
-        {/* NOTIFICATIONS */}
-        <Text style={styles.sectionLabel}>NOTIFICATIONS</Text>
-        <View style={styles.card}>
-          <SettingRow icon="megaphone-outline" label="Event Updates" description="Get notified about new events and RSVPs">
-            <Toggle value={notifyEvents} onToggle={() => setNotifyEvents(!notifyEvents)} color={COLORS.aqua} />
-          </SettingRow>
-
-          <SettingRow icon="chatbubbles-outline" label="Chat Messages" description="Notifications for pack and activity chats">
-            <Toggle value={notifyChat} onToggle={() => setNotifyChat(!notifyChat)} color={COLORS.aqua} />
-          </SettingRow>
-
-          <SettingRow icon="heart-outline" label="Beast Reactions" description="When someone beasts your post">
-            <Toggle value={notifyBeasts} onToggle={() => setNotifyBeasts(!notifyBeasts)} color={COLORS.aqua} />
-          </SettingRow>
-        </View>
-
-        {/* COACH ACCESS */}
-        <Text style={styles.sectionLabel}>COACH ACCESS</Text>
-        <View style={styles.card}>
-          <SettingRow icon="barbell-outline" label="Share Workouts" description="Let your coach see your workout history">
-            <Toggle value={true} onToggle={() => {}} color={COLORS.green} />
-          </SettingRow>
-          <SettingRow icon="restaurant-outline" label="Share Nutrition" description="Let your coach see your meal logs">
-            <Toggle value={true} onToggle={() => {}} color={COLORS.green} />
-          </SettingRow>
-          <SettingRow icon="checkbox-outline" label="Share Habits" description="Let your coach see your daily habits">
-            <Toggle value={true} onToggle={() => {}} color={COLORS.green} />
-          </SettingRow>
-          <SettingRow icon="body-outline" label="Share Body Metrics" description="Let your coach see weight, BMI, measurements">
-            <Toggle value={true} onToggle={() => {}} color={COLORS.green} />
-          </SettingRow>
-          <SettingRow icon="camera-outline" label="Share Progress Photos" description="Allow coach to view your before/after photos">
-            <Toggle value={false} onToggle={() => {}} color={COLORS.green} />
-          </SettingRow>
-          <SettingRow icon="megaphone-outline" label="Post My Transformation" description="Allow coach to share your progress on the feed">
-            <Toggle value={false} onToggle={() => {}} color={COLORS.green} />
-          </SettingRow>
-        </View>
-
-        {/* APPEARANCE */}
-        <Text style={styles.sectionLabel}>APPEARANCE</Text>
-        <View style={styles.card}>
-          <SettingRow icon={isDark ? 'moon' : 'sunny'} label={isDark ? 'Dark Mode' : 'Light Mode'} description="Switch between dark and light theme">
-            <Toggle value={isDark} onToggle={toggleTheme} />
-          </SettingRow>
-        </View>
-
-        {/* ACCOUNT */}
-        <Text style={styles.sectionLabel}>ACCOUNT</Text>
-        <View style={styles.card}>
-          <TouchableOpacity style={styles.settingRow} onPress={() => router.push('/(onboarding)/about-you?edit=1')} activeOpacity={0.7}>
-            <View style={styles.settingIconWrap}>
-              <Ionicons name="person-outline" size={18} color={COLORS.orange} />
-            </View>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Edit Profile</Text>
-              <Text style={styles.settingDesc}>Country, city, gender, experience level</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={COLORS.textTertiary} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.settingRow} onPress={() => router.push('/(onboarding)/pick-sports?edit=1')} activeOpacity={0.7}>
-            <View style={styles.settingIconWrap}>
-              <Ionicons name="fitness-outline" size={18} color={COLORS.orange} />
-            </View>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Edit Disciplines</Text>
-              <Text style={styles.settingDesc}>Sports you train in</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={COLORS.textTertiary} />
-          </TouchableOpacity>
-        </View>
-
-        {/* COMMUNITY BEST PRACTICES */}
-        <Text style={styles.sectionLabel}>COMMUNITY GUIDELINES</Text>
-        <View style={styles.guidelinesCard}>
-          <View style={styles.guidelineItem}>
-            <View style={styles.guidelineIconWrap}>
-              <Ionicons name="shield-checkmark" size={20} color={COLORS.green} />
-            </View>
-            <View style={styles.guidelineContent}>
-              <Text style={styles.guidelineTitle}>Be Respectful</Text>
-              <Text style={styles.guidelineText}>Treat every beast with respect. No harassment, bullying, or hate speech. We're all here to grow.</Text>
-            </View>
-          </View>
-
-          <View style={styles.guidelineItem}>
-            <View style={styles.guidelineIconWrap}>
-              <Ionicons name="hand-left" size={20} color={COLORS.orange} />
-            </View>
-            <View style={styles.guidelineContent}>
-              <Text style={styles.guidelineTitle}>Keep It Safe</Text>
-              <Text style={styles.guidelineText}>Never share personal info like phone numbers or addresses in public chats. Use private messages for personal details.</Text>
-            </View>
-          </View>
-
-          <View style={styles.guidelineItem}>
-            <View style={styles.guidelineIconWrap}>
-              <Ionicons name="heart" size={20} color={COLORS.coral} />
-            </View>
-            <View style={styles.guidelineContent}>
-              <Text style={styles.guidelineTitle}>Support Each Other</Text>
-              <Text style={styles.guidelineText}>Celebrate wins, encourage effort, and lift up your tribe. Every beast started somewhere.</Text>
-            </View>
-          </View>
-
-          <View style={styles.guidelineItem}>
-            <View style={styles.guidelineIconWrap}>
-              <Ionicons name="camera-outline" size={20} color={COLORS.aqua} />
-            </View>
-            <View style={styles.guidelineContent}>
-              <Text style={styles.guidelineTitle}>Ask Before Sharing</Text>
-              <Text style={styles.guidelineText}>Always get permission before posting photos or videos of others. Respect everyone's privacy.</Text>
-            </View>
-          </View>
-
-          <View style={styles.guidelineItem}>
-            <View style={styles.guidelineIconWrap}>
-              <Ionicons name="warning-outline" size={20} color="#FFD700" />
-            </View>
-            <View style={styles.guidelineContent}>
-              <Text style={styles.guidelineTitle}>Listen to Your Body</Text>
-              <Text style={styles.guidelineText}>Push your limits, not past them. Rest days are beast days too. Consult a doctor before starting any new fitness program.</Text>
-            </View>
-          </View>
-
-          <View style={styles.guidelineItem}>
-            <View style={styles.guidelineIconWrap}>
-              <Ionicons name="flag" size={20} color="#EF5350" />
-            </View>
-            <View style={styles.guidelineContent}>
-              <Text style={styles.guidelineTitle}>Report Issues</Text>
-              <Text style={styles.guidelineText}>See something wrong? Use the 3-dot menu on any post to report it. Our team reviews every report.</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* DANGER ZONE */}
-        <Text style={[styles.sectionLabel, styles.dangerLabel]}>DANGER ZONE</Text>
-        <View style={styles.dangerCard}>
-          <TouchableOpacity
-            style={styles.dangerRow}
-            activeOpacity={0.7}
-            onPress={() => setShowDeleteModal(true)}
-          >
-            <View style={styles.dangerIconWrap}>
-              <Ionicons name="trash-outline" size={18} color={'#EF5350'} />
-            </View>
-            <View style={styles.settingInfo}>
-              <Text style={styles.dangerLabelText}>Delete Account</Text>
-              <Text style={styles.dangerDesc}>Permanently delete your account and all data</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={'#EF5350'} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={{ height: 40 }} />
+        <Txt v="caption" align="center" style={{ marginTop: 24 }}>
+          {t('common.appName')} · {t('settings.version', { v: version })}
+        </Txt>
       </ScrollView>
-
-      {/* Delete Account Confirmation Modal */}
-      <Modal visible={showDeleteModal} transparent animationType="fade">
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => !deleting && setShowDeleteModal(false)}
-        >
-          <View style={styles.modalSheet}>
-            <View style={styles.modalIconWrap}>
-              <Ionicons name="warning-outline" size={32} color={'#EF5350'} />
-            </View>
-            <Text style={styles.modalTitle}>Delete Account?</Text>
-            <Text style={styles.modalSubtitle}>
-              This permanently deletes your account, profile, posts, and event history. This cannot be undone.
-            </Text>
-            <TouchableOpacity
-              style={styles.modalDeleteBtn}
-              activeOpacity={0.8}
-              onPress={handleDeleteAccount}
-              disabled={deleting}
-            >
-              <Text style={styles.modalDeleteText}>
-                {deleting ? 'Deleting...' : 'Delete Forever'}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalCancelBtn}
-              activeOpacity={0.7}
-              onPress={() => setShowDeleteModal(false)}
-              disabled={deleting}
-            >
-              <Text style={styles.modalCancelText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12,
-  },
-  headerTitle: { fontSize: 16, fontFamily: FONTS.heading, color: COLORS.textPrimary },
-  backBtn: { padding: 8 },
-  scroll: { flex: 1, paddingHorizontal: 16 },
-
-  sectionLabel: {
-    fontSize: 9, fontFamily: FONTS.bodySemiBold, color: COLORS.textMuted,
-    letterSpacing: 1.5, marginTop: 24, marginBottom: 10,
-  },
-
-  card: {
-    backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.cardBorder,
-    borderRadius: 14, overflow: 'hidden',
-  },
-
-  settingRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingHorizontal: 14, paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)',
-  },
-  settingIconWrap: {
-    width: 36, height: 36, borderRadius: 10,
-    backgroundColor: 'rgba(232,143,36,0.08)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  settingInfo: { flex: 1 },
-  settingLabel: { fontSize: 13, fontFamily: FONTS.bodyMedium, color: COLORS.textPrimary },
-  settingDesc: { fontSize: 10, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 1 },
-
-  toggle: {
-    width: 44, height: 24, borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    justifyContent: 'center', paddingHorizontal: 3,
-  },
-  toggleDot: {
-    width: 18, height: 18, borderRadius: 9,
-    backgroundColor: COLORS.textMuted, alignSelf: 'flex-start',
-  },
-
-  // Guidelines
-  guidelinesCard: {
-    backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.cardBorder,
-    borderRadius: 14, padding: 16, gap: 16,
-  },
-  guidelineItem: { flexDirection: 'row', gap: 12 },
-  guidelineIconWrap: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    alignItems: 'center', justifyContent: 'center', marginTop: 2,
-  },
-  guidelineContent: { flex: 1 },
-  guidelineTitle: { fontSize: 13, fontFamily: FONTS.heading, color: COLORS.textPrimary, marginBottom: 2 },
-  guidelineText: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textSecondary, lineHeight: 16 },
-
-  // Danger Zone
-  dangerLabel: { color: '#EF5350' },
-  dangerCard: {
-    backgroundColor: 'rgba(239,83,80,0.06)', borderWidth: 1, borderColor: 'rgba(239,83,80,0.25)',
-    borderRadius: 14, overflow: 'hidden',
-  },
-  dangerRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingHorizontal: 14, paddingVertical: 14,
-  },
-  dangerIconWrap: {
-    width: 36, height: 36, borderRadius: 10,
-    backgroundColor: 'rgba(239,83,80,0.1)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  dangerLabelText: { fontSize: 13, fontFamily: FONTS.bodyMedium, color: '#EF5350' },
-  dangerDesc: { fontSize: 10, fontFamily: FONTS.body, color: 'rgba(239,83,80,0.7)', marginTop: 1 },
-
-  // Delete Account Modal
-  modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end',
-  },
-  modalSheet: {
-    backgroundColor: '#012A2A',
-    borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    paddingHorizontal: 24, paddingTop: 28, paddingBottom: 40,
-    alignItems: 'center',
-    borderWidth: 1, borderBottomWidth: 0, borderColor: 'rgba(239,83,80,0.15)',
-  },
-  modalIconWrap: {
-    width: 64, height: 64, borderRadius: 32,
-    backgroundColor: 'rgba(239,83,80,0.1)',
-    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
-  },
-  modalTitle: {
-    fontSize: 20, fontFamily: FONTS.heading, color: '#FFFFFF', marginBottom: 8,
-  },
-  modalSubtitle: {
-    fontSize: 13, fontFamily: FONTS.body, color: 'rgba(255,255,255,0.7)',
-    textAlign: 'center', lineHeight: 20, marginBottom: 28, maxWidth: 300,
-  },
-  modalDeleteBtn: {
-    width: '100%', paddingVertical: 14, borderRadius: 14,
-    backgroundColor: '#EF5350', alignItems: 'center', marginBottom: 10,
-  },
-  modalDeleteText: {
-    fontSize: 15, fontFamily: FONTS.bodySemiBold, color: COLORS.white,
-  },
-  modalCancelBtn: {
-    width: '100%', paddingVertical: 14, borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center',
-  },
-  modalCancelText: {
-    fontSize: 15, fontFamily: FONTS.bodySemiBold, color: 'rgba(255,255,255,0.7)',
-  },
-});
+const useStyles = makeStyles(({ p }) => ({
+  screen: { flex: 1, backgroundColor: p.board },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingStart: 4, paddingBottom: 6 },
+  content: { padding: 16, paddingBottom: 48 },
+  groupTitle: { marginTop: 18, marginBottom: 8, marginStart: 4 },
+}));
