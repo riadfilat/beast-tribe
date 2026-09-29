@@ -7,7 +7,8 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Protect all routes except static files and api
-    '/((?!_next/static|_next/image|favicon.ico|api).*)',
+    // Protect every page, but never static files: link-preview images, icons and other
+    // public assets must reach logged-out visitors and crawlers (WhatsApp, iMessage).
+    '/((?!_next/static|_next/image|favicon.ico|api|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|txt|xml|webmanifest)$).*)',
   ],
 };
