@@ -1,370 +1,468 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Modal, TextInput, TouchableOpacity, Alert } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Alert, RefreshControl, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { Button } from '../../../src/components/ui';
-import { CalorieRing } from '../../../src/components/nutrition/CalorieRing';
-import { MacroGrid } from '../../../src/components/nutrition/MacroGrid';
-import { MealRow } from '../../../src/components/nutrition/MealRow';
-import { COLORS, FONTS } from '../../../src/lib/constants';
-import { useTodayNutrition, useTodayWater, useLogMeal, useLogWater } from '../../../src/hooks';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
+import { makeStyles, useKit } from '../../../src/theme';
+import { useI18n } from '../../../src/i18n';
+import { fmtDay, fmtWeekday, localDateKey } from '../../../src/i18n/format';
+import { useAuth } from '../../../src/providers/AuthProvider';
+import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
+import {
+  addGlass,
+  DEFAULT_GOALS,
+  deleteMeal,
+  GLASS_L,
+  logMeal,
+  Meal,
+  MEAL_TYPES,
+  mealTypeForNow,
+  MealType,
+  NutritionGoals,
+  QUICK_FOODS,
+  QuickFood,
+  removeGlass,
+  saveNutritionGoals,
+  useNutritionGoals,
+  useNutritionWeek,
+} from '../../../src/data/nutrition';
+import { Txt } from '../../../src/components/board/Txt';
+import { Press } from '../../../src/components/board/Press';
+import { Tally } from '../../../src/components/board/marks';
+import { Field, IconButton, MarkerButton, Segmented, SectionHeading, TextButton } from '../../../src/components/board/controls';
+import { Sheet } from '../../../src/components/board/sheet';
+import { toast } from '../../../src/components/board/toast';
+import { haptic } from '../../../src/lib/haptics';
 
-const CALORIE_GOAL = 2200;
-const PROTEIN_GOAL = 150;
-const CARBS_GOAL = 250;
-const FAT_GOAL = 70;
-const SUGAR_GOAL = 50;
-const FIBER_GOAL = 30;
-const WATER_GOAL = 3; // liters
-
-const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
-
-// Quick food items with pre-filled nutrition
-const QUICK_FOODS = [
-  { icon: '🥗', name: 'Salad', cal: 250, p: 12, c: 20, f: 15, s: 5, fi: 6 },
-  { icon: '🍗', name: 'Grilled Chicken', cal: 350, p: 40, c: 5, f: 18, s: 0, fi: 0 },
-  { icon: '🍚', name: 'Rice & Protein', cal: 500, p: 30, c: 60, f: 12, s: 2, fi: 2 },
-  { icon: '🥚', name: 'Eggs (2)', cal: 180, p: 14, c: 1, f: 12, s: 0, fi: 0 },
-  { icon: '🥣', name: 'Oatmeal', cal: 300, p: 10, c: 50, f: 8, s: 12, fi: 8 },
-  { icon: '🥤', name: 'Protein Shake', cal: 200, p: 30, c: 15, f: 5, s: 3, fi: 1 },
-  { icon: '🥪', name: 'Sandwich', cal: 450, p: 22, c: 45, f: 18, s: 6, fi: 4 },
-  { icon: '🍌', name: 'Banana', cal: 105, p: 1, c: 27, f: 0, s: 14, fi: 3 },
-  { icon: '🥜', name: 'Nuts (handful)', cal: 180, p: 6, c: 6, f: 16, s: 2, fi: 2 },
-  { icon: '☕', name: 'Coffee + Milk', cal: 80, p: 4, c: 8, f: 3, s: 6, fi: 0 },
-  { icon: '🍕', name: 'Pizza (2 slices)', cal: 550, p: 20, c: 60, f: 25, s: 8, fi: 3 },
-  { icon: '🌯', name: 'Shawarma', cal: 600, p: 35, c: 50, f: 25, s: 5, fi: 3 },
-];
+const fmtNum = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+const dayOf = (key: string) => {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
 
 export default function NutritionScreen() {
+  const s = useStyles();
+  const { p, lang } = useKit();
+  const { t } = useI18n();
   const router = useRouter();
-  const { data: nutritionLogs, loading: nutritionLoading, refetch: refetchNutrition } = useTodayNutrition();
-  const { data: waterLogs, loading: waterLoading, refetch: refetchWater } = useTodayWater();
-  const { logMeal, loading: logMealLoading } = useLogMeal();
-  const { logWater, loading: logWaterLoading } = useLogWater();
+  const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
+  const week = useNutritionWeek();
+  const { goals } = useNutritionGoals();
+  const today = localDateKey(new Date());
+  const [day, setDay] = useState(today);
+  const [logOpen, setLogOpen] = useState(false);
+  const [targetsOpen, setTargetsOpen] = useState(false);
 
-  const [showMealModal, setShowMealModal] = useState(false);
-  const [mealType, setMealType] = useState('Lunch');
-  const [mealTitle, setMealTitle] = useState('');
-  const [mealCalories, setMealCalories] = useState('');
-  const [mealProtein, setMealProtein] = useState('');
-  const [mealCarbs, setMealCarbs] = useState('');
-  const [mealFat, setMealFat] = useState('');
-  const [showCustom, setShowCustom] = useState(false);
+  const days = week.data?.days ?? [];
+  const meals = (week.data?.meals ?? []).filter((m) => m.date === day);
+  const glasses = week.data?.glasses[day] ?? 0;
+  const totals = meals.reduce((a, m) => ({ cal: a.cal + m.calories, p: a.p + m.protein, c: a.c + m.carbs, f: a.f + m.fat }), { cal: 0, p: 0, c: 0, f: 0 });
+  const dayCalories = (key: string) => (week.data?.meals ?? []).filter((m) => m.date === key).reduce((sum, m) => sum + m.calories, 0);
+  const remaining = goals.calories - totals.cal;
 
-  const hasRealData = nutritionLogs && nutritionLogs.length > 0;
-  const totalCalories = hasRealData ? nutritionLogs.reduce((s: number, l: any) => s + (l.calories ?? 0), 0) : 0;
-  const totalProtein = hasRealData ? nutritionLogs.reduce((s: number, l: any) => s + (l.protein_g ?? 0), 0) : 0;
-  const totalCarbs = hasRealData ? nutritionLogs.reduce((s: number, l: any) => s + (l.carbs_g ?? 0), 0) : 0;
-  const totalFat = hasRealData ? nutritionLogs.reduce((s: number, l: any) => s + (l.fat_g ?? 0), 0) : 0;
-
-  const waterCount = waterLogs && waterLogs.length > 0
-    ? waterLogs.reduce((s: number, l: any) => s + ((l.glasses ?? 1) * 0.5), 0)
-    : 0;
-
-  const macros = [
-    { label: 'Protein', current: totalProtein, goal: PROTEIN_GOAL, unit: 'g', color: COLORS.teal, icon: 'fitness-outline' },
-    { label: 'Carbs', current: totalCarbs, goal: CARBS_GOAL, unit: 'g', color: COLORS.aqua, icon: 'leaf-outline' },
-    { label: 'Fat', current: totalFat, goal: FAT_GOAL, unit: 'g', color: COLORS.orange, icon: 'water-outline' },
-    { label: 'Water', current: waterCount, goal: WATER_GOAL, unit: 'L', color: COLORS.blueGray, icon: 'water-outline' },
-  ];
-
-  const meals = hasRealData
-    ? nutritionLogs.map((log: any) => ({
-        mealType: log.meal_type ? log.meal_type.charAt(0).toUpperCase() + log.meal_type.slice(1) : 'Meal',
-        description: log.title ?? '',
-        calories: log.calories ?? 0,
-        color: ({ breakfast: COLORS.orange, lunch: COLORS.green, dinner: COLORS.teal, snack: COLORS.aqua } as Record<string, string>)[log.meal_type?.toLowerCase()] ?? COLORS.aqua,
-      }))
-    : [];
-
-  function parseNum(v: string): number | undefined {
-    if (!v) return undefined;
-    const n = parseInt(v);
-    return isNaN(n) || n < 0 ? undefined : n;
+  async function water(delta: 1 | -1) {
+    if (!meId) return;
+    if (delta < 0 && glasses === 0) return;
+    week.setData((prev) => (prev ? { ...prev, glasses: { ...prev.glasses, [day]: Math.max(0, (prev.glasses[day] ?? 0) + delta) } } : prev));
+    try {
+      await (delta > 0 ? addGlass(meId, day) : removeGlass(meId, day));
+    } catch {
+      toast.show(t('common.somethingWrong'), 'error');
+      week.refetch();
+    }
   }
 
-  // Quick-add a food item directly
-  async function quickAddFood(food: typeof QUICK_FOODS[0]) {
-    await logMeal({
-      meal_type: mealType.toLowerCase(),
-      title: food.name,
-      calories: food.cal,
-      protein_g: food.p,
-      carbs_g: food.c,
-      fat_g: food.f,
-    });
-    refetchNutrition();
-    setShowMealModal(false);
+  function askRemove(m: Meal) {
+    Alert.alert(t('nutrition.removeTitle', { food: m.title }), undefined, [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.remove'),
+        style: 'destructive',
+        onPress: async () => {
+          week.setData((prev) => (prev ? { ...prev, meals: prev.meals.filter((x) => x.id !== m.id) } : prev));
+          try {
+            await deleteMeal(m.id);
+            haptic('light');
+          } catch {
+            toast.show(t('common.somethingWrong'), 'error');
+            week.refetch();
+          }
+        },
+      },
+    ]);
   }
 
-  async function handleLogMeal() {
-    if (!mealTitle.trim()) return;
-    const cal = parseNum(mealCalories);
-    await logMeal({
-      meal_type: mealType.toLowerCase(),
-      title: mealTitle.trim(),
-      calories: cal,
-      protein_g: parseNum(mealProtein),
-      carbs_g: parseNum(mealCarbs),
-      fat_g: parseNum(mealFat),
-    });
-    setMealTitle(''); setMealCalories(''); setMealProtein(''); setMealCarbs(''); setMealFat('');
-    setShowMealModal(false); setShowCustom(false);
-    refetchNutrition();
-  }
-
-  async function handleLogWater() {
-    await logWater();
-    refetchWater();
-  }
-
-  if (nutritionLoading && waterLoading) {
-    return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color={COLORS.teal} />
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const grouped = MEAL_TYPES.map((type) => ({ type, items: meals.filter((m) => m.type === type) })).filter((g) => g.items.length);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/home')}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Nutrition</Text>
-        <View style={{ width: 22 }} />
+    <SafeAreaView style={s.screen} edges={['top']}>
+      <View style={s.header}>
+        <IconButton name="back" label={t('common.back')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/profile'))} />
+        <Txt v="title" size={22} style={{ flex: 1 }} accessibilityRole="header">
+          {t('nutrition.title')}
+        </Txt>
+        <TextButton label={t('nutrition.targets')} onPress={() => setTargetsOpen(true)} style={{ paddingHorizontal: 8 }} />
       </View>
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        <CalorieRing current={totalCalories} goal={CALORIE_GOAL} size={110} />
-        <MacroGrid macros={macros} />
-
-        {/* Logged meals */}
-        {meals.length > 0 ? (
-          meals.map((meal: any, i: number) => (
-            <MealRow key={`${meal.mealType}-${i}`} {...meal} />
-          ))
-        ) : (
-          <View style={styles.emptyState}>
-            <Ionicons name="restaurant-outline" size={32} color={COLORS.textMuted} />
-            <Text style={styles.emptyText}>No meals logged today</Text>
-          </View>
-        )}
-
-        {/* Action buttons */}
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.logMealBtn} onPress={() => setShowMealModal(true)} activeOpacity={0.8}>
-            <Ionicons name="add-circle" size={20} color={COLORS.dark} />
-            <Text style={styles.logMealText}>Log Meal</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.waterBtn, logWaterLoading && { opacity: 0.5 }]}
-            onPress={handleLogWater}
-            disabled={logWaterLoading}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="water" size={18} color={COLORS.aqua} />
-            <Text style={styles.waterBtnText}>+0.5L</Text>
-          </TouchableOpacity>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 24 }}
+        refreshControl={<RefreshControl refreshing={week.refreshing} onRefresh={week.refetch} tintColor={p.ink} />}
+      >
+        {/* The week: each day's total against the target; tap a day to open it. */}
+        <View style={s.week} accessibilityRole="tablist" accessibilityLabel={t('nutrition.week')}>
+          {days.map((key) => {
+            const d = dayOf(key);
+            const cal = dayCalories(key);
+            const ratio = Math.min(1, cal / Math.max(1, goals.calories));
+            const on = key === day;
+            const isToday = key === today;
+            return (
+              <Press
+                key={key}
+                onPress={() => setDay(key)}
+                feedback="selection"
+                depress={0.95}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: on }}
+                accessibilityLabel={t('nutrition.dayTotal', { day: fmtDay(d, lang), n: fmtNum(cal) })}
+                style={s.dayCol}
+              >
+                <Txt v="caption" size={11} color={on ? p.ink : p.inkSoft} numberOfLines={1} adjustsFontSizeToFit>
+                  {lang === 'ar' ? fmtWeekday(d, lang) : fmtWeekday(d, lang).toUpperCase()}
+                </Txt>
+                <View style={[s.bar, { backgroundColor: p.rule }]}>
+                  <View style={[s.barFill, { height: `${Math.round(ratio * 100)}%`, backgroundColor: on ? p.ink : p.inkFaint }]} />
+                </View>
+                <View style={[s.date, on ? { backgroundColor: p.ink } : null]}>
+                  <Txt v="time" size={15} color={on ? p.board : isToday ? p.markerText : p.ink}>
+                    {d.getDate()}
+                  </Txt>
+                </View>
+              </Press>
+            );
+          })}
         </View>
 
-        <View style={{ height: 20 }} />
-      </ScrollView>
+        {/* The day's ledger */}
+        <View style={s.section}>
+          <Txt v="row" size={20} accessibilityRole="header">
+            {fmtDay(dayOf(day), lang)}
+          </Txt>
+          <View style={s.totalRow}>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, flex: 1 }}>
+              <Txt v="time" size={44}>
+                {fmtNum(totals.cal)}
+              </Txt>
+              <Txt v="meta" size={15}>
+                {t('nutrition.kcal')}
+              </Txt>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Txt v="label" size={15} color={remaining < 0 ? p.markerText : p.ink}>
+                {remaining >= 0 ? t('nutrition.left', { n: fmtNum(remaining) }) : t('nutrition.over', { n: fmtNum(-remaining) })}
+              </Txt>
+              <Txt v="meta">{t('nutrition.ofTarget', { n: fmtNum(goals.calories) })}</Txt>
+            </View>
+          </View>
+          <MeasureLine ratio={totals.cal / Math.max(1, goals.calories)} dot />
 
-      {/* ============ LOG MEAL MODAL ============ */}
-      <Modal visible={showMealModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHandle} />
+          <View style={s.macros}>
+            <Macro label={t('nutrition.protein')} value={totals.p} goal={goals.protein} />
+            <Macro label={t('nutrition.carbs')} value={totals.c} goal={goals.carbs} />
+            <Macro label={t('nutrition.fat')} value={totals.f} goal={goals.fat} />
+          </View>
 
-            {/* Meal type */}
-            <Text style={styles.modalTitle}>Log a meal</Text>
-            <View style={styles.mealTypeRow}>
-              {MEAL_TYPES.map((type) => (
-                <TouchableOpacity
-                  key={type}
-                  style={[styles.mealChip, mealType === type && styles.mealChipActive]}
-                  onPress={() => setMealType(type)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.mealChipText, mealType === type && styles.mealChipTextActive]}>{type}</Text>
-                </TouchableOpacity>
+          {/* Water, counted in tally strokes: one stroke per glass */}
+          <View style={s.water}>
+            <View style={{ flex: 1, gap: 6 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+                <Txt v="label" size={15}>
+                  {t('nutrition.water')}
+                </Txt>
+                <Txt v="meta">{t('nutrition.waterOf', { n: String(glasses * GLASS_L), goal: String(goals.water) })}</Txt>
+              </View>
+              <Tally count={glasses} capacity={Math.round(goals.water / GLASS_L)} size={18} />
+            </View>
+            <IconButton name="minus" label={t('nutrition.removeGlass')} onPress={() => water(-1)} color={glasses ? p.ink : p.ghost} style={s.waterBtn} />
+            <IconButton name="plus" label={t('nutrition.addGlass')} onPress={() => water(1)} style={s.waterBtn} />
+          </View>
+        </View>
+
+        {/* Meals */}
+        <View style={[s.section, { marginTop: 18 }]}>
+          {grouped.length === 0 && !week.loading ? (
+            <Txt v="body" color={p.inkSoft} style={{ paddingVertical: 12 }}>
+              {day === today ? t('nutrition.emptyToday') : t('nutrition.emptyDay')}
+            </Txt>
+          ) : null}
+          {grouped.map((g) => (
+            <View key={g.type} style={{ marginBottom: 14 }}>
+              <View style={s.mealHead}>
+                <Txt v="row" size={14} color={p.inkSoft} style={{ flex: 1 }}>
+                  {t(`nutrition.meals.${g.type}`)}
+                </Txt>
+                <Txt v="time" size={14} color={p.inkSoft}>
+                  {fmtNum(g.items.reduce((sum, m) => sum + m.calories, 0))}
+                </Txt>
+              </View>
+              {g.items.map((m) => (
+                <Press key={m.id} onPress={() => askRemove(m)} feedback="selection" depress={0.99} style={s.mealRow} accessibilityHint={t('nutrition.removeTitle', { food: m.title })}>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Txt v="body" numberOfLines={1}>
+                      {m.title}
+                    </Txt>
+                    {m.protein || m.carbs || m.fat ? (
+                      <Txt v="caption">{t('nutrition.macros', { p: fmtNum(m.protein), c: fmtNum(m.carbs), f: fmtNum(m.fat) })}</Txt>
+                    ) : null}
+                  </View>
+                  <Txt v="time" size={16}>
+                    {fmtNum(m.calories)}
+                  </Txt>
+                </Press>
               ))}
             </View>
-
-            {/* Quick-add food grid */}
-            <Text style={styles.sectionLabel}>TAP TO ADD</Text>
-            <ScrollView showsVerticalScrollIndicator={false} style={styles.foodScrollOuter}>
-              <View style={styles.foodGrid}>
-                {QUICK_FOODS.map((food) => (
-                  <TouchableOpacity
-                    key={food.name}
-                    style={styles.foodCard}
-                    onPress={() => quickAddFood(food)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.foodEmoji}>{food.icon}</Text>
-                    <Text style={styles.foodName} numberOfLines={1}>{food.name}</Text>
-                    <Text style={styles.foodCal}>{food.cal} cal</Text>
-                    <View style={styles.foodMacroRow}>
-                      <Text style={styles.foodMacro}>P{food.p}</Text>
-                      <Text style={styles.foodMacro}>C{food.c}</Text>
-                      <Text style={styles.foodMacro}>F{food.f}</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
-
-            {/* Custom entry toggle */}
-            {!showCustom ? (
-              <TouchableOpacity style={styles.customToggle} onPress={() => setShowCustom(true)} activeOpacity={0.7}>
-                <Ionicons name="create-outline" size={16} color={COLORS.orange} />
-                <Text style={styles.customToggleText}>Custom entry</Text>
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.customSection}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="What did you eat?"
-                  placeholderTextColor={COLORS.textMuted}
-                  value={mealTitle}
-                  onChangeText={setMealTitle}
-                />
-                <View style={styles.macroRow}>
-                  {[
-                    { key: 'cal', label: 'Cal', val: mealCalories, set: setMealCalories },
-                    { key: 'p', label: 'Protein', val: mealProtein, set: setMealProtein },
-                    { key: 'c', label: 'Carbs', val: mealCarbs, set: setMealCarbs },
-                    { key: 'f', label: 'Fat', val: mealFat, set: setMealFat },
-                  ].map(({ key, label, val, set }) => (
-                    <View key={key} style={styles.macroField}>
-                      <Text style={styles.macroLabel}>{label}</Text>
-                      <TextInput
-                        style={styles.macroInput}
-                        placeholder="0"
-                        placeholderTextColor={COLORS.textMuted}
-                        value={val}
-                        onChangeText={set}
-                        keyboardType="numeric"
-                      />
-                    </View>
-                  ))}
-                </View>
-                <TouchableOpacity
-                  style={[styles.saveBtn, !mealTitle.trim() && { opacity: 0.4 }]}
-                  onPress={handleLogMeal}
-                  disabled={logMealLoading || !mealTitle.trim()}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.saveBtnText}>{logMealLoading ? 'Saving...' : 'Log Meal'}</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            <TouchableOpacity onPress={() => { setShowMealModal(false); setShowCustom(false); }} style={styles.cancelBtn}>
-              <Text style={styles.cancelText}>Close</Text>
-            </TouchableOpacity>
-          </View>
+          ))}
         </View>
-      </Modal>
+      </ScrollView>
+
+      <View style={[s.bar2, { paddingBottom: 12 + insets.bottom }]}>
+        <MarkerButton label={t('nutrition.logMeal')} icon="plus" onPress={() => setLogOpen(true)} />
+      </View>
+
+      <LogMealSheet visible={logOpen} day={day} meId={meId} onClose={() => setLogOpen(false)} />
+      <TargetsSheet visible={targetsOpen} goals={goals} meId={meId} onClose={() => setTargetsOpen(false)} />
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12,
-  },
-  headerTitle: { fontSize: 16, fontFamily: FONTS.heading, color: COLORS.textPrimary },
-  scroll: { flex: 1, paddingHorizontal: 16 },
+// ─── A measuring line: chalk fill, the orange circle marks where you are ─────
+function MeasureLine({ ratio, dot, height = 8 }: { ratio: number; dot?: boolean; height?: number }) {
+  const { p } = useKit();
+  const reduce = useReducedMotion();
+  const [w, setW] = useState(0);
+  const target = Math.max(0, Math.min(1, ratio)) * w;
+  const x = useSharedValue(0);
+  useEffect(() => {
+    x.value = reduce ? target : withSpring(target, { damping: 16, stiffness: 140 });
+  }, [target, reduce]);
+  const fill = useAnimatedStyle(() => ({ width: x.value }));
+  return (
+    <View
+      onLayout={(e) => setW(e.nativeEvent.layout.width)}
+      style={{ height: dot ? 18 : height, justifyContent: 'center', marginTop: dot ? 8 : 6 }}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <View style={{ height, borderRadius: height / 2, backgroundColor: p.rule }} />
+      <Animated.View style={[{ position: 'absolute', start: 0, height, borderRadius: height / 2, backgroundColor: p.ink }, fill]}>
+        {dot ? <View style={{ position: 'absolute', end: -9, top: height / 2 - 9, width: 18, height: 18, borderRadius: 9, backgroundColor: p.marker, borderWidth: 3, borderColor: p.board }} /> : null}
+      </Animated.View>
+    </View>
+  );
+}
 
-  emptyState: { alignItems: 'center', paddingVertical: 24, gap: 8 },
-  emptyText: { fontSize: 13, fontFamily: FONTS.bodyMedium, color: COLORS.textSecondary },
+function Macro({ label, value, goal }: { label: string; value: number; goal: number }) {
+  const { p } = useKit();
+  const { t } = useI18n();
+  return (
+    <View style={{ flex: 1 }}>
+      <Txt v="caption">{label}</Txt>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 3 }}>
+        <Txt v="time" size={17}>
+          {fmtNum(value)}
+        </Txt>
+        <Txt v="caption" color={p.inkFaint}>
+          / {t('nutrition.grams', { n: fmtNum(goal) })}
+        </Txt>
+      </View>
+      <MeasureLine ratio={value / Math.max(1, goal)} height={3} />
+    </View>
+  );
+}
 
-  // Action buttons
-  actionRow: { flexDirection: 'row', gap: 10, marginTop: 16 },
-  logMealBtn: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: COLORS.orange, borderRadius: 14, paddingVertical: 14,
-  },
-  logMealText: { fontSize: 14, fontFamily: FONTS.heading, color: COLORS.dark },
-  waterBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: 'rgba(86,196,196,0.1)', borderWidth: 1, borderColor: 'rgba(86,196,196,0.25)',
-    borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14,
-  },
-  waterBtnText: { fontSize: 13, fontFamily: FONTS.heading, color: COLORS.aqua },
+// ─── Log a meal ─────────────────────────────────────────────────────────────
+function LogMealSheet({ visible, day, meId, onClose }: { visible: boolean; day: string; meId: string | null; onClose: () => void }) {
+  const s = useStyles();
+  const { t } = useI18n();
+  const [type, setType] = useState<MealType>(mealTypeForNow());
+  const [title, setTitle] = useState('');
+  const [kcal, setKcal] = useState('');
+  const [prot, setProt] = useState('');
+  const [carb, setCarb] = useState('');
+  const [fat, setFat] = useState('');
+  const [busy, setBusy] = useState(false);
 
-  // Modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: {
-    backgroundColor: COLORS.background, borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    paddingHorizontal: 20, paddingTop: 12, paddingBottom: 30, maxHeight: '85%',
-  },
-  modalHandle: {
-    width: 40, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.15)',
-    alignSelf: 'center', marginBottom: 16,
-  },
-  modalTitle: { fontSize: 20, fontFamily: FONTS.heading, color: COLORS.textPrimary, marginBottom: 12 },
+  useEffect(() => {
+    if (!visible) return;
+    setType(mealTypeForNow());
+    setTitle('');
+    setKcal('');
+    setProt('');
+    setCarb('');
+    setFat('');
+  }, [visible]);
 
-  // Meal type chips
-  mealTypeRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  mealChip: {
-    flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
-  },
-  mealChipActive: { borderColor: COLORS.orange, backgroundColor: 'rgba(232,143,36,0.1)' },
-  mealChipText: { fontSize: 11, fontFamily: FONTS.bodyMedium, color: COLORS.textTertiary },
-  mealChipTextActive: { color: COLORS.orange },
+  const parse = (v: string) => {
+    const n = Number(v.replace(',', '.'));
+    return v.trim() && isFinite(n) && n >= 0 ? Math.round(n) : undefined;
+  };
 
-  // Quick food grid
-  sectionLabel: { fontSize: 9, fontFamily: FONTS.bodySemiBold, color: COLORS.textMuted, letterSpacing: 1, marginBottom: 10 },
-  foodScrollOuter: { maxHeight: 280 },
-  foodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  foodCard: {
-    width: '31%', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 4,
-    backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 12,
-  },
-  foodEmoji: { fontSize: 24, marginBottom: 4 },
-  foodName: { fontSize: 10, fontFamily: FONTS.bodyMedium, color: COLORS.textPrimary, textAlign: 'center' },
-  foodCal: { fontSize: 11, fontFamily: FONTS.heading, color: COLORS.orange, marginTop: 2 },
-  foodMacroRow: { flexDirection: 'row', gap: 6, marginTop: 4 },
-  foodMacro: { fontSize: 8, fontFamily: FONTS.body, color: COLORS.textMuted },
+  async function add(entry: { title: string; calories?: number; protein?: number; carbs?: number; fat?: number }) {
+    if (!meId || busy) return;
+    setBusy(true);
+    try {
+      await logMeal(meId, day, { type, ...entry });
+      haptic('success');
+      toast.show(t('nutrition.added', { food: entry.title, meal: t(`nutrition.meals.${type}`) }), 'yours');
+      onClose();
+    } catch {
+      haptic('error');
+      toast.show(t('common.somethingWrong'), 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
 
-  // Custom entry
-  customToggle: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    paddingVertical: 12, marginTop: 12,
-  },
-  customToggleText: { fontSize: 13, fontFamily: FONTS.bodyMedium, color: COLORS.orange },
-  customSection: { marginTop: 8 },
-  input: {
-    backgroundColor: COLORS.inputBg, borderWidth: 1, borderColor: COLORS.inputBorder,
-    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 14, fontFamily: FONTS.body, color: COLORS.textPrimary, marginBottom: 10,
-  },
-  macroRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  macroField: { flex: 1 },
-  macroLabel: { fontSize: 8, fontFamily: FONTS.bodySemiBold, color: COLORS.textMuted, letterSpacing: 0.5, marginBottom: 4 },
-  macroInput: {
-    backgroundColor: COLORS.inputBg, borderWidth: 1, borderColor: COLORS.inputBorder,
-    borderRadius: 10, paddingHorizontal: 10, paddingVertical: 10,
-    fontSize: 14, fontFamily: FONTS.heading, color: COLORS.textPrimary, textAlign: 'center',
-  },
-  saveBtn: {
-    backgroundColor: COLORS.orange, borderRadius: 14, paddingVertical: 14, alignItems: 'center',
-  },
-  saveBtnText: { fontSize: 14, fontFamily: FONTS.heading, color: COLORS.dark },
+  const quick = (f: QuickFood) => add({ title: t(`nutrition.foods.${f.id}`), calories: f.calories, protein: f.protein, carbs: f.carbs, fat: f.fat });
+  const custom = () => title.trim() && add({ title: title.trim(), calories: parse(kcal), protein: parse(prot), carbs: parse(carb), fat: parse(fat) });
 
-  cancelBtn: { alignItems: 'center', paddingVertical: 12, marginTop: 4 },
-  cancelText: { fontSize: 13, fontFamily: FONTS.bodyMedium, color: COLORS.textTertiary },
-});
+  return (
+    <Sheet
+      visible={visible}
+      title={t('nutrition.logMeal')}
+      onClose={onClose}
+      footer={<MarkerButton label={t('nutrition.addTo', { meal: t(`nutrition.meals.${type}`) })} onPress={custom} loading={busy} disabled={!title.trim()} />}
+    >
+      <Segmented options={MEAL_TYPES.map((m) => ({ value: m, label: t(`nutrition.meals.${m}`) }))} value={type} onChange={setType} />
+
+      <SectionHeading title={t('nutrition.quickAdd')} style={{ marginTop: 6 }} />
+      <View style={s.foods}>
+        {QUICK_FOODS.map((f) => (
+          <Press key={f.id} onPress={() => quick(f)} feedback="light" depress={0.97} style={s.food} disabled={busy} accessibilityLabel={`${t(`nutrition.foods.${f.id}`)}, ${f.calories} ${t('nutrition.kcal')}`}>
+            <Txt v="label" size={15} numberOfLines={1}>
+              {t(`nutrition.foods.${f.id}`)}
+            </Txt>
+            <Txt v="caption">
+              {f.calories} {t('nutrition.kcal')}
+            </Txt>
+          </Press>
+        ))}
+      </View>
+      <Txt v="caption">{t('nutrition.quickNote')}</Txt>
+
+      <SectionHeading title={t('nutrition.custom')} style={{ marginTop: 6 }} />
+      <Field value={title} onChangeText={setTitle} placeholder={t('nutrition.whatDidYouEat')} maxLength={60} returnKeyType="done" />
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        {[
+          { label: t('nutrition.kcal'), val: kcal, set: setKcal },
+          { label: t('nutrition.protein'), val: prot, set: setProt },
+          { label: t('nutrition.carbs'), val: carb, set: setCarb },
+          { label: t('nutrition.fat'), val: fat, set: setFat },
+        ].map((x) => (
+          <View key={x.label} style={{ flex: 1, gap: 6 }}>
+            <Txt v="caption" numberOfLines={1} adjustsFontSizeToFit>
+              {x.label}
+            </Txt>
+            <Field value={x.val} onChangeText={x.set} keyboardType="number-pad" placeholder="0" maxLength={4} style={{ textAlign: 'center', paddingHorizontal: 0 }} />
+          </View>
+        ))}
+      </View>
+    </Sheet>
+  );
+}
+
+// ─── Daily targets ──────────────────────────────────────────────────────────
+function TargetsSheet({ visible, goals, meId, onClose }: { visible: boolean; goals: NutritionGoals; meId: string | null; onClose: () => void }) {
+  const { t } = useI18n();
+  const { p } = useKit();
+  const [form, setForm] = useState<Record<keyof NutritionGoals, string>>(() => toForm(goals));
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (visible) setForm(toForm(goals));
+  }, [visible]);
+
+  const parsed = useMemo(() => {
+    const out: Partial<NutritionGoals> = {};
+    (Object.keys(form) as (keyof NutritionGoals)[]).forEach((k) => {
+      const n = Number(form[k].replace(',', '.'));
+      if (form[k].trim() && isFinite(n) && n > 0) out[k] = k === 'water' ? Math.round(n * 2) / 2 : Math.round(n);
+    });
+    return out;
+  }, [form]);
+  const valid = Object.keys(parsed).length === 5;
+
+  async function save(next: NutritionGoals) {
+    if (!meId) return;
+    setBusy(true);
+    try {
+      await saveNutritionGoals(meId, next);
+      haptic('success');
+      toast.show(t('nutrition.savedTargets'), 'info');
+      onClose();
+    } catch {
+      toast.show(t('common.somethingWrong'), 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const rows: { k: keyof NutritionGoals; label: string; unit: string; decimal?: boolean }[] = [
+    { k: 'calories', label: t('nutrition.calories'), unit: t('nutrition.kcal') },
+    { k: 'protein', label: t('nutrition.protein'), unit: t('nutrition.grams', { n: '' }).trim() },
+    { k: 'carbs', label: t('nutrition.carbs'), unit: t('nutrition.grams', { n: '' }).trim() },
+    { k: 'fat', label: t('nutrition.fat'), unit: t('nutrition.grams', { n: '' }).trim() },
+    { k: 'water', label: t('nutrition.water'), unit: t('nutrition.litres', { n: '' }).trim(), decimal: true },
+  ];
+
+  return (
+    <Sheet visible={visible} title={t('nutrition.targets')} onClose={onClose} action={{ label: busy ? t('common.saving') : t('common.save'), onPress: () => valid && save(parsed as NutritionGoals), disabled: !valid || busy }}>
+      <Txt v="body" color={p.inkSoft}>
+        {t('nutrition.targetsSub')}
+      </Txt>
+      {rows.map((r) => (
+        <View key={r.k} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Txt v="label" size={16} style={{ flex: 1 }}>
+            {r.label}
+          </Txt>
+          <Field
+            value={form[r.k]}
+            onChangeText={(v) => setForm((f) => ({ ...f, [r.k]: v }))}
+            keyboardType={r.decimal ? 'decimal-pad' : 'number-pad'}
+            maxLength={5}
+            containerStyle={{ width: 120 }}
+            style={{ textAlign: 'center' }}
+            trailing={<Txt v="meta">{r.unit}</Txt>}
+          />
+        </View>
+      ))}
+      <TextButton label={t('nutrition.useDefaults')} onPress={() => setForm(toForm(DEFAULT_GOALS))} />
+    </Sheet>
+  );
+}
+
+function toForm(g: NutritionGoals): Record<keyof NutritionGoals, string> {
+  return { calories: String(g.calories), protein: String(g.protein), carbs: String(g.carbs), fat: String(g.fat), water: String(g.water) };
+}
+
+const useStyles = makeStyles(({ p }) => ({
+  screen: { flex: 1, backgroundColor: p.board },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingStart: 4, paddingEnd: 8, paddingBottom: 6 },
+  week: { flexDirection: 'row', paddingHorizontal: 12, paddingTop: 4, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: p.rule },
+  dayCol: { flex: 1, alignItems: 'center', gap: 6, paddingHorizontal: 2 },
+  bar: { width: 8, height: 44, borderRadius: 4, overflow: 'hidden', justifyContent: 'flex-end' },
+  barFill: { width: '100%', borderRadius: 4 },
+  date: { minWidth: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  section: { paddingHorizontal: 16, paddingTop: 16 },
+  totalRow: { flexDirection: 'row', alignItems: 'flex-end', marginTop: 6, gap: 12 },
+  macros: { flexDirection: 'row', gap: 16, marginTop: 18 },
+  water: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 20, paddingTop: 14, borderTopWidth: 1, borderTopColor: p.rule },
+  waterBtn: { borderWidth: 1.5, borderColor: p.ruleStrong, borderRadius: 10, width: 44, height: 44, marginStart: 6 },
+  mealHead: { flexDirection: 'row', alignItems: 'center', paddingBottom: 6, borderBottomWidth: 1.5, borderBottomColor: p.ruleStrong },
+  mealRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: p.rule },
+  bar2: { paddingHorizontal: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: p.rule, backgroundColor: p.boardDeep },
+  foods: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  food: { width: '48.5%', minHeight: 60, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: p.rule, gap: 2, justifyContent: 'center' },
+}));

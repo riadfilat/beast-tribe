@@ -12,7 +12,7 @@ import { useCoaches, useMyPackList, useMySports, usePopularSpots } from '../src/
 import { PREVIEW, PREVIEW_ME } from '../src/data/preview';
 import { SPORT_LIST, SportId } from '../src/lib/sports';
 import { SESSION_LINK_BASE } from '../src/lib/constants';
-import { useBookCoach, useCoachAvailability } from '../src/hooks';
+import { bookCoach, useCoachSlots } from '../src/data/coaching';
 import { Txt } from '../src/components/board/Txt';
 import { Icon } from '../src/components/board/Icon';
 import { Press } from '../src/components/board/Press';
@@ -57,7 +57,6 @@ export default function HostScreen() {
   const mySports = useMySports().data ?? [];
   const packs = useMyPackList().data ?? [];
   const coaches = useCoaches().data ?? [];
-  const { bookCoach } = useBookCoach();
 
   const [sport, setSport] = useState<SportId | null>(null);
   const [dayKey, setDayKey] = useState<string | null>(null);
@@ -83,7 +82,7 @@ export default function HostScreen() {
   const now = new Date();
   const days = useMemo(() => Array.from({ length: 14 }, (_, i) => addDays(startOfLocalDay(now), i)), []);
   const coach = coaches.find((c) => c.id === coachId) ?? null;
-  const { slots: coachSlots } = useCoachAvailability(coachId ?? undefined, dayKey ?? undefined);
+  const coachSlots = useCoachSlots(coachId, dayKey).data ?? [];
 
   // Preselect a spot handed over from the board.
   useEffect(() => {
@@ -166,9 +165,9 @@ export default function HostScreen() {
         cover: cover ?? spot?.imageUrl ?? null,
         country,
       });
-      if (coach && coachSlots.some((x) => x.start_time === time)) {
-        const end = fmtEnd(time, duration);
-        await bookCoach(coach.id, dayKey, time, end, id);
+      if (coach && coachSlots.some((x) => x.start === time && !x.booked)) {
+        // The session is already live; a failed booking shouldn't undo it.
+        await bookCoach(meId, coach.id, dayKey, time, fmtEnd(time, duration), id).catch(() => {});
       }
       haptic('success');
       if (photoFailed) setError(t('host.errPhoto'));
@@ -238,7 +237,7 @@ export default function HostScreen() {
   }
 
   const timeRows: { key: string; label: string; times: { v: string; booked?: boolean }[] }[] = coach && dayKey
-    ? [{ key: 'coach', label: coach.name, times: coachSlots.map((x) => ({ v: x.start_time, booked: x.booked })) }]
+    ? [{ key: 'coach', label: coach.name, times: coachSlots.map((x) => ({ v: x.start, booked: x.booked })) }]
     : (Object.keys(SLOTS) as (keyof typeof SLOTS)[]).map((k) => ({ key: k, label: t(`periods.${k}`), times: SLOTS[k].map((v) => ({ v })) }));
 
   return (

@@ -36,7 +36,9 @@ export async function updateSession(request: NextRequest) {
   // must be linkable from the app's signup screen.
   const isPublicPage =
     request.nextUrl.pathname.startsWith('/legal') ||
-    request.nextUrl.pathname.startsWith('/support');
+    request.nextUrl.pathname.startsWith('/support') ||
+    // Shared session links from the app's Share sheet
+    request.nextUrl.pathname.startsWith('/s/');
   if (isPublicPage) {
     return supabaseResponse;
   }

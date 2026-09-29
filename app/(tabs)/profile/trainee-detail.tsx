@@ -1,348 +1,422 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { Avatar, ProgressBar } from '../../../src/components/ui';
-import { useBodyMetrics, useLogBodyMetrics, useTraineeWorkouts, useTraineeNutrition, useCoachNotes, useTraineePrivacy } from '../../../src/hooks';
-import { COLORS, FONTS } from '../../../src/lib/constants';
+import React, { useEffect, useState } from 'react';
+import { Alert, RefreshControl, ScrollView, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { makeStyles, useKit } from '../../../src/theme';
+import { useI18n } from '../../../src/i18n';
+import { fmtDay, fmtShortDate } from '../../../src/i18n/format';
+import { useAuth } from '../../../src/providers/AuthProvider';
+import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
+import {
+  addCoachNote,
+  CoachNote,
+  deleteCoachNote,
+  endCoaching,
+  Measurement,
+  NOTE_TYPES,
+  NoteType,
+  recordMeasurement,
+  sharesLine,
+  useCoachNotes,
+  useCoachProfile,
+  useMeasurements,
+  useTraineeIntake,
+  useTraineeSessions,
+  useTrainees,
+} from '../../../src/data/coaching';
+import { Magnet } from '../../../src/components/board/people';
+import { Txt } from '../../../src/components/board/Txt';
+import { Icon } from '../../../src/components/board/Icon';
+import { Press } from '../../../src/components/board/Press';
+import { Tag, TagTone } from '../../../src/components/board/marks';
+import { Chip, Field, IconButton, MarkerButton, Segmented, SectionHeading } from '../../../src/components/board/controls';
+import { Group, GroupRow } from '../../../src/components/board/list';
+import { Sheet } from '../../../src/components/board/sheet';
+import { toast } from '../../../src/components/board/toast';
+import { haptic } from '../../../src/lib/haptics';
 
-const TABS = ['Overview', 'Body', 'Workouts', 'Nutrition', 'Notes'];
+type Tab = 'overview' | 'body' | 'food' | 'notes';
+const NOTE_TONE: Record<NoteType, TagTone> = { feedback: 'ink', goal: 'aqua', milestone: 'marker', program: 'ink', warning: 'danger' };
+const fmtNum = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+const dayOf = (key: string) => {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
 
 export default function TraineeDetailScreen() {
+  const s = useStyles();
+  const { p, lang } = useKit();
+  const { t, tn } = useI18n();
   const router = useRouter();
-  const { traineeId, coachId, traineeName } = useLocalSearchParams<{ traineeId: string; coachId: string; traineeName: string }>();
+  const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
+  const { traineeId } = useLocalSearchParams<{ traineeId: string }>();
+  const coachId = useCoachProfile().data?.id ?? null;
+  const list = useTrainees(coachId);
+  const link = (list.data ?? []).find((x) => x.person.id === traineeId);
+  const sharing = link?.sharing ?? { nutrition: false, body: false };
+  const [tab, setTab] = useState<Tab>('overview');
+  const [recording, setRecording] = useState(false);
+  const [noting, setNoting] = useState(false);
 
-  const [activeTab, setActiveTab] = useState(0);
-  const [showMetricModal, setShowMetricModal] = useState(false);
-  const [showNoteModal, setShowNoteModal] = useState(false);
-  const [noteType, setNoteType] = useState('feedback');
-  const [noteContent, setNoteContent] = useState('');
-  const [metricWeight, setMetricWeight] = useState('');
-  const [metricHeight, setMetricHeight] = useState('');
-  const [metricBodyFat, setMetricBodyFat] = useState('');
-  const [metricWaist, setMetricWaist] = useState('');
-  const [metricChest, setMetricChest] = useState('');
-  const [metricNotes, setMetricNotes] = useState('');
+  const sessions = useTraineeSessions(traineeId);
+  const metrics = useMeasurements(traineeId, sharing.body);
+  const intake = useTraineeIntake(traineeId, sharing.nutrition);
+  const notes = useCoachNotes(coachId, traineeId);
 
-  const { metrics, loading: metricsLoading } = useBodyMetrics(traineeId);
-  const { logMetrics, loading: loggingMetrics } = useLogBodyMetrics();
-  const { workouts, loading: workoutsLoading } = useTraineeWorkouts(traineeId);
-  const { logs: nutritionLogs, loading: nutritionLoading } = useTraineeNutrition(traineeId);
-  const { notes, loading: notesLoading, addNote } = useCoachNotes(coachId, traineeId);
-  const { privacy } = useTraineePrivacy(traineeId, coachId);
+  const name = link?.person.name ?? '';
+  const back = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/profile/coach-dashboard'));
 
-  const latestMetric = metrics[0];
-  const bmi = latestMetric?.bmi || (latestMetric?.weight_kg && latestMetric?.height_cm ? Math.round((latestMetric.weight_kg / ((latestMetric.height_cm / 100) ** 2)) * 10) / 10 : null);
-  const bmiCategory = bmi ? (bmi < 18.5 ? 'Underweight' : bmi < 25 ? 'Normal' : bmi < 30 ? 'Overweight' : 'Obese') : '';
-  const bmiColor = bmi ? (bmi < 18.5 ? COLORS.aqua : bmi < 25 ? COLORS.green : bmi < 30 ? COLORS.orange : '#EF5350') : COLORS.textMuted;
-
-  async function handleSaveMetric() {
-    if (!traineeId) return;
-    await logMetrics(traineeId, {
-      weight_kg: metricWeight ? parseFloat(metricWeight) : undefined,
-      height_cm: metricHeight ? parseFloat(metricHeight) : undefined,
-      body_fat_pct: metricBodyFat ? parseFloat(metricBodyFat) : undefined,
-      waist_cm: metricWaist ? parseFloat(metricWaist) : undefined,
-      chest_cm: metricChest ? parseFloat(metricChest) : undefined,
-      notes: metricNotes || undefined,
-    });
-    setShowMetricModal(false);
-    setMetricWeight(''); setMetricHeight(''); setMetricBodyFat(''); setMetricWaist(''); setMetricChest(''); setMetricNotes('');
+  function stop() {
+    if (!link) return;
+    Alert.alert(t('coach.remove'), t('coach.removeConfirm', { name }), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('coach.remove'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await endCoaching(link.linkId);
+            back();
+          } catch {
+            toast.show(t('common.somethingWrong'), 'error');
+          }
+        },
+      },
+    ]);
   }
 
-  async function handleSaveNote() {
-    if (!noteContent.trim()) return;
-    await addNote(noteType, noteContent.trim());
-    setShowNoteModal(false);
-    setNoteContent('');
+  function removeNote(n: CoachNote) {
+    if (!coachId || !traineeId) return;
+    Alert.alert(t('coach.deleteNote'), undefined, [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'),
+        style: 'destructive',
+        onPress: async () => {
+          notes.setData((prev) => prev?.filter((x) => x.id !== n.id));
+          try {
+            await deleteCoachNote(coachId, traineeId, n.id);
+          } catch {
+            toast.show(t('common.somethingWrong'), 'error');
+            notes.refetch();
+          }
+        },
+      },
+    ]);
   }
+
+  const days = intake.data ?? [];
+  const logged = days.filter((d) => d.meals > 0);
+  const avg = logged.length ? logged.reduce((a, d) => a + d.calories, 0) / logged.length : 0;
+  const ms = metrics.data ?? [];
+  const latest = ms[0];
+  const first = ms.length > 1 ? ms[ms.length - 1] : null;
+  const delta = latest?.weight != null && first?.weight != null ? Math.round((latest.weight - first.weight) * 10) / 10 : null;
+
+  const notShared = (
+    <View style={s.locked}>
+      <Icon name="lock" size={22} color={p.inkFaint} />
+      <Txt v="body" color={p.inkSoft} align="center">
+        {t('coach.notShared', { name })}
+      </Txt>
+    </View>
+  );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/profile/coach-dashboard')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{traineeName || 'Trainee'}</Text>
-        <View style={{ width: 22 }} />
+    <SafeAreaView style={s.screen} edges={['top']}>
+      <View style={s.header}>
+        <IconButton name="back" label={t('common.back')} onPress={back} />
+        <View style={{ flex: 1 }} />
+        {link ? <IconButton name="more" label={t('coach.remove')} onPress={stop} /> : null}
       </View>
 
-      {/* Tabs */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabBar}>
-        {TABS.map((tab, i) => (
-          <TouchableOpacity key={tab} onPress={() => setActiveTab(i)} style={[styles.tab, activeTab === i && styles.tabActive]}>
-            <Text style={[styles.tabText, activeTab === i && styles.tabTextActive]}>{tab}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* OVERVIEW TAB */}
-        {activeTab === 0 && (
-          <>
-            <View style={styles.overviewGrid}>
-              <View style={styles.overviewCard}>
-                <Ionicons name="flash" size={18} color={COLORS.orange} />
-                <Text style={styles.overviewValue}>{bmi || '—'}</Text>
-                <Text style={styles.overviewLabel}>BMI</Text>
-                {bmiCategory ? <Text style={[styles.overviewBadge, { color: bmiColor }]}>{bmiCategory}</Text> : null}
-              </View>
-              <View style={styles.overviewCard}>
-                <Ionicons name="scale-outline" size={18} color={COLORS.aqua} />
-                <Text style={styles.overviewValue}>{latestMetric?.weight_kg || '—'}</Text>
-                <Text style={styles.overviewLabel}>Weight (kg)</Text>
-              </View>
-              <View style={styles.overviewCard}>
-                <Ionicons name="body-outline" size={18} color={COLORS.green} />
-                <Text style={styles.overviewValue}>{latestMetric?.body_fat_pct ? `${latestMetric.body_fat_pct}%` : '—'}</Text>
-                <Text style={styles.overviewLabel}>Body Fat</Text>
-              </View>
-              <View style={styles.overviewCard}>
-                <Ionicons name="barbell-outline" size={18} color={COLORS.coral} />
-                <Text style={styles.overviewValue}>{workouts.length}</Text>
-                <Text style={styles.overviewLabel}>Workouts (30d)</Text>
-              </View>
-            </View>
-
-            <TouchableOpacity style={styles.actionBtn} onPress={() => setShowMetricModal(true)}>
-              <Ionicons name="add-circle" size={18} color="#FFFFFF" />
-              <Text style={styles.actionBtnText}>Record Measurement</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: COLORS.aqua }]} onPress={() => setShowNoteModal(true)}>
-              <Ionicons name="chatbubble" size={18} color="#FFFFFF" />
-              <Text style={styles.actionBtnText}>Add Note</Text>
-            </TouchableOpacity>
-          </>
-        )}
-
-        {/* BODY METRICS TAB */}
-        {activeTab === 1 && (
-          <>
-            <TouchableOpacity style={styles.actionBtn} onPress={() => setShowMetricModal(true)}>
-              <Ionicons name="add-circle" size={18} color="#FFFFFF" />
-              <Text style={styles.actionBtnText}>New Measurement</Text>
-            </TouchableOpacity>
-
-            {metricsLoading ? <ActivityIndicator color={COLORS.orange} style={{ marginTop: 20 }} /> :
-             metrics.length === 0 ? <Text style={styles.emptyText}>No measurements recorded yet</Text> :
-             metrics.map((m: any) => (
-              <View key={m.id} style={styles.metricCard}>
-                <Text style={styles.metricDate}>{new Date(m.recorded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
-                <View style={styles.metricGrid}>
-                  {m.weight_kg && <View style={styles.metricItem}><Text style={styles.metricValue}>{m.weight_kg}</Text><Text style={styles.metricLabel}>kg</Text></View>}
-                  {m.bmi && <View style={styles.metricItem}><Text style={[styles.metricValue, { color: bmiColor }]}>{m.bmi}</Text><Text style={styles.metricLabel}>BMI</Text></View>}
-                  {m.body_fat_pct && <View style={styles.metricItem}><Text style={styles.metricValue}>{m.body_fat_pct}%</Text><Text style={styles.metricLabel}>Body Fat</Text></View>}
-                  {m.waist_cm && <View style={styles.metricItem}><Text style={styles.metricValue}>{m.waist_cm}</Text><Text style={styles.metricLabel}>Waist</Text></View>}
-                  {m.chest_cm && <View style={styles.metricItem}><Text style={styles.metricValue}>{m.chest_cm}</Text><Text style={styles.metricLabel}>Chest</Text></View>}
-                </View>
-                {m.notes && <Text style={styles.metricNotes}>{m.notes}</Text>}
-              </View>
-            ))}
-          </>
-        )}
-
-        {/* WORKOUTS TAB */}
-        {activeTab === 2 && (
-          <>
-            {!privacy?.share_workouts ? <Text style={styles.privateText}>Trainee has not shared workout data</Text> :
-             workoutsLoading ? <ActivityIndicator color={COLORS.orange} style={{ marginTop: 20 }} /> :
-             workouts.length === 0 ? <Text style={styles.emptyText}>No workouts logged</Text> :
-             workouts.map((w: any) => (
-              <View key={w.id} style={styles.workoutCard}>
-                <View style={styles.workoutIcon}><Ionicons name="barbell" size={18} color={COLORS.orange} /></View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.workoutTitle}>{w.title || 'Workout'}</Text>
-                  <Text style={styles.workoutMeta}>{w.sport?.name || ''} · {w.duration_minutes || 0} min · {w.calories_burned || 0} cal</Text>
-                  <Text style={styles.workoutDate}>{new Date(w.completed_at).toLocaleDateString()}</Text>
-                </View>
-              </View>
-            ))}
-          </>
-        )}
-
-        {/* NUTRITION TAB */}
-        {activeTab === 3 && (
-          <>
-            {!privacy?.share_nutrition ? <Text style={styles.privateText}>Trainee has not shared nutrition data</Text> :
-             nutritionLoading ? <ActivityIndicator color={COLORS.orange} style={{ marginTop: 20 }} /> :
-             nutritionLogs.length === 0 ? <Text style={styles.emptyText}>No meals logged recently</Text> :
-             nutritionLogs.map((n: any, i: number) => (
-              <View key={i} style={styles.nutritionCard}>
-                <Text style={styles.nutritionType}>{(n.meal_type || 'meal').toUpperCase()}</Text>
-                <Text style={styles.nutritionTitle}>{n.title || 'Meal'}</Text>
-                <View style={styles.nutritionMacros}>
-                  <Text style={styles.nutritionMacro}>{n.calories || 0} cal</Text>
-                  {n.protein_g && <Text style={styles.nutritionMacro}>P{n.protein_g}g</Text>}
-                  {n.carbs_g && <Text style={styles.nutritionMacro}>C{n.carbs_g}g</Text>}
-                  {n.fat_g && <Text style={styles.nutritionMacro}>F{n.fat_g}g</Text>}
-                </View>
-                <Text style={styles.nutritionDate}>{n.logged_date}</Text>
-              </View>
-            ))}
-          </>
-        )}
-
-        {/* NOTES TAB */}
-        {activeTab === 4 && (
-          <>
-            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: COLORS.aqua }]} onPress={() => setShowNoteModal(true)}>
-              <Ionicons name="chatbubble" size={18} color="#FFFFFF" />
-              <Text style={styles.actionBtnText}>Add Note</Text>
-            </TouchableOpacity>
-
-            {notesLoading ? <ActivityIndicator color={COLORS.orange} style={{ marginTop: 20 }} /> :
-             notes.length === 0 ? <Text style={styles.emptyText}>No notes yet</Text> :
-             notes.map((n: any) => {
-              const typeIcon = ({ feedback: 'chatbubble', goal: 'flag', milestone: 'trophy', warning: 'warning', program: 'clipboard' } as Record<string, string>)[n.note_type] || 'chatbubble';
-              const typeColor = ({ feedback: COLORS.aqua, goal: COLORS.orange, milestone: COLORS.green, warning: '#EF5350', program: COLORS.textSecondary } as Record<string, string>)[n.note_type] || COLORS.aqua;
-              return (
-                <View key={n.id} style={styles.noteCard}>
-                  <View style={[styles.noteIcon, { backgroundColor: `${typeColor}15` }]}>
-                    <Ionicons name={typeIcon as any} size={16} color={typeColor} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={[styles.noteType, { color: typeColor }]}>{n.note_type?.toUpperCase()}</Text>
-                      {n.is_private && <Text style={styles.privateBadge}>PRIVATE</Text>}
-                    </View>
-                    <Text style={styles.noteContent}>{n.content}</Text>
-                    <Text style={styles.noteDate}>{new Date(n.created_at).toLocaleDateString()}</Text>
-                  </View>
-                </View>
-              );
-            })}
-          </>
-        )}
-
-        <View style={{ height: 30 }} />
-      </ScrollView>
-
-      {/* Record Measurement Modal */}
-      <Modal visible={showMetricModal} transparent animationType="slide">
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowMetricModal(false)}>
-          <View style={styles.modalSheet} onStartShouldSetResponder={() => true}>
-            <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>Record Measurement</Text>
-            <View style={styles.modalGrid}>
-              {[
-                { label: 'Weight (kg)', val: metricWeight, set: setMetricWeight },
-                { label: 'Height (cm)', val: metricHeight, set: setMetricHeight },
-                { label: 'Body Fat %', val: metricBodyFat, set: setMetricBodyFat },
-                { label: 'Waist (cm)', val: metricWaist, set: setMetricWaist },
-                { label: 'Chest (cm)', val: metricChest, set: setMetricChest },
-              ].map(f => (
-                <View key={f.label} style={styles.modalField}>
-                  <Text style={styles.modalFieldLabel}>{f.label}</Text>
-                  <TextInput style={styles.modalFieldInput} value={f.val} onChangeText={f.set} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={COLORS.textMuted} />
-                </View>
-              ))}
-            </View>
-            <TextInput style={styles.modalNotesInput} value={metricNotes} onChangeText={setMetricNotes} placeholder="Notes (optional)" placeholderTextColor={COLORS.textMuted} multiline />
-            <TouchableOpacity style={styles.modalSaveBtn} onPress={handleSaveMetric} disabled={loggingMetrics}>
-              <Text style={styles.modalSaveBtnText}>{loggingMetrics ? 'Saving...' : 'Save Measurement'}</Text>
-            </TouchableOpacity>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 32 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={sessions.refreshing || notes.refreshing}
+            onRefresh={() => {
+              list.refetch();
+              sessions.refetch();
+              metrics.refetch();
+              intake.refetch();
+              notes.refetch();
+            }}
+            tintColor={p.ink}
+          />
+        }
+      >
+        <View style={s.identity}>
+          {link ? <Magnet person={link.person} size={64} /> : null}
+          <View style={{ flex: 1, gap: 4 }}>
+            <Txt v="title" size={26} numberOfLines={2} accessibilityRole="header">
+              {name}
+            </Txt>
+            {link ? (
+              <Txt v="meta">
+                {[link.since ? t('coach.since', { date: fmtShortDate(link.since, lang) }) : null, sharesLine(t, sharing)].filter(Boolean).join(' · ')}
+              </Txt>
+            ) : null}
           </View>
-        </TouchableOpacity>
-      </Modal>
+        </View>
 
-      {/* Add Note Modal */}
-      <Modal visible={showNoteModal} transparent animationType="slide">
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowNoteModal(false)}>
-          <View style={styles.modalSheet} onStartShouldSetResponder={() => true}>
-            <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>Coach Note</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                {['feedback', 'goal', 'milestone', 'warning', 'program'].map(t => (
-                  <TouchableOpacity key={t} onPress={() => setNoteType(t)}
-                    style={[styles.noteTypeChip, noteType === t && styles.noteTypeChipActive]}>
-                    <Text style={[styles.noteTypeText, noteType === t && { color: COLORS.orange }]}>{t.charAt(0).toUpperCase() + t.slice(1)}</Text>
-                  </TouchableOpacity>
+        <Segmented
+          style={{ marginHorizontal: 16, marginTop: 18 }}
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: 'overview', label: t('coach.overview') },
+            { value: 'body', label: t('coach.body') },
+            { value: 'food', label: t('coach.food') },
+            { value: 'notes', label: t('coach.notes') },
+          ]}
+        />
+
+        {tab === 'overview' ? (
+          <View style={s.body}>
+            <SectionHeading title={t('coach.sessions30')} />
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+              <Txt v="time" size={40}>
+                {sessions.data?.length ?? 0}
+              </Txt>
+            </View>
+            {(sessions.data ?? []).length === 0 && !sessions.loading ? <Txt v="meta">{t('coach.noSessions')}</Txt> : null}
+            {(sessions.data ?? []).slice(0, 5).map((x) => (
+              <View key={x.id} style={s.line}>
+                <Icon sport={x.sport} size={16} color={p.inkSoft} />
+                <Txt v="body" style={{ flex: 1 }} numberOfLines={1}>
+                  {x.title}
+                </Txt>
+                <Txt v="meta">{fmtDay(x.startsAt, lang)}</Txt>
+              </View>
+            ))}
+
+            {sharing.body && latest ? (
+              <>
+                <SectionHeading title={t('coach.body')} style={{ marginTop: 18 }} />
+                <Txt v="time" size={28}>
+                  {latest.weight != null ? t('coach.kg', { n: latest.weight }) : '—'}
+                </Txt>
+                {delta != null && first ? (
+                  <Txt v="meta">{t('coach.fromFirst', { delta: delta > 0 ? `+${delta}` : delta < 0 ? `\u2212${Math.abs(delta)}` : '0', date: fmtShortDate(first.at, lang) })}</Txt>
+                ) : null}
+              </>
+            ) : null}
+
+            {sharing.nutrition && logged.length ? (
+              <>
+                <SectionHeading title={t('coach.food')} style={{ marginTop: 18 }} />
+                <Txt v="body">{t('coach.avgDay', { n: fmtNum(avg) })}</Txt>
+                <Txt v="meta">{tn('coach.daysLogged', logged.length)}</Txt>
+              </>
+            ) : null}
+          </View>
+        ) : null}
+
+        {tab === 'body' ? (
+          <View style={s.body}>
+            {!sharing.body ? (
+              notShared
+            ) : (
+              <>
+                {ms.length === 0 && !metrics.loading ? <Txt v="meta">{t('coach.noMeasurements')}</Txt> : null}
+                {ms.map((m) => (
+                  <MeasurementRow key={m.id} m={m} />
                 ))}
-              </View>
-            </ScrollView>
-            <TextInput style={styles.modalNotesInput} value={noteContent} onChangeText={setNoteContent} placeholder="Write your note..." placeholderTextColor={COLORS.textMuted} multiline />
-            <TouchableOpacity style={styles.modalSaveBtn} onPress={handleSaveNote} disabled={!noteContent.trim()}>
-              <Text style={styles.modalSaveBtnText}>Save Note</Text>
-            </TouchableOpacity>
+              </>
+            )}
           </View>
-        </TouchableOpacity>
-      </Modal>
+        ) : null}
+
+        {tab === 'food' ? (
+          <View style={s.body}>
+            {!sharing.nutrition ? (
+              notShared
+            ) : (
+              <>
+                <Txt v="meta" style={{ marginBottom: 6 }}>
+                  {logged.length ? `${t('coach.avgDay', { n: fmtNum(avg) })} · ${tn('coach.daysLogged', logged.length)}` : tn('coach.daysLogged', 0)}
+                </Txt>
+                {[...days].reverse().map((d) => (
+                  <View key={d.date} style={s.line}>
+                    <Txt v="body" style={{ flex: 1 }}>
+                      {fmtDay(dayOf(d.date), lang)}
+                    </Txt>
+                    {d.meals ? (
+                      <>
+                        <Txt v="meta">{t('coach.proteinDay', { n: fmtNum(d.protein) })}</Txt>
+                        <Txt v="time" size={16} style={{ minWidth: 64, textAlign: 'right' }}>
+                          {fmtNum(d.calories)}
+                        </Txt>
+                      </>
+                    ) : (
+                      <Txt v="meta">—</Txt>
+                    )}
+                  </View>
+                ))}
+              </>
+            )}
+          </View>
+        ) : null}
+
+        {tab === 'notes' ? (
+          <View style={s.body}>
+            {(notes.data ?? []).length === 0 && !notes.loading ? <Txt v="meta">{t('coach.noNotes')}</Txt> : null}
+            {(notes.data ?? []).map((n) => (
+              <Press key={n.id} onPress={() => removeNote(n)} feedback="selection" depress={0.99} style={s.note} accessibilityHint={t('coach.deleteNote')}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Tag label={t(`coach.noteTypes.${n.type}`)} tone={NOTE_TONE[n.type]} />
+                  {n.isPrivate ? <Icon name="lock" size={12} color={p.inkFaint} /> : null}
+                  <View style={{ flex: 1 }} />
+                  <Txt v="caption">{fmtShortDate(n.at, lang)}</Txt>
+                </View>
+                <Txt v="body">{n.content}</Txt>
+              </Press>
+            ))}
+          </View>
+        ) : null}
+      </ScrollView>
+
+      {(tab === 'body' && sharing.body) || tab === 'notes' ? (
+        <View style={[s.bar, { paddingBottom: 12 + insets.bottom }]}>
+          {tab === 'body' ? (
+            <MarkerButton label={t('coach.record')} icon="plus" onPress={() => setRecording(true)} />
+          ) : (
+            <MarkerButton label={t('coach.addNote')} icon="edit" onPress={() => setNoting(true)} disabled={!link || link.status === 'pending'} />
+          )}
+        </View>
+      ) : null}
+
+      {meId && traineeId ? <RecordSheet visible={recording} meId={meId} traineeId={traineeId} onClose={() => setRecording(false)} /> : null}
+      {coachId && traineeId ? <NoteSheet visible={noting} coachId={coachId} traineeId={traineeId} name={name} onClose={() => setNoting(false)} /> : null}
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  headerTitle: { fontSize: 16, fontFamily: FONTS.heading, color: COLORS.textPrimary },
-  scroll: { flex: 1, paddingHorizontal: 16 },
+function MeasurementRow({ m }: { m: Measurement }) {
+  const s = useStyles();
+  const { lang } = useKit();
+  const { t } = useI18n();
+  const parts = [
+    m.weight != null ? t('coach.kg', { n: m.weight }) : null,
+    m.bodyFat != null ? `${m.bodyFat}%` : null,
+    m.waist != null ? `${t('coach.waist').replace(/\s*\(.*\)$/, '')} ${m.waist}` : null,
+    m.chest != null ? `${t('coach.chest').replace(/\s*\(.*\)$/, '')} ${m.chest}` : null,
+    m.bmi != null ? `${t('coach.bmi')} ${m.bmi}` : null,
+  ].filter(Boolean);
+  return (
+    <View style={s.note}>
+      <Txt v="label" size={14}>
+        {fmtDay(m.at, lang)}
+      </Txt>
+      <Txt v="body">{parts.join(' · ')}</Txt>
+      {m.notes ? <Txt v="meta">{m.notes}</Txt> : null}
+    </View>
+  );
+}
 
-  tabBar: { maxHeight: 44, borderBottomWidth: 1, borderBottomColor: COLORS.cardBorder, marginBottom: 12 },
-  tab: { paddingHorizontal: 16, paddingVertical: 10 },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: COLORS.orange },
-  tabText: { fontSize: 12, fontFamily: FONTS.bodyMedium, color: COLORS.textTertiary },
-  tabTextActive: { color: COLORS.orange },
+function RecordSheet({ visible, meId, traineeId, onClose }: { visible: boolean; meId: string; traineeId: string; onClose: () => void }) {
+  const { t } = useI18n();
+  const [f, setF] = useState({ weight: '', height: '', bodyFat: '', waist: '', chest: '', notes: '' });
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (visible) setF({ weight: '', height: '', bodyFat: '', waist: '', chest: '', notes: '' });
+  }, [visible]);
+  const num = (v: string) => {
+    const n = Number(v.replace(',', '.'));
+    return v.trim() && isFinite(n) && n > 0 ? n : null;
+  };
+  const any = ['weight', 'height', 'bodyFat', 'waist', 'chest'].some((k) => num((f as any)[k]) != null);
 
-  overviewGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
-  overviewCard: { width: '47%', backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.cardBorder, borderRadius: 14, padding: 14, alignItems: 'center' },
-  overviewValue: { fontSize: 24, fontFamily: FONTS.heading, color: COLORS.textPrimary, marginTop: 6 },
-  overviewLabel: { fontSize: 9, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 2 },
-  overviewBadge: { fontSize: 10, fontFamily: FONTS.bodySemiBold, marginTop: 2 },
+  async function save() {
+    if (!any) return;
+    setBusy(true);
+    try {
+      await recordMeasurement(meId, traineeId, { weight: num(f.weight), height: num(f.height), bodyFat: num(f.bodyFat), waist: num(f.waist), chest: num(f.chest), notes: f.notes });
+      haptic('success');
+      toast.show(t('coach.saved'), 'info');
+      onClose();
+    } catch {
+      toast.show(t('common.somethingWrong'), 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
 
-  actionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: COLORS.orange, borderRadius: 14, paddingVertical: 14, marginBottom: 10 },
-  actionBtnText: { fontSize: 14, fontFamily: FONTS.heading, color: '#FFFFFF' },
+  const fields: { k: keyof typeof f; label: string }[] = [
+    { k: 'weight', label: t('coach.weight') },
+    { k: 'height', label: t('coach.height') },
+    { k: 'bodyFat', label: t('coach.bodyFat') },
+    { k: 'waist', label: t('coach.waist') },
+    { k: 'chest', label: t('coach.chest') },
+  ];
+  return (
+    <Sheet visible={visible} title={t('coach.record')} onClose={onClose} action={{ label: busy ? t('common.saving') : t('common.save'), onPress: save, disabled: !any || busy }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+        {fields.map((x) => (
+          <View key={x.k} style={{ width: '48%', gap: 6 }}>
+            <Txt v="caption">{x.label}</Txt>
+            <Field value={f[x.k]} onChangeText={(v) => setF((prev) => ({ ...prev, [x.k]: v }))} keyboardType="decimal-pad" placeholder="0" maxLength={5} style={{ textAlign: 'center' }} />
+          </View>
+        ))}
+      </View>
+      <Field value={f.notes} onChangeText={(v) => setF((prev) => ({ ...prev, notes: v }))} placeholder={t('coach.notesOptional')} multiline maxLength={300} />
+    </Sheet>
+  );
+}
 
-  emptyText: { textAlign: 'center', color: COLORS.textMuted, fontSize: 13, paddingVertical: 30 },
-  privateText: { textAlign: 'center', color: COLORS.textMuted, fontSize: 13, paddingVertical: 30, fontStyle: 'italic' },
+function NoteSheet({ visible, coachId, traineeId, name, onClose }: { visible: boolean; coachId: string; traineeId: string; name: string; onClose: () => void }) {
+  const { t } = useI18n();
+  const [type, setType] = useState<NoteType>('feedback');
+  const [text, setText] = useState('');
+  const [priv, setPriv] = useState(false);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (visible) {
+      setType('feedback');
+      setText('');
+      setPriv(false);
+    }
+  }, [visible]);
 
-  // Body metrics
-  metricCard: { backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.cardBorder, borderRadius: 14, padding: 14, marginBottom: 8 },
-  metricDate: { fontSize: 11, fontFamily: FONTS.bodySemiBold, color: COLORS.orange, marginBottom: 8 },
-  metricGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  metricItem: { alignItems: 'center' },
-  metricValue: { fontSize: 18, fontFamily: FONTS.heading, color: COLORS.textPrimary },
-  metricLabel: { fontSize: 9, fontFamily: FONTS.body, color: COLORS.textMuted },
-  metricNotes: { fontSize: 11, fontFamily: FONTS.body, color: COLORS.textTertiary, marginTop: 8, fontStyle: 'italic' },
+  async function save() {
+    if (!text.trim()) return;
+    setBusy(true);
+    try {
+      await addCoachNote(coachId, traineeId, type, text, priv);
+      haptic('success');
+      onClose();
+    } catch {
+      toast.show(t('common.somethingWrong'), 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
 
-  // Workouts
-  workoutCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.cardBorder, borderRadius: 14, padding: 14, marginBottom: 8 },
-  workoutIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(232,143,36,0.1)', alignItems: 'center', justifyContent: 'center' },
-  workoutTitle: { fontSize: 13, fontFamily: FONTS.heading, color: COLORS.textPrimary },
-  workoutMeta: { fontSize: 10, fontFamily: FONTS.body, color: COLORS.textTertiary, marginTop: 2 },
-  workoutDate: { fontSize: 9, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 2 },
+  return (
+    <Sheet visible={visible} title={t('coach.addNote')} onClose={onClose} action={{ label: busy ? t('common.saving') : t('common.save'), onPress: save, disabled: !text.trim() || busy }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {NOTE_TYPES.map((x) => (
+          <Chip key={x} label={t(`coach.noteTypes.${x}`)} selected={type === x} onPress={() => setType(x)} />
+        ))}
+      </View>
+      <Field value={text} onChangeText={setText} placeholder={t('coach.notePlaceholder')} multiline autoFocus maxLength={1000} />
+      <Group>
+        <GroupRow icon="lock" label={t('coach.privateNote')} sub={priv ? t('coach.privateSub', { name }) : t('coach.sharedNote', { name })} toggle={priv} onToggle={setPriv} />
+      </Group>
+    </Sheet>
+  );
+}
 
-  // Nutrition
-  nutritionCard: { backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.cardBorder, borderRadius: 14, padding: 14, marginBottom: 8 },
-  nutritionType: { fontSize: 9, fontFamily: FONTS.bodySemiBold, color: COLORS.orange, letterSpacing: 1 },
-  nutritionTitle: { fontSize: 13, fontFamily: FONTS.bodyMedium, color: COLORS.textPrimary, marginTop: 2 },
-  nutritionMacros: { flexDirection: 'row', gap: 10, marginTop: 6 },
-  nutritionMacro: { fontSize: 10, fontFamily: FONTS.bodySemiBold, color: COLORS.textTertiary },
-  nutritionDate: { fontSize: 9, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 4 },
-
-  // Notes
-  noteCard: { flexDirection: 'row', gap: 12, backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.cardBorder, borderRadius: 14, padding: 14, marginBottom: 8 },
-  noteIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  noteType: { fontSize: 9, fontFamily: FONTS.bodySemiBold, letterSpacing: 0.5 },
-  privateBadge: { fontSize: 8, fontFamily: FONTS.bodySemiBold, color: COLORS.textMuted, backgroundColor: 'rgba(255,255,255,0.06)', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4 },
-  noteContent: { fontSize: 13, fontFamily: FONTS.body, color: COLORS.textPrimary, marginTop: 4, lineHeight: 18 },
-  noteDate: { fontSize: 9, fontFamily: FONTS.body, color: COLORS.textMuted, marginTop: 4 },
-
-  noteTypeChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-  noteTypeChipActive: { borderColor: COLORS.orange, backgroundColor: 'rgba(232,143,36,0.1)' },
-  noteTypeText: { fontSize: 11, fontFamily: FONTS.bodyMedium, color: COLORS.textTertiary },
-
-  // Modals
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-  modalSheet: { backgroundColor: COLORS.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 34 },
-  modalHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.15)', alignSelf: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontFamily: FONTS.heading, color: COLORS.textPrimary, marginBottom: 16 },
-  modalGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  modalField: { width: '47%' },
-  modalFieldLabel: { fontSize: 9, fontFamily: FONTS.bodySemiBold, color: COLORS.textMuted, letterSpacing: 0.5, marginBottom: 4 },
-  modalFieldInput: { backgroundColor: COLORS.inputBg, borderWidth: 1, borderColor: COLORS.inputBorder, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, fontFamily: FONTS.heading, color: COLORS.orange, textAlign: 'center' },
-  modalNotesInput: { backgroundColor: COLORS.inputBg, borderWidth: 1, borderColor: COLORS.inputBorder, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, fontFamily: FONTS.body, color: COLORS.textPrimary, minHeight: 80, marginTop: 12, marginBottom: 14, textAlignVertical: 'top' },
-  modalSaveBtn: { backgroundColor: COLORS.orange, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
-  modalSaveBtnText: { fontSize: 14, fontFamily: FONTS.heading, color: '#FFFFFF' },
-});
+const useStyles = makeStyles(({ p }) => ({
+  screen: { flex: 1, backgroundColor: p.board },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4 },
+  identity: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 16 },
+  body: { paddingHorizontal: 16, paddingTop: 10 },
+  line: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: p.rule },
+  note: { gap: 6, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: p.rule },
+  locked: { alignItems: 'center', gap: 10, paddingHorizontal: 24, paddingTop: 40 },
+  bar: { paddingHorizontal: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: p.rule, backgroundColor: p.boardDeep },
+}));

@@ -42,26 +42,37 @@ export default function SupportPage() {
               <div>
                 <h3 className="font-semibold text-gray-900">How do I report a post or user?</h3>
                 <p>
-                  Tap the three-dot menu (&hellip;) on any post in the Tribe feed and choose
-                  <strong> Report</strong> to flag content, or <strong>Block User</strong> to stop
-                  seeing someone&rsquo;s posts. Reported content is reviewed within 24 hours.
+                  Tap the three-dot menu (&hellip;) on any post in the <strong>Tribe</strong> tab and
+                  choose <strong>Report</strong> to flag it, or <strong>Block</strong> to stop seeing
+                  someone&rsquo;s posts. Reported content is reviewed within 24 hours.
                 </p>
               </div>
 
               <div>
                 <h3 className="font-semibold text-gray-900">How do I delete my account?</h3>
                 <p>
-                  Open <strong>Profile &rarr; Settings &amp; Privacy</strong>, scroll to the bottom,
-                  and tap <strong>Delete Account</strong>. This permanently removes your account,
-                  profile, posts, and event history. It cannot be undone.
+                  Open <strong>You &rarr; Settings</strong> and tap <strong>Delete account</strong>.
+                  This permanently removes your account, profile, posts, and session history. It
+                  cannot be undone.
                 </p>
               </div>
 
               <div>
-                <h3 className="font-semibold text-gray-900">How do I join or create an activity?</h3>
+                <h3 className="font-semibold text-gray-900">How do I join or host a session?</h3>
                 <p>
-                  Browse the <strong>Events</strong> tab to find workouts near you, or tap the
-                  <strong> +</strong> button to create your own and invite your tribe.
+                  Sessions near you are on the <strong>Board</strong> and in <strong>Explore</strong>.
+                  Open one and tap <strong>I&rsquo;m in</strong>; if it&rsquo;s full you can join the
+                  waitlist and you&rsquo;re in automatically when a spot opens. To host, tap
+                  <strong> Host</strong> on the Board.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-gray-900">What does my coach see?</h3>
+                <p>
+                  Only what you choose. When a coach sends you a request, you pick whether to share
+                  your nutrition log and body measurements. Change it or stop anytime from
+                  <strong> You &rarr; Your coach</strong>.
                 </p>
               </div>
 

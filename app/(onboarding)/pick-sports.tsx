@@ -5,9 +5,8 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { makeStyles, useKit } from '../../src/theme';
 import { useI18n } from '../../src/i18n';
 import { useAuth } from '../../src/providers/AuthProvider';
-import { useSaveSports } from '../../src/hooks';
-import { useMySports } from '../../src/data/member';
-import { invalidate } from '../../src/data/query';
+import { saveMySports, useMySports } from '../../src/data/member';
+import { PREVIEW, PREVIEW_ME } from '../../src/data/preview';
 import { SPORT_LIST } from '../../src/lib/sports';
 import { Txt } from '../../src/components/board/Txt';
 import { Icon } from '../../src/components/board/Icon';
@@ -23,8 +22,8 @@ export default function PickSportsScreen() {
   const insets = useSafeAreaInsets();
   const { edit } = useLocalSearchParams<{ edit?: string }>();
   const editing = edit === '1';
-  const { completeOnboarding } = useAuth();
-  const { saveSports } = useSaveSports();
+  const { completeOnboarding, user } = useAuth();
+  const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
   const current = useMySports().data;
   const [picked, setPicked] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -38,8 +37,7 @@ export default function PickSportsScreen() {
   async function done() {
     setBusy(true);
     try {
-      await saveSports(picked);
-      invalidate('member:sports');
+      if (meId) await saveMySports(meId, picked);
       if (editing) {
         router.canGoBack() ? router.back() : router.replace('/(tabs)/profile');
         return;

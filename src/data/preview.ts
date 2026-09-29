@@ -168,6 +168,39 @@ export const previewProfile = {
   daily_steps_avg: null,
 };
 
+// Nutrition: a believable week (keys are local day strings, oldest first).
+export function previewMeals(days: string[]) {
+  const today = days[days.length - 1];
+  const rows: any[] = [
+    { id: 'm1', meal_type: 'breakfast', title: 'Foul', calories: 300, protein_g: 15, carbs_g: 35, fat_g: 9, logged_date: today },
+    { id: 'm2', meal_type: 'breakfast', title: 'Laban', calories: 130, protein_g: 8, carbs_g: 11, fat_g: 6, logged_date: today },
+    { id: 'm3', meal_type: 'lunch', title: 'Chicken kabsa', calories: 650, protein_g: 40, carbs_g: 75, fat_g: 20, logged_date: today },
+    { id: 'm4', meal_type: 'snack', title: 'Dates (3)', calories: 100, protein_g: 1, carbs_g: 27, fat_g: 0, logged_date: today },
+  ];
+  const past = [1850, 2310, 1620, 2050, 0, 1980];
+  days.slice(0, 6).forEach((d, i) => {
+    if (past[i]) rows.push({ id: `mp${i}`, meal_type: 'lunch', title: 'Logged', calories: past[i], protein_g: 110, carbs_g: 200, fat_g: 60, logged_date: d });
+  });
+  return rows;
+}
+export function previewWater(days: string[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  [5, 6, 4, 6, 0, 3, 3].forEach((g, i) => {
+    if (days[i]) out[days[i]] = g;
+  });
+  return out;
+}
+
+// Coaching: one pending request from a coach, so the consent card can be reviewed.
+export const previewCoachLinks = [
+  { id: 'ct-1', coach_id: 'c-reem', status: 'pending', started_at: null, coach: { id: 'c-reem', business_name: 'Coach Reem', name: 'Coach Reem', user_id: 'p-reem' } },
+];
+export const previewTrainees = [
+  { id: 'ct-a', trainee_id: 'p-sara', status: 'active', started_at: '2026-08-02T08:00:00Z', trainee: people.sara },
+  { id: 'ct-b', trainee_id: 'p-majed', status: 'active', started_at: '2026-07-14T08:00:00Z', trainee: people.majed },
+  { id: 'ct-c', trainee_id: 'p-dana', status: 'pending', started_at: null, trainee: people.dana },
+];
+
 export const previewLocations = [
   { id: 'l-wadi', name: 'Wadi Hanifah Path', city: 'Riyadh', country: 'SA', sports: ['running', 'cycling', 'walking'], image_url: PREVIEW_PHOTOS.wadi, latitude: 24.6405, longitude: 46.6286 },
   { id: 'l-park', name: 'King Fahd Park', city: 'Riyadh', country: 'SA', sports: ['running', 'walking', 'football', 'yoga'], image_url: PREVIEW_PHOTOS.park, latitude: null, longitude: null },

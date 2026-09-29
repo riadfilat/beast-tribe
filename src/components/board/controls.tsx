@@ -219,6 +219,7 @@ export function Segmented<T extends string>({
             feedback="selection"
             depress={0.97}
             accessibilityRole="tab"
+            accessibilityLabel={o.label}
             accessibilityState={{ selected: on }}
             style={{
               flex: 1,
@@ -280,6 +281,8 @@ export const Field = forwardRef<TextInput, FieldProps>(function Field({ error, t
           style={[
             {
               flex: 1,
+              // lets the input shrink beside a trailing unit (web inputs have an intrinsic width)
+              minWidth: 0,
               color: p.ink,
               fontSize: 17,
               ...f.ui,

@@ -14,6 +14,8 @@ export default function TabLayout() {
   const { p, f } = useKit();
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
+  // Same 54pt for icon + label on every device; only the padding below changes.
+  const bottom = insets.bottom > 0 ? insets.bottom - 2 : 8;
   useInboxLive();
   return (
     <Tabs
@@ -25,9 +27,9 @@ export default function TabLayout() {
           backgroundColor: p.boardDeep,
           borderTopColor: p.rule,
           borderTopWidth: 1,
-          height: 58 + insets.bottom,
+          height: 6 + 54 + bottom,
           paddingTop: 6,
-          paddingBottom: insets.bottom > 0 ? insets.bottom - 2 : 8,
+          paddingBottom: bottom,
         },
         tabBarLabelStyle: { ...f.uiSemibold, fontSize: 11 },
         sceneStyle: { backgroundColor: p.board },

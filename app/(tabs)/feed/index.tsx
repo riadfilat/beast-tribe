@@ -8,9 +8,8 @@ import { useI18n } from '../../../src/i18n';
 import { fmtAgo } from '../../../src/i18n/format';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { useFeed, toggleBeast, createPost, deletePost, reportPost, blockMember, Post } from '../../../src/data/feed';
-import { useMyPackList, PackSummary } from '../../../src/data/member';
+import { useMyCommunity, useMyPackList, PackSummary } from '../../../src/data/member';
 import { useMySessions } from '../../../src/data/sessions';
-import { useMyCommunity } from '../../../src/hooks';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { Txt } from '../../../src/components/board/Txt';
 import { Icon } from '../../../src/components/board/Icon';
@@ -37,7 +36,7 @@ export default function TribeScreen() {
   const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
   const feed = useFeed();
   const packs = useMyPackList();
-  const community = useMyCommunity().data as any;
+  const community = useMyCommunity().data;
   const [tab, setTab] = useState<Tab>('feed');
   const [composeFor, setComposeFor] = useState<string | null | undefined>(undefined); // undefined = closed
   const [reporting, setReporting] = useState<Post | null>(null);

@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../providers/AuthProvider';
 import { useQuery, invalidate } from './query';
-import { sportIdOf, SportId } from '../lib/sports';
+import { sportDef, sportIdOf, SportId } from '../lib/sports';
 import { uploadImage } from '../lib/upload';
 import { PREVIEW, PREVIEW_ME, previewLocations, previewMySports, previewPacks, previewStats } from './preview';
 
@@ -35,6 +35,36 @@ export function useMySports() {
     if (error) throw error;
     const ids = (data || []).map((r: any) => sportIdOf(r.sport?.name)).filter((s: SportId) => s !== 'other');
     return Array.from(new Set(ids));
+  });
+}
+
+export async function saveMySports(meId: string, ids: string[]) {
+  if (PREVIEW) return invalidate('member:sports');
+  const names = Array.from(new Set(ids.map((id) => sportDef(id).dbName).filter(Boolean))) as string[];
+  let sportIds: string[] = [];
+  if (names.length) {
+    const { data, error } = await supabase.from('sports').select('id').in('name', names);
+    if (error) throw error;
+    sportIds = (data || []).map((r: any) => r.id);
+  }
+  const { error: delErr } = await supabase.from('user_sports').delete().eq('user_id', meId);
+  if (delErr) throw delErr;
+  if (sportIds.length) {
+    const { error } = await supabase.from('user_sports').insert(sportIds.map((sport_id) => ({ user_id: meId, sport_id })));
+    if (error) throw error;
+  }
+  invalidate('member:sports');
+}
+
+// ─── Community (assigned in the admin) ──────────────────────────────────────
+export function useMyCommunity() {
+  const { profile } = useAuth();
+  const id = PREVIEW ? 'c-andorra' : profile?.community_id ?? null;
+  return useQuery<{ id: string; name: string } | null>(id ? `member:community:${id}` : null, async () => {
+    if (PREVIEW) return { id: 'c-andorra', name: 'Andorra Sports Tribe' };
+    const { data, error } = await supabase.from('communities').select('id, name').eq('id', id!).maybeSingle();
+    if (error) throw error;
+    return data ? { id: data.id, name: data.name } : null;
   });
 }
 

@@ -1,21 +1,22 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, Image, Linking, RefreshControl, ScrollView, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Image, Linking, RefreshControl, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { makeStyles, useKit } from '../../../src/theme';
 import { useI18n } from '../../../src/i18n';
 import { useAuth } from '../../../src/providers/AuthProvider';
-import { useMyStats, useMySports, useMyPackList, saveAvatar } from '../../../src/data/member';
+import { useMyCommunity, useMyStats, useMySports, useMyPackList, saveAvatar } from '../../../src/data/member';
 import { useMySessions } from '../../../src/data/sessions';
-import { useIsCoach, useMyCommunity } from '../../../src/hooks';
+import { acceptCoach, endCoaching, MyCoach, saveSharing, sharesLine, Sharing, useCoachProfile, useMyCoaches } from '../../../src/data/coaching';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { SHOP_URL } from '../../../src/lib/constants';
 import { Txt } from '../../../src/components/board/Txt';
 import { Icon } from '../../../src/components/board/Icon';
 import { Press } from '../../../src/components/board/Press';
 import { Magnet } from '../../../src/components/board/people';
-import { SectionHeading } from '../../../src/components/board/controls';
+import { MarkerButton, OutlineButton, SectionHeading } from '../../../src/components/board/controls';
+import { Sheet } from '../../../src/components/board/sheet';
 import { Group, GroupRow } from '../../../src/components/board/list';
 import { SessionRow, useNow } from '../../../src/components/board/session';
 import { patchFor } from '../../../src/components/board/patches';
@@ -34,8 +35,9 @@ export default function YouScreen() {
   const sports = useMySports().data ?? [];
   const packs = useMyPackList().data ?? [];
   const mine = useMySessions();
-  const { isCoach } = useIsCoach();
-  const community = useMyCommunity().data as any;
+  const isCoach = !!useCoachProfile().data;
+  const coaches = useMyCoaches();
+  const community = useMyCommunity().data;
   const now = useNow();
   const [uploading, setUploading] = useState(false);
   const [localAvatar, setLocalAvatar] = useState<string | null>(null);
@@ -76,7 +78,7 @@ export default function YouScreen() {
       <ScrollView
         contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={stats.refreshing || mine.refreshing} onRefresh={() => { stats.refetch(); mine.refetch(); refreshProfile(); }} tintColor={p.ink} />}
+        refreshControl={<RefreshControl refreshing={stats.refreshing || mine.refreshing} onRefresh={() => { stats.refetch(); mine.refetch(); coaches.refetch(); refreshProfile(); }} tintColor={p.ink} />}
       >
         <View style={s.header}>
           <Txt v="title" size={32} style={{ flex: 1 }} accessibilityRole="header">
@@ -116,6 +118,20 @@ export default function YouScreen() {
           <Txt v="body" style={s.facts}>
             {facts}
           </Txt>
+        ) : null}
+
+        {/* Coaching: requests wait for your answer; you choose what a coach sees */}
+        {(coaches.data ?? []).length ? (
+          <>
+            <SectionHeading title={t('coach.yourCoach')} style={s.section} />
+            {(coaches.data ?? []).map((c) =>
+              c.status === 'pending' ? (
+                <CoachRequest key={c.linkId} c={c} meId={meId} onDone={() => coaches.refetch()} />
+              ) : (
+                <CoachRow key={c.linkId} c={c} meId={meId} onChanged={() => coaches.refetch()} />
+              ),
+            )}
+          </>
         ) : null}
 
         {/* Next up */}
@@ -185,6 +201,120 @@ export default function YouScreen() {
   );
 }
 
+// ─── Coaching (member side) ─────────────────────────────────────────────────
+function SharingToggles({ value, onChange }: { value: Sharing; onChange: (v: Sharing) => void }) {
+  const { t } = useI18n();
+  return (
+    <Group>
+      <GroupRow icon="nutrition" label={t('coach.shareNutrition')} sub={t('coach.shareNutritionSub')} toggle={value.nutrition} onToggle={(v) => onChange({ ...value, nutrition: v })} />
+      <GroupRow icon="people" label={t('coach.shareBody')} sub={t('coach.shareBodySub')} toggle={value.body} onToggle={(v) => onChange({ ...value, body: v })} />
+    </Group>
+  );
+}
+
+function CoachRequest({ c, meId, onDone }: { c: MyCoach; meId: string | null; onDone: () => void }) {
+  const s = useStyles();
+  const { t } = useI18n();
+  const [share, setShare] = useState<Sharing>({ nutrition: true, body: true });
+  const [busy, setBusy] = useState<'accept' | 'decline' | null>(null);
+
+  async function answer(accept: boolean) {
+    if (!meId) return;
+    setBusy(accept ? 'accept' : 'decline');
+    try {
+      if (accept) await acceptCoach(meId, c, share);
+      else await endCoaching(c.linkId);
+      haptic(accept ? 'success' : 'light');
+      onDone();
+    } catch {
+      toast.show(t('common.somethingWrong'), 'error');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <View style={s.request}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Magnet person={{ id: c.coachId, name: c.name }} size={44} />
+        <Txt v="headline" style={{ flex: 1 }}>
+          {t('coach.requestTitle', { coach: c.name })}
+        </Txt>
+      </View>
+      <Txt v="meta" size={14}>
+        {t('coach.requestBody', { coach: c.name })}
+      </Txt>
+      <SharingToggles value={share} onChange={setShare} />
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <OutlineButton label={t('coach.decline')} onPress={() => answer(false)} loading={busy === 'decline'} disabled={!!busy} style={{ flex: 1 }} />
+        <MarkerButton label={t('coach.accept')} onPress={() => answer(true)} loading={busy === 'accept'} disabled={!!busy} style={{ flex: 1, height: 50 }} />
+      </View>
+    </View>
+  );
+}
+
+function CoachRow({ c, meId, onChanged }: { c: MyCoach; meId: string | null; onChanged: () => void }) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const [share, setShare] = useState<Sharing>(c.sharing);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (open) setShare(c.sharing);
+  }, [open]);
+
+  async function save() {
+    if (!meId) return;
+    setBusy(true);
+    try {
+      await saveSharing(meId, c.coachId, share);
+      haptic('success');
+      toast.show(t('coach.saved'), 'info');
+      setOpen(false);
+      onChanged();
+    } catch {
+      toast.show(t('common.somethingWrong'), 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function stop() {
+    Alert.alert(t('coach.stop'), t('coach.stopConfirm', { coach: c.name }), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('coach.stop'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await endCoaching(c.linkId);
+            setOpen(false);
+            onChanged();
+          } catch {
+            toast.show(t('common.somethingWrong'), 'error');
+          }
+        },
+      },
+    ]);
+  }
+
+  return (
+    <>
+      <Group style={{ marginHorizontal: 16 }}>
+        <GroupRow icon="coach" label={c.name} sub={sharesLine(t, c.sharing)} onPress={() => setOpen(true)} />
+      </Group>
+      <Sheet
+        visible={open}
+        title={t('coach.whatTheySee', { coach: c.name })}
+        onClose={() => setOpen(false)}
+        action={{ label: busy ? t('common.saving') : t('common.save'), onPress: save, disabled: busy }}
+      >
+        <SharingToggles value={share} onChange={setShare} />
+        <OutlineButton label={t('coach.stop')} tone="danger" onPress={stop} style={{ marginTop: 12 }} />
+      </Sheet>
+    </>
+  );
+}
+
 function arCount(n: number, one: string, two: string, few: string, many: string) {
   if (n === 1) return one;
   if (n === 2) return two;
@@ -205,4 +335,5 @@ const useStyles = makeStyles(({ p }) => ({
   sports: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16 },
   sport: { flexDirection: 'row', alignItems: 'center', gap: 7, minHeight: 36, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1.5, borderColor: p.rule },
   patch: { width: 64, height: 64, borderRadius: 32, overflow: 'hidden', backgroundColor: '#023C3C', borderWidth: 1.5, borderColor: p.rule },
+  request: { marginHorizontal: 16, padding: 14, gap: 12, borderRadius: 12, borderWidth: 1.5, borderStyle: 'dashed', borderColor: p.ruleStrong },
 }));
