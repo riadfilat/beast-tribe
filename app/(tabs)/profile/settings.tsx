@@ -10,6 +10,7 @@ import { PRIVACY_URL, SUPPORT_URL, TERMS_URL } from '../../../src/lib/constants'
 import { Txt } from '../../../src/components/board/Txt';
 import { IconButton, Segmented } from '../../../src/components/board/controls';
 import { Group, GroupRow } from '../../../src/components/board/list';
+import { Lockup } from '../../../src/components/brand/Logo';
 import { toast } from '../../../src/components/board/toast';
 
 export default function SettingsScreen() {
@@ -115,9 +116,12 @@ export default function SettingsScreen() {
           <GroupRow icon="trash" label={deleting ? t('settings.deleting') : t('settings.deleteAccount')} tone="danger" chevron={false} onPress={deleting ? undefined : confirmDelete} />
         </Group>
 
-        <Txt v="caption" align="center" style={{ marginTop: 24 }}>
-          {t('common.appName')} · {t('settings.version', { v: version })}
-        </Txt>
+        <View style={{ alignItems: 'center', gap: 8, marginTop: 28 }}>
+          <Lockup height={18} ink={p.ink} />
+          <Txt v="caption" align="center">
+            {t('auth.byOB')} · {t('settings.version', { v: version })}
+          </Txt>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

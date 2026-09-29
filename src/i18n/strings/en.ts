@@ -376,6 +376,7 @@ export const en = {
   },
   auth: {
     tagline: 'Awaken the beast.',
+    byOB: 'By Operation Beast',
     welcomeBody: 'Find a session. Show up. Train with your tribe.',
     createAccount: 'Create account',
     signIn: 'Sign in',

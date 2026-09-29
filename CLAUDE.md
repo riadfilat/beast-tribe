@@ -115,6 +115,12 @@ User wants to launch the app to limited public testers via TestFlight.
 
 ## Session Log (append-only — newest at top)
 
+### 2026-09-29 (later) — Beast Tribe logo "The Pack" + new welcome
+- User chose logo A "The Pack": three parent wolves (from LogoVariations.ai vectors) in Dreamer aqua / Seeker orange / Mover ink; BEAST TRIBE wordmark from the parent logotype glyphs. Sources: assets/brand/*.svg; components src/components/brand/Logo.tsx (PackMark, Wordmark, Lockup, WolfGlyph) + admin/src/components/brand/Logo.tsx; geometry paths.ts (generated).
+- Rolled out: welcome (photo-led, teal overlay, lockup, "By Operation Beast"), sign-in, Board masthead, Settings footer, Beast reaction = single wolf; admin sidebar + login (was a 🐺 emoji), /s/ share page, support + legal headers, favicon/apple-icon, og-default.png.
+- Native assets regenerated (icon.png no alpha, splash, android adaptive, favicon) — the phone still shows Expo's DEFAULT icon until the next native build (EAS). Old orange marks (mark-sun, beast-icon, ob-logo-*) removed.
+- Welcome photo is a stand-in (Mina Rad, Unsplash License, loaded from Unsplash CDN). Guideline photos are other brands' moodboard refs — do not ship. Ask user for OB shoot photos.
+
 ### 2026-09-29 — UPLIFT continued (branch uplift/box-board; NOT pushed — no GitHub login on this Mac)
 - DB 036 applied (dry-run tested): coaching by consent — coach requests (pending), member accepts + picks sharing (nutrition / body), either side ends (delete). Fixed: coach notes (even private) were readable by every user; coach/trainee pairs public; anyone could insert body_metrics for others; coaches could never read shared nutrition. New: profiles.nutrition_goals, bt_coach_can_see(), coach_request/coach_accepted notifications (localized push).
 - Rebuilt on the kit + EN/AR: Nutrition (week strip, day ledger, editable targets, water tally, delete, local-date logging), Coach dashboard, Trainee view, member coach request/sharing on You, +not-found. Inbox routes coach notifications.

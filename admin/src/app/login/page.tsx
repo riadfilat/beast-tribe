@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase-browser';
+import { Lockup } from '@/components/brand/Logo';
 
 const ERROR_MESSAGES: Record<string, string> = {
   unauthorized: 'Your account does not have admin or partner access.',
@@ -77,11 +78,9 @@ export default function LoginPage() {
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 bg-brand-teal rounded-2xl mb-4 shadow-lg">
-              <span className="text-2xl">🐺</span>
-            </div>
-            <h1 className="text-2xl font-bold text-brand-teal">Beast Tribe</h1>
-            <p className="text-sm text-gray-400 mt-1">Admin & Partner Portal</p>
+            <h1 className="sr-only">Beast Tribe</h1>
+            <Lockup height={30} id="bt-login" className="mx-auto" />
+            <p className="text-sm text-gray-500 mt-3">Admin & Partner Portal</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">

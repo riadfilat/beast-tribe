@@ -44,7 +44,8 @@ A sports community app owned by a real activewear brand (Operation Beast) and bu
 
 - Name: Operation Beast (brand), Beast Tribe (app). The reaction is called "Beast".
 - Colors from the adopted collateral: deep teal #023C3C as the dominant field, orange #E88F24 (the sun) as the accent, aqua #56C4C4 secondary.
-- Wordmark: octagonal stencil lettering (the SlamDunk font in the app) with the howling-wolf-and-sun mark.
+- Parent mark: Operation Beast's howling wolf and orange sun, with an octagonal stencil wordmark.
+- Beast Tribe logo (chosen 2026-09-29, "The Pack"): three of the parent's wolves howling together in the journey colours (Dreamer aqua, Seeker orange, Mover = surface ink), with BEAST TRIBE set in the parent logotype's own letterforms, endorsed "By Operation Beast". The orange sun is the parent's, never Beast Tribe's logo.
 - Typefaces in use: Montserrat, Poppins, SlamDunk (Latin only).
 - Mascots: neon hand-drawn Wolf, Eagle, Tiger, Rhino ("On Black Neon" and "On White" sets).
 - Voice: short imperatives — "Awaken the beast", "Awaken, advance, repeat", "Welcome to the tribe", "Unleash the beast", "Don't just move. Push. Break limits. Go further than yesterday."
@@ -52,7 +53,8 @@ A sports community app owned by a real activewear brand (Operation Beast) and bu
 ## Evidence on Hand
 
 - Brand books: `/Users/riadabulfilat/Desktop/OB/Operation Beast_Collateral 2.pdf` (adopted teal/orange collateral), `/Users/riadabulfilat/Desktop/OB/Huda the Designer x Operation Beast_v2.pdf` (logo exploration, vermillion option).
-- Logos and marks: `assets/images/ob-logo-*.{png,jpg}`, `assets/images/beast-icon.png`.
+- Beast Tribe logo sources: `assets/brand/*.svg` (mark, wordmark, lockups) generated from the parent master file `drive-download-20260302T171831Z-3-001/Logo Variations/LogoVariations.ai`; geometry in `src/components/brand/paths.ts` (app) and `admin/src/components/brand/paths.ts` (web).
+- Welcome photo (stand-in until an Operation Beast shoot): Mina Rad, "A group of people running down a street" (Tehran), Unsplash License. The brand guideline's photos are other brands' moodboard references and must not ship.
 - Mascot art: `assets/images/animals/{Wolf,Eagle,Tiger,Rhino}/{1,2}.png`; source sets in `/Users/riadabulfilat/Desktop/OB/Designs/`.
 - No member testimonials, member counts, partner logos, or press exist. Never fabricate them.
 

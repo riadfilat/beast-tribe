@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { Montserrat, Noto_Kufi_Arabic } from 'next/font/google';
 import { createAdminClient } from '@/lib/supabase-server';
+import { Lockup } from '@/components/brand/Logo';
 
 // Public landing for a shared session link (https://beast-tribe.vercel.app/s/<id>).
 // The app's Share sheet sends this URL, mostly over WhatsApp, so it must preview well
@@ -131,7 +132,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const lang = langOf();
   const base: Metadata = { metadataBase: new URL(SITE), robots: { index: false, follow: false } };
   if (!row || row.visibility === 'pack') {
-    return { ...base, title: COPY[lang].brand, description: COPY[lang].tagline, openGraph: { title: COPY[lang].brand, description: COPY[lang].tagline, images: ['/mark-sun.png'] } };
+    return { ...base, title: COPY[lang].brand, description: COPY[lang].tagline, openGraph: { title: COPY[lang].brand, description: COPY[lang].tagline, images: ['/og-default.png'] } };
   }
   const { day, time } = when(row, lang);
   const title = `${row.title || sportName(row, lang)} · ${COPY[lang].brand}`;
@@ -140,7 +141,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     ...base,
     title,
     description,
-    openGraph: { title, description, images: [row.image_url || '/mark-sun.png'], type: 'website' },
+    openGraph: { title, description, images: [row.image_url || '/og-default.png'], type: 'website' },
     twitter: { card: row.image_url ? 'summary_large_image' : 'summary', title, description },
   };
 }
@@ -159,9 +160,9 @@ export default async function SessionLinkPage({ params }: { params: { id: string
       style={{ fontFamily: ar ? 'var(--font-kufi), var(--font-mont), sans-serif' : 'var(--font-mont), sans-serif' }}
     >
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-10 pt-6">
-        <div className="flex items-center gap-2">
-          <span className="inline-block h-3 w-3 rounded-full bg-[#E88F24]" aria-hidden />
-          <span className="text-sm font-extrabold uppercase tracking-[0.12em]">{c.brand}</span>
+        <div className="flex flex-col items-start gap-1.5">
+          <Lockup height={22} ink="#F4F1EA" id="bt-share" />
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#F4F1EA]/70">{ar ? 'من أوبريشن بيست' : 'By Operation Beast'}</span>
         </div>
         {body}
       </div>

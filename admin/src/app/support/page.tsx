@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Lockup } from '@/components/brand/Logo';
 
 export const metadata: Metadata = {
   title: 'Support — Beast Tribe',
@@ -13,6 +14,7 @@ export default function SupportPage() {
     <main className="min-h-screen bg-white text-gray-800">
       <div className="mx-auto max-w-3xl px-6 py-16">
         <header className="mb-10 border-b border-gray-200 pb-6">
+          <Lockup height={22} id="bt-support" className="mb-6" />
           <h1 className="text-3xl font-bold text-gray-900">Support</h1>
           <p className="mt-2 text-sm text-gray-500">Beast Tribe by Operation Beast</p>
           <p className="text-sm text-gray-500">We&rsquo;re here to help.</p>

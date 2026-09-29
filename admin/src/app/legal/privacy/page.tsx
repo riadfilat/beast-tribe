@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Lockup } from '@/components/brand/Logo';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy — Beast Tribe',
@@ -11,6 +12,7 @@ export default function PrivacyPolicyPage() {
     <main className="min-h-screen bg-white text-gray-800">
       <div className="mx-auto max-w-3xl px-6 py-16">
         <header className="mb-10 border-b border-gray-200 pb-6">
+          <Lockup height={22} id="bt-privacy" className="mb-6" />
           <h1 className="text-3xl font-bold text-gray-900">Privacy Policy</h1>
           <p className="mt-2 text-sm text-gray-500">Beast Tribe by Operation Beast</p>
           <p className="text-sm text-gray-500">Last updated: June 2026</p>

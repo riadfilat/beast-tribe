@@ -418,6 +418,7 @@ export const ar: Strings = {
   },
   auth: {
     tagline: 'أيقظ الوحش بداخلك.',
+    byOB: 'من أوبريشن بيست',
     welcomeBody: 'اعثر على تمرين. احضر. تمرّن مع مجتمعك.',
     createAccount: 'إنشاء حساب',
     signIn: 'تسجيل الدخول',

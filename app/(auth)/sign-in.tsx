@@ -11,6 +11,7 @@ import { Txt } from '../../src/components/board/Txt';
 import { Icon } from '../../src/components/board/Icon';
 import { Press } from '../../src/components/board/Press';
 import { Field, IconButton, MarkerButton, TextButton } from '../../src/components/board/controls';
+import { PackMark } from '../../src/components/brand/Logo';
 
 type Step = 'email' | 'name' | 'signup-password' | 'signin-password' | 'forgot' | 'reset-sent';
 
@@ -199,6 +200,7 @@ export default function SignInScreen() {
         </View>
 
         <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled">
+          <PackMark height={20} ink={p.ink} style={{ marginBottom: 22 }} />
           <Txt v="title" size={30} accessibilityRole="header">
             {title}
           </Txt>

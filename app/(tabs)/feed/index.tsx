@@ -12,6 +12,7 @@ import { useMyCommunity, useMyPackList, PackSummary } from '../../../src/data/me
 import { useMySessions } from '../../../src/data/sessions';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { Txt } from '../../../src/components/board/Txt';
+import { WolfGlyph } from '../../../src/components/brand/Logo';
 import { Icon } from '../../../src/components/board/Icon';
 import { Press } from '../../../src/components/board/Press';
 import { Magnet } from '../../../src/components/board/people';
@@ -21,7 +22,6 @@ import { haptic } from '../../../src/lib/haptics';
 import { compressImage } from '../../../src/lib/imageUtils';
 import { patchFor } from '../../../src/components/board/patches';
 
-const CLAW = require('../../../assets/images/beast-icon.png');
 
 type Tab = 'feed' | 'packs';
 const REASONS = ['inappropriate', 'spam', 'harassment', 'nudity', 'other'] as const;
@@ -217,7 +217,7 @@ function PostItem({ post, meId, onBeast, onMore, onOpenEvent }: { post: Post; me
       {post.imageUrl ? <Image source={{ uri: post.imageUrl }} style={s.postImg} accessibilityIgnoresInvertColors /> : null}
       <View style={s.actions}>
         <Press onPress={onBeast} feedback={null} depress={0.9} accessibilityLabel={t('tribe.beast')} accessibilityState={{ selected: post.beasted }} style={[s.beast, post.beasted ? { backgroundColor: p.marker, borderColor: p.marker } : null]}>
-          <Image source={CLAW} style={{ width: 18, height: 18, tintColor: post.beasted ? p.onMarker : p.ink }} />
+          <WolfGlyph size={16} color={post.beasted ? p.onMarker : p.ink} />
           <Txt v="label" size={13} color={post.beasted ? p.onMarker : p.ink}>
             {post.beastCount > 0 ? tn('tribe.beasts', post.beastCount) : t('tribe.beast')}
           </Txt>

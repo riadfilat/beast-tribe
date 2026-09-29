@@ -12,6 +12,7 @@ import { usePopularSpots } from '../../../src/data/member';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import type { Session } from '../../../src/data/model';
 import { Txt } from '../../../src/components/board/Txt';
+import { PackMark } from '../../../src/components/brand/Logo';
 import { Press } from '../../../src/components/board/Press';
 import { Icon } from '../../../src/components/board/Icon';
 import { IconButton, MarkerButton, TextButton } from '../../../src/components/board/controls';
@@ -20,7 +21,6 @@ import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
 import { syncEventReminders } from '../../../src/lib/notifications';
 
-const MARK = require('../../../assets/images/mark-sun.png');
 
 export default function BoardScreen() {
   const s = useStyles();
@@ -129,7 +129,7 @@ export default function BoardScreen() {
       >
         {/* Masthead */}
         <View style={s.masthead}>
-          <Image source={MARK} style={s.mark} accessibilityIgnoresInvertColors />
+          <PackMark height={17} ink={p.ink} />
           <Txt v="label" size={13} color={p.inkSoft} style={{ flex: 1 }}>
             {fmtBoardDate(new Date(now), lang)}
           </Txt>
@@ -277,7 +277,6 @@ const useStyles = makeStyles(({ p }) => ({
   screen: { flex: 1, backgroundColor: p.board },
   content: { paddingBottom: 40 },
   masthead: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingStart: 16, paddingEnd: 12, paddingTop: 4 },
-  mark: { width: 30, height: 30 },
   hostChip: {
     flexDirection: 'row',
     alignItems: 'center',

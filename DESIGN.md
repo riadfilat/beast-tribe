@@ -253,6 +253,12 @@ Sharp and confident: 10px on buttons and fields, 8px on chips and magnets (about
 - **Stacks:** a 44pt back chevron on the leading edge (mirrors in Arabic) and a Montserrat title.
 - **Sheets:** native page sheets with Cancel · title · action in the header; the action is orange text when enabled.
 
+### Logo ("The Pack")
+- **Mark:** three of Operation Beast's wolves howling together, rising left to right, each silhouette whole. Back to front: Dreamer aqua (#56C4C4), Seeker orange (#E88F24), and the surface's ink (chalk on slate, teal on the whiteboard). Gaps between overlapping wolves are real knockouts, so it sits on photos too.
+- **Wordmark:** BEAST TRIBE in the parent logotype's letterforms; lockup = mark + wordmark at 0.9 of the mark's height, endorsed "By Operation Beast" where there is room.
+- **Where:** the welcome and sign-in, the Board masthead, Settings, the app icon and splash, the admin sidebar and sign-in, and every public web page. The single wolf alone is the "Beast" reaction glyph.
+- **Never:** the parent's orange sun as Beast Tribe's logo, recoloured wolves, or the mark on busy photography without the teal overlay.
+
 ### Session Row (signature)
 Time on the rail (the next one set largest), caps title, sport glyph and place, the crew's magnets and a tally on the trailing line. When the session is yours the orange sun sits behind its time; tapping I'M IN makes the sun rise with a spring while your magnet snaps onto the roster.
 

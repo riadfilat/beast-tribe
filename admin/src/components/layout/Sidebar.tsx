@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase-browser';
+import { Lockup } from '@/components/brand/Logo';
 
 interface NavItem {
   label: string;
@@ -91,16 +92,11 @@ export default function Sidebar({ type, userName, roleBadge, pendingModeration }
       >
         {/* Header */}
         <div className="px-6 py-5 border-b border-white/10">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-brand-orange rounded-lg flex items-center justify-center text-sm font-bold text-white shadow-sm">
-              🐺
-            </div>
-            <div>
-              <h1 className="text-sm font-bold leading-tight">Beast Tribe</h1>
-              <p className="text-xs text-white/50 leading-tight">
-                {type === 'admin' ? 'Admin Dashboard' : 'Partner Portal'}
-              </p>
-            </div>
+          <div className="flex flex-col gap-2">
+            <Lockup height={20} ink="#F4F1EA" id="bt-sidebar" />
+            <p className="text-xs text-white/60 leading-tight">
+              {type === 'admin' ? 'Admin Dashboard' : 'Partner Portal'}
+            </p>
           </div>
         </div>
 
