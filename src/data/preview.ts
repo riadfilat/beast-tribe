@@ -3,6 +3,7 @@
 // photos here are illustrative; none of it is real member data.
 
 import { startOfLocalDay, addDays } from '../i18n/format';
+import type { Emblem } from '../lib/emblem';
 
 export const PREVIEW = process.env.EXPO_PUBLIC_PREVIEW === '1';
 export const PREVIEW_ME = 'preview-me';
@@ -140,9 +141,11 @@ export function previewPosts() {
   ];
 }
 
-export const previewPacks = [
-  { id: 'pk-andoraa', name: 'ANDORAA', animal: 'wolf', members: 14, community: 'Andorra Sports Tribe' },
-  { id: 'pk-dawn', name: 'Dawn Patrol', animal: 'eagle', members: 6, community: null },
+export const previewPacks: { id: string; name: string; emblem: Emblem; members: number; community: string | null }[] = [
+  { id: 'pk-andoraa', name: 'ANDORAA', emblem: { kind: 'glyph', value: 'wolf', color: 'dreamer' }, members: 14, community: 'Andorra Sports Tribe' },
+  { id: 'pk-dawn', name: 'Dawn Patrol', emblem: { kind: 'glyph', value: 'falcon', color: 'slate' }, members: 6, community: null },
+  { id: 'pk-burn', name: 'Burn Unit', emblem: { kind: 'emoji', value: '🔥', color: 'orange' }, members: 9, community: null },
+  { id: 'pk-desert', name: 'Desert Runners', emblem: { kind: 'letters', value: null, color: 'chalk' }, members: 11, community: null },
 ];
 
 export const previewStats = { attended: 23, hosted: 4, met: 57 };

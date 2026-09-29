@@ -20,7 +20,7 @@ import { Chip, IconButton, MarkerButton, OutlineButton, Segmented, TextButton } 
 import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
 import { compressImage } from '../../../src/lib/imageUtils';
-import { patchFor } from '../../../src/components/board/patches';
+import { Patch } from '../../../src/components/board/Patch';
 
 
 type Tab = 'feed' | 'packs';
@@ -250,9 +250,7 @@ function PacksPane({ packs, loading, community, onOpen, onCreate, onJoin }: { pa
       ) : null}
       {packs.map((pk) => (
         <Press key={pk.id} onPress={() => onOpen(pk)} feedback="selection" depress={0.99} style={s.packRow}>
-          <View style={s.patch}>
-            <Image source={patchFor(pk.animal)} style={{ width: 56, height: 56 }} />
-          </View>
+          <Patch emblem={pk.emblem} name={pk.name} size={56} />
           <View style={{ flex: 1 }}>
             <Txt v="row" size={16}>
               {pk.name}
@@ -436,7 +434,6 @@ const useStyles = makeStyles(({ p, f }) => ({
   beast: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 36, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1.5, borderColor: p.ruleStrong },
   community: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
   packRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: p.rule },
-  patch: { width: 56, height: 56, borderRadius: 28, overflow: 'hidden', backgroundColor: '#023C3C' },
   sheet: { flex: 1, backgroundColor: p.board },
   sheetHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: p.rule },
   composeInput: { minHeight: 140, borderRadius: 10, borderWidth: 1.5, borderColor: p.ruleStrong, backgroundColor: p.wash, padding: 14, color: p.ink, fontSize: 17, textAlignVertical: 'top', ...f.ui },

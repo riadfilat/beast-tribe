@@ -3,6 +3,7 @@ import { useAuth } from '../providers/AuthProvider';
 import { useQuery, invalidate } from './query';
 import { personOf, Session, SESSION_SELECT, toSession } from './model';
 import { PREVIEW, PREVIEW_ME, previewPacks, previewSessionRows } from './preview';
+import { Emblem, emblemColumns, emblemOf } from '../lib/emblem';
 import type { Person } from '../components/board/people';
 
 export const MAX_PACKS = 20;
@@ -21,11 +22,15 @@ export interface PackMember extends Person {
 export interface PackDetail {
   id: string;
   name: string;
-  animal: string | null;
+  emblem: Emblem;
   inviteCode: string | null;
   isLeader: boolean;
+  /** Only the pack's creator can restyle it (packs_update_own). */
+  canEdit: boolean;
   members: PackMember[];
 }
+
+export const PACK_EMBLEM_COLUMNS = 'animal, emblem_kind, emblem_value, emblem_color';
 
 function useMe() {
   const { user } = useAuth();
@@ -47,10 +52,10 @@ export function usePack(packId?: string | null) {
   return useQuery<PackDetail | null>(packId && me ? `packs:one:${packId}` : null, async () => {
     if (PREVIEW) {
       const pk = previewPacks.find((x) => x.id === packId) ?? previewPacks[0];
-      return { id: pk.id, name: pk.name, animal: pk.animal, inviteCode: pk.id === 'pk-dawn' ? 'DAWN77' : 'WEL319', isLeader: true, members: previewMembers(pk.id) };
+      return { id: pk.id, name: pk.name, emblem: pk.emblem, inviteCode: pk.id === 'pk-dawn' ? 'DAWN77' : 'WEL319', isLeader: true, canEdit: true, members: previewMembers(pk.id) };
     }
     const [{ data: pack, error }, { data: rows }] = await Promise.all([
-      supabase.from('packs').select('id, name, animal, invite_code').eq('id', packId!).maybeSingle(),
+      supabase.from('packs').select(`id, name, invite_code, created_by, ${PACK_EMBLEM_COLUMNS}`).eq('id', packId!).maybeSingle(),
       supabase.from('pack_members').select('role, joined_at, profile:profiles(id, display_name, full_name, avatar_url)').eq('pack_id', packId!).order('joined_at', { ascending: true }),
     ]);
     if (error) throw error;
@@ -64,9 +69,10 @@ export function usePack(packId?: string | null) {
     return {
       id: pack.id,
       name: pack.name,
-      animal: pack.animal ?? null,
+      emblem: emblemOf(pack),
       inviteCode: pack.invite_code ?? null,
       isLeader: members.some((m) => m.id === me && m.role === 'leader'),
+      canEdit: !!me && pack.created_by === me,
       members,
     };
   });
@@ -101,14 +107,14 @@ export function usePackSessions(packId?: string | null, memberIds: string[] = []
   });
 }
 
-export async function createPack(meId: string, name: string, animal: string) {
+export async function createPack(meId: string, name: string, emblem: Emblem) {
   if (PREVIEW) return { id: 'pk-andoraa' };
   const { count } = await supabase.from('pack_members').select('*', { count: 'exact', head: true }).eq('user_id', meId);
   if ((count ?? 0) >= MAX_PACKS) throw new PackError('LIMIT');
   const code = Math.random().toString(36).substring(2, 8).toUpperCase();
   const { data: pack, error } = await supabase
     .from('packs')
-    .insert({ name: name.trim(), animal, created_by: meId, invite_code: code, is_system: false })
+    .insert({ name: name.trim(), created_by: meId, invite_code: code, is_system: false, ...emblemColumns(emblem) })
     .select('id')
     .single();
   if (error) throw new PackError('generic');
@@ -116,6 +122,14 @@ export async function createPack(meId: string, name: string, animal: string) {
   if (memberErr) throw new PackError('generic');
   invalidate('member:packs');
   return pack;
+}
+
+export async function updatePackEmblem(packId: string, emblem: Emblem) {
+  if (PREVIEW) return;
+  const { data, error } = await supabase.from('packs').update(emblemColumns(emblem)).eq('id', packId).select('id');
+  if (error || !data?.length) throw new PackError('generic');
+  invalidate('member:packs');
+  invalidate(`packs:one:${packId}`);
 }
 
 export async function joinPackByCode(meId: string, code: string) {
@@ -156,7 +170,7 @@ export interface PackInvite {
   id: string;
   packId: string;
   packName: string;
-  animal: string | null;
+  emblem: Emblem;
   from: string;
 }
 export function usePackInvites() {
@@ -165,7 +179,7 @@ export function usePackInvites() {
     if (PREVIEW) return [];
     const { data, error } = await supabase
       .from('pack_invites')
-      .select('id, pack_id, pack:packs(name, animal), inviter:profiles!invited_by(display_name, full_name)')
+      .select(`id, pack_id, pack:packs(name, ${PACK_EMBLEM_COLUMNS}), inviter:profiles!invited_by(display_name, full_name)`)
       .eq('invited_user_id', me!)
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
@@ -174,7 +188,7 @@ export function usePackInvites() {
       id: r.id,
       packId: r.pack_id,
       packName: r.pack?.name || '',
-      animal: r.pack?.animal ?? null,
+      emblem: emblemOf(r.pack),
       from: r.inviter?.display_name || r.inviter?.full_name || '',
     }));
   });

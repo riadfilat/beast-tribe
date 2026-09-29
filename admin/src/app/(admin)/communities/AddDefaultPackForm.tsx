@@ -2,24 +2,28 @@
 
 import { useState } from 'react';
 import { addCommunityDefaultPack } from './actions';
+import { GLYPH_GROUPS, PackPatch, PATCH_COLOR_NAMES } from '@/components/brand/PackPatch';
 
 interface PackOption {
   id: string;
   name: string;
-  animal: string | null;
 }
+
+const GROUP_LABEL: Record<string, string> = { beasts: 'Beasts of Arabia', myths: 'Myths', marks: 'Marks' };
+const label = (id: string) => (id === 'chevrons' ? 'Rise' : id.charAt(0).toUpperCase() + id.slice(1));
 
 interface Props {
   communityId: string;
   availablePacks: PackOption[];
 }
 
-const ANIMALS = ['Wolf', 'Eagle', 'Tiger', 'Rhino'];
-
 export default function AddDefaultPackForm({ communityId, availablePacks }: Props) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<'existing' | 'new'>('new');
   const [pending, setPending] = useState(false);
+  const [glyph, setGlyph] = useState('wolf');
+  const [color, setColor] = useState('slate');
+  const [name, setName] = useState('');
 
   async function onSubmit(formData: FormData) {
     setPending(true);
@@ -84,23 +88,48 @@ export default function AddDefaultPackForm({ communityId, availablePacks }: Prop
                 type="text"
                 name="name"
                 required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Riyadh Runners"
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-aqua focus:border-brand-aqua outline-none bg-white"
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Animal</label>
-              <select
-                name="animal"
-                defaultValue="Wolf"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-brand-aqua focus:border-brand-aqua outline-none"
-              >
-                {ANIMALS.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </select>
+            <div className="flex items-end gap-3">
+              <PackPatch pack={{ id: 'preview', name: name || 'Pack', emblem_kind: 'glyph', emblem_value: glyph, emblem_color: color }} size={52} />
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Patch</label>
+                <select
+                  name="emblem_value"
+                  value={glyph}
+                  onChange={(e) => setGlyph(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-brand-aqua focus:border-brand-aqua outline-none"
+                >
+                  {Object.entries(GLYPH_GROUPS).map(([group, ids]) => (
+                    <optgroup key={group} label={GROUP_LABEL[group] ?? group}>
+                      {ids.map((id) => (
+                        <option key={id} value={id}>
+                          {label(id)}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Colour</label>
+                <select
+                  name="emblem_color"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-brand-aqua focus:border-brand-aqua outline-none"
+                >
+                  {Object.entries(PATCH_COLOR_NAMES).map(([id, n]) => (
+                    <option key={id} value={id}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
@@ -133,7 +162,7 @@ export default function AddDefaultPackForm({ communityId, availablePacks }: Prop
                 </option>
                 {availablePacks.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} {p.animal ? `(${p.animal})` : ''}
+                    {p.name}
                   </option>
                 ))}
               </select>

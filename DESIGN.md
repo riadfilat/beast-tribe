@@ -259,6 +259,13 @@ Sharp and confident: 10px on buttons and fields, 8px on chips and magnets (about
 - **Where:** the welcome and sign-in, the Board masthead, Settings, the app icon and splash, the admin sidebar and sign-in, and every public web page. The single wolf alone is the "Beast" reaction glyph.
 - **Never:** the parent's orange sun as Beast Tribe's logo, recoloured wolves, or the mark on busy photography without the teal overlay.
 
+### Pack Patch
+- **What:** a pack's identity: one symbol on a round patch in one of six brand colourways: Teal, Teal with aqua, Teal with orange, Aqua, Orange, Chalk. Anything on aqua or orange is Deep Teal. Teal and chalk grounds carry a hairline edge so a patch never vanishes into a board of its own colour.
+- **Symbols:** Beast Tribe's own glyphs, drawn in the parent wolf's geometry (the italic cut, flat feet, the triangle eye): Beasts of Arabia (wolf, falcon, horse, oryx, camel, ibex, leopard, lion, rhino, bull, shark, scorpion), Myths (spartan, shield, pegasus, phoenix, minotaur, trident, laurel, torch) and Marks (bolt, peak, waves, flame, tally, rise, spark); any emoji the pack picks; or the pack's letters (two Slam Dunk initials in Latin, one Noto Kufi letter in Arabic).
+- **Composition:** heads rise out of the bottom of the patch like a crest; whole animals, objects and marks float centred.
+- **Picker:** Beasts · Myths · Marks · Emoji · Letters tabs, then the six colours, with a live preview that springs as it changes. A new pack starts on a random beast; its creator can change the patch later from the pack page.
+- **Sources:** `assets/brand/pack-glyphs/*.svg`; `scripts/brand/pack-glyphs/generate.py` writes the app and admin data. Never the neon t-shirt mascots.
+
 ### Session Row (signature)
 Time on the rail (the next one set largest), caps title, sport glyph and place, the crew's magnets and a tally on the trailing line. When the session is yours the orange sun sits behind its time; tapping I'M IN makes the sun rise with a spring while your magnet snaps onto the roster.
 
@@ -283,7 +290,7 @@ A straight chalk line filling toward a target, with the orange circle marking wh
 
 ### Don't:
 - **Don't** use cards, carousels, or stat dashboards as structure.
-- **Don't** use progress rings or emoji as icons.
+- **Don't** use progress rings, or emoji as interface icons. (A pack choosing an emoji for its patch is the member's content, not our iconography.)
 - **Don't** set small orange text on the whiteboard, or white text on orange.
 - **Don't** set more than one Slam Dunk line on a screen.
 - **Don't** add shadows or glass.

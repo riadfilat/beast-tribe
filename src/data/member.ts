@@ -3,6 +3,7 @@ import { useAuth } from '../providers/AuthProvider';
 import { useQuery, invalidate } from './query';
 import { sportDef, sportIdOf, SportId } from '../lib/sports';
 import { uploadImage } from '../lib/upload';
+import { Emblem, emblemOf } from '../lib/emblem';
 import { PREVIEW, PREVIEW_ME, previewLocations, previewMySports, previewPacks, previewStats } from './preview';
 
 function useMeId() {
@@ -72,7 +73,7 @@ export function useMyCommunity() {
 export interface PackSummary {
   id: string;
   name: string;
-  animal: string | null;
+  emblem: Emblem;
   members: number;
   community: string | null;
 }
@@ -82,7 +83,7 @@ export function useMyPackList() {
     if (PREVIEW) return previewPacks;
     const { data, error } = await supabase
       .from('pack_members')
-      .select('pack:packs(id, name, animal, community:communities(name), members:pack_members(count))')
+      .select('pack:packs(id, name, animal, emblem_kind, emblem_value, emblem_color, community:communities(name), members:pack_members(count))')
       .eq('user_id', me!);
     if (error) throw error;
     return (data || [])
@@ -91,7 +92,7 @@ export function useMyPackList() {
       .map((pk: any) => ({
         id: pk.id,
         name: pk.name,
-        animal: pk.animal ?? null,
+        emblem: emblemOf(pk),
         members: pk.members?.[0]?.count ?? 1,
         community: pk.community?.name ?? null,
       }));

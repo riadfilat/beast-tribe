@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PackPatch } from '@/components/brand/PackPatch';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
@@ -35,7 +36,7 @@ export default async function EditCommunityPage({ params }: { params: { id: stri
       .limit(200),
     db
       .from('packs')
-      .select('id, name, animal, description, is_community_default')
+      .select('id, name, animal, emblem_kind, emblem_value, emblem_color, description, is_community_default')
       .eq('community_id', community.id)
       .eq('is_community_default', true)
       .order('name', { ascending: true }),
@@ -45,7 +46,7 @@ export default async function EditCommunityPage({ params }: { params: { id: stri
       .eq('community_id', community.id),
     db
       .from('packs')
-      .select('id, name, animal')
+      .select('id, name')
       .is('community_id', null)
       .order('name', { ascending: true })
       .limit(100),
@@ -57,7 +58,6 @@ export default async function EditCommunityPage({ params }: { params: { id: stri
   const availablePacks = (availablePacksRes.data || []) as {
     id: string;
     name: string;
-    animal: string | null;
   }[];
 
   return (
@@ -165,15 +165,9 @@ export default async function EditCommunityPage({ params }: { params: { id: stri
             <div className="divide-y divide-gray-50">
               {defaultPacks.map((p: any) => (
                 <div key={p.id} className="py-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-800">
-                      {p.name}
-                      {p.animal && (
-                        <span className="ml-2 text-[11px] px-1.5 py-0.5 bg-brand-teal/10 text-brand-teal rounded">
-                          {p.animal}
-                        </span>
-                      )}
-                    </p>
+                  <PackPatch pack={p} size={32} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-gray-800">{p.name}</p>
                     {p.description && (
                       <p className="text-xs text-gray-500 line-clamp-1">{p.description}</p>
                     )}

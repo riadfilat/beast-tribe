@@ -199,5 +199,3 @@ export const GOAL_TEMPLATES: Record<string, Array<{ title: string; difficulty: s
   ],
 };
 
-export const PACK_ANIMALS = ['wolf', 'eagle', 'tiger', 'rhino'] as const;
-export type PackAnimal = (typeof PACK_ANIMALS)[number];

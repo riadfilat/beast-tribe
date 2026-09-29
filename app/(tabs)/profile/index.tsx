@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Linking, RefreshControl, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, RefreshControl, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -19,7 +19,7 @@ import { MarkerButton, OutlineButton, SectionHeading } from '../../../src/compon
 import { Sheet } from '../../../src/components/board/sheet';
 import { Group, GroupRow } from '../../../src/components/board/list';
 import { SessionRow, useNow } from '../../../src/components/board/session';
-import { patchFor } from '../../../src/components/board/patches';
+import { Patch } from '../../../src/components/board/Patch';
 import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
 import { journeyStage } from '../../../src/lib/journey';
@@ -177,9 +177,7 @@ export default function YouScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 14 }}>
               {packs.map((pk) => (
                 <Press key={pk.id} onPress={() => router.push({ pathname: '/(tabs)/feed/pack', params: { packId: pk.id } })} feedback="selection" style={{ width: 72, alignItems: 'center', gap: 6 }}>
-                  <View style={s.patch}>
-                    <Image source={patchFor(pk.animal)} style={{ width: 64, height: 64 }} />
-                  </View>
+                  <Patch emblem={pk.emblem} name={pk.name} size={64} />
                   <Txt v="caption" numberOfLines={1} align="center" style={{ width: 72 }}>
                     {pk.name}
                   </Txt>
@@ -334,6 +332,5 @@ const useStyles = makeStyles(({ p }) => ({
   emptyRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: p.rule },
   sports: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16 },
   sport: { flexDirection: 'row', alignItems: 'center', gap: 7, minHeight: 36, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1.5, borderColor: p.rule },
-  patch: { width: 64, height: 64, borderRadius: 32, overflow: 'hidden', backgroundColor: '#023C3C', borderWidth: 1.5, borderColor: p.rule },
   request: { marginHorizontal: 16, padding: 14, gap: 12, borderRadius: 12, borderWidth: 1.5, borderStyle: 'dashed', borderColor: p.ruleStrong },
 }));

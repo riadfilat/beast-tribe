@@ -115,6 +115,13 @@ User wants to launch the app to limited public testers via TestFlight.
 
 ## Session Log (append-only — newest at top)
 
+### 2026-09-30 — Pack patches replace the neon t-shirt mascots (review comment 1)
+- User's review, comment 1: the Wolf/Eagle/Tiger/Rhino neon mascots are t-shirt art; wanted options (icons, emoji, etc.) + unique on-brand icons. Chose all kinds + asked for Greek mythology.
+- New: 27 glyphs drawn in the OB wolf's geometry — Beasts of Arabia (12), Myths (8), Marks (7). Sources: scripts/brand/pack-glyphs/ (glyphs.py = shapes, workbench.py = review sheet, generate.py → src/components/brand/glyphs.ts + admin copy + assets/brand/pack-glyphs/*.svg).
+- App: Patch + PatchPreview (src/components/board/Patch.tsx), PatchPicker (tabs Beasts·Myths·Marks·Emoji·Letters + 6 colourways), src/lib/emblem.ts (emblemOf, initials, firstEmoji). Start a pack (name first, random beast default), pack page (creator gets "Change patch" sheet), Tribe list, You tab, invites. Old patch PNGs + patches.ts removed.
+- DB 037 (dry-run 21/21, applied): packs.emblem_kind/emblem_value/emblem_color + checks; legacy `animal` mirrored by trigger (old writers still valid; eagle→falcon, tiger→leopard). SECURITY FIX: members could move their pack into any community / make it a community default (the SECURITY DEFINER sync trigger then added every community member) or system pack, or change owner — now blocked by trg_packs_guard (admins + service role exempt). Dropped duplicate insert/update policies.
+- Admin: PackPatch component; default-pack form picks glyph + colour with preview; community + user pages show patches.
+
 ### 2026-09-29 (later) — Beast Tribe logo "The Pack" + new welcome
 - User chose logo A "The Pack": three parent wolves (from LogoVariations.ai vectors) in Dreamer aqua / Seeker orange / Mover ink; BEAST TRIBE wordmark from the parent logotype glyphs. Sources: assets/brand/*.svg; components src/components/brand/Logo.tsx (PackMark, Wordmark, Lockup, WolfGlyph) + admin/src/components/brand/Logo.tsx; geometry paths.ts (generated).
 - Rolled out: welcome (photo-led, teal overlay, lockup, "By Operation Beast"), sign-in, Board masthead, Settings footer, Beast reaction = single wolf; admin sidebar + login (was a 🐺 emoji), /s/ share page, support + legal headers, favicon/apple-icon, og-default.png.

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PackPatch } from '@/components/brand/PackPatch';
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
 import { notFound } from 'next/navigation';
@@ -47,7 +48,7 @@ export default async function UserDetailPage({ params }: { params: { id: string 
       .order('created_at', { ascending: false })
       .limit(10),
     db.from('pack_members')
-      .select('*, pack:packs(name, animal)')
+      .select('*, pack:packs(id, name, animal, emblem_kind, emblem_value, emblem_color)')
       .eq('user_id', params.id)
       .maybeSingle(),
   ]);
@@ -85,8 +86,9 @@ export default async function UserDetailPage({ params }: { params: { id: string 
         </div>
 
         {packMembership.data?.pack && (
-          <div className="mt-4 px-4 py-2 bg-brand-teal/5 rounded-lg">
-            <span className="text-xs text-gray-500">Pack: </span>
+          <div className="mt-4 px-4 py-2 bg-brand-teal/5 rounded-lg flex items-center gap-2">
+            <span className="text-xs text-gray-500">Pack:</span>
+            <PackPatch pack={packMembership.data.pack} size={22} />
             <span className="text-sm font-medium text-brand-teal">{packMembership.data.pack.name}</span>
             <span className="text-xs text-gray-400 ml-2">({packMembership.data.role})</span>
           </div>

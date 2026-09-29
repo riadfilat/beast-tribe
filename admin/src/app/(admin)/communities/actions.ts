@@ -4,8 +4,7 @@ import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-
-const ANIMALS = ['Wolf', 'Eagle', 'Tiger', 'Rhino'];
+import { GLYPH_IDS, PATCH_PAINT } from '@/components/brand/PackPatch';
 
 function slugify(raw: string): string {
   return raw
@@ -126,7 +125,7 @@ export async function assignUserToCommunity(userId: string, communityId: string 
 /**
  * Adds a default pack for a community. Two modes:
  *   - existing pack: pass packId via formData "pack_id"
- *   - new pack: pass formData with name, animal, description (creates a new pack scoped to community + sets is_community_default)
+ *   - new pack: pass formData with name, emblem_value (glyph), emblem_color, description (creates a new pack scoped to community + sets is_community_default)
  */
 export async function addCommunityDefaultPack(communityId: string, formData: FormData) {
   const admin = await requireAdmin();
@@ -146,16 +145,21 @@ export async function addCommunityDefaultPack(communityId: string, formData: For
     targetPackId = existingPackId;
   } else {
     const name = ((formData.get('name') as string) || '').trim();
-    const animal = ((formData.get('animal') as string) || 'Wolf').trim();
+    const glyph = ((formData.get('emblem_value') as string) || 'wolf').trim();
+    const color = ((formData.get('emblem_color') as string) || 'slate').trim();
     const description = ((formData.get('description') as string) || '').trim() || null;
     if (!name) throw new Error('Pack name is required');
-    if (!ANIMALS.includes(animal)) throw new Error('Invalid animal');
+    if (!GLYPH_IDS.includes(glyph)) throw new Error('Invalid patch');
+    if (!PATCH_PAINT[color]) throw new Error('Invalid colour');
 
     const { data: created, error } = await db
       .from('packs')
       .insert({
         name,
-        animal,
+        animal: glyph,
+        emblem_kind: 'glyph',
+        emblem_value: glyph,
+        emblem_color: color,
         description,
         community_id: communityId,
         is_community_default: true,

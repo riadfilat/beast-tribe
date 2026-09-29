@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Image, RefreshControl, ScrollView, Share, View } from 'react-native';
+import { Alert, RefreshControl, ScrollView, Share, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { makeStyles, useKit } from '../../../src/theme';
 import { useI18n } from '../../../src/i18n';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { useMyPackList } from '../../../src/data/member';
-import { joinPackByCode, leavePack, MAX_PACKS, PackError, PackInvite, respondToInvite, usePack, usePackInvites, usePackSessions } from '../../../src/data/packs';
+import { joinPackByCode, leavePack, MAX_PACKS, PackError, PackInvite, respondToInvite, updatePackEmblem, usePack, usePackInvites, usePackSessions } from '../../../src/data/packs';
+import type { Emblem } from '../../../src/lib/emblem';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { Txt } from '../../../src/components/board/Txt';
 import { Icon } from '../../../src/components/board/Icon';
@@ -15,7 +16,9 @@ import { Magnet } from '../../../src/components/board/people';
 import { Rule } from '../../../src/components/board/marks';
 import { Field, IconButton, MarkerButton, OutlineButton, SectionHeading, TextButton } from '../../../src/components/board/controls';
 import { SessionRow, useNow } from '../../../src/components/board/session';
-import { patchFor } from '../../../src/components/board/patches';
+import { Patch, PatchPreview } from '../../../src/components/board/Patch';
+import { PatchPicker } from '../../../src/components/board/PatchPicker';
+import { Sheet } from '../../../src/components/board/sheet';
 import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
 
@@ -31,6 +34,8 @@ export default function PackScreen() {
   const packs = list.data ?? [];
   const [selected, setSelected] = useState<string | null>(params.packId ?? null);
   const [adding, setAdding] = useState(false);
+  const [restyle, setRestyle] = useState<Emblem | null>(null);
+  const [saving, setSaving] = useState(false);
   const pack = usePack(selected);
   const sessions = usePackSessions(selected, (pack.data?.members ?? []).map((m) => m.id));
   const now = useNow();
@@ -70,6 +75,25 @@ export default function PackScreen() {
     ]);
   }
 
+  async function savePatch() {
+    const d = pack.data;
+    if (!d || !restyle) return;
+    setSaving(true);
+    try {
+      await updatePackEmblem(d.id, restyle);
+      haptic('success');
+      toast.show(t('pack.patchSaved'), 'info');
+      setRestyle(null);
+      pack.refetch();
+      list.refetch();
+    } catch {
+      haptic('error');
+      toast.show(t('pack.errors.generic'), 'error');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const showJoin = adding || (!list.loading && packs.length === 0);
   const d = pack.data;
 
@@ -90,8 +114,8 @@ export default function PackScreen() {
               const on = pk.id === selected && !adding;
               return (
                 <Press key={pk.id} onPress={() => { setSelected(pk.id); setAdding(false); }} feedback="selection" style={{ width: 70, alignItems: 'center', gap: 6 }} accessibilityState={{ selected: on }}>
-                  <View style={[s.patchSm, on ? { borderColor: p.ink, borderWidth: 2.5 } : null]}>
-                    <Image source={patchFor(pk.animal)} style={{ width: 60, height: 60 }} />
+                  <View style={[s.ring, on ? { borderColor: p.ink } : null]}>
+                    <Patch emblem={pk.emblem} name={pk.name} size={54} />
                   </View>
                   <Txt v="caption" numberOfLines={1} color={on ? p.ink : p.inkSoft} align="center" style={{ width: 70 }}>
                     {pk.name}
@@ -117,9 +141,9 @@ export default function PackScreen() {
         ) : d ? (
           <View style={{ paddingHorizontal: 16 }}>
             <View style={s.hero}>
-              <View style={s.patchLg}>
-                <Image source={patchFor(d.animal)} style={{ width: 112, height: 112 }} />
-              </View>
+              <Press onPress={d.canEdit ? () => setRestyle(d.emblem) : undefined} disabled={!d.canEdit} feedback="light" accessibilityRole={d.canEdit ? 'button' : 'image'} accessibilityLabel={d.canEdit ? t('pack.changePatch') : d.name}>
+                <Patch emblem={d.emblem} name={d.name} size={112} />
+              </Press>
               <View style={{ flex: 1, gap: 4 }}>
                 <Txt v="row" size={24} numberOfLines={2}>
                   {d.name}
@@ -130,6 +154,7 @@ export default function PackScreen() {
                     {t('pack.leader')}
                   </Txt>
                 ) : null}
+                {d.canEdit ? <TextButton label={t('pack.changePatch')} onPress={() => setRestyle(d.emblem)} color={p.aqua} style={{ alignSelf: 'flex-start', marginStart: -8 }} /> : null}
               </View>
             </View>
 
@@ -190,6 +215,15 @@ export default function PackScreen() {
           </>
         ) : null}
       </ScrollView>
+
+      {d && restyle ? (
+        <Sheet visible title={t('pack.patchTitle')} onClose={() => setRestyle(null)} action={{ label: t('common.save'), onPress: savePatch, disabled: saving }}>
+          <View style={{ alignItems: 'center', paddingVertical: 8 }}>
+            <PatchPreview emblem={restyle} name={d.name} size={112} />
+          </View>
+          <PatchPicker value={restyle} onChange={setRestyle} name={d.name} />
+        </Sheet>
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -261,9 +295,7 @@ function JoinPanel({ meId, onJoined, onCreate }: { meId: string | null; onJoined
           <SectionHeading title={t('pack.invites')} />
           {(invites.data ?? []).map((inv) => (
             <View key={inv.id} style={s.invite}>
-              <View style={s.patchXs}>
-                <Image source={patchFor(inv.animal)} style={{ width: 40, height: 40 }} />
-              </View>
+              <Patch emblem={inv.emblem} name={inv.packName} size={40} />
               <View style={{ flex: 1 }}>
                 <Txt v="headline" size={15}>
                   {inv.packName}
@@ -284,10 +316,9 @@ const useStyles = makeStyles(({ p }) => ({
   screen: { flex: 1, backgroundColor: p.board },
   header: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingStart: 4, paddingBottom: 6 },
   selector: { paddingHorizontal: 16, paddingVertical: 8, gap: 12 },
-  patchSm: { width: 60, height: 60, borderRadius: 30, overflow: 'hidden', backgroundColor: '#023C3C', borderWidth: 1.5, borderColor: p.rule },
+  ring: { padding: 3, borderRadius: 99, borderWidth: 2, borderColor: 'transparent' },
+  patchSm: { width: 64, height: 64, borderRadius: 32, borderWidth: 1.5 },
   addPatch: { backgroundColor: p.wash, alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed', borderColor: p.ruleStrong },
-  patchLg: { width: 112, height: 112, borderRadius: 56, overflow: 'hidden', backgroundColor: '#023C3C', borderWidth: 1.5, borderColor: p.ruleStrong },
-  patchXs: { width: 40, height: 40, borderRadius: 20, overflow: 'hidden', backgroundColor: '#023C3C' },
   hero: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 12 },
   code: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 18, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10, borderWidth: 1.5, borderColor: p.ruleStrong, borderStyle: 'dashed' },
   members: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
