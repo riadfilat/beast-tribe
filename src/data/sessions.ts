@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { cancelEventReminder } from '../lib/notifications';
 import { useAuth } from '../providers/AuthProvider';
 import { useQuery, invalidate } from './query';
 import { MyStatus, Session, SESSION_SELECT, toSession, personOf } from './model';
@@ -171,6 +172,7 @@ export function useSessionActions() {
     }
     const { error } = await supabase.from('event_rsvps').delete().eq('event_id', eventId).eq('user_id', meId);
     if (error) throw toSessionError(error);
+    cancelEventReminder(eventId);
     invalidate('sessions:');
   }
 
@@ -181,6 +183,7 @@ export function useSessionActions() {
     }
     const { error } = await supabase.rpc('cancel_event', { p_event_id: eventId, p_reason: null });
     if (error) throw toSessionError(error);
+    cancelEventReminder(eventId);
     invalidate('sessions:');
   }
 

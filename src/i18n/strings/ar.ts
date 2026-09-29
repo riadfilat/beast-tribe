@@ -172,6 +172,8 @@ export const ar: Strings = {
     cancelBody: 'سيصل تنبيه لكل من انضم.',
     removeFromMine: 'إزالة من تماريني',
     joinedToast: 'تم! نراك هناك.',
+    reminderTitle: 'يبدأ قريبًا',
+    reminderBody: '{title} يبدأ بعد 15 دقيقة',
     waitlistToast: 'اكتمل العدد، لذا أنت في قائمة الانتظار. سنبلغك فور تحرّر مكان.',
     notFound: 'هذا التمرين لم يعد على اللوحة.',
     recapPrompt: 'كيف كان؟ شارك ملخصًا',

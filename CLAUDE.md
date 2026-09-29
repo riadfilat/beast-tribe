@@ -115,6 +115,16 @@ User wants to launch the app to limited public testers via TestFlight.
 
 ## Session Log (append-only — newest at top)
 
+### 2026-09-29 — UPLIFT continued (branch uplift/box-board; NOT pushed — no GitHub login on this Mac)
+- DB 036 applied (dry-run tested): coaching by consent — coach requests (pending), member accepts + picks sharing (nutrition / body), either side ends (delete). Fixed: coach notes (even private) were readable by every user; coach/trainee pairs public; anyone could insert body_metrics for others; coaches could never read shared nutrition. New: profiles.nutrition_goals, bt_coach_can_see(), coach_request/coach_accepted notifications (localized push).
+- Rebuilt on the kit + EN/AR: Nutrition (week strip, day ledger, editable targets, water tally, delete, local-date logging), Coach dashboard, Trainee view, member coach request/sharing on You, +not-found. Inbox routes coach notifications.
+- OTA SAFETY: src/lib/notifications.ts statically imported expo-notifications/expo-device (NOT in the installed April binary; they throw at import) → now lazy + guarded (requireOptionalNativeModule). Reminders localized; left/cancelled sessions drop their reminder; Board syncs reminders from all my sessions.
+- Removed legacy src/hooks (2,200 lines), components/ui, old home/feed/nutrition/onboarding components, localEventStore, eventTime; 8 unused fonts no longer loaded; a font failure no longer crashes startup.
+- Admin: public /s/[id] session page (OG preview, deep link beasttribe://session/<id>, noindex; /s/ added to middleware public paths); support FAQ updated to the new app. Deploys only after push.
+- Contrast audit (both boards, EN/AR, all main screens): only whiteboard aqua failed (4.496) → #147070. Tab bar label clipping fixed.
+- DESIGN.md + .impeccable/design.json written (North Star "The Box Board").
+- NEXT: user wants a page-by-page design review; push branch once GitHub auth exists; merge to main (deploys admin /s/ page); native build later (push capability needs ASC API key; bump runtime then).
+
 ### 2026-09-28 — UPLIFT IN PROGRESS (branch uplift/box-board, not shipped)
 - Visual world "The Box Board" chosen by user; contract in .impeccable/surfaces/app-tabs-home-index-tsx.md; product truth in PRODUCT.md.
 - Built: theme kit (src/theme), i18n EN/AR + RTL (src/i18n), board components (src/components/board), data layer (src/data), screens: Board, Explore, Session sheet + chat, Host, Inbox, My sessions, Tribe feed, Packs (+create/invite), You, Settings, Welcome, Sign-in, Verify, About-you, Pick-sports.

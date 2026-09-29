@@ -86,7 +86,7 @@ export const WHITEBOARD: Palette = {
   marker: '#E88F24', // fills and the circle only — never small text on light
   markerText: '#023C3C',
   onMarker: '#023C3C',
-  aqua: '#1A7A7A', // 4.6:1 (brand aqua is fill-only on light)
+  aqua: '#147070', // 5.2:1 on the board, 4.7:1 on bars (brand aqua is fill-only on light)
   coral: '#B23C35', // 5.2:1
   danger: '#B3261E', // 5.9:1
   scrim: ['rgba(2,60,60,0.25)', 'rgba(2,60,60,0.85)'],

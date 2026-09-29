@@ -1,0 +1,289 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-29T08:27:43+00:00",
+  "title": "Design System: Beast Tribe",
+  "extensions": {
+    "colorMeta": {
+      "marker-orange": {
+        "role": "primary",
+        "displayName": "Marker Orange",
+        "canonical": "oklch(72.7% 0.154 64.2)",
+        "tonalRamp": [
+          "#240000",
+          "#471100",
+          "#6C2E00",
+          "#934D00",
+          "#BC6C00",
+          "#E68D22",
+          "#FFB45C",
+          "#FFDB8C"
+        ]
+      },
+      "brand-aqua": {
+        "role": "secondary",
+        "displayName": "Brand Aqua",
+        "canonical": "oklch(75.7% 0.100 195.2)",
+        "tonalRamp": [
+          "#001213",
+          "#002F30",
+          "#004E4F",
+          "#007070",
+          "#2C9393",
+          "#4CB8B8",
+          "#77DDDD",
+          "#A5FFFF"
+        ]
+      },
+      "aqua-ink": {
+        "role": "secondary",
+        "displayName": "Aqua Ink (whiteboard)",
+        "canonical": "oklch(49.6% 0.079 194.9)",
+        "tonalRamp": [
+          "#001213",
+          "#002E2F",
+          "#004E4E",
+          "#136F6F",
+          "#469090",
+          "#6FB3B2",
+          "#98D7D6",
+          "#C2FBFA"
+        ]
+      },
+      "coral": {
+        "role": "tertiary",
+        "displayName": "Women-only Coral",
+        "canonical": "oklch(74.4% 0.122 24.1)",
+        "tonalRamp": [
+          "#230000",
+          "#460D0E",
+          "#6C2A28",
+          "#934744",
+          "#BC6661",
+          "#E78680",
+          "#FFABA5",
+          "#FFD3CC"
+        ]
+      },
+      "deep-teal": {
+        "role": "neutral",
+        "displayName": "Deep Teal Slate",
+        "canonical": "oklch(32.3% 0.054 194.8)",
+        "tonalRamp": [
+          "#001111",
+          "#002D2D",
+          "#194B4A",
+          "#3E6A6A",
+          "#628B8A",
+          "#88AEAD",
+          "#AED1D0",
+          "#D6F6F5"
+        ]
+      },
+      "chalk": {
+        "role": "neutral",
+        "displayName": "Chalk",
+        "canonical": "oklch(95.9% 0.010 87.5)",
+        "tonalRamp": [
+          "#0C0B09",
+          "#262522",
+          "#43423E",
+          "#63615D",
+          "#84827D",
+          "#A7A59F",
+          "#CCC9C3",
+          "#F1EEE7"
+        ]
+      },
+      "whiteboard": {
+        "role": "neutral",
+        "displayName": "Whiteboard Gray",
+        "canonical": "oklch(95.6% 0.003 67.8)",
+        "tonalRamp": [
+          "#0C0B0A",
+          "#262524",
+          "#434241",
+          "#626160",
+          "#838281",
+          "#A6A5A3",
+          "#CAC9C7",
+          "#F0EEEC"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Stencil hero",
+        "purpose": "TODAY, your next time, the welcome line. One per screen."
+      },
+      "display-ar": {
+        "displayName": "Arabic hero",
+        "purpose": "Noto Kufi Arabic Black at 0.78x with 1.45 leading."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Screen and session titles."
+      },
+      "row": {
+        "displayName": "Row",
+        "purpose": "Row titles and day headings, caps in English."
+      },
+      "time": {
+        "displayName": "Time",
+        "purpose": "Times, counts, calories; tabular figures."
+      },
+      "button": {
+        "displayName": "Button",
+        "purpose": "Caps button labels."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Everything a member reads; 1.55 leading in Arabic."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "sun-rise",
+        "value": "spring(damping 11, stiffness 190), scale 0.35 to 1, rise 25% of size",
+        "purpose": "The orange circle rising behind your session's time when you join."
+      },
+      {
+        "name": "magnet-snap",
+        "value": "spring(damping 9, stiffness 260) from -14px, scale 1.25 to 1",
+        "purpose": "Your name magnet snapping onto a roster."
+      },
+      {
+        "name": "measure-fill",
+        "value": "spring(damping 16, stiffness 140)",
+        "purpose": "Measure lines filling toward a target."
+      },
+      {
+        "name": "live-pulse",
+        "value": "timing 900ms ease-out quad, every 1400ms",
+        "purpose": "The live session node's ring."
+      },
+      {
+        "name": "reduce-motion",
+        "value": "final state, no animation",
+        "purpose": "Every animation respects Reduce Motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone",
+        "value": "320-430pt, single column"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Marker Button",
+      "kind": "button",
+      "refersTo": "button-marker",
+      "description": "The one orange call to action on a screen.",
+      "html": "<button class=\"ds-btn-marker\">I'M IN</button>",
+      "css": ".ds-btn-marker{height:54px;padding:0 20px;border:none;border-radius:10px;background:#E88F24;color:#023C3C;font:800 15px/1.2 Montserrat, sans-serif;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;transition:transform .12s}.ds-btn-marker:hover{filter:brightness(1.05)}.ds-btn-marker:active{transform:scale(.97)}.ds-btn-marker:focus-visible{outline:2px solid #F4F1EA;outline-offset:2px}"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action in chalk.",
+      "html": "<button class=\"ds-btn-outline\">DECLINE</button>",
+      "css": ".ds-btn-outline{height:50px;padding:0 18px;border:1.5px solid rgba(244,241,234,.32);border-radius:10px;background:transparent;color:#F4F1EA;font:800 14px/1.2 Montserrat, sans-serif;letter-spacing:.8px;text-transform:uppercase;cursor:pointer}.ds-btn-outline:hover{background:rgba(244,241,234,.07)}.ds-btn-outline:focus-visible{outline:2px solid #F4F1EA;outline-offset:2px}"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Filter chip; selection fills with chalk, never orange.",
+      "html": "<span class=\"ds-chip\">Padel</span><span class=\"ds-chip ds-chip--on\">Running</span>",
+      "css": ".ds-chip{display:inline-flex;align-items:center;height:38px;padding:0 13px;margin-inline-end:8px;border:1.5px solid rgba(244,241,234,.13);border-radius:8px;color:#F4F1EA;font:600 14px system-ui}.ds-chip:hover{border-color:rgba(244,241,234,.32)}.ds-chip--on{background:#F4F1EA;border-color:#F4F1EA;color:#023C3C}"
+    },
+    {
+      "name": "Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Chalk-wash text field; focus turns the outline chalk.",
+      "html": "<input class=\"ds-field\" placeholder=\"What did you eat?\">",
+      "css": ".ds-field{height:52px;width:280px;padding:0 14px;border:1.5px solid rgba(244,241,234,.32);border-radius:10px;background:rgba(244,241,234,.07);color:#F4F1EA;font:17px system-ui;caret-color:#E88F24}.ds-field::placeholder{color:rgba(244,241,234,.6)}.ds-field:focus{outline:none;border-color:#F4F1EA}"
+    },
+    {
+      "name": "Name Magnets",
+      "kind": "custom",
+      "refersTo": "magnet",
+      "description": "People on the board; yours is orange and leads.",
+      "html": "<div class=\"ds-magnets\"><span class=\"ds-magnet ds-magnet--you\">NO</span><span class=\"ds-magnet\">SA</span><span class=\"ds-magnet\">MA</span><span class=\"ds-magnet ds-magnet--more\">+4</span></div>",
+      "css": ".ds-magnets{display:flex;gap:4px}.ds-magnet{width:30px;height:30px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;background:rgba(244,241,234,.07);border:1.5px solid rgba(244,241,234,.32);color:#F4F1EA;font:800 11px Montserrat, sans-serif}.ds-magnet--you{background:#E88F24;border:none;color:#023C3C}.ds-magnet--more{background:transparent;border-color:rgba(244,241,234,.13);color:rgba(244,241,234,.74)}"
+    },
+    {
+      "name": "Session Row",
+      "kind": "custom",
+      "refersTo": "row",
+      "description": "A board row with the orange sun behind your time.",
+      "html": "<div class=\"ds-row\"><div class=\"ds-sun\"><b>7:30</b><small>PM</small></div><div><div class=\"ds-row-title\">EVENING PADEL</div><div class=\"ds-row-meta\">Padel · Olaya · 7 of 8</div></div></div>",
+      "css": ".ds-row{display:flex;gap:14px;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(244,241,234,.13);background:#023C3C}.ds-sun{width:70px;height:70px;border-radius:50%;background:#E88F24;color:#023C3C;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Montserrat, sans-serif}.ds-sun b{font-size:16px;font-weight:800}.ds-sun small{font-size:10px;font-weight:800}.ds-row-title{color:#F4F1EA;font:800 15px/1.25 Montserrat, sans-serif;letter-spacing:.3px}.ds-row-meta{color:rgba(244,241,234,.74);font:13px system-ui;margin-top:2px}"
+    },
+    {
+      "name": "Tab Bar",
+      "kind": "nav",
+      "refersTo": "tab-bar",
+      "description": "Board, Explore, Tribe, You.",
+      "html": "<nav class=\"ds-tabs\"><a class=\"on\">Board</a><a>Explore</a><a>Tribe</a><a>You</a></nav>",
+      "css": ".ds-tabs{display:flex;justify-content:space-around;height:60px;align-items:center;background:#013131;border-top:1px solid rgba(244,241,234,.13)}.ds-tabs a{color:rgba(244,241,234,.6);font:600 11px system-ui;text-decoration:none}.ds-tabs a.on{color:#F4F1EA}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Box Board",
+    "overview": "Every gym box keeps a class board by the door: today's sessions written at their times, and you're in when your name is on it. Beast Tribe is that board. The screen is the board itself, a deep teal slate (or the light whiteboard), and everything on it is written in chalk: straight hairline rules instead of cards, name magnets instead of avatars, tally strokes instead of progress bars, zig-zag dividers between days. One orange circle, the brand's marker, shows what is yours, what is live, and the act of joining.",
+    "keyCharacteristics": [
+      "A board, not a feed: rows on rules, never cards as structure.",
+      "One spot color. Orange marks yours, live, and joining; nothing else.",
+      "People are name magnets; capacity is tally strokes; days are cut by zig-zags.",
+      "Slate (dark) and Whiteboard (light) are the same board in two materials.",
+      "Full RTL parity: mirrored layout, Latin digits, Noto Kufi titles, wider Arabic leading."
+    ],
+    "rules": [
+      {
+        "name": "The One Marker Rule",
+        "body": "Orange appears only on what is yours, what is live, and the act of joining. If orange is on it, the member either owns it or can commit to it right now.",
+        "section": "colors"
+      },
+      {
+        "name": "The Teal-On-Orange Rule",
+        "body": "Anything written on orange is Deep Teal, never white.",
+        "section": "colors"
+      },
+      {
+        "name": "The Rare Stencil Rule",
+        "body": "Slam Dunk sets at most one line per screen. When everything shouts, nothing does.",
+        "section": "typography"
+      },
+      {
+        "name": "The Case Rule",
+        "body": "Latin row titles and buttons are set in caps; Arabic has no case, so it gets weight and room instead.",
+        "section": "typography"
+      },
+      {
+        "name": "The Chalk-Not-Card Rule",
+        "body": "Group with rules and space, never with raised cards. The only bordered containers are inset groups (settings-shaped lists) and dashed \"pinned note\" blocks for a request that needs an answer.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep orange to what is yours, what is live, and the act of joining.",
+      "Do separate with rules, space, and zig-zag day headings.",
+      "Do show people as name magnets and capacity as tally strokes.",
+      "Do keep every text token at 4.5:1 or better against its board; Chalk Ghost is for decoration only.",
+      "Do write layout with start/end so the board mirrors in Arabic, and keep digits Latin.",
+      "Do put photography under a teal overlay."
+    ],
+    "donts": [
+      "Don't use cards, carousels, or stat dashboards as structure.",
+      "Don't use progress rings or emoji as icons.",
+      "Don't set small orange text on the whiteboard, or white text on orange.",
+      "Don't set more than one Slam Dunk line on a screen.",
+      "Don't add shadows or glass."
+    ]
+  }
+}

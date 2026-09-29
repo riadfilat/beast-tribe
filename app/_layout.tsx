@@ -63,20 +63,13 @@ export default function RootLayout() {
 
   const [fontsLoaded, fontError] = useFonts({
     ...FONT_FILES,
-    'Montserrat-Light': require('../assets/fonts/Montserrat-Light.otf'),
-    'Montserrat-Regular': require('../assets/fonts/Montserrat-Regular.otf'),
-    'Montserrat-SemiBold': require('../assets/fonts/Montserrat-SemiBold.otf'),
-    'Poppins-ExtraLight': require('../assets/fonts/Poppins-ExtraLight.otf'),
-    'Poppins-Regular': require('../assets/fonts/Poppins-Regular.otf'),
-    'Poppins-Medium': require('../assets/fonts/Poppins-Medium.otf'),
-    'Poppins-SemiBold': require('../assets/fonts/Poppins-SemiBold.otf'),
-    'Poppins-Bold': require('../assets/fonts/Poppins-Bold.otf'),
   });
   // Language decides layout direction; settle it before the first frame.
   const [langReady, setLangReady] = useState(false);
 
   useEffect(() => {
-    if (fontError) throw fontError;
+    // A font that fails to load falls back to the system face; never block the app on it.
+    if (fontError) console.warn('[fonts]', fontError);
   }, [fontError]);
 
   useEffect(() => {
@@ -91,7 +84,7 @@ export default function RootLayout() {
     };
   }, []);
 
-  const ready = fontsLoaded && langReady;
+  const ready = (fontsLoaded || !!fontError) && langReady;
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);

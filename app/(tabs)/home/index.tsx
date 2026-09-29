@@ -6,7 +6,7 @@ import { makeStyles, useKit } from '../../../src/theme';
 import { useI18n } from '../../../src/i18n';
 import { dayOffset, fmtBoardDate } from '../../../src/i18n/format';
 import { useAuth } from '../../../src/providers/AuthProvider';
-import { useBoardSessions, useSessionActions, SessionError } from '../../../src/data/sessions';
+import { useBoardSessions, useMySessions, useSessionActions, SessionError } from '../../../src/data/sessions';
 import { useUnreadCount } from '../../../src/data/inbox';
 import { usePopularSpots } from '../../../src/data/member';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
@@ -30,6 +30,7 @@ export default function BoardScreen() {
   const { user, profile } = useAuth();
   const meId = PREVIEW ? PREVIEW_ME : user?.id;
   const board = useBoardSessions(8);
+  const mineAll = useMySessions();
   const unread = useUnreadCount();
   const now = useNow();
   const country = profile?.region || 'SA';
@@ -54,14 +55,13 @@ export default function BoardScreen() {
   const upcoming = sessions.filter((x) => x.state === 'upcoming');
   const heroId = (upcoming.find((x) => x.myStatus === 'going' || x.isHost) ?? upcoming[0])?.id;
 
-  // Local 15-minute reminders for sessions you're in (no-op on builds without notifications).
+  // Local 15-minute reminders mirror every session you're in, including ones past this
+  // week, and drop reminders for sessions you left (no-op on builds without notifications).
   useEffect(() => {
-    const mine = sessions.filter((x) => x.state === 'upcoming' && (x.myStatus === 'going' || x.isHost));
-    if (!mine.length) return;
-    Promise.resolve()
-      .then(() => syncEventReminders(mine.map((x) => ({ id: x.id, title: x.title, starts_at: x.startsAt.toISOString() }))))
-      .catch(() => {});
-  }, [board.data]);
+    if (!mineAll.data) return;
+    const mine = mineAll.data.filter((x) => x.state === 'upcoming' && (x.myStatus === 'going' || x.isHost));
+    syncEventReminders(mine.map((x) => ({ id: x.id, title: x.title, starts_at: x.startsAt.toISOString() }))).catch(() => {});
+  }, [mineAll.data]);
 
   const onJoin = useCallback(
     async (x: Session) => {

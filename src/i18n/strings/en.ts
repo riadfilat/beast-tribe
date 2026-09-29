@@ -151,6 +151,8 @@ export const en = {
     cancelBody: 'Everyone who joined gets a notification.',
     removeFromMine: 'Remove from my sessions',
     joinedToast: "You're in. See you there.",
+    reminderTitle: 'Starting soon',
+    reminderBody: '{title} starts in 15 minutes',
     waitlistToast: "It's full, so you're on the waitlist. We'll tell you the moment a spot opens.",
     notFound: "This session isn't on the board anymore.",
     recapPrompt: 'How was it? Post a recap',

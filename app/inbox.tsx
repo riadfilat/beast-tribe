@@ -15,7 +15,7 @@ import { Magnet } from '../src/components/board/people';
 import { IconButton, TextButton } from '../src/components/board/controls';
 import { Group, GroupRow } from '../src/components/board/list';
 import { toast } from '../src/components/board/toast';
-import { registerForPushNotificationsAsync, savePushToken } from '../src/lib/notifications';
+import { pushPermission, registerForPushNotificationsAsync, savePushToken } from '../src/lib/notifications';
 
 const TYPE_ICON: Record<string, IconName> = {
   event_full: 'people',
@@ -26,16 +26,6 @@ const TYPE_ICON: Record<string, IconName> = {
   coach_request: 'coach',
   coach_accepted: 'coach',
 };
-
-async function pushPermission(): Promise<'granted' | 'denied' | 'undetermined' | 'unavailable'> {
-  try {
-    const N = require('expo-notifications');
-    const r = await N.getPermissionsAsync();
-    return r?.status ?? 'unavailable';
-  } catch {
-    return 'unavailable';
-  }
-}
 
 export default function InboxScreen() {
   const s = useStyles();
