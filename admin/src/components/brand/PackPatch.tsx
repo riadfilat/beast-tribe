@@ -22,7 +22,7 @@ export const PATCH_COLOR_NAMES: Record<string, string> = {
 export const GLYPH_GROUPS = GLYPH_FAMILIES;
 export const GLYPH_IDS = Object.keys(GLYPHS);
 
-const LEGACY: Record<string, string> = { eagle: 'falcon', tiger: 'leopard' };
+const LEGACY: Record<string, string> = { eagle: 'falcon', leopard: 'tiger', oryx: 'ibex', phoenix: 'griffin' };
 export function glyphId(v?: string | null) {
   const k = (v || '').toLowerCase();
   const id = LEGACY[k] ?? k;
@@ -84,7 +84,7 @@ export function PackPatch({ pack, size }: { pack: PatchRow; size: number }) {
       <circle cx="50" cy="50" r="50" fill={paint.ground} />
       <g clipPath={`url(#${clip})`}>
         <g transform={`translate(${tx} ${ty}) scale(${s})`}>
-          <path d={g.d} fill={paint.ink} fillRule="evenodd" />
+          <path d={g.d} fill={paint.ink} />
         </g>
       </g>
       {edge ? <circle cx="50" cy="50" r={50 - edgeW / 2} fill="none" stroke={edge} strokeWidth={edgeW} /> : null}

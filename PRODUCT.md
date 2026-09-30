@@ -48,7 +48,7 @@ A sports community app owned by a real activewear brand (Operation Beast) and bu
 - Beast Tribe logo (chosen 2026-09-29, "The Pack"): three of the parent's wolves howling together in the journey colours (Dreamer aqua, Seeker orange, Mover = surface ink), with BEAST TRIBE set in the parent logotype's own letterforms, endorsed "By Operation Beast". The orange sun is the parent's, never Beast Tribe's logo.
 - Typefaces in use: Montserrat, Poppins, SlamDunk (Latin only).
 - Mascots: neon hand-drawn Wolf, Eagle, Tiger, Rhino ("On Black Neon" and "On White" sets) are t-shirt art, not app identity; the app no longer uses them.
-- Pack patches (chosen 2026-09-30): a pack's identity is a symbol on a round patch in a brand colourway. Symbols are Beast Tribe's own glyphs drawn in the parent wolf's geometry (Beasts of Arabia, Greek myths, brand marks), any emoji, or the pack's letters.
+- Pack patches (chosen 2026-09-30): a pack's identity is a symbol on a round patch in a brand colourway. Symbols come from one professionally drawn silhouette family (game-icons.net, CC BY 3.0, credited in Settings): beasts, Greek myths and sport marks; or any emoji; or the pack's letters. Hand-drawn attempts were rejected by the user as not good enough.
 - Voice: short imperatives — "Awaken the beast", "Awaken, advance, repeat", "Welcome to the tribe", "Unleash the beast", "Don't just move. Push. Break limits. Go further than yesterday."
 
 ## Evidence on Hand
@@ -57,7 +57,7 @@ A sports community app owned by a real activewear brand (Operation Beast) and bu
 - Beast Tribe logo sources: `assets/brand/*.svg` (mark, wordmark, lockups) generated from the parent master file `drive-download-20260302T171831Z-3-001/Logo Variations/LogoVariations.ai`; geometry in `src/components/brand/paths.ts` (app) and `admin/src/components/brand/paths.ts` (web).
 - Welcome photo (stand-in until an Operation Beast shoot): Mina Rad, "A group of people running down a street" (Tehran), Unsplash License. The brand guideline's photos are other brands' moodboard references and must not ship.
 - Mascot art (t-shirt designs, unused in the app): `assets/images/animals/{Wolf,Eagle,Tiger,Rhino}/{1,2}.png`; source sets in `/Users/riadabulfilat/Desktop/OB/Designs/`.
-- Pack glyphs: `assets/brand/pack-glyphs/*.svg`; geometry and generator in `scripts/brand/pack-glyphs/` (writes `src/components/brand/glyphs.ts` and the admin copy).
+- Pack glyphs: `assets/brand/pack-glyphs/*.svg` (+ CREDITS.md); sources and generator in `scripts/brand/pack-glyphs/` (writes `src/components/brand/glyphs.ts` and the admin copy). CC BY 3.0 requires the credit line to stay in the app.
 - No member testimonials, member counts, partner logos, or press exist. Never fabricate them.
 
 ## Product Principles

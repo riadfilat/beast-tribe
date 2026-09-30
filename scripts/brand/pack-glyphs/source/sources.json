@@ -1,0 +1,142 @@
+{
+ "wolf": {
+  "source": "wolf-head",
+  "author": "Lorc"
+ },
+ "falcon": {
+  "source": "eagle-head",
+  "author": "Delapouite"
+ },
+ "horse": {
+  "source": "horse-head",
+  "author": "Lorc"
+ },
+ "camel": {
+  "source": "camel-head",
+  "author": "Delapouite"
+ },
+ "ibex": {
+  "source": "goat",
+  "author": "Skoll"
+ },
+ "tiger": {
+  "source": "tiger-head",
+  "author": "Delapouite"
+ },
+ "lion": {
+  "source": "lion",
+  "author": "Lorc"
+ },
+ "rhino": {
+  "source": "rhinoceros-horn",
+  "author": "Delapouite"
+ },
+ "bull": {
+  "source": "bull",
+  "author": "Lorc"
+ },
+ "shark": {
+  "source": "shark-fin",
+  "author": "Delapouite"
+ },
+ "scorpion": {
+  "source": "scorpion",
+  "author": "Lorc"
+ },
+ "fox": {
+  "source": "fox-head",
+  "author": "Lorc"
+ },
+ "spartan": {
+  "source": "spartan-helmet",
+  "author": "Delapouite"
+ },
+ "shield": {
+  "source": "winged-shield",
+  "author": "Lorc"
+ },
+ "pegasus": {
+  "source": "pegasus",
+  "author": "Skoll"
+ },
+ "griffin": {
+  "source": "griffin-symbol",
+  "author": "Delapouite"
+ },
+ "hydra": {
+  "source": "hydra",
+  "author": "Lorc"
+ },
+ "minotaur": {
+  "source": "minotaur",
+  "author": "Lorc"
+ },
+ "centaur": {
+  "source": "centaur",
+  "author": "Delapouite"
+ },
+ "trident": {
+  "source": "trident",
+  "author": "Lorc"
+ },
+ "laurel": {
+  "source": "laurels",
+  "author": "Lorc"
+ },
+ "torch": {
+  "source": "torch",
+  "author": "Delapouite"
+ },
+ "hermes": {
+  "source": "wingfoot",
+  "author": "Lorc"
+ },
+ "bolt": {
+  "source": "power-lightning",
+  "author": "Lorc"
+ },
+ "peak": {
+  "source": "peaks",
+  "author": "Lorc"
+ },
+ "waves": {
+  "source": "waves",
+  "author": "Lorc"
+ },
+ "flame": {
+  "source": "flame",
+  "author": "Carl Olsen"
+ },
+ "tally": {
+  "source": "tally-mark-5",
+  "author": "Delapouite"
+ },
+ "claws": {
+  "source": "claw-slashes",
+  "author": "Lorc"
+ },
+ "chevrons": {
+  "source": "upgrade",
+  "author": "Delapouite"
+ },
+ "spark": {
+  "source": "polar-star",
+  "author": "Delapouite"
+ },
+ "trophy": {
+  "source": "trophy",
+  "author": "Lorc"
+ },
+ "fist": {
+  "source": "fist",
+  "author": "Lorc"
+ },
+ "shoe": {
+  "source": "running-shoe",
+  "author": "Delapouite"
+ },
+ "lift": {
+  "source": "weight-lifting-up",
+  "author": "Delapouite"
+ }
+}

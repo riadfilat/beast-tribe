@@ -11,6 +11,7 @@ import { Txt } from '../../../src/components/board/Txt';
 import { IconButton, Segmented } from '../../../src/components/board/controls';
 import { Group, GroupRow } from '../../../src/components/board/list';
 import { Lockup } from '../../../src/components/brand/Logo';
+import { GLYPH_CREDIT } from '../../../src/components/brand/glyphs';
 import { toast } from '../../../src/components/board/toast';
 
 export default function SettingsScreen() {
@@ -120,6 +121,9 @@ export default function SettingsScreen() {
           <Lockup height={18} ink={p.ink} />
           <Txt v="caption" align="center">
             {t('auth.byOB')} · {t('settings.version', { v: version })}
+          </Txt>
+          <Txt v="caption" align="center" style={{ maxWidth: 300 }}>
+            {t('settings.iconCredit', { credit: GLYPH_CREDIT })}
           </Txt>
         </View>
       </ScrollView>

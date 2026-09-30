@@ -115,6 +115,11 @@ User wants to launch the app to limited public testers via TestFlight.
 
 ## Session Log (append-only — newest at top)
 
+### 2026-09-30 (later) — Pack patch icons redone with a professional set
+- User: my hand-drawn glyphs (polygons, then a chalk-line pass) "really don't look good, create something great". Switched to one professionally drawn silhouette family from game-icons.net (Lorc, Delapouite, Skoll, Carl Olsen; CC BY 3.0 — credit line under the lockup in Settings, CREDITS.md in assets/brand/pack-glyphs). 35 glyphs: 12 beasts (+tiger, fox; oryx/leopard retired), 11 myths (+griffin, hydra, minotaur, centaur, hermes; phoenix retired), 12 marks (+claws, trophy, fist, run, lift).
+- Stitch animation on the preview patch (outline draws via strokeDashoffset, fill lands, outline fades; Reanimated animatedProps on react-native-svg; works on web too). User had added skills svg-animations + icon-system; the Skill tool can't load skills added mid-session, so their SKILL.md files were read from disk and applied.
+- DB 038 (dry-run 6/6, applied): emblem trigger maps eagle→falcon, leopard→tiger, oryx→ibex, phoenix→griffin; existing rows updated.
+
 ### 2026-09-30 — Pack patches replace the neon t-shirt mascots (review comment 1)
 - User's review, comment 1: the Wolf/Eagle/Tiger/Rhino neon mascots are t-shirt art; wanted options (icons, emoji, etc.) + unique on-brand icons. Chose all kinds + asked for Greek mythology.
 - New: 27 glyphs drawn in the OB wolf's geometry — Beasts of Arabia (12), Myths (8), Marks (7). Sources: scripts/brand/pack-glyphs/ (glyphs.py = shapes, workbench.py = review sheet, generate.py → src/components/brand/glyphs.ts + admin copy + assets/brand/pack-glyphs/*.svg).

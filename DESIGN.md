@@ -261,10 +261,11 @@ Sharp and confident: 10px on buttons and fields, 8px on chips and magnets (about
 
 ### Pack Patch
 - **What:** a pack's identity: one symbol on a round patch in one of six brand colourways: Teal, Teal with aqua, Teal with orange, Aqua, Orange, Chalk. Anything on aqua or orange is Deep Teal. Teal and chalk grounds carry a hairline edge so a patch never vanishes into a board of its own colour.
-- **Symbols:** Beast Tribe's own glyphs, drawn in the parent wolf's geometry (the italic cut, flat feet, the triangle eye): Beasts of Arabia (wolf, falcon, horse, oryx, camel, ibex, leopard, lion, rhino, bull, shark, scorpion), Myths (spartan, shield, pegasus, phoenix, minotaur, trident, laurel, torch) and Marks (bolt, peak, waves, flame, tally, rise, spark); any emoji the pack picks; or the pack's letters (two Slam Dunk initials in Latin, one Noto Kufi letter in Arabic).
-- **Composition:** heads rise out of the bottom of the patch like a crest; whole animals, objects and marks float centred.
-- **Picker:** Beasts · Myths · Marks · Emoji · Letters tabs, then the six colours, with a live preview that springs as it changes. A new pack starts on a random beast; its creator can change the patch later from the pack page.
-- **Sources:** `assets/brand/pack-glyphs/*.svg`; `scripts/brand/pack-glyphs/generate.py` writes the app and admin data. Never the neon t-shirt mascots.
+- **Symbols:** one family of bold, solid silhouettes with cut-out detail (professionally drawn, from game-icons.net by Lorc, Delapouite, Skoll and Carl Olsen, CC BY 3.0; the credit sits under the lockup in Settings). Beasts (wolf, falcon, horse, camel, ibex, tiger, lion, rhino, bull, shark, scorpion, fox), Myths (spartan, shield, pegasus, griffin, hydra, minotaur, centaur, trident, laurel, torch, hermes) and Marks (bolt, peak, waves, flame, tally, claws, rise, star, trophy, fist, run, lift). Also any emoji the pack picks, or its letters (two Slam Dunk initials in Latin, one Noto Kufi letter in Arabic). Never mix in a second icon style, and never the neon t-shirt mascots.
+- **Composition:** every glyph is centred with its longer side at 58% of the patch, with small optical corrections.
+- **Motion (the patch's one authored moment):** when a glyph is chosen, the preview stitches it on: the outline draws itself, the fill lands as it closes, then the outline fades. About 950 ms, ease-out; the patch presses in and springs back. Off under Reduce Motion.
+- **Picker:** Beasts · Myths · Marks · Emoji · Letters tabs, then the six colours. A new pack starts on a random beast; its creator can change the patch later from the pack page.
+- **Sources:** `scripts/brand/pack-glyphs/source/*.svg` (with `sources.json` authors); `generate.py` writes the app and admin data and `assets/brand/pack-glyphs/` (with CREDITS.md).
 
 ### Session Row (signature)
 Time on the rail (the next one set largest), caps title, sport glyph and place, the crew's magnets and a tally on the trailing line. When the session is yours the orange sun sits behind its time; tapping I'M IN makes the sun rise with a spring while your magnet snaps onto the roster.

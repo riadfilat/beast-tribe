@@ -1,17 +1,19 @@
 import React, { useEffect, useId, useRef } from 'react';
 import { StyleProp, Text, View, ViewStyle } from 'react-native';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, SharedValue, useAnimatedProps, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import Svg, { Circle, ClipPath, Defs, G, Path } from 'react-native-svg';
-import { GLYPHS } from '../brand/glyphs';
+import { Glyph, GLYPHS } from '../brand/glyphs';
 import { Emblem, glyphId, packInitials, PATCH_PAINT } from '../../lib/emblem';
 
 // The pack patch: a round badge in one of the brand colourways carrying the pack's symbol.
 // The circle is reserved for patches and the orange marker (DESIGN.md › Shapes).
 // Teal and chalk grounds get a hairline edge so they never vanish into a board of the same colour.
+// Decorative: the pack's name always sits beside it, so screen readers skip the drawing.
 
 const EDGE: Record<string, string> = { '#023C3C': 'rgba(244,241,234,0.32)', '#F4F1EA': 'rgba(2,60,60,0.30)' };
+const AnimatedPath = Animated.createAnimatedComponent(Path);
 
-export function Patch({ emblem, name = '', size, style }: { emblem: Emblem; name?: string; size: number; style?: StyleProp<ViewStyle> }) {
+export function Patch({ emblem, name = '', size, style, stitch }: { emblem: Emblem; name?: string; size: number; style?: StyleProp<ViewStyle>; stitch?: SharedValue<number> }) {
   const { ground, ink } = PATCH_PAINT[emblem.color] ?? PATCH_PAINT.slate;
   const edge = EDGE[ground];
   const clipId = 'pc' + useId().replace(/[^a-zA-Z0-9]/g, '');
@@ -62,7 +64,7 @@ export function Patch({ emblem, name = '', size, style }: { emblem: Emblem; name
         <Circle cx={50} cy={50} r={50} fill={ground} />
         <G clipPath={`url(#${clipId})`}>
           <G transform={`translate(${tx} ${ty}) scale(${s})`}>
-            <Path d={g.d} fill={ink} fillRule="evenodd" />
+            {stitch ? <StitchedGlyph glyph={g} ink={ink} stroke={1.6 / ((size * s) / 100)} progress={stitch} /> : <Path d={g.d} fill={ink} />}
           </G>
         </G>
         {edge ? <Circle cx={50} cy={50} r={50 - edgeW / 2} fill="none" stroke={edge} strokeWidth={edgeW} /> : null}
@@ -71,24 +73,49 @@ export function Patch({ emblem, name = '', size, style }: { emblem: Emblem; name
   );
 }
 
-/** The big preview while choosing: the patch presses in and springs back each time it changes. */
+/**
+ * The glyph sewn onto the patch: its outline draws itself (stroke-dashoffset from the full
+ * outline length to zero), the fill lands as the outline closes, then the outline fades so the
+ * finished glyph is exactly the static one.
+ */
+function StitchedGlyph({ glyph, ink, stroke, progress }: { glyph: Glyph; ink: string; stroke: number; progress: SharedValue<number> }) {
+  const len = glyph.len;
+  const props = useAnimatedProps(() => {
+    const t = progress.value;
+    const drawn = Math.min(1, t / 0.7);
+    return {
+      strokeDashoffset: len * (1 - drawn),
+      fillOpacity: Math.min(1, Math.max(0, (t - 0.5) / 0.4)),
+      strokeOpacity: 1 - Math.min(1, Math.max(0, (t - 0.85) / 0.15)),
+    };
+  });
+  return <AnimatedPath d={glyph.d} fill={ink} stroke={ink} strokeWidth={stroke} strokeLinejoin="round" strokeDasharray={[len, len]} animatedProps={props} />;
+}
+
+/** The big preview while choosing: the patch springs, and a new glyph is stitched on. */
 export function PatchPreview({ emblem, name, size }: { emblem: Emblem; name: string; size: number }) {
   const reduce = useReducedMotion();
   const scale = useSharedValue(1);
+  const stitch = useSharedValue(1);
   const key = `${emblem.kind}:${emblem.value}:${emblem.color}`;
   const first = useRef(true);
+  const canStitch = emblem.kind === 'glyph';
   useEffect(() => {
     if (first.current) {
       first.current = false;
       return;
     }
     if (reduce) return;
-    scale.value = withSequence(withTiming(0.9, { duration: 70 }), withSpring(1, { damping: 11, stiffness: 260 }));
+    scale.value = withSequence(withTiming(0.92, { duration: 80 }), withSpring(1, { damping: 12, stiffness: 240 }));
+    if (canStitch) {
+      stitch.value = 0;
+      stitch.value = withTiming(1, { duration: 950, easing: Easing.out(Easing.cubic) });
+    }
   }, [key]);
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   return (
     <Animated.View style={style}>
-      <Patch emblem={emblem} name={name} size={size} />
+      <Patch emblem={emblem} name={name} size={size} stitch={canStitch ? stitch : undefined} />
     </Animated.View>
   );
 }

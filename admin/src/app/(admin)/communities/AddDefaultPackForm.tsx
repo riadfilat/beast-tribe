@@ -10,7 +10,8 @@ interface PackOption {
 }
 
 const GROUP_LABEL: Record<string, string> = { beasts: 'Beasts of Arabia', myths: 'Myths', marks: 'Marks' };
-const label = (id: string) => (id === 'chevrons' ? 'Rise' : id.charAt(0).toUpperCase() + id.slice(1));
+const NAMES: Record<string, string> = { chevrons: 'Rise', spark: 'Star', shoe: 'Running shoe', lift: 'Lift', hermes: 'Hermes (winged foot)', falcon: 'Falcon', claws: 'Claw marks' };
+const label = (id: string) => NAMES[id] ?? id.charAt(0).toUpperCase() + id.slice(1);
 
 interface Props {
   communityId: string;

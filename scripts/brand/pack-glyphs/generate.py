@@ -1,119 +1,122 @@
-"""Generates the pack glyph data for the app and the admin, and the SVG brand files.
+"""Pack patch glyphs: builds the app and admin data, and the brand SVGs, from source/*.svg.
 
-Usage: python3 scripts/brand/pack-glyphs/generate.py
-Edit shapes in glyphs.py (120-unit box, y down, evenodd knockouts); review them with workbench.py.
+The sources are professionally drawn icons from game-icons.net (CC BY 3.0). Their authors are
+listed in source/sources.json and credited in the app (Settings > About) as GLYPH_CREDIT.
+To add a glyph: drop a 512-unit single-path SVG into source/, add it to FAMILIES (and to
+sources.json with its author), then run:
+
+    pip install svgelements
+    python3 scripts/brand/pack-glyphs/generate.py [--sheet out.svg]
 """
-import json, math, os, re, sys
+import json, os, re, sys
+from svgelements import Path
+
 HERE = os.path.dirname(os.path.abspath(__file__))
-__file__ = os.path.join(HERE, 'workbench.py')
-exec(open(__file__).read().split("if __name__")[0])
+ROOT = os.path.abspath(os.path.join(HERE, '..', '..', '..'))
 
 FAMILIES = {
-    'beasts': ['wolf', 'falcon', 'horse', 'oryx', 'camel', 'ibex', 'leopard', 'lion', 'rhino', 'bull', 'shark', 'scorpion'],
-    'myths': ['spartan', 'shield', 'pegasus', 'phoenix', 'minotaur', 'trident', 'laurel', 'torch'],
-    'marks': ['bolt', 'peak', 'waves', 'flame', 'tally', 'chevrons', 'spark'],
+    'beasts': ['wolf', 'falcon', 'horse', 'camel', 'ibex', 'tiger', 'lion', 'rhino', 'bull', 'shark', 'scorpion', 'fox'],
+    'myths': ['spartan', 'shield', 'pegasus', 'griffin', 'hydra', 'minotaur', 'centaur', 'trident', 'laurel', 'torch', 'hermes'],
+    'marks': ['bolt', 'peak', 'waves', 'flame', 'tally', 'claws', 'chevrons', 'spark', 'trophy', 'fist', 'shoe', 'lift'],
 }
-# Heads rise out of the bottom of the patch like a crest; everything else floats centred.
-RISE = {'falcon', 'horse', 'oryx', 'lion', 'rhino', 'ibex', 'leopard', 'bull', 'pegasus'}
-# Optical corrections (scale multiplier, dx, dy in patch units).
-TUNE = {'shield': (0.94, 0, 0), 'laurel': (1.06, 0, 0), 'spark': (0.92, 0, 0), 'chevrons': (0.96, 0, 2), 'wolf': (1.04, 0, 0),
-        'scorpion': (1.08, 0, 0), 'shark': (1.06, 0, 0), 'camel': (1.06, 0, 1), 'trident': (1.02, 0, 0), 'torch': (1.0, 0, 0)}
-
-WS = 88 / 148.74
-def num(v):
-    t = f'{v:.1f}'
-    return t[:-2] if t.endswith('.0') else t
+SIZE = 58  # the glyph's longer side in a 100-unit patch
+# Optical corrections: (scale multiplier, dx, dy) in patch units.
+TUNE = {
+    'tally': (0.92, 0, 0), 'claws': (0.95, 0, 0), 'spark': (0.95, 0, 0), 'shield': (1.02, 0, 1),
+    'laurel': (1.04, 0, 0), 'shark': (1.04, 0, -1), 'waves': (0.94, 0, 0), 'peak': (1.0, 0, -1),
+    'trophy': (0.98, 0, 0), 'bolt': (0.97, 0, 0), 'chevrons': (0.94, 0, 0),
+}
+CREDIT = 'Lorc, Delapouite, Skoll and Carl Olsen (game-icons.net), CC BY 3.0'
 
 
-def wolf_d():
-    parts = []
-    for d in WOLF_PATHS:
-        toks = re.findall(r'[MLCZ]|-?\d+\.?\d*', d)
-        cmd, nums, open_sub = None, [], False
-        for t in toks:
-            if t in 'MLCZ':
-                if t == 'M' and open_sub:
-                    parts.append('Z')
-                if t == 'Z':
-                    parts.append('Z')
-                    open_sub = False
-                else:
-                    parts.append(t)
-                    open_sub = True
-                continue
-            nums.append(float(t))
-            if len(nums) == 2:
-                parts.append(f'{num(16 + nums[0] * WS)} {num(19.5 + nums[1] * WS)}')
-                nums = []
-        if open_sub:
-            parts.append('Z')
-    out = ''
-    for p in parts:
-        if p in 'MLCZ':
-            out += p
-        else:
-            out += (' ' if out and out[-1] not in 'MLCZ' else '') + p
-    return out
+def build():
+    sources = json.load(open(os.path.join(HERE, 'source', 'sources.json')))
+    glyphs = {}
+    for fam, ids in FAMILIES.items():
+        for gid in ids:
+            svg = open(os.path.join(HERE, 'source', f'{gid}.svg')).read()
+            d = re.search(r' d="([^"]+)"', svg).group(1)
+            p = Path(d)
+            x0, y0, x1, y1 = p.bbox()
+            w, h = x1 - x0, y1 - y0
+            k, dx, dy = TUNE.get(gid, (1, 0, 0))
+            s = SIZE * k / max(w, h)
+            tx = 50 - (x0 + w / 2) * s + dx
+            ty = 50 - (y0 + h / 2) * s + dy
+            glyphs[gid] = {'d': d, 't': [round(tx, 2), round(ty, 2), round(s, 5)], 'len': int(round(p.length(error=1e-4)))}
+            assert gid in sources, gid
+    return glyphs
 
 
-def pts_of(name):
-    if name == 'wolf':
-        return [(16, 19.5), (16 + 148.74 * WS, 19.5 + 136.86 * WS)]
-    return [p for sub in G[name] for p in sub]
-
-def d_of(name):
-    if name == 'wolf':
-        return wolf_d()
-    return ''.join('M' + 'L'.join(f'{num(x)} {num(y)}' for x, y in sub) + 'Z' for sub in G[name])
-
-out = {}
-for fam, ids in FAMILIES.items():
-    for n in ids:
-        P = pts_of(n)
-        xs, ys = [p[0] for p in P], [p[1] for p in P]
-        x0, y0, x1, y1 = min(xs), min(ys), max(xs), max(ys)
-        w, h = x1 - x0, y1 - y0
-        k, dx, dy = TUNE.get(n, (1, 0, 0))
-        if n in RISE:
-            s = 76 / h * k
-            tx, ty = 50 - (x0 + w / 2) * s, 102 - y1 * s
-        else:
-            s = 64 / max(w, h) * k
-            tx, ty = 50 - (x0 + w / 2) * s, 50 - (y0 + h / 2) * s
-        out[n] = {'d': d_of(n), 't': [round(tx + dx, 2), round(ty + dy, 2), round(s, 4)]}
-
-def ts(header):
-    lines = [header,
-             "export type GlyphFamily = 'beasts' | 'myths' | 'marks';",
-             "export interface Glyph {",
-             "  /** Outline in a 120-unit box; knockouts rely on fillRule=\"evenodd\". */",
-             "  d: string;",
-             "  /** translate x, translate y, scale — places the glyph in a 100-unit round patch. */",
-             "  t: [number, number, number];",
-             "}",
-             '',
-             'export const GLYPH_FAMILIES: Record<GlyphFamily, string[]> = ' + json.dumps(FAMILIES) + ';',
-             '',
-             'export const GLYPHS: Record<string, Glyph> = {']
-    for n, g in out.items():
-        lines.append(f"  {n}: {{ t: {json.dumps(g['t'])}, d: '{g['d']}' }},")
-    lines.append('};')
-    lines.append('')
+def ts(glyphs):
+    lines = [
+        '// Generated by scripts/brand/pack-glyphs/generate.py — do not edit by hand.',
+        "// Pack patch glyphs: professionally drawn icons from game-icons.net by Lorc, Delapouite,",
+        '// Skoll and Carl Olsen (CC BY 3.0, credited in Settings › About), fitted to the round patch.',
+        '',
+        "export type GlyphFamily = 'beasts' | 'myths' | 'marks';",
+        'export interface Glyph {',
+        '  /** Silhouette in a 512-unit box (nonzero fill). */',
+        '  d: string;',
+        '  /** translate x, translate y, scale — places the glyph in a 100-unit round patch. */',
+        '  t: [number, number, number];',
+        '  /** Outline length in the glyph\'s own units, for the stitch animation. */',
+        '  len: number;',
+        '}',
+        '',
+        f'export const GLYPH_CREDIT = {json.dumps(CREDIT)};',
+        '',
+        'export const GLYPH_FAMILIES: Record<GlyphFamily, string[]> = ' + json.dumps(FAMILIES) + ';',
+        '',
+        'export const GLYPHS: Record<string, Glyph> = {',
+    ]
+    for gid, g in glyphs.items():
+        lines.append(f"  {gid}: {{ t: {json.dumps(g['t'])}, len: {g['len']}, d: '{g['d']}' }},")
+    lines += ['};', '']
     return '\n'.join(lines)
 
-HEADER = """// Generated by scripts/brand/pack-glyphs/generate.py — do not edit by hand.
-// Beast Tribe's own pack glyphs, drawn in the Operation Beast wolf's geometry (the italic
-// cut, flat feet, triangle eye): Beasts of Arabia, Greek myths, and brand marks.
-"""
-root = os.path.abspath(os.path.join(HERE, '..', '..', '..')) + '/'
-open(root + 'src/components/brand/glyphs.ts', 'w').write(ts(HEADER))
-open(root + 'admin/src/components/brand/glyphs.ts', 'w').write(ts(HEADER))
-print(sum(len(g['d']) for g in out.values()), 'chars;', out['wolf']['d'][:120])
 
-import os
-gdir = root + 'assets/brand/pack-glyphs/'
-os.makedirs(gdir, exist_ok=True)
-for fam, ids in FAMILIES.items():
-    for n in ids:
-        open(gdir + f'{n}.svg', 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><title>{n}</title><path fill="currentColor" fill-rule="evenodd" d="{out[n]["d"]}"/></svg>\n')
-print('exported', sum(len(v) for v in FAMILIES.values()), 'glyph svgs')
+def sheet(glyphs, out):
+    ids = [i for f in FAMILIES.values() for i in f]
+    cols, D, gap = 8, 110, 16
+    rows = -(-len(ids) // cols)
+    W, H = cols * (D + gap) + gap, rows * (D + gap) + gap + 60
+    s = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}"><rect width="{W}" height="{H}" fill="#E8E5E1"/>']
+    for i, gid in enumerate(ids):
+        g = glyphs[gid]
+        x, y = gap + (i % cols) * (D + gap), gap + (i // cols) * (D + gap)
+        tx, ty, sc = g['t']
+        s.append(f'<g transform="translate({x} {y}) scale({D / 100})"><circle cx="50" cy="50" r="50" fill="#023C3C"/><circle cx="50" cy="50" r="49.3" fill="none" stroke="#F4F1EA" stroke-opacity=".32" stroke-width="1.4"/>'
+                 f'<g transform="translate({tx} {ty}) scale({sc})"><path d="{g["d"]}" fill="#F4F1EA"/></g></g>')
+    # small sizes row
+    for i, gid in enumerate(ids[:24]):
+        g = glyphs[gid]
+        x, y = gap + i * 44, H - 52
+        tx, ty, sc = g['t']
+        s.append(f'<g transform="translate({x} {y}) scale(0.4)"><circle cx="50" cy="50" r="50" fill="#56C4C4"/><g transform="translate({tx} {ty}) scale({sc})"><path d="{g["d"]}" fill="#023C3C"/></g></g>')
+    s.append('</svg>')
+    open(out, 'w').write(''.join(s))
+    return W, H
+
+
+if __name__ == '__main__':
+    glyphs = build()
+    code = ts(glyphs)
+    open(os.path.join(ROOT, 'src/components/brand/glyphs.ts'), 'w').write(code)
+    open(os.path.join(ROOT, 'admin/src/components/brand/glyphs.ts'), 'w').write(code)
+    gdir = os.path.join(ROOT, 'assets/brand/pack-glyphs')
+    os.makedirs(gdir, exist_ok=True)
+    for f in os.listdir(gdir):
+        os.remove(os.path.join(gdir, f))
+    sources = json.load(open(os.path.join(HERE, 'source', 'sources.json')))
+    for gid, g in glyphs.items():
+        src = sources[gid]
+        open(os.path.join(gdir, f'{gid}.svg'), 'w').write(
+            f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><title>{gid}</title><!-- "{src["source"]}" by {src["author"]}, game-icons.net, CC BY 3.0 --><path fill="currentColor" d="{g["d"]}"/></svg>\n')
+    open(os.path.join(gdir, 'CREDITS.md'), 'w').write(
+        '# Pack patch glyphs\n\nFrom [game-icons.net](https://game-icons.net), licensed [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). '
+        'Recoloured and fitted to Beast Tribe patches.\n\n| Glyph | Source icon | Author |\n|---|---|---|\n'
+        + ''.join(f'| {gid} | {sources[gid]["source"]} | {sources[gid]["author"]} |\n' for gid in glyphs))
+    if '--sheet' in sys.argv:
+        print(*sheet(glyphs, sys.argv[sys.argv.index('--sheet') + 1]))
+    print(len(glyphs), 'glyphs;', sum(len(g['d']) for g in glyphs.values()), 'chars of path data')

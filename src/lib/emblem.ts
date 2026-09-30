@@ -1,5 +1,5 @@
 // A pack's patch: one symbol on one of six brand colourways.
-// Symbols are Beast Tribe's own glyphs (beasts, myths, marks), any emoji, or the pack's letters.
+// Symbols are glyphs (beasts, myths, marks), any emoji, or the pack's letters.
 import { GLYPHS, GLYPH_FAMILIES, GlyphFamily } from '../components/brand/glyphs';
 
 export type PatchColor = 'slate' | 'dreamer' | 'seeker' | 'aqua' | 'orange' | 'chalk';
@@ -25,7 +25,8 @@ export const PATCH_PAINT: Record<PatchColor, { ground: string; ink: string }> = 
   chalk: { ground: CHALK, ink: TEAL },
 };
 
-const LEGACY: Record<string, string> = { eagle: 'falcon', tiger: 'leopard' };
+// Ids from earlier drawings: the eagle became the falcon; leopard, oryx and phoenix were retired.
+const LEGACY: Record<string, string> = { eagle: 'falcon', leopard: 'tiger', oryx: 'ibex', phoenix: 'griffin' };
 
 export function glyphId(value?: string | null): string {
   const v = (value || '').toLowerCase();
