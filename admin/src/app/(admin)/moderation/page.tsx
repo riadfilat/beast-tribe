@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
 import { approveImage, rejectImage } from './actions';
+import { Icon } from '@/components/ui/Icon';
 
 export const revalidate = 0;
 
@@ -88,13 +89,13 @@ export default async function ModerationPage() {
                     {/* Actions */}
                     <div className="flex gap-2">
                       <form action={approveAction} className="flex-1">
-                        <button type="submit" className="w-full py-2 text-sm font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100 transition">
-                          ✓ Approve
+                        <button type="submit" className="w-full py-2 text-sm font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100 transition inline-flex items-center justify-center gap-1.5">
+                          <Icon name="check" size="sm" weight="bold" />Approve
                         </button>
                       </form>
                       <form action={rejectAction} className="flex-1">
-                        <button type="submit" className="w-full py-2 text-sm font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition">
-                          ✕ Reject
+                        <button type="submit" className="w-full py-2 text-sm font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition inline-flex items-center justify-center gap-1.5">
+                          <Icon name="close" size="sm" weight="bold" />Reject
                         </button>
                       </form>
                     </div>

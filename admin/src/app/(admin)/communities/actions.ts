@@ -26,11 +26,18 @@ function readCommunityFields(formData: FormData) {
   const country = ((formData.get('country') as string) || 'SA').trim();
   const city = ((formData.get('city') as string) || '').trim() || null;
   const is_active = formData.get('is_active') !== 'off' && formData.get('is_active') !== null;
+  const visibility = formData.get('visibility') === 'open' ? 'open' : 'private';
+  const kindRaw = (formData.get('kind') as string) || 'club';
+  const kind = ['club', 'company', 'compound', 'city', 'brand'].includes(kindRaw) ? kindRaw : 'club';
+  const seats = parseInt((formData.get('seat_limit') as string) || '', 10);
+  const seat_limit = Number.isFinite(seats) && seats > 0 ? seats : null;
+  const ends = ((formData.get('contract_ends_at') as string) || '').trim();
+  const contract_ends_at = ends ? new Date(`${ends}T23:59:59`).toISOString() : null;
 
   if (!name) throw new Error('Name is required');
   if (!slug) throw new Error('Slug is required');
 
-  return { name, slug, description, logo_url, cover_url, country, city, is_active };
+  return { name, slug, description, logo_url, cover_url, country, city, is_active, visibility, kind, seat_limit, contract_ends_at };
 }
 
 export async function createCommunity(formData: FormData) {
@@ -208,11 +215,10 @@ export async function removeUserFromCommunity(userId: string, communityId: strin
   const admin = await requireAdmin();
   const db = createAdminClient();
 
-  const { error } = await db
-    .from('profiles')
-    .update({ community_id: null })
-    .eq('id', userId);
+  // Members can be in several communities; remove just this one.
+  const { error } = await db.from('community_members').delete().eq('community_id', communityId).eq('user_id', userId);
   if (error) throw new Error(error.message);
+  await db.from('profiles').update({ community_id: null }).eq('id', userId).eq('community_id', communityId);
 
   await db.from('admin_audit_log').insert({
     admin_user_id: admin.id,
@@ -224,4 +230,15 @@ export async function removeUserFromCommunity(userId: string, communityId: strin
 
   revalidatePath(`/communities/${communityId}`);
   revalidatePath(`/users/${userId}`);
+}
+
+/** Issue a new invite code for a private community (the old one stops working). */
+export async function regenerateJoinCode(communityId: string) {
+  const admin = await requireAdmin();
+  const db = createAdminClient();
+  // The communities trigger fills in a fresh code when it is cleared.
+  const { error } = await db.from('communities').update({ join_code: null }).eq('id', communityId);
+  if (error) throw new Error(error.message);
+  await db.from('admin_audit_log').insert({ admin_user_id: admin.id, action: 'regenerate_join_code', target_table: 'communities', target_id: communityId });
+  revalidatePath(`/communities/${communityId}`);
 }

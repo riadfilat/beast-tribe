@@ -10,7 +10,7 @@ import type { Person } from '../components/board/people';
 
 export type JoinResult = 'going' | 'waitlist';
 export type SessionErrorCode =
-  | 'WOMEN_ONLY' | 'PACK_ONLY' | 'EVENT_OVER' | 'EVENT_CANCELLED' | 'EVENT_NOT_FOUND' | 'NOT_HOST' | 'generic';
+  | 'WOMEN_ONLY' | 'PACK_ONLY' | 'COMMUNITY_ONLY' | 'EVENT_OVER' | 'EVENT_CANCELLED' | 'EVENT_NOT_FOUND' | 'NOT_HOST' | 'generic';
 
 export class SessionError extends Error {
   code: SessionErrorCode;
@@ -22,7 +22,7 @@ export class SessionError extends Error {
 
 function toSessionError(e: any): SessionError {
   const m = String(e?.message || e || '');
-  const hit = m.match(/WOMEN_ONLY|PACK_ONLY|EVENT_OVER|EVENT_CANCELLED|EVENT_NOT_FOUND|NOT_HOST/);
+  const hit = m.match(/WOMEN_ONLY|PACK_ONLY|COMMUNITY_ONLY|EVENT_OVER|EVENT_CANCELLED|EVENT_NOT_FOUND|NOT_HOST/);
   return new SessionError((hit?.[0] as SessionErrorCode) || 'generic', m);
 }
 
@@ -203,6 +203,9 @@ export interface HostInput {
   difficulty?: 'easy' | 'medium' | 'hard' | null;
   womenOnly?: boolean;
   packId?: string | null;
+  /** Where the session lives when it isn't pack-only (defaults to the open community). */
+  communityId?: string | null;
+  priceSar?: number | null;
   coachName?: string | null;
   notes?: string;
   /** http(s) URL (popular spot photo) or a local file to upload */
@@ -244,7 +247,9 @@ export async function hostSession(meId: string, input: HostInput): Promise<{ id:
       difficulty: input.difficulty ?? null,
       is_women_only: !!input.womenOnly,
       pack_id: input.packId ?? null,
-      visibility: input.packId ? 'pack' : 'public',
+      community_id: input.packId ? null : input.communityId ?? null,
+      visibility: input.packId ? 'pack' : 'community',
+      price_sar: input.priceSar ?? null,
       coach_name: input.coachName ?? null,
       description: input.notes?.trim() || null,
       image_url: imageUrl,

@@ -132,28 +132,17 @@ export async function updatePackEmblem(packId: string, emblem: Emblem) {
   invalidate(`packs:one:${packId}`);
 }
 
-export async function joinPackByCode(meId: string, code: string) {
+export async function joinPackByCode(meId: string, code: string): Promise<{ id: string; name: string }> {
   if (PREVIEW) return { id: 'pk-dawn', name: 'Dawn Patrol' };
-  const { data: pack, error } = await supabase
-    .from('packs')
-    .select('id, name, max_members')
-    .eq('invite_code', code.toUpperCase().trim())
-    .eq('is_system', false)
-    .maybeSingle();
-  if (error) throw new PackError('generic');
-  if (!pack) throw new PackError('INVALID');
-  const [{ count: size }, { count: mine }, { data: existing }] = await Promise.all([
-    supabase.from('pack_members').select('*', { count: 'exact', head: true }).eq('pack_id', pack.id),
-    supabase.from('pack_members').select('*', { count: 'exact', head: true }).eq('user_id', meId),
-    supabase.from('pack_members').select('id').eq('pack_id', pack.id).eq('user_id', meId).maybeSingle(),
-  ]);
-  if (existing) throw new PackError('ALREADY');
-  if ((size ?? 0) >= (pack.max_members || 20)) throw new PackError('FULL');
-  if ((mine ?? 0) >= MAX_PACKS) throw new PackError('LIMIT');
-  const { error: joinErr } = await supabase.from('pack_members').insert({ pack_id: pack.id, user_id: meId, role: 'member' });
-  if (joinErr) throw new PackError('generic');
+  // Packs are private to their members, so the code is checked on the server.
+  const { data, error } = await supabase.rpc('join_pack_by_code', { p_code: code.trim() });
+  if (error) {
+    const hit = String(error.message || '').match(/INVALID|FULL|LIMIT|ALREADY/);
+    throw new PackError((hit?.[0] as PackErrorCode) || 'generic');
+  }
   invalidate('member:packs');
-  return pack;
+  const row = Array.isArray(data) ? data[0] : data;
+  return { id: row.id, name: row.name };
 }
 
 export async function leavePack(meId: string, packId: string) {

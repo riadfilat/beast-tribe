@@ -376,10 +376,11 @@ export function useCoachSlots(partnerId?: string | null, dateKey?: string | null
     const hhmm = (v: any) => String(v || '').substring(0, 5);
     const [weekly, bookings] = await Promise.all([
       supabase.from('coach_slots').select('start_time, end_time').eq('partner_id', partnerId!).eq('day_of_week', weekday).eq('is_active', true).order('start_time'),
-      supabase.from('coach_bookings').select('start_time').eq('partner_id', partnerId!).eq('booking_date', dateKey!).neq('status', 'cancelled'),
+      // Bookings are private; the server only says which start times are taken.
+      supabase.rpc('coach_taken_starts', { p_partner: partnerId!, p_date: dateKey! }),
     ]);
     if (weekly.error) throw weekly.error;
-    const taken = new Set((bookings.data || []).map((b: any) => hhmm(b.start_time)));
+    const taken = new Set((bookings.data || []).map((b: any) => hhmm(typeof b === 'string' ? b : b.coach_taken_starts ?? b.start_time)));
     return (weekly.data || []).map((r: any) => ({ start: hhmm(r.start_time), end: hhmm(r.end_time), booked: taken.has(hhmm(r.start_time)) }));
   });
 }

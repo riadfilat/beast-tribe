@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
+import { Icon } from '@/components/ui/Icon';
 
 export const revalidate = 0;
 
@@ -212,17 +213,17 @@ export default async function DashboardPage() {
       {/* Quick Actions */}
       <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: 'Create Event', href: '/events/new', icon: '📅' },
-          { label: 'Review Images', href: '/moderation', icon: '🛡️' },
-          { label: 'Add Partner', href: '/partners/new', icon: '🤝' },
-          { label: 'View Feed', href: '/feed', icon: '💬' },
+          { label: 'Create Event', href: '/events/new', icon: 'events' as const },
+          { label: 'Review Images', href: '/moderation', icon: 'moderation' as const },
+          { label: 'Add Partner', href: '/partners/new', icon: 'partners' as const },
+          { label: 'View Feed', href: '/feed', icon: 'feed' as const },
         ].map((action) => (
           <Link
             key={action.href}
             href={action.href}
             className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-gray-100 shadow-sm hover:border-brand-aqua hover:shadow-md transition text-sm font-medium text-gray-700"
           >
-            <span className="text-lg">{action.icon}</span>
+            <Icon name={action.icon} size="md" className="text-brand-teal" />
             {action.label}
           </Link>
         ))}

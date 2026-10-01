@@ -9,9 +9,10 @@ import { addDays, clockParts, fmtClock, fmtDay, localDateKey, localDateTime, sta
 import { useAuth } from '../src/providers/AuthProvider';
 import { hostSession, SessionError } from '../src/data/sessions';
 import { useCoaches, useMyPackList, useMySports, usePopularSpots } from '../src/data/member';
+import { useMyCommunities } from '../src/data/communities';
 import { PREVIEW, PREVIEW_ME } from '../src/data/preview';
 import { SPORT_LIST, SportId } from '../src/lib/sports';
-import { SESSION_LINK_BASE } from '../src/lib/constants';
+import { PAYMENTS_ENABLED, SESSION_LINK_BASE } from '../src/lib/constants';
 import { bookCoach, useCoachSlots } from '../src/data/coaching';
 import { Txt } from '../src/components/board/Txt';
 import { Icon } from '../src/components/board/Icon';
@@ -49,13 +50,14 @@ export default function HostScreen() {
   const { t } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ spot?: string }>();
+  const params = useLocalSearchParams<{ spot?: string; community?: string; pack?: string }>();
   const { user, profile } = useAuth();
   const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
   const country = profile?.region || 'SA';
   const spots = usePopularSpots(country).data ?? [];
   const mySports = useMySports().data ?? [];
   const packs = useMyPackList().data ?? [];
+  const communities = useMyCommunities().data ?? [];
   const coaches = useCoaches().data ?? [];
 
   const [sport, setSport] = useState<SportId | null>(null);
@@ -71,7 +73,11 @@ export default function HostScreen() {
   const [duration, setDuration] = useState(60);
   const [level, setLevel] = useState<'any' | 'easy' | 'medium' | 'hard'>('any');
   const [womenOnly, setWomenOnly] = useState(false);
-  const [packId, setPackId] = useState<string | null>(null);
+  // Every session lives somewhere: one of my communities or one of my packs.
+  const [audience, setAudience] = useState<{ kind: 'community' | 'pack'; id: string } | null>(
+    params.pack ? { kind: 'pack', id: params.pack } : params.community ? { kind: 'community', id: params.community } : null,
+  );
+  const [price, setPrice] = useState('');
   const [coachId, setCoachId] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
   const [cover, setCover] = useState<string | null>(null);
@@ -82,6 +88,10 @@ export default function HostScreen() {
   const now = new Date();
   const days = useMemo(() => Array.from({ length: 14 }, (_, i) => addDays(startOfLocalDay(now), i)), []);
   const coach = coaches.find((c) => c.id === coachId) ?? null;
+  // Default: the first community (private ones are listed first).
+  const where = audience ?? (communities[0] ? { kind: 'community' as const, id: communities[0].id } : null);
+  const packId = where?.kind === 'pack' ? where.id : null;
+  const communityId = where?.kind === 'community' ? where.id : null;
   const coachSlots = useCoachSlots(coachId, dayKey).data ?? [];
 
   // Preselect a spot handed over from the board.
@@ -160,6 +170,8 @@ export default function HostScreen() {
         difficulty: level === 'any' ? null : level,
         womenOnly,
         packId,
+        communityId,
+        priceSar: PAYMENTS_ENABLED && Number(price) > 0 ? Number(price) : null,
         coachName: coach?.name ?? null,
         notes,
         cover: cover ?? spot?.imageUrl ?? null,
@@ -258,6 +270,23 @@ export default function HostScreen() {
             <Chip key={x.id} sport={x.id} label={t(`sports.${x.id}`)} selected={sport === x.id} onPress={() => setSport(x.id)} />
           ))}
         </View>
+
+        {communities.length + packs.length > 1 ? (
+          <>
+            <SectionHeading title={t('host.audience')} style={s.gap} />
+            <Txt v="meta" style={{ marginTop: -6, marginBottom: 8 }}>
+              {t('host.audienceSub')}
+            </Txt>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.row}>
+              {communities.map((c) => (
+                <Chip key={c.id} label={c.name} icon={c.open ? 'people' : 'shield'} selected={where?.kind === 'community' && where.id === c.id} onPress={() => setAudience({ kind: 'community', id: c.id })} />
+              ))}
+              {packs.map((x) => (
+                <Chip key={x.id} label={x.name} icon="lock" selected={where?.kind === 'pack' && where.id === x.id} onPress={() => setAudience({ kind: 'pack', id: x.id })} />
+              ))}
+            </ScrollView>
+          </>
+        ) : null}
 
         <SectionHeading title={t('host.day')} style={s.gap} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.row}>
@@ -389,21 +418,13 @@ export default function HostScreen() {
               {profile?.gender === 'female' || PREVIEW ? (
                 <GroupRow label={t('host.womenOnly')} sub={t('host.womenOnlySub')} toggle={womenOnly} onToggle={setWomenOnly} />
               ) : null}
-              {packs.length ? (
-                <GroupRow
-                  label={t('host.packOnly')}
-                  sub={t('host.packOnlySub', { pack: packs.find((x) => x.id === packId)?.name ?? packs[0].name })}
-                  toggle={!!packId}
-                  onToggle={(v) => setPackId(v ? packs[0].id : null)}
-                />
-              ) : null}
             </Group>
-            {packId && packs.length > 1 ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.row}>
-                {packs.map((x) => (
-                  <Chip key={x.id} label={x.name} icon="lock" selected={packId === x.id} onPress={() => setPackId(x.id)} />
-                ))}
-              </ScrollView>
+
+            {PAYMENTS_ENABLED ? (
+              <View style={{ gap: 8 }}>
+                <SectionHeading title={t('host.price')} />
+                <Field value={price} onChangeText={(v) => setPrice(v.replace(/[^0-9.]/g, ''))} placeholder={t('host.priceFree')} keyboardType="decimal-pad" maxLength={6} />
+              </View>
             ) : null}
 
             <View style={{ gap: 8 }}>

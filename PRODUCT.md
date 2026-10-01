@@ -60,6 +60,12 @@ A sports community app owned by a real activewear brand (Operation Beast) and bu
 - Pack glyphs: `assets/brand/pack-glyphs/*.svg` (+ CREDITS.md); sources and generator in `scripts/brand/pack-glyphs/` (writes `src/components/brand/glyphs.ts` and the admin copy). CC BY 3.0 requires the credit line to stay in the app.
 - No member testimonials, member counts, partner logos, or press exist. Never fabricate them.
 
+## Business Model (decided 2026-10-01)
+
+- Community-driven and B2B first: companies, compounds and clubs buy a PRIVATE community (seats + contract) that their people join with an invite code. Open communities anyone can join; everyone starts in the open "Beast Tribe".
+- Members can be in several communities; sessions live in a community or a pack; packs are private to their members.
+- Revenue: B2B licences first, then a cut of paid sessions (prepared, switched off), coach subscriptions, featured venues, healthy-restaurant partnerships. No ads, no selling data, no paywall on joining sessions.
+
 ## Product Principles
 
 1. Showing up is the product: every screen should move a member closer to attending or hosting a session.

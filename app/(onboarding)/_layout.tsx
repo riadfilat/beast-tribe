@@ -7,6 +7,7 @@ export default function OnboardingLayout() {
     <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: p.board } }}>
       <Stack.Screen name="about-you" />
       <Stack.Screen name="pick-sports" />
+      <Stack.Screen name="join-community" />
     </Stack>
   );
 }

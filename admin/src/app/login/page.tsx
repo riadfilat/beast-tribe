@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase-browser';
 import { Lockup } from '@/components/brand/Logo';
+import { Icon } from '@/components/ui/Icon';
 
 const ERROR_MESSAGES: Record<string, string> = {
   unauthorized: 'Your account does not have admin or partner access.',
@@ -134,7 +135,7 @@ export default function LoginPage() {
 
             {error && (
               <div className="flex items-start gap-2 bg-red-50 text-red-700 text-sm px-4 py-3 rounded-xl border border-red-100">
-                <span className="mt-0.5 flex-none">⚠️</span>
+                <Icon name="warning" size="sm" className="mt-0.5" />
                 <span>{error}</span>
               </div>
             )}

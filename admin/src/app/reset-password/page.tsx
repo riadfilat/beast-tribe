@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase-browser';
 import Link from 'next/link';
+import { Icon } from '@/components/ui/Icon';
+import { PackMark } from '@/components/brand/Logo';
 
 function ResetPasswordForm() {
   const [password, setPassword] = useState('');
@@ -79,7 +81,7 @@ function ResetPasswordForm() {
         <div className="relative w-full max-w-md px-4">
           <div className="bg-white rounded-2xl shadow-2xl p-8 text-center">
             <div className="inline-flex items-center justify-center w-14 h-14 bg-red-100 rounded-2xl mb-4 shadow-lg">
-              <span className="text-2xl">❌</span>
+              <Icon name="error" size="lg" className="text-red-600" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Invalid Link</h1>
             <p className="text-gray-600 mb-6">
@@ -112,9 +114,7 @@ function ResetPasswordForm() {
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 bg-brand-teal rounded-2xl mb-4 shadow-lg">
-              <span className="text-2xl">🐺</span>
-            </div>
+            <PackMark height={34} id="bt-auth" className="mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-brand-teal">Create New Password</h1>
             <p className="text-sm text-gray-400 mt-1">Enter your new password below</p>
           </div>
@@ -154,7 +154,7 @@ function ResetPasswordForm() {
 
               {error && (
                 <div className="flex items-start gap-2 bg-red-50 text-red-700 text-sm px-4 py-3 rounded-xl border border-red-100">
-                  <span className="mt-0.5 flex-none">⚠️</span>
+                  <Icon name="warning" size="sm" className="mt-0.5" />
                   <span>{error}</span>
                 </div>
               )}
@@ -191,7 +191,7 @@ function ResetPasswordForm() {
           ) : (
             <div className="text-center">
               <div className="inline-flex items-center justify-center w-14 h-14 bg-green-100 rounded-2xl mb-4 shadow-lg">
-                <span className="text-2xl">✅</span>
+                <Icon name="success" size="lg" className="text-green-700" />
               </div>
               <h2 className="text-xl font-bold text-gray-900 mb-2">Password Reset</h2>
               <p className="text-gray-600 mb-6">Your password has been successfully reset.</p>

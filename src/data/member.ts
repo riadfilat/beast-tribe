@@ -58,17 +58,6 @@ export async function saveMySports(meId: string, ids: string[]) {
 }
 
 // ─── Community (assigned in the admin) ──────────────────────────────────────
-export function useMyCommunity() {
-  const { profile } = useAuth();
-  const id = PREVIEW ? 'c-andorra' : profile?.community_id ?? null;
-  return useQuery<{ id: string; name: string } | null>(id ? `member:community:${id}` : null, async () => {
-    if (PREVIEW) return { id: 'c-andorra', name: 'Andorra Sports Tribe' };
-    const { data, error } = await supabase.from('communities').select('id, name').eq('id', id!).maybeSingle();
-    if (error) throw error;
-    return data ? { id: data.id, name: data.name } : null;
-  });
-}
-
 // ─── Packs ──────────────────────────────────────────────────────────────────
 export interface PackSummary {
   id: string;

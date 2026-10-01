@@ -22,7 +22,7 @@ export default function PickSportsScreen() {
   const insets = useSafeAreaInsets();
   const { edit } = useLocalSearchParams<{ edit?: string }>();
   const editing = edit === '1';
-  const { completeOnboarding, user } = useAuth();
+  const { user } = useAuth();
   const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
   const current = useMySports().data;
   const [picked, setPicked] = useState<string[]>([]);
@@ -42,8 +42,7 @@ export default function PickSportsScreen() {
         router.canGoBack() ? router.back() : router.replace('/(tabs)/profile');
         return;
       }
-      await completeOnboarding();
-      router.replace('/(tabs)/home');
+      router.push('/(onboarding)/join-community');
     } catch {
       toast.show(t('onboarding.saveError'), 'error');
     } finally {
@@ -56,7 +55,7 @@ export default function PickSportsScreen() {
       <View style={s.topRow}>
         <IconButton name="back" label={t('common.back')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/profile'))} />
         <Txt v="label" color={p.inkSoft}>
-          {editing ? t('you.mySports') : t('onboarding.step', { n: 2, total: 2 })}
+          {editing ? t('you.mySports') : t('onboarding.step', { n: 2, total: 3 })}
         </Txt>
         <View style={{ width: 44 }} />
       </View>
@@ -91,7 +90,7 @@ export default function PickSportsScreen() {
         </View>
       </ScrollView>
       <View style={[s.bar, { paddingBottom: 12 + insets.bottom }]}>
-        <MarkerButton label={editing ? t('common.save') : t('onboarding.enter')} onPress={done} loading={busy} disabled={!picked.length} />
+        <MarkerButton label={editing ? t('common.save') : t('common.continue')} onPress={done} loading={busy} disabled={!picked.length} />
       </View>
     </SafeAreaView>
   );

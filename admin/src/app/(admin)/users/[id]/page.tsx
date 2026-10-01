@@ -5,6 +5,7 @@ import { requireAdmin } from '@/lib/auth';
 import { notFound } from 'next/navigation';
 import UserActions from './UserActions';
 import CommunityAssign from './CommunityAssign';
+import { Icon } from '@/components/ui/Icon';
 
 export default async function UserDetailPage({ params }: { params: { id: string } }) {
   await requireAdmin();
@@ -94,8 +95,9 @@ export default async function UserDetailPage({ params }: { params: { id: string 
           </div>
         )}
 
-        <div className="mt-3 px-4 py-2 bg-brand-orange/5 rounded-lg">
-          <span className="text-xs text-gray-500">🏘 Community: </span>
+        <div className="mt-3 px-4 py-2 bg-brand-orange/5 rounded-lg flex items-center gap-1.5 flex-wrap">
+          <Icon name="communities" size="sm" className="text-brand-orange" />
+          <span className="text-xs text-gray-500">Community:</span>
           {user.community?.name ? (
             <Link
               href={`/communities/${user.community.id}`}

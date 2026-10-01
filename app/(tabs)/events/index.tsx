@@ -8,11 +8,13 @@ import { addDays, dayOffset, fmtDay, localDateKey, startOfLocalDay } from '../..
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { useBoardSessions } from '../../../src/data/sessions';
 import { useMySports } from '../../../src/data/member';
+import { useOpenCommunities } from '../../../src/data/communities';
+import { CommunityRow } from '../../../src/components/board/communities';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import type { Session } from '../../../src/data/model';
 import { Txt } from '../../../src/components/board/Txt';
 import { Icon } from '../../../src/components/board/Icon';
-import { Chip, Field, IconButton, MarkerButton } from '../../../src/components/board/controls';
+import { Chip, Field, IconButton, MarkerButton, SectionHeading } from '../../../src/components/board/controls';
 import { DayHeading, SessionRow, useNow } from '../../../src/components/board/session';
 
 type SportFilter = 'all' | 'mine' | string;
@@ -26,6 +28,8 @@ export default function ExploreScreen() {
   const meId = PREVIEW ? PREVIEW_ME : user?.id;
   const q = useBoardSessions(14);
   const mySports = useMySports().data ?? [];
+  const openCommunities = useOpenCommunities();
+  const discover = (openCommunities.data ?? []).slice(0, 3);
   const now = useNow();
   const [sport, setSport] = useState<SportFilter>('all');
   const [day, setDay] = useState<string | null>(null);
@@ -144,6 +148,15 @@ export default function ExploreScreen() {
             </View>
           ))
         )}
+
+        {discover.length ? (
+          <View style={{ paddingHorizontal: 16, marginTop: 28 }}>
+            <SectionHeading title={t('explore.openCommunities')} action={t('common.seeAll')} onAction={() => router.push({ pathname: '/(tabs)/feed', params: { tab: 'communities' } })} />
+            {discover.map((c, i) => (
+              <CommunityRow key={c.id} c={c} onJoined={() => { openCommunities.refetch(); q.refetch(); }} last={i === discover.length - 1} />
+            ))}
+          </View>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );

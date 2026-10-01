@@ -2,13 +2,15 @@ import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
 import { togglePartnerVerification, togglePartnerActive } from './actions';
+import { Icon } from '@/components/ui/Icon';
 
 export const revalidate = 0;
 
-const TYPE_LABELS: Record<string, string> = {
-  coach: '🏋️ Coach',
-  gym: '🏢 Gym',
-  event_company: '🎪 Event Company',
+const TYPE_LABELS: Record<string, { label: string; icon: 'coach' | 'gym' | 'eventCompany' | 'food' }> = {
+  nutrition: { label: 'Healthy restaurant', icon: 'food' },
+  coach: { label: 'Coach', icon: 'coach' },
+  gym: { label: 'Gym', icon: 'gym' },
+  event_company: { label: 'Event Company', icon: 'eventCompany' },
 };
 
 export default async function PartnersPage() {
@@ -54,7 +56,16 @@ export default async function PartnersPage() {
                     <p className="font-medium text-gray-800">{partner.business_name}</p>
                     <p className="text-xs text-gray-400">{partner.profile?.full_name}</p>
                   </td>
-                  <td className="px-5 py-3 text-gray-600">{TYPE_LABELS[partner.partner_type] || partner.partner_type}</td>
+                  <td className="px-5 py-3 text-gray-600">
+                    {TYPE_LABELS[partner.partner_type] ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Icon name={TYPE_LABELS[partner.partner_type].icon} size="sm" className="text-brand-teal" />
+                        {TYPE_LABELS[partner.partner_type].label}
+                      </span>
+                    ) : (
+                      partner.partner_type
+                    )}
+                  </td>
                   <td className="px-5 py-3">
                     <p className="text-gray-600 text-xs">{partner.contact_email}</p>
                     {partner.contact_phone && <p className="text-gray-400 text-xs">{partner.contact_phone}</p>}

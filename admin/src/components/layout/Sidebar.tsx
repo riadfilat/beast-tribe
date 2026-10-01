@@ -5,29 +5,30 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase-browser';
 import { Lockup } from '@/components/brand/Logo';
+import { Icon, type IconName } from '@/components/ui/Icon';
 
 interface NavItem {
   label: string;
   href: string;
-  icon: string;
+  icon: IconName;
   badge?: number;
 }
 
 const ADMIN_NAV: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { label: 'Users', href: '/users', icon: '👥' },
-  { label: 'Communities', href: '/communities', icon: '🏘️' },
-  { label: 'Events', href: '/events', icon: '📅' },
-  { label: 'Locations', href: '/locations', icon: '📍' },
-  { label: 'Feed', href: '/feed', icon: '💬' },
-  { label: 'Moderation', href: '/moderation', icon: '🛡️' },
-  { label: 'Partners', href: '/partners', icon: '🤝' },
+  { label: 'Dashboard', href: '/dashboard', icon: 'dashboard' },
+  { label: 'Users', href: '/users', icon: 'users' },
+  { label: 'Communities', href: '/communities', icon: 'communities' },
+  { label: 'Events', href: '/events', icon: 'events' },
+  { label: 'Locations', href: '/locations', icon: 'locations' },
+  { label: 'Feed', href: '/feed', icon: 'feed' },
+  { label: 'Moderation', href: '/moderation', icon: 'moderation' },
+  { label: 'Partners', href: '/partners', icon: 'partners' },
 ];
 
 const PARTNER_NAV: NavItem[] = [
-  { label: 'Dashboard', href: '/partner/dashboard', icon: '📊' },
-  { label: 'My Events', href: '/partner/events', icon: '📅' },
-  { label: 'Profile', href: '/partner/profile', icon: '⚙️' },
+  { label: 'Dashboard', href: '/partner/dashboard', icon: 'dashboard' },
+  { label: 'My Events', href: '/partner/events', icon: 'events' },
+  { label: 'Profile', href: '/partner/profile', icon: 'settings' },
 ];
 
 interface SidebarProps {
@@ -71,9 +72,9 @@ export default function Sidebar({ type, userName, roleBadge, pendingModeration }
         type="button"
         aria-label="Toggle navigation"
         onClick={() => setOpen((v) => !v)}
-        className="md:hidden fixed top-3 left-3 z-50 w-10 h-10 rounded-lg bg-brand-teal text-white flex items-center justify-center shadow-lg"
+        className="md:hidden fixed top-3 left-3 z-50 w-11 h-11 rounded-lg bg-brand-teal text-white flex items-center justify-center shadow-lg"
       >
-        <span className="text-lg">{open ? '✕' : '☰'}</span>
+        <Icon name={open ? 'close' : 'menu'} size="lg" weight="bold" />
       </button>
 
       {/* Backdrop for mobile */}
@@ -115,10 +116,10 @@ export default function Sidebar({ type, userName, roleBadge, pendingModeration }
                     : 'text-white/60 hover:bg-white/8 hover:text-white/90'
                 }`}
               >
-                <span className="text-base w-5 flex-none text-center">{item.icon}</span>
+                <Icon name={item.icon} size="md" />
                 <span className="flex-1">{item.label}</span>
                 {item.badge ? (
-                  <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold min-w-[20px] text-center">
+                  <span className="bg-brand-orange text-brand-teal text-xs px-1.5 py-0.5 rounded-full font-bold min-w-[20px] text-center">
                     {item.badge > 99 ? '99+' : item.badge}
                   </span>
                 ) : null}
@@ -145,8 +146,8 @@ export default function Sidebar({ type, userName, roleBadge, pendingModeration }
             onClick={handleSignOut}
             className="w-full text-xs text-white/40 hover:text-white/70 transition text-left py-1 flex items-center gap-1"
           >
+            <Icon name="signOut" size="sm" />
             <span>Sign out</span>
-            <span className="text-white/25">→</span>
           </button>
         </div>
       </aside>

@@ -5,6 +5,7 @@ export const revalidate = 0;
 import { hidePost } from './actions';
 import Link from 'next/link';
 import { ConfirmButton } from '@/components/ConfirmSubmit';
+import { Icon } from '@/components/ui/Icon';
 
 export default async function FeedPage({
   searchParams,
@@ -96,7 +97,7 @@ export default async function FeedPage({
                   {/* Meta */}
                   <div className="flex items-center gap-4 text-xs text-gray-400">
                     {post.sport && <span>{post.sport.emoji} {post.sport.name}</span>}
-                    <span>🐺 {beasts} beasts</span>
+                    <span className="inline-flex items-center gap-1"><Icon name="beast" size="sm" className="text-brand-teal" />{beasts} beasts</span>
                     <span>{post.post_type}</span>
                   </div>
                 </div>

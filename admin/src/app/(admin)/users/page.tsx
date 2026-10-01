@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
 import SearchInput from '@/components/ui/SearchInput';
+import { Icon } from '@/components/ui/Icon';
 
 export const revalidate = 0;
 
@@ -107,7 +108,7 @@ export default async function UsersPage({
                       {user.display_name || user.full_name}
                     </p>
                     {user.is_premium && (
-                      <span className="text-xs text-brand-orange font-medium">★ Premium</span>
+                      <span className="inline-flex items-center gap-1 text-xs text-brand-orange font-medium"><Icon name="star" size="xs" />Premium</span>
                     )}
                   </div>
                 </td>

@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import SubmitButton from '@/components/SubmitButton';
+import { Icon } from '@/components/ui/Icon';
 
 async function updateProfile(formData: FormData) {
   'use server';
@@ -41,17 +42,25 @@ export default async function PartnerProfilePage() {
 
   if (!partnerData) return null;
 
-  const TYPE_LABELS: Record<string, string> = {
-    coach: '🏋️ Coach',
-    gym: '🏢 Gym',
-    event_company: '🎪 Event Company',
+  const TYPE_LABELS: Record<string, { label: string; icon: 'coach' | 'gym' | 'eventCompany' }> = {
+    coach: { label: 'Coach', icon: 'coach' },
+    gym: { label: 'Gym', icon: 'gym' },
+    event_company: { label: 'Event Company', icon: 'eventCompany' },
   };
+  const type = TYPE_LABELS[partnerData.partner_type];
 
   return (
     <div className="max-w-2xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Partner Profile</h1>
-      <p className="text-sm text-gray-500 mb-6">
-        {TYPE_LABELS[partnerData.partner_type]} · {partnerData.is_verified ? '✅ Verified' : '⏳ Pending verification'}
+      <p className="text-sm text-gray-500 mb-6 flex items-center gap-1.5 flex-wrap">
+        {type ? (
+          <>
+            <Icon name={type.icon} size="sm" className="text-brand-teal" />
+            {type.label} ·
+          </>
+        ) : null}
+        <Icon name={partnerData.is_verified ? 'success' : 'pending'} size="sm" className={partnerData.is_verified ? 'text-brand-aqua' : 'text-gray-400'} />
+        {partnerData.is_verified ? 'Verified' : 'Pending verification'}
       </p>
 
       <form action={updateProfile} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-5">

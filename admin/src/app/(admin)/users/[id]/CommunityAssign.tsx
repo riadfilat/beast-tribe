@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { assignUserToCommunity } from '../../communities/actions';
+import { Icon } from '@/components/ui/Icon';
 
 interface CommunityOption {
   id: string;
@@ -46,8 +47,9 @@ export default function CommunityAssign({
             {currentCommunityName ? (
               <>
                 Currently in{' '}
-                <span className="font-medium text-brand-orange">
-                  🏘 {currentCommunityName}
+                <span className="font-medium text-brand-orange inline-flex items-center gap-1">
+                  <Icon name="communities" size="xs" />
+                  {currentCommunityName}
                 </span>
               </>
             ) : (

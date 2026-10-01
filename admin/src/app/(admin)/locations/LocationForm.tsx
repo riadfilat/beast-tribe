@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useRef } from 'react';
 import SubmitButton from '@/components/SubmitButton';
+import { Icon } from '@/components/ui/Icon';
 
 interface Location {
   id?: string;
@@ -154,7 +155,7 @@ export default function LocationForm({ action, location, communities = [] }: Loc
                   : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
               }`}
             >
-              📁 Upload
+              <span className="inline-flex items-center gap-1"><Icon name="upload" size="xs" />Upload</span>
             </button>
             <button
               type="button"
@@ -165,7 +166,7 @@ export default function LocationForm({ action, location, communities = [] }: Loc
                   : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
               }`}
             >
-              🔗 URL
+              <span className="inline-flex items-center gap-1"><Icon name="link" size="xs" />URL</span>
             </button>
           </div>
         </div>
@@ -174,7 +175,7 @@ export default function LocationForm({ action, location, communities = [] }: Loc
           <div>
             {!filePreview && !location?.image_url ? (
               <label className="block w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-brand-aqua hover:bg-gray-50 transition flex flex-col items-center justify-center">
-                <span className="text-3xl mb-1">📷</span>
+                <Icon name="photo" size="xl" className="mb-1 text-gray-400" />
                 <span className="text-sm text-gray-600 font-medium">Click to upload image</span>
                 <span className="text-xs text-gray-400 mt-1">PNG, JPG, or WebP — max 5MB</span>
                 <input
@@ -194,7 +195,7 @@ export default function LocationForm({ action, location, communities = [] }: Loc
                 />
                 <div className="mt-2 flex items-center justify-between bg-gray-50 px-3 py-2 rounded-lg">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className="text-xs">📁</span>
+                    <Icon name="photo" size="sm" className="text-gray-400" />
                     <span className="text-xs text-gray-600 truncate">
                       {fileName || (location?.image_url ? 'Existing image' : '')}
                     </span>
@@ -311,10 +312,10 @@ export default function LocationForm({ action, location, communities = [] }: Loc
           defaultValue={location?.community_id || ''}
           className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-aqua focus:border-brand-aqua outline-none bg-white"
         >
-          <option value="">🌍 Global (visible to all users)</option>
+          <option value="">Global (visible to all users)</option>
           {communities.map((c) => (
             <option key={c.id} value={c.id}>
-              🏘 {c.name}
+              {c.name}
             </option>
           ))}
         </select>

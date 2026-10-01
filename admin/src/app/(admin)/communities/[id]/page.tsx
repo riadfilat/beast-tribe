@@ -10,8 +10,10 @@ import {
   deleteCommunity,
   removeCommunityDefaultPack,
   removeUserFromCommunity,
+  regenerateJoinCode,
 } from '../actions';
 import { ConfirmButton } from '@/components/ConfirmSubmit';
+import { Icon } from '@/components/ui/Icon';
 
 export const revalidate = 0;
 
@@ -29,11 +31,11 @@ export default async function EditCommunityPage({ params }: { params: { id: stri
 
   const [membersRes, defaultPacksRes, locationsRes, availablePacksRes] = await Promise.all([
     db
-      .from('profiles')
-      .select('id, display_name, full_name, created_at')
+      .from('community_members')
+      .select('joined_at, role, profile:profiles(id, display_name, full_name, created_at)')
       .eq('community_id', community.id)
-      .order('created_at', { ascending: false })
-      .limit(200),
+      .order('joined_at', { ascending: false })
+      .limit(500),
     db
       .from('packs')
       .select('id, name, animal, emblem_kind, emblem_value, emblem_color, description, is_community_default')
@@ -52,7 +54,7 @@ export default async function EditCommunityPage({ params }: { params: { id: stri
       .limit(100),
   ]);
 
-  const members = membersRes.data || [];
+  const members = (membersRes.data || []).map((r: any) => ({ ...r.profile, joined_at: r.joined_at, role: r.role })).filter((m: any) => m.id);
   const defaultPacks = defaultPacksRes.data || [];
   const locations = locationsRes.data || [];
   const availablePacks = (availablePacksRes.data || []) as {
@@ -77,7 +79,7 @@ export default async function EditCommunityPage({ params }: { params: { id: stri
             />
           ) : (
             <div className="w-12 h-12 rounded-lg bg-brand-orange/10 text-brand-orange flex items-center justify-center text-xl flex-none border border-gray-200">
-              🏘
+              <Icon name="communities" size="lg" />
             </div>
           )}
           <div>
@@ -88,6 +90,39 @@ export default async function EditCommunityPage({ params }: { params: { id: stri
           </div>
         </div>
       </div>
+
+      {community.visibility === 'private' ? (
+        <div className="mb-6 flex items-center justify-between gap-4 rounded-xl border-2 border-dashed border-brand-teal/30 bg-white px-5 py-4">
+          <div>
+            <p className="text-xs font-medium text-gray-500 flex items-center gap-1.5">
+              <Icon name="key" size="sm" />
+              Invite code — share it with the {community.kind === 'compound' ? 'residents' : 'members'}
+            </p>
+            <p className="text-3xl font-bold tracking-[0.3em] text-brand-teal mt-1">{community.join_code}</p>
+            <p className="text-[11px] text-gray-400 mt-1">
+              {[
+                community.seat_limit ? `${members.length}/${community.seat_limit} seats used` : `${members.length} members`,
+                community.contract_ends_at ? `contract ends ${new Date(community.contract_ends_at).toLocaleDateString()}` : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
+          </div>
+          <form
+            action={async () => {
+              'use server';
+              await regenerateJoinCode(community.id);
+            }}
+          >
+            <button className="text-xs px-3 py-1.5 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition">New code</button>
+          </form>
+        </div>
+      ) : (
+        <div className="mb-6 rounded-xl border border-gray-100 bg-white px-5 py-4 text-sm text-gray-600 flex items-center gap-2">
+          <Icon name="globe" size="sm" className="text-brand-aqua" />
+          Open community: anyone can join from the app{community.is_default ? '. Every new member joins it automatically.' : '.'}
+        </div>
+      )}
 
       <CommunityForm
         action={async (formData: FormData) => {
@@ -219,9 +254,10 @@ export default async function EditCommunityPage({ params }: { params: { id: stri
                 <Link
                   key={loc.id}
                   href={`/locations/${loc.id}`}
-                  className="text-xs px-3 py-1.5 bg-brand-aqua/10 text-brand-aqua rounded-full hover:bg-brand-aqua/20 transition"
+                  className="text-xs px-3 py-1.5 bg-brand-aqua/10 text-brand-aqua rounded-full hover:bg-brand-aqua/20 transition inline-flex items-center gap-1"
                 >
-                  📍 {loc.name}
+                  <Icon name="locations" size="xs" />
+                  {loc.name}
                   {loc.city && <span className="text-gray-400 ml-1">· {loc.city}</span>}
                 </Link>
               ))}

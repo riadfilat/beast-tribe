@@ -69,7 +69,8 @@ export function previewSessionRows(): any[] {
   const yoursStart = plus(now, 110);
   const base = (o: any) => ({
     description: null, gym_name: null, country: 'SA', location_lat: null, location_lng: null,
-    visibility: 'public', pack_id: null, pack: null, difficulty: null, coach_name: null,
+    visibility: 'community', community_id: 'c-beast', community: { id: 'c-beast', name: 'Beast Tribe', visibility: 'open', is_default: true },
+    pack_id: null, pack: null, difficulty: null, coach_name: null,
     cancelled_at: null, is_women_only: false, max_capacity: null, location_city: 'Riyadh', ...o,
   });
   return [
@@ -83,6 +84,7 @@ export function previewSessionRows(): any[] {
       description: 'Friendly doubles, rotating partners every set. Bring water — courts 3 and 4.',
       created_by: 'p-sara', host: people.sara, roster: roster(7, { me: true }) }),
     base({ id: 's-football', title: 'Night Football', event_type: 'football', starts_at: iso(plus(now, 265)), ends_at: iso(plus(now, 355)),
+      community_id: 'c-andorra', community: { id: 'c-andorra', name: 'Andorra Sports Tribe', visibility: 'private', is_default: false },
       location_name: 'King Fahd Park', image_url: PREVIEW_PHOTOS.park, max_capacity: 14, going_count: 10,
       created_by: 'p-khalid', host: people.khalid, roster: roster(10, { offset: 5 }) }),
     base({ id: 's-yoga', title: 'Sunset Yoga Flow', event_type: 'yoga', starts_at: iso(plus(now, 300)), ends_at: iso(plus(now, 360)),
@@ -94,7 +96,7 @@ export function previewSessionRows(): any[] {
       location_name: 'Fitness Time — King Fahd', image_url: PREVIEW_PHOTOS.box, max_capacity: 12, going_count: 12, difficulty: 'hard',
       created_by: 'p-reem', host: people.reem, roster: roster(12, { offset: 4, waitlist: 3 }) }),
     base({ id: 's-hosting', title: 'Hoops at Andoraa', event_type: 'basketball', starts_at: iso(at(1, 19, 30)), ends_at: iso(at(1, 21, 0)),
-      location_name: 'Andoraa basketball court', max_capacity: 10, going_count: 6, visibility: 'pack', pack_id: 'pk-andoraa',
+      location_name: 'Andoraa basketball court', max_capacity: 10, going_count: 6, visibility: 'pack', pack_id: 'pk-andoraa', community_id: null, community: null,
       pack: { id: 'pk-andoraa', name: 'ANDORAA' }, created_by: PREVIEW_ME, host: people.me, roster: roster(6, { me: true, offset: 6 }) }),
     base({ id: 's-cancelled', title: 'Boxing Basics', event_type: 'boxing', starts_at: iso(at(2, 20, 0)), ends_at: iso(at(2, 21, 0)),
       location_name: 'Leejam — Olaya', image_url: PREVIEW_PHOTOS.gym, max_capacity: 10, going_count: 3, cancelled_at: iso(plus(now, -600)),
@@ -137,6 +139,7 @@ export function previewPosts() {
     { id: 'post-2', user_id: 'p-reem', content: 'Engine day. Sled pushes until the legs said no, then two more rounds.', image_url: PREVIEW_PHOTOS.box,
       created_at: ago(420), event_id: null, event: null, author: people.reem, beast_count: [{ count: 22 }], comment_count: 5 },
     { id: 'post-3', user_id: 'p-khalid', content: 'Football tonight at King Fahd Park — 4 spots left. Bring both colours.', image_url: null,
+      community: { id: 'c-andorra', name: 'Andorra Sports Tribe', visibility: 'private' },
       created_at: ago(780), event_id: null, event: null, author: people.khalid, beast_count: [{ count: 6 }], comment_count: 0 },
   ];
 }
@@ -146,6 +149,15 @@ export const previewPacks: { id: string; name: string; emblem: Emblem; members: 
   { id: 'pk-dawn', name: 'Dawn Patrol', emblem: { kind: 'glyph', value: 'falcon', color: 'slate' }, members: 6, community: null },
   { id: 'pk-burn', name: 'Burn Unit', emblem: { kind: 'emoji', value: '🔥', color: 'orange' }, members: 9, community: null },
   { id: 'pk-desert', name: 'Desert Runners', emblem: { kind: 'letters', value: null, color: 'chalk' }, members: 11, community: null },
+];
+
+// Communities: the open default, a private compound (B2B) the member belongs to, and an open
+// club to discover.
+export const previewCommunities: import('./communities').Community[] = [
+  { id: 'c-andorra', name: 'Andorra Sports Tribe', description: 'Residents of Andorra compound.', kind: 'compound', open: false, isDefault: false, city: 'Riyadh', logoUrl: null, members: 48, joinCode: 'AND7RA', isMember: true },
+  { id: 'c-beast', name: 'Beast Tribe', description: 'The open Operation Beast community. Everyone is welcome.', kind: 'brand', open: true, isDefault: true, city: null, logoUrl: null, members: 1240, joinCode: null, isMember: true },
+  { id: 'c-runners', name: 'Riyadh Dawn Runners', description: 'Weekly 5 AM runs across Riyadh.', kind: 'club', open: true, isDefault: false, city: 'Riyadh', logoUrl: null, members: 312, joinCode: null, isMember: false },
+  { id: 'c-padel', name: 'Jeddah Padel League', description: 'Open padel nights on the corniche.', kind: 'club', open: true, isDefault: false, city: 'Jeddah', logoUrl: null, members: 186, joinCode: null, isMember: false },
 ];
 
 export const previewStats = { attended: 23, hosted: 4, met: 57 };

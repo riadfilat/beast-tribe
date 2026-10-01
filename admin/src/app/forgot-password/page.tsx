@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase-browser';
+import { Icon } from '@/components/ui/Icon';
+import { PackMark } from '@/components/brand/Logo';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -50,9 +52,7 @@ export default function ForgotPasswordPage() {
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 bg-brand-teal rounded-2xl mb-4 shadow-lg">
-              <span className="text-2xl">🐺</span>
-            </div>
+            <PackMark height={34} id="bt-auth" className="mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-brand-teal">Reset Password</h1>
             <p className="text-sm text-gray-400 mt-1">Enter your email to receive a reset link</p>
           </div>
@@ -75,14 +75,14 @@ export default function ForgotPasswordPage() {
 
             {error && (
               <div className="flex items-start gap-2 bg-red-50 text-red-700 text-sm px-4 py-3 rounded-xl border border-red-100">
-                <span className="mt-0.5 flex-none">⚠️</span>
+                <Icon name="warning" size="sm" className="mt-0.5" />
                 <span>{error}</span>
               </div>
             )}
 
             {message && (
               <div className="flex items-start gap-2 bg-green-50 text-green-700 text-sm px-4 py-3 rounded-xl border border-green-100">
-                <span className="mt-0.5 flex-none">✅</span>
+                <Icon name="success" size="sm" className="mt-0.5" />
                 <span>{message}</span>
               </div>
             )}

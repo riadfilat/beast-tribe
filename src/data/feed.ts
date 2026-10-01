@@ -16,6 +16,8 @@ export interface Post {
   beasted: boolean;
   commentCount: number;
   event: { id: string; title: string } | null;
+  /** Shown on posts that live in a private community. */
+  community: { id: string; name: string; private: boolean } | null;
 }
 
 function toPost(r: any, beasted: Set<string>): Post {
@@ -29,6 +31,7 @@ function toPost(r: any, beasted: Set<string>): Post {
     beasted: beasted.has(r.id),
     commentCount: r.comment_count ?? r.comments?.[0]?.count ?? 0,
     event: r.event?.id ? { id: r.event.id, title: r.event.title || '' } : null,
+    community: r.community?.id ? { id: r.community.id, name: r.community.name || '', private: r.community.visibility === 'private' } : null,
   };
 }
 
@@ -40,7 +43,7 @@ export function useFeed() {
     const [{ data, error }, blocked] = await Promise.all([
       supabase
         .from('feed_posts')
-        .select('id, user_id, content, image_url, created_at, event:events(id, title), author:profiles!user_id(id, display_name, full_name, avatar_url), beast_count:beasts(count)')
+        .select('id, user_id, content, image_url, created_at, event:events(id, title), community:communities(id, name, visibility), author:profiles!user_id(id, display_name, full_name, avatar_url), beast_count:beasts(count)')
         .eq('is_visible', true)
         .eq('is_hidden', false)
         .neq('image_status', 'rejected')
@@ -71,7 +74,7 @@ export async function toggleBeast(meId: string, postId: string, beasted: boolean
   }
 }
 
-export async function createPost(meId: string, input: { content: string; imageUri?: string | null; eventId?: string | null }) {
+export async function createPost(meId: string, input: { content: string; imageUri?: string | null; eventId?: string | null; communityId?: string | null }) {
   if (PREVIEW) return;
   let imageUrl: string | null = null;
   if (input.imageUri) {
@@ -82,6 +85,8 @@ export async function createPost(meId: string, input: { content: string; imageUr
     content: input.content.trim(),
     image_url: imageUrl,
     event_id: input.eventId ?? null,
+    // A recap lives where its session lives (the database fills it in); otherwise the chosen community.
+    community_id: input.eventId ? null : input.communityId ?? null,
     post_type: input.eventId ? 'recap' : 'activity',
     is_visible: true,
   });

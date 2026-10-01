@@ -29,6 +29,12 @@ export interface Session {
   packOnly: boolean;
   packId: string | null;
   packName: string | null;
+  communityId: string | null;
+  communityName: string | null;
+  /** Lives in a private (invite-code) community: only its members see it. */
+  communityPrivate: boolean;
+  /** Price per spot in SAR, when paid sessions are switched on (PAYMENTS_ENABLED). */
+  priceSar: number | null;
   host: Person | null;
   hostId: string | null;
   roster: Person[];
@@ -45,8 +51,9 @@ export const DEFAULT_DURATION_MIN = 120;
 export const SESSION_SELECT = `
   id, title, description, event_type, starts_at, ends_at, location_name, location_city, gym_name,
   country, location_lat, location_lng, image_url, max_capacity, going_count, created_by,
-  is_women_only, visibility, pack_id, difficulty, coach_name, cancelled_at,
+  is_women_only, visibility, pack_id, community_id, price_sar, difficulty, coach_name, cancelled_at,
   pack:packs(id, name),
+  community:communities(id, name, visibility, is_default),
   host:profiles!events_created_by_fkey(id, display_name, full_name, avatar_url),
   roster:event_rsvps(user_id, status, created_at, profile:profiles(id, display_name, full_name, avatar_url))
 `;
@@ -107,6 +114,10 @@ export function toSession(row: any, meId: string | null | undefined, myStatus?: 
     packOnly: row.visibility === 'pack',
     packId: row.pack_id || null,
     packName: row.pack?.name || null,
+    communityId: row.community_id || null,
+    communityName: row.community?.name || null,
+    communityPrivate: row.community?.visibility === 'private',
+    priceSar: row.price_sar != null ? Number(row.price_sar) : null,
     host: personOf(row.host),
     hostId: row.created_by || null,
     roster,

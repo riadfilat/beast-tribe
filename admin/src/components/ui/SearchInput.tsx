@@ -3,6 +3,7 @@
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useTransition, Suspense } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
+import { Icon } from '@/components/ui/Icon';
 
 interface SearchInputProps {
   placeholder?: string;
@@ -37,8 +38,8 @@ function SearchInputInner({
 
   return (
     <div className="relative">
-      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none select-none text-sm">
-        🔍
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none select-none">
+        <Icon name="search" size="sm" weight="bold" />
       </span>
       <input
         type="text"

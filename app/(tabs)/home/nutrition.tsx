@@ -8,6 +8,7 @@ import { useI18n } from '../../../src/i18n';
 import { fmtDay, fmtWeekday, localDateKey } from '../../../src/i18n/format';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
+import { FoodPartner, useFoodPartners } from '../../../src/data/partners';
 import {
   addGlass,
   DEFAULT_GOALS,
@@ -225,6 +226,8 @@ export default function NutritionScreen() {
             </View>
           ))}
         </View>
+
+        <FoodOffers />
       </ScrollView>
 
       <View style={[s.bar2, { paddingBottom: 12 + insets.bottom }]}>
@@ -234,6 +237,42 @@ export default function NutritionScreen() {
       <LogMealSheet visible={logOpen} day={day} meId={meId} onClose={() => setLogOpen(false)} />
       <TargetsSheet visible={targetsOpen} goals={goals} meId={meId} onClose={() => setTargetsOpen(false)} />
     </SafeAreaView>
+  );
+}
+
+// ─── Healthy-food partners: member offers ───────────────────────────────────
+function FoodOffers() {
+  const { p, lang } = useKit();
+  const { t } = useI18n();
+  const partners = useFoodPartners(lang).data ?? [];
+  if (!partners.length) return null;
+  return (
+    <View style={{ paddingHorizontal: 16, marginTop: 10 }}>
+      <SectionHeading title={t('nutrition.partners')} />
+      <Txt v="meta" style={{ marginBottom: 4 }}>
+        {t('nutrition.partnersSub')}
+      </Txt>
+      {partners.map((x: FoodPartner, i) => (
+        <View key={x.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: i === partners.length - 1 ? 0 : 1, borderBottomColor: p.rule }}>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Txt v="row" size={15} numberOfLines={1}>
+              {x.name}
+            </Txt>
+            <Txt v="body" color={p.inkSoft}>
+              {x.offer}
+            </Txt>
+            {x.city ? <Txt v="caption">{x.city}</Txt> : null}
+          </View>
+          {x.code ? (
+            <View style={{ borderWidth: 1.5, borderStyle: 'dashed', borderColor: p.ruleStrong, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}>
+              <Txt v="time" size={14} selectable accessibilityLabel={t('nutrition.partnerCode', { code: x.code })} style={{ letterSpacing: 1.5 }}>
+                {x.code}
+              </Txt>
+            </View>
+          ) : null}
+        </View>
+      ))}
+    </View>
   );
 }
 

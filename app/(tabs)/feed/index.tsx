@@ -8,7 +8,9 @@ import { useI18n } from '../../../src/i18n';
 import { fmtAgo } from '../../../src/i18n/format';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { useFeed, toggleBeast, createPost, deletePost, reportPost, blockMember, Post } from '../../../src/data/feed';
-import { useMyCommunity, useMyPackList, PackSummary } from '../../../src/data/member';
+import { useMyPackList, PackSummary } from '../../../src/data/member';
+import { Community, useMyCommunities, useOpenCommunities } from '../../../src/data/communities';
+import { CommunityRow, JoinCommunityForm } from '../../../src/components/board/communities';
 import { useMySessions } from '../../../src/data/sessions';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { Txt } from '../../../src/components/board/Txt';
@@ -16,14 +18,14 @@ import { WolfGlyph } from '../../../src/components/brand/Logo';
 import { Icon } from '../../../src/components/board/Icon';
 import { Press } from '../../../src/components/board/Press';
 import { Magnet } from '../../../src/components/board/people';
-import { Chip, IconButton, MarkerButton, OutlineButton, Segmented, TextButton } from '../../../src/components/board/controls';
+import { Chip, IconButton, MarkerButton, OutlineButton, SectionHeading, Segmented, TextButton } from '../../../src/components/board/controls';
 import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
 import { compressImage } from '../../../src/lib/imageUtils';
 import { Patch } from '../../../src/components/board/Patch';
 
 
-type Tab = 'feed' | 'packs';
+type Tab = 'feed' | 'communities' | 'packs';
 const REASONS = ['inappropriate', 'spam', 'harassment', 'nudity', 'other'] as const;
 
 export default function TribeScreen() {
@@ -31,13 +33,18 @@ export default function TribeScreen() {
   const { p } = useKit();
   const { t } = useI18n();
   const router = useRouter();
-  const params = useLocalSearchParams<{ compose?: string }>();
+  const params = useLocalSearchParams<{ compose?: string; tab?: string }>();
   const { user, profile } = useAuth();
   const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
   const feed = useFeed();
   const packs = useMyPackList();
-  const community = useMyCommunity().data;
+  const communities = useMyCommunities();
+  const openCommunities = useOpenCommunities();
   const [tab, setTab] = useState<Tab>('feed');
+
+  useEffect(() => {
+    if (params.tab === 'communities' || params.tab === 'packs') setTab(params.tab);
+  }, [params.tab]);
   const [composeFor, setComposeFor] = useState<string | null | undefined>(undefined); // undefined = closed
   const [reporting, setReporting] = useState<Post | null>(null);
 
@@ -125,6 +132,7 @@ export default function TribeScreen() {
         style={{ marginHorizontal: 16, marginBottom: 6 }}
         options={[
           { value: 'feed', label: t('tribe.feed') },
+          { value: 'communities', label: t('tribe.communities') },
           { value: 'packs', label: t('tribe.packs') },
         ]}
       />
@@ -158,11 +166,18 @@ export default function TribeScreen() {
             />
           ))}
         </ScrollView>
+      ) : tab === 'communities' ? (
+        <CommunitiesPane
+          mine={communities.data ?? []}
+          open={openCommunities.data ?? []}
+          refreshing={communities.refreshing}
+          onRefresh={() => { communities.refetch(); openCommunities.refetch(); }}
+          onOpen={(c) => router.push({ pathname: '/(tabs)/feed/community', params: { id: c.id } })}
+        />
       ) : (
         <PacksPane
           packs={packs.data ?? []}
           loading={packs.loading}
-          community={community?.name ?? null}
           onOpen={(pk) => router.push({ pathname: '/(tabs)/feed/pack', params: { packId: pk.id } })}
           onCreate={() => router.push('/(tabs)/feed/pack-create')}
           onJoin={() => router.push('/(tabs)/feed/pack')}
@@ -178,6 +193,7 @@ export default function TribeScreen() {
           if (params.compose) router.setParams({ compose: undefined });
         }}
         onPosted={() => feed.refetch()}
+        communities={communities.data ?? []}
       />
       <ReportSheet post={reporting} meId={meId} onClose={() => setReporting(null)} />
     </SafeAreaView>
@@ -201,6 +217,14 @@ function PostItem({ post, meId, onBeast, onMore, onOpenEvent }: { post: Post; me
         </View>
         <IconButton name="more" label={t('tribe.report')} size={18} color={p.inkSoft} onPress={onMore} />
       </View>
+      {post.community?.private ? (
+        <View style={s.where}>
+          <Icon name="lock" size={11} color={p.aqua} />
+          <Txt v="label" size={12} color={p.aqua}>
+            {post.community.name}
+          </Txt>
+        </View>
+      ) : null}
       {post.event ? (
         <Press onPress={onOpenEvent} feedback="selection" style={s.recap}>
           <Icon name="calendar" size={12} color={p.aqua} />
@@ -229,20 +253,43 @@ function PostItem({ post, meId, onBeast, onMore, onOpenEvent }: { post: Post; me
 }
 
 // ─── Packs ──────────────────────────────────────────────────────────────────
-function PacksPane({ packs, loading, community, onOpen, onCreate, onJoin }: { packs: PackSummary[]; loading: boolean; community: string | null; onOpen: (p: PackSummary) => void; onCreate: () => void; onJoin: () => void }) {
+// ─── Communities ────────────────────────────────────────────────────────────
+function CommunitiesPane({ mine, open, refreshing, onRefresh, onOpen }: { mine: Community[]; open: Community[]; refreshing: boolean; onRefresh: () => void; onOpen: (c: Community) => void }) {
+  const { p } = useKit();
+  const { t } = useI18n();
+  return (
+    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={p.ink} />}>
+      <SectionHeading title={t('community.mine')} />
+      {mine.length ? (
+        mine.map((c, i) => <CommunityRow key={c.id} c={c} onPress={() => onOpen(c)} last={i === mine.length - 1} />)
+      ) : (
+        <Txt v="meta">{t('community.noneYet')}</Txt>
+      )}
+      <View style={{ marginTop: 24 }}>
+        <JoinCommunityForm onJoined={onRefresh} />
+      </View>
+      {open.length ? (
+        <View style={{ marginTop: 24 }}>
+          <SectionHeading title={t('community.discover')} />
+          <Txt v="meta" style={{ marginBottom: 4 }}>
+            {t('community.discoverSub')}
+          </Txt>
+          {open.map((c, i) => (
+            <CommunityRow key={c.id} c={c} onPress={() => onOpen(c)} onJoined={onRefresh} last={i === open.length - 1} />
+          ))}
+        </View>
+      ) : null}
+    </ScrollView>
+  );
+}
+
+// ─── Packs ──────────────────────────────────────────────────────────────────
+function PacksPane({ packs, loading, onOpen, onCreate, onJoin }: { packs: PackSummary[]; loading: boolean; onOpen: (p: PackSummary) => void; onCreate: () => void; onJoin: () => void }) {
   const s = useStyles();
   const { p } = useKit();
   const { t, tn } = useI18n();
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 12 }}>
-      {community ? (
-        <View style={s.community}>
-          <Icon name="shield" size={16} color={p.aqua} />
-          <Txt v="label" size={14} color={p.aqua}>
-            {t('tribe.yourCommunity')} · {community}
-          </Txt>
-        </View>
-      ) : null}
       {!loading && !packs.length ? (
         <Txt v="body" color={p.inkSoft} style={{ marginVertical: 8 }}>
           {t('tribe.packsEmpty')}
@@ -269,7 +316,7 @@ function PacksPane({ packs, loading, community, onOpen, onCreate, onJoin }: { pa
 }
 
 // ─── Compose ────────────────────────────────────────────────────────────────
-function ComposeSheet({ visible, eventId, meId, onClose, onPosted }: { visible: boolean; eventId: string | null; meId: string | null; onClose: () => void; onPosted: () => void }) {
+function ComposeSheet({ visible, eventId, meId, onClose, onPosted, communities }: { visible: boolean; eventId: string | null; meId: string | null; onClose: () => void; onPosted: () => void; communities: Community[] }) {
   const s = useStyles();
   const { p, lang } = useKit();
   const { t } = useI18n();
@@ -278,7 +325,10 @@ function ComposeSheet({ visible, eventId, meId, onClose, onPosted }: { visible: 
   const [text, setText] = useState('');
   const [photo, setPhoto] = useState<string | null>(null);
   const [tag, setTag] = useState<string | null>(eventId);
+  const [where, setWhere] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Private communities come first, so a member of a company posts to the company by default.
+  const target = where ?? communities[0]?.id ?? null;
 
   useEffect(() => {
     if (visible) setTag(eventId);
@@ -295,7 +345,7 @@ function ComposeSheet({ visible, eventId, meId, onClose, onPosted }: { visible: 
     if (!meId || (!text.trim() && !photo) || busy) return;
     setBusy(true);
     try {
-      await createPost(meId, { content: text, imageUri: photo, eventId: tag });
+      await createPost(meId, { content: text, imageUri: photo, eventId: tag, communityId: target });
       haptic('success');
       setText('');
       setPhoto(null);
@@ -339,6 +389,18 @@ function ComposeSheet({ visible, eventId, meId, onClose, onPosted }: { visible: 
           ) : (
             <OutlineButton label={t('tribe.photo')} icon="photo" onPress={pick} />
           )}
+          {!tag && communities.length > 1 ? (
+            <View style={{ gap: 8 }}>
+              <Txt v="label" color={p.inkSoft}>
+                {t('community.postTo')}
+              </Txt>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {communities.map((c) => (
+                  <Chip key={c.id} label={c.name} icon={c.open ? 'people' : 'lock'} selected={target === c.id} onPress={() => setWhere(c.id)} />
+                ))}
+              </View>
+            </View>
+          ) : null}
           {recent.length ? (
             <View style={{ gap: 8 }}>
               <Txt v="label" color={p.inkSoft}>
@@ -432,7 +494,7 @@ const useStyles = makeStyles(({ p, f }) => ({
   postImg: { width: '100%', aspectRatio: 4 / 3, borderRadius: 10, marginTop: 10, backgroundColor: p.wash },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 12 },
   beast: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 36, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1.5, borderColor: p.ruleStrong },
-  community: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
+  where: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8 },
   packRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: p.rule },
   sheet: { flex: 1, backgroundColor: p.board },
   sheetHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: p.rule },

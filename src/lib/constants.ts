@@ -199,3 +199,9 @@ export const GOAL_TEMPLATES: Record<string, Array<{ title: string; difficulty: s
   ],
 };
 
+
+/**
+ * Paid sessions (price per spot, checkout, host payouts). The database is ready (events.price_sar,
+ * payments); turn this on once a payment provider (Moyasar / Tap) is connected.
+ */
+export const PAYMENTS_ENABLED = false;

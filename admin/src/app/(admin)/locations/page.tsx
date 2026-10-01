@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
 import SearchInput from '@/components/ui/SearchInput';
+import { Icon } from '@/components/ui/Icon';
 
 export const revalidate = 0;
 
@@ -182,7 +183,7 @@ export default async function LocationsPage({
                 : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
             }`}
           >
-            🌍 Global only
+            <span className="inline-flex items-center gap-1"><Icon name="globe" size="xs" />Global only</span>
           </Link>
           {(allCommunities || []).map((c: any) => (
             <Link
@@ -194,7 +195,7 @@ export default async function LocationsPage({
                   : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
               }`}
             >
-              🏘 {c.name}
+              <span className="inline-flex items-center gap-1"><Icon name="communities" size="xs" />{c.name}</span>
             </Link>
           ))}
         </div>
@@ -223,8 +224,8 @@ export default async function LocationsPage({
                     style={{ backgroundImage: `url(${loc.image_url})` }}
                   />
                 ) : (
-                  <div className="h-32 bg-gradient-to-br from-brand-teal to-brand-aqua flex items-center justify-center text-3xl">
-                    📍
+                  <div className="h-32 bg-gradient-to-br from-brand-teal to-brand-aqua flex items-center justify-center text-[#F4F1EA]">
+                    <Icon name="locations" size="xl" />
                   </div>
                 )}
                 <div className="p-4">
@@ -242,8 +243,9 @@ export default async function LocationsPage({
                     {loc.city} · {loc.country}
                   </p>
                   {community && (
-                    <span className="inline-block text-[10px] px-1.5 py-0.5 bg-brand-orange/10 text-brand-orange rounded font-medium mb-2">
-                      🏘 {community.name}
+                    <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-brand-orange/10 text-brand-orange rounded font-medium mb-2">
+                      <Icon name="communities" size="xs" />
+                      {community.name}
                     </span>
                   )}
                   {loc.description && (

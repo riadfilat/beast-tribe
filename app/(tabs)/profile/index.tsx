@@ -6,7 +6,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { makeStyles, useKit } from '../../../src/theme';
 import { useI18n } from '../../../src/i18n';
 import { useAuth } from '../../../src/providers/AuthProvider';
-import { useMyCommunity, useMyStats, useMySports, useMyPackList, saveAvatar } from '../../../src/data/member';
+import { useMyStats, useMySports, useMyPackList, saveAvatar } from '../../../src/data/member';
+import { useMyCommunities } from '../../../src/data/communities';
 import { useMySessions } from '../../../src/data/sessions';
 import { acceptCoach, endCoaching, MyCoach, saveSharing, sharesLine, Sharing, useCoachProfile, useMyCoaches } from '../../../src/data/coaching';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
@@ -37,7 +38,8 @@ export default function YouScreen() {
   const mine = useMySessions();
   const isCoach = !!useCoachProfile().data;
   const coaches = useMyCoaches();
-  const community = useMyCommunity().data;
+  // The private communities (company, compound, club) say who you train with; the open one is implied.
+  const privateCommunities = (useMyCommunities().data ?? []).filter((c) => !c.open);
   const now = useNow();
   const [uploading, setUploading] = useState(false);
   const [localAvatar, setLocalAvatar] = useState<string | null>(null);
@@ -104,13 +106,13 @@ export default function YouScreen() {
             <Txt v="meta" size={14}>
               {[stage ? t(`onboarding.levels.${stage}`) : null, profile?.city].filter(Boolean).join(' · ')}
             </Txt>
-            {community?.name ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            {privateCommunities.length ? (
+              <Press onPress={() => router.push({ pathname: '/(tabs)/feed', params: { tab: 'communities' } })} feedback="selection" style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Icon name="shield" size={13} color={p.aqua} />
-                <Txt v="label" size={13} color={p.aqua}>
-                  {community.name}
+                <Txt v="label" size={13} color={p.aqua} numberOfLines={1} style={{ flexShrink: 1 }}>
+                  {privateCommunities.map((c) => c.name).join(' · ')}
                 </Txt>
-              </View>
+              </Press>
             ) : null}
           </View>
         </View>

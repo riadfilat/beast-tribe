@@ -88,7 +88,7 @@ export default function AboutYouScreen() {
       <View style={s.topRow}>
         {editing ? <IconButton name="back" label={t('common.back')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/profile'))} /> : <View style={{ width: 44 }} />}
         <Txt v="label" color={p.inkSoft}>
-          {editing ? t('onboarding.editTitle') : t('onboarding.step', { n: 1, total: 2 })}
+          {editing ? t('onboarding.editTitle') : t('onboarding.step', { n: 1, total: 3 })}
         </Txt>
         <View style={{ width: 44 }} />
       </View>

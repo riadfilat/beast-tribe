@@ -10,6 +10,7 @@ export default function TribeLayout() {
       <Stack.Screen name="pack-create" />
       <Stack.Screen name="pack-invite" />
       <Stack.Screen name="pack-chat" />
+      <Stack.Screen name="community" />
     </Stack>
   );
 }

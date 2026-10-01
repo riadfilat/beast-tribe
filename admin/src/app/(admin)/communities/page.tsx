@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
+import { Icon } from '@/components/ui/Icon';
 
 export const revalidate = 0;
 
@@ -32,7 +33,7 @@ export default async function CommunitiesPage() {
   // Pull aggregate counts in parallel
   const [memberRows, locationRows, defaultPackRows] = await Promise.all([
     ids.length
-      ? db.from('profiles').select('community_id').in('community_id', ids)
+      ? db.from('community_members').select('community_id').in('community_id', ids)
       : Promise.resolve({ data: [] as { community_id: string | null }[] }),
     ids.length
       ? db.from('popular_locations').select('community_id').in('community_id', ids)
@@ -107,7 +108,7 @@ export default async function CommunitiesPage() {
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-lg bg-brand-orange/10 text-brand-orange flex items-center justify-center flex-none -mt-8 shadow-sm border border-gray-200 text-base">
-                      🏘
+                      <Icon name="communities" size="md" />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
@@ -115,6 +116,10 @@ export default async function CommunitiesPage() {
                       <h3 className="font-semibold text-gray-800 group-hover:text-brand-aqua transition leading-tight truncate">
                         {c.name}
                       </h3>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium uppercase flex-none inline-flex items-center gap-1 ${(c as any).visibility === 'open' ? 'bg-brand-aqua/10 text-brand-aqua' : 'bg-brand-teal/10 text-brand-teal'}`}>
+                        <Icon name={(c as any).visibility === 'open' ? 'globe' : 'lock'} size="xs" />
+                        {(c as any).visibility === 'open' ? 'Open' : 'Private'}
+                      </span>
                       {!c.is_active && (
                         <span className="text-[10px] px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded font-medium uppercase flex-none">
                           Hidden

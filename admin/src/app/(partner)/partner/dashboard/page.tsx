@@ -1,6 +1,7 @@
 import { requirePartner } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import Link from 'next/link';
+import { Icon } from '@/components/ui/Icon';
 
 export default async function PartnerDashboardPage() {
   const partner = await requirePartner();
@@ -20,8 +21,9 @@ export default async function PartnerDashboardPage() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Welcome, {partner.business_name}</h1>
-        <p className="text-sm text-gray-500">
-          {partner.is_verified ? '✅ Verified partner' : '⏳ Verification pending'}
+        <p className="text-sm text-gray-500 flex items-center gap-1.5">
+          <Icon name={partner.is_verified ? 'success' : 'pending'} size="sm" className={partner.is_verified ? 'text-brand-aqua' : 'text-gray-400'} />
+          {partner.is_verified ? 'Verified partner' : 'Verification pending'}
         </p>
       </div>
 
