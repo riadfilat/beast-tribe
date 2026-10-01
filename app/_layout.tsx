@@ -2,7 +2,7 @@ import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments, useGlobalSearchParams } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
-import { StatusBar, View } from 'react-native';
+import { Platform, StatusBar, View } from 'react-native';
 import 'react-native-reanimated';
 import { AuthProvider, useAuth } from '../src/providers/AuthProvider';
 import { ThemeProvider, useKit } from '../src/theme';
@@ -102,7 +102,11 @@ function ThemedApp() {
   const { p, isRTL } = useKit();
   return (
     <AuthProvider>
-      <View style={{ flex: 1, backgroundColor: p.board, direction: isRTL ? 'rtl' : 'ltr' }}>
+      {/* On the web, `dir` also tells react-native-web to resolve start/end styles right-to-left. */}
+      <View
+        style={{ flex: 1, backgroundColor: p.board, direction: isRTL ? 'rtl' : 'ltr' }}
+        {...(Platform.OS === 'web' ? ({ dir: isRTL ? 'rtl' : 'ltr' } as any) : null)}
+      >
         <StatusBar barStyle={p.statusBar} />
         <AuthGate />
         <ToastHost />

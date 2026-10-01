@@ -1,4 +1,4 @@
-import { TextStyle } from 'react-native';
+import { Platform, TextStyle } from 'react-native';
 import type { Lang } from '../i18n';
 
 /**
@@ -31,12 +31,16 @@ export const FONT_FILES = {
   'NotoKufiArabic-Black': require('../../assets/fonts/NotoKufiArabic-Black.ttf'),
 };
 
+// Noto Kufi has no Latin letters. iOS and Android fall back to the system face for Latin words
+// inside Arabic titles (place and member names); the web needs the fallback spelled out.
+const withLatin = (arabic: string, latin: string) => (Platform.OS === 'web' ? `${arabic}, ${latin}, system-ui, sans-serif` : arabic);
+
 export function typeKit(lang: Lang): TypeKit {
   const ar = lang === 'ar';
   return {
     stencil: { fontFamily: 'SlamDunk' },
-    heading: ar ? { fontFamily: 'NotoKufiArabic-Black' } : { fontFamily: 'SlamDunk' },
-    title: ar ? { fontFamily: 'NotoKufiArabic-Bold' } : { fontFamily: 'Montserrat-ExtraBold' },
+    heading: ar ? { fontFamily: withLatin('NotoKufiArabic-Black', 'SlamDunk') } : { fontFamily: 'SlamDunk' },
+    title: ar ? { fontFamily: withLatin('NotoKufiArabic-Bold', 'Montserrat-ExtraBold') } : { fontFamily: 'Montserrat-ExtraBold' },
     ui: { fontWeight: '400' },
     uiMedium: { fontWeight: '500' },
     uiSemibold: { fontWeight: '600' },

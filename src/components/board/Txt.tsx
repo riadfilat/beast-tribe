@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleProp, Text, TextProps, TextStyle } from 'react-native';
+import { Platform, StyleProp, Text, TextProps, TextStyle } from 'react-native';
 import { useKit } from '../../theme';
 import { lh } from '../../theme/type';
 
@@ -30,6 +30,8 @@ interface Props extends TextProps {
   style?: StyleProp<TextStyle>;
   children?: React.ReactNode;
 }
+
+const WEB_AR_START = Platform.OS === 'web';
 
 export function Txt({ v = 'body', size, color, align, style, children, ...rest }: Props) {
   const { p, f, lang } = useKit();
@@ -76,7 +78,9 @@ export function Txt({ v = 'body', size, color, align, style, children, ...rest }
   return (
     <Text
       {...rest}
-      style={[base, { color: tone, textAlign: align ?? 'auto' }, style]}
+      // Native aligns 'auto' text with the layout direction; the web aligns by each string's own
+      // script, so Latin names in Arabic screens need the start edge spelled out.
+      style={[base, { color: tone, textAlign: align ?? (WEB_AR_START && ar ? 'right' : 'auto') }, style]}
     >
       {children}
     </Text>
