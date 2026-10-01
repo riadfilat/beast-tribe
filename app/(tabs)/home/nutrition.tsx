@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, View } from 'react-native';
+import { Alert, Image, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
@@ -254,6 +254,12 @@ function FoodOffers() {
       </Txt>
       {partners.map((x: FoodPartner, i) => (
         <View key={x.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: i === partners.length - 1 ? 0 : 1, borderBottomColor: p.rule }}>
+          {x.logoUrl ? (
+            <View style={{ width: 56, height: 56, borderRadius: 10, overflow: 'hidden', backgroundColor: p.wash }}>
+              <Image source={{ uri: x.logoUrl }} style={{ width: 56, height: 56 }} accessibilityIgnoresInvertColors />
+              <View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(2,60,60,0.18)' }]} />
+            </View>
+          ) : null}
           <View style={{ flex: 1, gap: 2 }}>
             <Txt v="row" size={15} numberOfLines={1}>
               {x.name}

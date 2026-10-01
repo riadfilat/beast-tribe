@@ -4,7 +4,7 @@ import { useQuery, invalidate } from './query';
 import { sportDef, sportIdOf, SportId } from '../lib/sports';
 import { uploadImage } from '../lib/upload';
 import { Emblem, emblemOf } from '../lib/emblem';
-import { PREVIEW, PREVIEW_ME, previewLocations, previewMySports, previewPacks, previewStats } from './preview';
+import { PREVIEW, PREVIEW_ME, previewCoaches, previewLocations, previewMySports, previewPacks, previewStats } from './preview';
 
 function useMeId() {
   const { user } = useAuth();
@@ -126,7 +126,7 @@ export function usePopularSpots(country: string) {
 // ─── Coaches (partners) ─────────────────────────────────────────────────────
 export function useCoaches() {
   return useQuery<{ id: string; name: string; sports: string[]; userId: string | null }[]>('coaches', async () => {
-    if (PREVIEW) return [{ id: 'c-reem', name: 'Coach Reem', sports: ['hyrox', 'crossfit', 'gym'], userId: 'p-reem' }];
+    if (PREVIEW) return previewCoaches;
     const { data, error } = await supabase.from('partners').select('id, business_name, name, sports, user_id').eq('partner_type', 'coach');
     if (error) throw error;
     return (data || []).map((c: any) => ({

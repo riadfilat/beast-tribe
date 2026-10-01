@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { useQuery } from './query';
-import { PREVIEW } from './preview';
+import { PREVIEW, previewFood } from './preview';
 
 // Healthy-food partners (partners.partner_type = 'nutrition'), added in the admin with a member
 // offer in metadata: { offer, offer_ar, code }. A partner can be scoped to one community.
@@ -14,10 +14,7 @@ export interface FoodPartner {
   code: string | null;
 }
 
-const PREVIEW_FOOD: FoodPartner[] = [
-  { id: 'f-1', name: 'Greens & Grains', city: 'Riyadh', logoUrl: null, url: null, offer: '15% off bowls for Beast Tribe members', code: 'BEAST15' },
-  { id: 'f-2', name: 'Protein Kitchen', city: 'Riyadh', logoUrl: null, url: null, offer: 'Free shake with any meal after a session', code: 'TRIBESHAKE' },
-];
+const PREVIEW_FOOD: FoodPartner[] = previewFood;
 
 export function useFoodPartners(lang: string) {
   return useQuery<FoodPartner[]>(`partners:food:${lang}`, async () => {

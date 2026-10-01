@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../providers/AuthProvider';
 import { useQuery, invalidate } from './query';
-import { PREVIEW, PREVIEW_ME, previewCommunities } from './preview';
+import { PREVIEW, PREVIEW_COMPANY, PREVIEW_ME, previewCommunities } from './preview';
 
 // Communities are where Beast Tribe lives. OPEN ones anyone can join from Explore; PRIVATE ones
 // (companies, compounds, clubs) are joined with their invite code. Members can be in several.
@@ -112,7 +112,7 @@ function refresh() {
 }
 
 export async function joinCommunityByCode(code: string): Promise<{ id: string; name: string }> {
-  if (PREVIEW) return { id: 'c-andorra', name: 'Andorra Sports Tribe' };
+  if (PREVIEW) return PREVIEW_COMPANY;
   const { data, error } = await supabase.rpc('join_community_by_code', { p_code: code.trim() });
   if (error) throw toCommunityError(error);
   refresh();

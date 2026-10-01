@@ -292,7 +292,7 @@ export const en = {
     join: 'Join',
     joined: 'You joined {name}.',
     haveCode: 'Have an invite code?',
-    codeSub: 'Your company, compound or club gives you one.',
+    codeSub: 'Your company, club or gym gives you one.',
     codePlaceholder: 'Community code',
     private: 'Private',
     open: 'Open',
@@ -528,7 +528,7 @@ export const en = {
   },
   onboarding: {
     communityTitle: 'Join your community',
-    communitySub: "Got a code from your company, compound or club? Enter it to see your community's sessions. You're already in Beast Tribe, the open community.",
+    communitySub: "Got a code from your company, club or gym? Enter it to see your community's sessions. No code? Join people who play your sport.",
     communityOpen: 'Or join open communities',
     step: 'Step {n} of {total}',
     aboutTitle: 'About you',

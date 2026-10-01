@@ -115,6 +115,18 @@ User wants to launch the app to limited public testers via TestFlight.
 
 ## Session Log (append-only — newest at top)
 
+### 2026-10-01 (v2) — Video feedback: humans first
+- User: "humans want to see humans, everyone wants to be part of a community." Name magnets now show the member's photo under a light brand-teal wash (yours keeps an orange ring); food offers show the restaurant's photo (partners.logo_url).
+- Copy: "company, compound or club" → "company, club or gym"; onboarding adds "No code? Join people who play your sport."
+- Preview data (web preview only): faces (Unsplash stand-ins), names/places/posts in Arabic for AR, sessions on the hour/half hour, My Company (MYCO24), Padel Gang / Riyadh Runners / Weekend Football (open), Thursday Crew pack (CREW26), three padel courts, three coaches, three restaurants. No real business names.
+- Videos v2 (`exports/*-v2.mp4`): new Sport step, Coaches / Courts / Food as three scenes, people photos behind every scene, wall of faces at the end. Capture: `scratchpad/shots/capture2.cjs` (fixed clock 6:10 PM Riyadh, measures ring targets).
+
+### 2026-10-01 (later) — Marketing videos (user journey) + web Arabic fixes
+- Videos built in Remotion: `../beast-tribe-video/workout-video/src/journey/` (compositions BeastTribe-Explainer-EN/AR 1920x1080 ~60s, BeastTribe-Vertical-EN/AR 1080x1920 ~42s). Renders in `../beast-tribe-video/exports/`. Silent (no licensed music yet), with chalk-board motion, real app screens, rings and taps on the key actions, the I'M IN tap flooding orange into the sun.
+- Screens come from the web preview (EXPO_PUBLIC_PREVIEW=1, synthetic data) via Playwright at 390x844 @3x; copy lives in `src/journey/copy.ts` (EN + AR), annotation targets are measured app points. Re-render: `npx remotion render src/index.ts <id> ../exports/<id>.mp4 --codec=h264 --crf=18`.
+- Web-only RTL fixes (8d956fc): root `dir`, Arabic aligns right on web, Arabic heading stacks fall back to the Latin brand faces. No iOS OTA needed (web-gated).
+- `.github/workflows/*` remain untracked on purpose (need a workflow-scoped token).
+
 ### 2026-10-01 — Community-driven model (B2B first), go-live readiness
 - Decisions (user): open app + PRIVATE B2B communities joined by invite code; members in several communities; sessions live in a community or a pack (no global public); packs private to members; payments prepared but OFF; videos: 60–90s explainer + vertical cut-downs EN/AR. Monetization: app must earn itself (see memory beast-tribe-monetization).
 - DB 039 (dry-run 26/26, applied): communities.visibility/kind/join_code/seat_limit/contract_ends_at/is_default; community_members (multi); default open "Beast Tribe" (everyone auto-joins); events.community_id + price_sar, visibility community|pack, host guard; RLS now private-by-default for events, RSVPs, packs, pack_members, feed_posts (+community_id), comments, beasts, coach_bookings, locations, partners; RPCs join_community_by_code / join_open_community / join_pack_by_code / coach_taken_starts; payments table (no client writes). Andorra = private, code RUDZPH.

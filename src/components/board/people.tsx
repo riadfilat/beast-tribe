@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Image, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useKit } from '../../theme';
 import { Txt } from './Txt';
@@ -19,7 +19,10 @@ export function initialsOf(name?: string | null): string {
   return (first + second).toUpperCase();
 }
 
-/** A name magnet: the squared tag you stick on the class board. Yours is orange. */
+// Photos sit on the board under a light wash of brand teal, so faces read as part of the board.
+const PHOTO_WASH = 'rgba(2,60,60,0.24)';
+
+/** A name magnet: the squared tag you stick on the class board — a face when there's a photo. Yours is orange. */
 export function Magnet({
   person,
   size = 30,
@@ -59,14 +62,18 @@ export function Magnet({
           alignItems: 'center',
           justifyContent: 'center',
           backgroundColor: yours ? p.marker : p.wash,
-          borderWidth: yours ? 0 : 1.5,
-          borderColor: p.ruleStrong,
+          // Your photo keeps the orange: it rings the face instead of filling the tag.
+          borderWidth: yours ? (showPhoto ? Math.max(2, Math.round(size * 0.07)) : 0) : 1.5,
+          borderColor: yours ? p.marker : p.ruleStrong,
         },
         anim,
       ]}
     >
       {showPhoto ? (
-        <Image source={{ uri: person.avatarUrl! }} style={{ width: size, height: size }} onError={() => setBroken(true)} />
+        <>
+          <Image source={{ uri: person.avatarUrl! }} style={{ width: size, height: size }} onError={() => setBroken(true)} />
+          <View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { backgroundColor: PHOTO_WASH }]} />
+        </>
       ) : (
         <Txt v="time" size={Math.round(size * 0.36)} color={yours ? p.onMarker : p.ink} style={{ lineHeight: Math.round(size * 0.5) }}>
           {initialsOf(person.name)}

@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../providers/AuthProvider';
 import { useQuery, invalidate } from './query';
 import { personOf, Session, SESSION_SELECT, toSession } from './model';
-import { PREVIEW, PREVIEW_ME, previewPacks, previewSessionRows } from './preview';
+import { PREVIEW, PREVIEW_ME, previewPacks, previewSessionRows, previewPackMembers, PREVIEW_PACK_CODE } from './preview';
 import { Emblem, emblemColumns, emblemOf } from '../lib/emblem';
 import type { Person } from '../components/board/people';
 
@@ -37,22 +37,14 @@ function useMe() {
   return PREVIEW ? PREVIEW_ME : user?.id ?? null;
 }
 
-const previewMembers = (packId: string): PackMember[] => {
-  const names = ['Noor Al-Harbi', 'Sara Al-Qahtani', 'Majed Al-Otaibi', 'Lama K', 'Omar Haddad', 'Hessa M', 'Khalid Al-Dosari'];
-  return names.slice(0, packId === 'pk-dawn' ? 4 : 7).map((name, i) => ({
-    id: i === 0 ? PREVIEW_ME : `${packId}-m${i}`,
-    name,
-    avatarUrl: null,
-    role: i === 0 ? 'leader' : 'member',
-  }));
-};
+const previewMembers = (packId: string): PackMember[] => previewPackMembers(packId);
 
 export function usePack(packId?: string | null) {
   const me = useMe();
   return useQuery<PackDetail | null>(packId && me ? `packs:one:${packId}` : null, async () => {
     if (PREVIEW) {
       const pk = previewPacks.find((x) => x.id === packId) ?? previewPacks[0];
-      return { id: pk.id, name: pk.name, emblem: pk.emblem, inviteCode: pk.id === 'pk-dawn' ? 'DAWN77' : 'WEL319', isLeader: true, canEdit: true, members: previewMembers(pk.id) };
+      return { id: pk.id, name: pk.name, emblem: pk.emblem, inviteCode: PREVIEW_PACK_CODE(pk.id), isLeader: true, canEdit: true, members: previewMembers(pk.id) };
     }
     const [{ data: pack, error }, { data: rows }] = await Promise.all([
       supabase.from('packs').select(`id, name, invite_code, created_by, ${PACK_EMBLEM_COLUMNS}`).eq('id', packId!).maybeSingle(),
