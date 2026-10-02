@@ -46,3 +46,7 @@ yarn-error.*
 google-services.json
 *.keystore
 *.jks
+
+# Google Play upload key for eas submit (never commit)
+play-service-account.json
+*.p8
