@@ -28,7 +28,7 @@ export const PREVIEW_PHOTOS = {
   pitch: img('photo-1431324155629-1a6deb1dec8d'),
   corniche: img('photo-1541625602330-2277a4c46182'),
   gym: img('photo-1606335543042-57c525922933'),
-  box: img('photo-1593234270323-0414ec1574e1'),
+  box: img('photo-1632077804406-188472f1a810'),
   engine: img('photo-1775322838072-829ad37ab52d'),
   studio: img('photo-1545205597-3d9d02c29597'),
   padel: img('photo-1781310370779-9c45ab3f4e04'),
@@ -120,7 +120,8 @@ export function previewSessionRows(): any[] {
       location_name: PLACES.wadi, image_url: PREVIEW_PHOTOS.wadi, going_count: 9, created_by: 'p-majed', host: people.majed, roster: roster(9, { offset: 1 }) }),
     base({ id: 's-live', title: L('Hyrox Engine', 'تحدي هايروكس'), event_type: 'hyrox', starts_at: iso(liveStart), ends_at: iso(plus(liveStart, 90)),
       location_name: PLACES.box, image_url: PREVIEW_PHOTOS.box, max_capacity: 16, going_count: 11, difficulty: 'hard',
-      coach_name: L('Coach Reem', 'المدربة ريم'), created_by: 'p-reem', host: people.reem, roster: roster(11, { offset: 3 }) }),
+      coach_name: L('Coach Reem', 'المدربة ريم'), created_by: 'p-reem', host: people.reem, roster: roster(11, { offset: 3 }),
+      workout_id: 'w-engine', workout: { id: 'w-engine', title: 'Engine 20', title_ar: 'محرك 20', duration_minutes: 35 } }),
     base({ id: 's-yours', title: L('Evening Padel', 'بادل المساء'), event_type: 'padel', starts_at: iso(yoursStart), ends_at: iso(plus(yoursStart, 90)),
       location_name: PLACES.padel, image_url: PREVIEW_PHOTOS.padel, max_capacity: 8, going_count: 7, difficulty: 'medium',
       description: L('Friendly doubles, rotating partners every set. Bring water — courts 3 and 4.', 'زوجي ودّي، نبدّل الشركاء كل شوط. أحضر ماءك — الملعبان 3 و4.'),
@@ -179,7 +180,7 @@ export function previewPosts() {
     { id: 'post-1', user_id: PREVIEW_ME, content: L('Seven of us at 5:30 and the wadi was ours. Same time tomorrow?', 'كنا سبعة الساعة 5:30 والوادي كله لنا. نفس الموعد بكرة؟'), image_url: PREVIEW_PHOTOS.dawnCrew,
       created_at: ago(140), event_id: 's-dawn-today', event: { id: 's-dawn-today', title: L('Dawn Run', 'جري الفجر') }, author: people.me, beast_count: [{ count: 14 }], comment_count: 3 },
     { id: 'post-2', user_id: 'p-reem', content: L('Engine day. Sled pushes until the legs said no, then two more rounds.', 'يوم هايروكس. دفعنا الزلاجة لين ما بقى فينا شي، وبعدها جولتين زيادة.'), image_url: PREVIEW_PHOTOS.engine,
-      created_at: ago(420), event_id: null, event: null, author: people.reem, beast_count: [{ count: 22 }], comment_count: 5 },
+      created_at: ago(420), event_id: null, event: null, workout: { id: 'w-engine', title: 'Engine 20', title_ar: 'محرك 20' }, author: people.reem, beast_count: [{ count: 22 }], comment_count: 5 },
     { id: 'post-3', user_id: 'p-khalid', content: L('Football tonight at Nakheel Pitches — 4 spots left. Bring both colours.', 'كورة الليلة في ملاعب النخيل — باقي 4 أماكن. جيبوا اللونين.'), image_url: PREVIEW_PHOTOS.pitch,
       community: { id: COMPANY.id, name: COMPANY.name, visibility: 'private' },
       created_at: ago(780), event_id: null, event: null, author: people.khalid, beast_count: [{ count: 6 }], comment_count: 0 },
@@ -296,3 +297,65 @@ export const previewFood = [
   { id: 'f-2', name: L('Protein Kitchen', 'بروتين كتشن'), city: RIYADH, logoUrl: img('photo-1546069901-ba9599a7e63c'), url: null, offer: L('Free shake with any meal after a session', 'شيك مجاني مع أي وجبة بعد التمرين'), code: 'TRIBESHAKE' },
   { id: 'f-3', name: L('Shake Lab', 'شيك لاب'), city: RIYADH, logoUrl: img('photo-1622818426197-d54f85b88690'), url: null, offer: L('Buy one shake, your training partner gets one free', 'اشترِ شيك ويحصل شريك تمرينك على واحد مجانًا'), code: 'CREWSHAKE' },
 ];
+
+// Train: a few library workouts plus two coaches' workouts, in the database's shape (both languages).
+const coachAuthor = (id: string, en: string, ar: string, person: typeof people.reem) => ({
+  id, business_name: L(en, ar), name: L(en, ar), logo_url: null, user_id: person.id,
+  profile: { id: person.id, display_name: person.display_name, full_name: person.full_name, avatar_url: person.avatar_url },
+});
+const B = (title: string, title_ar: string, extra: Record<string, any>, items: [string, string, string, string?][]) => ({
+  title, title_ar, ...extra,
+  items: items.map(([name, name_ar, reps, reps_ar]) => ({ name, name_ar, reps, reps_ar: reps_ar ?? reps })),
+});
+export function previewWorkoutRows(): any[] {
+  const base = (o: any) => ({ description: null, description_ar: null, featured: false, published_at: '2026-09-20T08:00:00Z', community_id: null, community: null, author: null, source: 'library', equipment: [], ...o });
+  return [
+    base({ id: 'w-engine', title: 'Engine 20', title_ar: 'محرك 20', sport: 'hyrox', format: 'amrap', difficulty: 'advanced', duration_minutes: 35, featured: true,
+      equipment: ['rower', 'wall_ball', 'kettlebell'], image_url: img('photo-1540474861915-87c6b849f6d0'),
+      description: 'Hyrox-style engine work: twenty minutes, as many rounds as you can. Pace it so the last round looks like the first.',
+      description_ar: 'تمرين تحمّل بأسلوب هايروكس: عشرون دقيقة، أكبر عدد ممكن من الجولات. وزّع جهدك لتكون جولتك الأخيرة مثل الأولى.',
+      blocks: [
+        B('Warm-up', 'إحماء', { format: 'rounds', rounds: 2 }, [['Row', 'تجديف', '250 m', '250 م'], ['Air squats', 'سكوات بوزن الجسم', '10'], ['Push-ups', 'ضغط', '8']]),
+        B('Engine', 'المحرك', { format: 'amrap', minutes: 20, note: 'Run 400 m or row 500 m.', note_ar: 'اجرِ 400 م أو جدّف 500 م.' },
+          [['Run', 'جري', '400 m', '400 م'], ['Wall balls', 'رمي الكرة على الحائط', '20'], ['Kettlebell swings', 'أرجحة الكيتل بل', '15'], ['Burpees', 'بيربي', '10']]),
+        B('Cool-down', 'تهدئة', { format: 'flow', minutes: 5 }, [['Easy walk', 'مشي هادئ', '2 min', '2 د'], ['Child\'s pose', 'وضعية الطفل', '1 min', '1 د']]),
+      ] }),
+    base({ id: 'w-reem', source: 'coach', title: 'Sled & Run', title_ar: 'زلاجة وجري', sport: 'hyrox', format: 'intervals', difficulty: 'intermediate', duration_minutes: 30,
+      equipment: ['sled'], image_url: img('photo-1775322838072-829ad37ab52d'), community_id: 'c-company', community: { id: 'c-company', name: L('My Company', 'شركتي') },
+      author: coachAuthor('c-reem', 'Coach Reem', 'المدربة ريم', people.reem),
+      description: 'My Tuesday class, for the office crew. Push hard, jog it off, repeat.',
+      description_ar: 'حصة الثلاثاء لفريق المكتب. ادفع بقوة، هرول لتستعيد، وكرّر.',
+      blocks: [
+        B('Warm-up', 'إحماء', { format: 'flow', minutes: 5 }, [['Easy jog', 'هرولة خفيفة', '3 min', '3 د'], ['Leg swings', 'أرجحة الرجل', '10']]),
+        B('Sled & run', 'زلاجة وجري', { format: 'intervals', rounds: 6 }, [['Sled push', 'دفع الزلاجة', '60 s', '60 ث'], ['Easy jog', 'هرولة خفيفة', '90 s', '90 ث']]),
+      ] }),
+    base({ id: 'w-nokit', title: 'No-Kit 15', title_ar: 'بدون معدات 15', sport: 'gym', format: 'emom', difficulty: 'beginner', duration_minutes: 20,
+      image_url: img('photo-1787154604266-e29f25f07056'),
+      description: 'Fifteen minutes, no equipment, anywhere. A new move every minute on the minute.',
+      description_ar: 'خمس عشرة دقيقة بلا معدات وفي أي مكان. حركة جديدة مع بداية كل دقيقة.',
+      blocks: [
+        B('Every minute', 'كل دقيقة', { format: 'emom', minutes: 15 }, [['Air squats', 'سكوات بوزن الجسم', '12'], ['Push-ups', 'ضغط', '10'], ['Plank', 'بلانك', '30 s', '30 ث'], ['Reverse lunges', 'طعنات خلفية', '6 / side', '6 لكل رجل'], ['Mountain climbers', 'متسلق الجبل', '20']]),
+      ] }),
+    base({ id: 'w-faisal', source: 'coach', title: 'Padel Footwork', title_ar: 'حركة القدمين في البادل', sport: 'padel', format: 'rounds', difficulty: 'intermediate', duration_minutes: 25,
+      image_url: img('photo-1781310370779-9c45ab3f4e04'), author: coachAuthor('c-faisal', 'Coach Faisal', 'المدرب فيصل', people.faisal),
+      description: 'The footwork I teach every beginner. Five rounds and you will reach the ball earlier.',
+      description_ar: 'حركة القدمين التي أعلّمها لكل مبتدئ. خمس جولات وستصل إلى الكرة أبكر.',
+      blocks: [
+        B('Footwork', 'حركة القدمين', { format: 'rounds', rounds: 5 }, [['Split step + side shuffle', 'خطوة الانقسام + خطوات جانبية', '10'], ['Crossover to the glass', 'خطوة متقاطعة نحو الزجاج', '6 / side', '6 لكل جهة'], ['Lunge volley reach', 'طعنة للوصول إلى الطائرة', '8']]),
+      ] }),
+    base({ id: 'w-desk', title: 'Desk Reset 10', title_ar: 'استراحة المكتب 10', sport: 'yoga', format: 'flow', difficulty: 'beginner', duration_minutes: 10,
+      image_url: img('photo-1545205597-3d9d02c29597'),
+      description: 'Ten minutes to undo a day at the desk. No sweat, no kit, done next to your chair.',
+      description_ar: 'عشر دقائق تمحو يومًا على المكتب. بلا تعرّق ولا معدات، بجانب كرسيك.',
+      blocks: [
+        B('Reset', 'استعادة', { format: 'flow', minutes: 10 }, [['Neck rolls', 'دوران الرقبة', '30 s', '30 ث'], ['Cat-cow', 'القطة والبقرة', '8'], ['Thoracic rotations', 'تدوير الظهر العلوي', '6 / side', '6 لكل جهة'], ['Hip flexor stretch', 'إطالة مثنيات الورك', '30 s', '30 ث']]),
+      ] }),
+    base({ id: 'w-padel', title: 'Padel Legs', title_ar: 'أرجل البادل', sport: 'padel', format: 'rounds', difficulty: 'intermediate', duration_minutes: 30,
+      image_url: img('photo-1709587823553-765b325cc31b'),
+      description: 'Quick feet and strong legs for the court: lateral power, landings and short bursts.',
+      description_ar: 'خطوات سريعة وأرجل قوية للملعب: قوة جانبية، هبوط ثابت، وانطلاقات قصيرة.',
+      blocks: [
+        B('Court strength', 'قوة الملعب', { format: 'rounds', rounds: 4 }, [['Lateral lunges', 'طعنات جانبية', '5 / side', '5 لكل جهة'], ['Split-squat jumps', 'قفزات الطعن', '4 / side', '4 لكل رجل'], ['Shuttle runs (5 m)', 'جري مكوكي (5 م)', '6'], ['Calf raises', 'رفع السمانة', '15']]),
+      ] }),
+  ];
+}

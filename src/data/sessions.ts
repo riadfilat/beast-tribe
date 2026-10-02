@@ -206,6 +206,8 @@ export interface HostInput {
   /** Where the session lives when it isn't pack-only (defaults to the open community). */
   communityId?: string | null;
   priceSar?: number | null;
+  /** A workout from Train as the session's plan. */
+  workoutId?: string | null;
   coachName?: string | null;
   notes?: string;
   /** http(s) URL (popular spot photo) or a local file to upload */
@@ -250,6 +252,7 @@ export async function hostSession(meId: string, input: HostInput): Promise<{ id:
       community_id: input.packId ? null : input.communityId ?? null,
       visibility: input.packId ? 'pack' : 'community',
       price_sar: input.priceSar ?? null,
+      workout_id: input.workoutId ?? null,
       coach_name: input.coachName ?? null,
       description: input.notes?.trim() || null,
       image_url: imageUrl,

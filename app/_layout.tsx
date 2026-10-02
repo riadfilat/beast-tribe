@@ -50,6 +50,8 @@ function AuthGate() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="session/[id]/index" />
       <Stack.Screen name="session/[id]/chat" />
+      <Stack.Screen name="workout/[id]/index" />
+      <Stack.Screen name="workout/[id]/play" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
       <Stack.Screen name="host" options={{ presentation: 'modal' }} />
       <Stack.Screen name="inbox" />
       <Stack.Screen name="my-sessions" />

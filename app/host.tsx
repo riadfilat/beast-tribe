@@ -14,6 +14,7 @@ import { PREVIEW, PREVIEW_ME } from '../src/data/preview';
 import { SPORT_LIST, SportId } from '../src/lib/sports';
 import { PAYMENTS_ENABLED, SESSION_LINK_BASE } from '../src/lib/constants';
 import { bookCoach, useCoachSlots } from '../src/data/coaching';
+import { useWorkouts } from '../src/data/workouts';
 import { Txt } from '../src/components/board/Txt';
 import { Icon } from '../src/components/board/Icon';
 import { Press } from '../src/components/board/Press';
@@ -50,7 +51,7 @@ export default function HostScreen() {
   const { t } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ spot?: string; community?: string; pack?: string }>();
+  const params = useLocalSearchParams<{ spot?: string; community?: string; pack?: string; workout?: string }>();
   const { user, profile } = useAuth();
   const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
   const country = profile?.region || 'SA';
@@ -59,6 +60,7 @@ export default function HostScreen() {
   const packs = useMyPackList().data ?? [];
   const communities = useMyCommunities().data ?? [];
   const coaches = useCoaches().data ?? [];
+  const workouts = useWorkouts(lang).data ?? [];
 
   const [sport, setSport] = useState<SportId | null>(null);
   const [dayKey, setDayKey] = useState<string | null>(null);
@@ -81,6 +83,7 @@ export default function HostScreen() {
   const [coachId, setCoachId] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
   const [cover, setCover] = useState<string | null>(null);
+  const [workoutId, setWorkoutId] = useState<string | null>(params.workout ?? null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<{ id: string; title: string } | null>(null);
@@ -100,6 +103,16 @@ export default function HostScreen() {
     const spot = spots.find((x) => x.id === params.spot);
     if (spot) pickSpot(spot.id);
   }, [params.spot, spots.length]);
+
+  // A workout handed over from Train ("with your crew") sets the sport, the length and the name.
+  useEffect(() => {
+    if (!params.workout) return;
+    const w = workouts.find((x) => x.id === params.workout);
+    if (!w) return;
+    setSport((v) => v ?? (SPORT_LIST.some((x) => x.id === w.sport) ? w.sport : v));
+    setDuration((v) => DURATIONS.find((d) => d >= w.minutes) ?? v);
+    setName((v) => v || w.title);
+  }, [params.workout, workouts.length]);
 
   // Sensible spots per sport until the host sets it.
   useEffect(() => {
@@ -172,6 +185,7 @@ export default function HostScreen() {
         packId,
         communityId,
         priceSar: PAYMENTS_ENABLED && Number(price) > 0 ? Number(price) : null,
+        workoutId,
         coachName: coach?.name ?? null,
         notes,
         cover: cover ?? spot?.imageUrl ?? null,
@@ -284,6 +298,24 @@ export default function HostScreen() {
               {packs.map((x) => (
                 <Chip key={x.id} label={x.name} icon="lock" selected={where?.kind === 'pack' && where.id === x.id} onPress={() => setAudience({ kind: 'pack', id: x.id })} />
               ))}
+            </ScrollView>
+          </>
+        ) : null}
+
+        {workouts.length ? (
+          <>
+            <SectionHeading title={t('host.workout')} style={s.gap} />
+            <Txt v="meta" style={{ marginTop: -6, marginBottom: 8 }}>
+              {t('host.workoutSub')}
+            </Txt>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.row}>
+              <Chip label={t('host.workoutNone')} selected={!workoutId} onPress={() => setWorkoutId(null)} />
+              {workouts
+                .filter((w) => !sport || w.sport === sport || w.id === workoutId)
+                .slice(0, 12)
+                .map((w) => (
+                  <Chip key={w.id} label={w.title} icon="train" selected={workoutId === w.id} onPress={() => setWorkoutId(workoutId === w.id ? null : w.id)} />
+                ))}
             </ScrollView>
           </>
         ) : null}

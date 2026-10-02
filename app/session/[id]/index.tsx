@@ -270,6 +270,34 @@ export default function SessionScreen() {
             </View>
           </View>
 
+          {/* The plan, when the host attached a workout */}
+          {x.workout ? (
+            <>
+              <Rule style={s.rule} />
+              <Press
+                onPress={() => router.push({ pathname: '/workout/[id]', params: { id: x.workout!.id, event: x.id } })}
+                feedback="selection"
+                depress={0.99}
+                accessibilityRole="button"
+                style={s.section}
+              >
+                <Txt v="title" size={18}>
+                  {t('session.workout')}
+                </Txt>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <Icon name="train" size={18} color={p.ink} />
+                  <View style={{ flex: 1 }}>
+                    <Txt v="headline" style={lang === 'en' ? { textTransform: 'uppercase' } : null}>
+                      {lang === 'ar' && x.workout.titleAr ? x.workout.titleAr : x.workout.title}
+                    </Txt>
+                    {x.workout.minutes ? <Txt v="meta">{fmtDuration(x.workout.minutes, lang)}</Txt> : null}
+                  </View>
+                  <Icon name="chevron" size={14} color={p.inkFaint} weight="bold" />
+                </View>
+              </Press>
+            </>
+          ) : null}
+
           {/* Who's in */}
           <Rule style={s.rule} />
           <View style={s.section}>
@@ -319,7 +347,11 @@ export default function SessionScreen() {
                 <Txt v="title" size={18}>
                   {t('session.about')}
                 </Txt>
-                {x.coachName ? <Txt v="headline">{t('session.coach', { name: x.coachName })}</Txt> : null}
+                {x.coachName ? (
+                  <Txt v="headline">
+                    {/^(coach|المدرب|المدربة)\s/i.test(x.coachName) ? x.coachName : t('session.coach', { name: x.coachName })}
+                  </Txt>
+                ) : null}
                 {x.description ? <Txt v="body">{x.description}</Txt> : null}
               </View>
             </>

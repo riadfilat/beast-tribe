@@ -163,6 +163,7 @@ export default function TribeScreen() {
               onBeast={() => onBeast(post)}
               onMore={() => onMore(post)}
               onOpenEvent={() => post.event && router.push({ pathname: '/session/[id]', params: { id: post.event.id } })}
+              onOpenWorkout={() => post.workout && router.push({ pathname: '/workout/[id]', params: { id: post.workout.id } })}
             />
           ))}
         </ScrollView>
@@ -201,7 +202,7 @@ export default function TribeScreen() {
 }
 
 // ─── A post ─────────────────────────────────────────────────────────────────
-function PostItem({ post, meId, onBeast, onMore, onOpenEvent }: { post: Post; meId: string | null; onBeast: () => void; onMore: () => void; onOpenEvent: () => void }) {
+function PostItem({ post, meId, onBeast, onMore, onOpenEvent, onOpenWorkout }: { post: Post; meId: string | null; onBeast: () => void; onMore: () => void; onOpenEvent: () => void; onOpenWorkout: () => void }) {
   const s = useStyles();
   const { p, lang } = useKit();
   const { t, tn } = useI18n();
@@ -230,6 +231,14 @@ function PostItem({ post, meId, onBeast, onMore, onOpenEvent }: { post: Post; me
           <Icon name="calendar" size={12} color={p.aqua} />
           <Txt v="label" size={12} color={p.aqua}>
             {t('tribe.recapOf', { event: post.event.title })}
+          </Txt>
+        </Press>
+      ) : null}
+      {post.workout ? (
+        <Press onPress={onOpenWorkout} feedback="selection" style={s.recap}>
+          <Icon name="train" size={12} color={p.aqua} />
+          <Txt v="label" size={12} color={p.aqua}>
+            {t('tribe.workoutOf', { workout: lang === 'ar' && post.workout.titleAr ? post.workout.titleAr : post.workout.title })}
           </Txt>
         </Press>
       ) : null}

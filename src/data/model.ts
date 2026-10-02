@@ -35,6 +35,8 @@ export interface Session {
   communityPrivate: boolean;
   /** Price per spot in SAR, when paid sessions are switched on (PAYMENTS_ENABLED). */
   priceSar: number | null;
+  /** The plan for the session, when the host attached a workout the viewer can see. */
+  workout: { id: string; title: string; titleAr: string | null; minutes: number | null } | null;
   host: Person | null;
   hostId: string | null;
   roster: Person[];
@@ -51,8 +53,9 @@ export const DEFAULT_DURATION_MIN = 120;
 export const SESSION_SELECT = `
   id, title, description, event_type, starts_at, ends_at, location_name, location_city, gym_name,
   country, location_lat, location_lng, image_url, max_capacity, going_count, created_by,
-  is_women_only, visibility, pack_id, community_id, price_sar, difficulty, coach_name, cancelled_at,
+  is_women_only, visibility, pack_id, community_id, price_sar, difficulty, coach_name, cancelled_at, workout_id,
   pack:packs(id, name),
+  workout:workouts(id, title, title_ar, duration_minutes),
   community:communities(id, name, visibility, is_default),
   host:profiles!events_created_by_fkey(id, display_name, full_name, avatar_url),
   roster:event_rsvps(user_id, status, created_at, profile:profiles(id, display_name, full_name, avatar_url))
@@ -118,6 +121,9 @@ export function toSession(row: any, meId: string | null | undefined, myStatus?: 
     communityName: row.community?.name || null,
     communityPrivate: row.community?.visibility === 'private',
     priceSar: row.price_sar != null ? Number(row.price_sar) : null,
+    workout: row.workout?.id
+      ? { id: row.workout.id, title: row.workout.title || '', titleAr: row.workout.title_ar || null, minutes: row.workout.duration_minutes ?? null }
+      : null,
     host: personOf(row.host),
     hostId: row.created_by || null,
     roster,

@@ -40,6 +40,10 @@ export default function TabLayout() {
         options={{ title: t('tabs.board'), tabBarIcon: ({ color }) => <TabIcon name="board" color={color} /> }}
       />
       <Tabs.Screen
+        name="train"
+        options={{ title: t('tabs.train'), tabBarIcon: ({ color }) => <TabIcon name="train" color={color} /> }}
+      />
+      <Tabs.Screen
         name="events"
         options={{ title: t('tabs.explore'), tabBarIcon: ({ color }) => <TabIcon name="explore" color={color} /> }}
       />

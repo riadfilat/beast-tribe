@@ -145,3 +145,17 @@ export function useLiveChat(type: 'event' | 'pack', targetId?: string | null) {
 
   return { roomId, messages, loading, error, sending, send, meId };
 }
+
+/** Post one message into a pack's chat (finding or opening the room), e.g. a finished workout. */
+export async function postToPackChat(meId: string, packId: string, content: string) {
+  if (PREVIEW) return;
+  let { data: room } = await supabase.from('chat_rooms').select('id').eq('pack_id', packId).maybeSingle();
+  if (!room) {
+    const created = await supabase.from('chat_rooms').insert({ type: 'pack', pack_id: packId, name: 'pack chat' }).select('id').maybeSingle();
+    if (created.error) throw created.error;
+    room = created.data;
+  }
+  if (!room) throw new Error('no room');
+  const { error } = await supabase.from('chat_messages').insert({ room_id: room.id, user_id: meId, content: content.trim(), message_type: 'text' });
+  if (error) throw error;
+}

@@ -56,6 +56,13 @@ const ICONS = {
   contrast: { sf: 'circle.lefthalf.filled', ion: 'contrast' },
   minus: { sf: 'minus', ion: 'remove' },
   sparkle: { sf: 'sparkles', ion: 'sparkles' },
+  train: { sf: 'dumbbell.fill', ion: 'barbell' },
+  play: { sf: 'play.fill', ion: 'play' },
+  pause: { sf: 'pause.fill', ion: 'pause' },
+  next: { sf: 'forward.end.fill', ion: 'play-skip-forward', dir: true },
+  timer: { sf: 'timer', ion: 'timer-outline' },
+  bookmark: { sf: 'bookmark', ion: 'bookmark-outline' },
+  bookmarkFill: { sf: 'bookmark.fill', ion: 'bookmark' },
 } as const;
 
 export type IconName = keyof typeof ICONS;
