@@ -115,6 +115,18 @@ User wants to launch the app to limited public testers via TestFlight.
 
 ## Session Log (append-only — newest at top)
 
+### 2026-10-02 (later) — Train: workouts, coach pay by use
+- User: add workouts so Beast Tribe feels all-in-one — coach-posted workouts, coaches paid by use, our own library, wearables (Whoop) later. Decision and rules in PRODUCT.md › Train.
+- DB 040 (dry-run 21/21, applied): extends the first app's `workouts` (bilingual `blocks`, sport id, format, equipment, source library|coach, status draft|pending|published|rejected|archived, author_partner_id, community scope, featured) and `workout_logs` (result, rpe, event_id, metrics, `counted` + coach_partner_id set by trigger `bt_workout_logs_before`), `workout_saves`, `events.workout_id`, `feed_posts.workout_id`, RPC `workout_done_counts` (counts only), `app_settings` (service role; `coach_pay` = rate | pool). 58 old English-only workouts archived; 12 OB library workouts seeded EN+AR (fixed ids 0b7e0000-…-0001..12).
+- App: Train tab (today's workout, coaches, library, saved, done lately), `/workout/[id]` (WOD board, save, share, "train it with your crew" → Host prefilled), `/workout/[id]/play` (format-aware timer, rounds tally, log sheet with Share to: only me / a community feed / a pack chat), Host workout picker, session "The workout" row, feed "Workout · …" tag. Fixed "Coach Coach Reem".
+- Admin: Workouts (tabs by status, review coach submissions, feature today's workout, archive), editor, Coach pay (rate or pool, per-coach monthly totals). Partner portal: My workouts (submit for review, edits re-review, uses + estimated earnings).
+- Not visually checked: admin/partner pages (no admin login available here) — `next build` passes. No keep-awake during the player (not in the installed binary); the clock is time-based so it stays right after the screen locks.
+
+### 2026-10-02 — Voiceover cut (English) + photo review
+- User supplied an ElevenLabs voiceover (`beast-tribe-video/workout-video/public/vo-en.mp3`, 49.2 s). Transcribed locally with whisper.cpp (base.en, installed in the session scratchpad, not in the repo) and timed every sentence. The narration covers Join, Sport, I'M IN, Packs, Coaches, Courts, Food, Teams + logo and sign-off; it has no Board/Host/Share lines, so the voiceover cut drops those scenes.
+- Compositions `BeastTribe-Explainer-EN-VO` (16:9) and `BeastTribe-Vertical-EN-VO` (9:16), both 50.5 s: scene starts and per-scene beats live in `src/journey/vo.ts` (VO_STARTS, VO_BEATS); to change the narration, re-transcribe and update those frames.
+- Photo review: padel stand-in showed women lying on a court — replaced across the video and the web preview (see memory beast-tribe-photo-taste).
+
 ### 2026-10-01 (v2) — Video feedback: humans first
 - User: "humans want to see humans, everyone wants to be part of a community." Name magnets now show the member's photo under a light brand-teal wash (yours keeps an orange ring); food offers show the restaurant's photo (partners.logo_url).
 - Copy: "company, compound or club" → "company, club or gym"; onboarding adds "No code? Join people who play your sport."

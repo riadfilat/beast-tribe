@@ -276,6 +276,9 @@ Squared 8px tag with initials or photo. Yours is orange with Deep Teal initials 
 ### Tally
 Capacity counted the way a coach counts sign-ups: groups of four uprights and a slash, open spots as ghost strokes. Water in Nutrition uses the same strokes, one per glass.
 
+### WOD Board (Train)
+A workout is written the way a coach writes it on the box's whiteboard. Train opens on today's workout: its name in the one Slam Dunk line on the screen, the format line ("AMRAP 20 min · Hard · 35 min"), then its movements between two strong rules, reps on the leading column in tabular Montserrat. Lists are rows on rules with the length on the leading rail (like a session's time) and the coach's face trailing when a coach wrote it. On a workout page, blocks (warm-up, the main piece, cool-down) are cut by zig-zags. The player is a big Slam Dunk clock (countdown for AMRAP, the minute for EMOM, each step for timed intervals and flows, a stopwatch otherwise); the live movement is the only orange; rounds are counted as tally strokes. Sharing asks where it goes (only me, a community feed, a pack chat) and says who will see it.
+
 ### Measure Line
 A straight chalk line filling toward a target, with the orange circle marking where you are now (Nutrition's daily calories). No rings.
 

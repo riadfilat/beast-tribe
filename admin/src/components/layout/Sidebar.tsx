@@ -23,11 +23,13 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Feed', href: '/feed', icon: 'feed' },
   { label: 'Moderation', href: '/moderation', icon: 'moderation' },
   { label: 'Partners', href: '/partners', icon: 'partners' },
+  { label: 'Workouts', href: '/workouts', icon: 'workouts' },
 ];
 
 const PARTNER_NAV: NavItem[] = [
   { label: 'Dashboard', href: '/partner/dashboard', icon: 'dashboard' },
   { label: 'My Events', href: '/partner/events', icon: 'events' },
+  { label: 'My Workouts', href: '/partner/workouts', icon: 'workouts' },
   { label: 'Profile', href: '/partner/profile', icon: 'settings' },
 ];
 

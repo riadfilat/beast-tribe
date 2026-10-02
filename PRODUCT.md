@@ -66,6 +66,13 @@ A sports community app owned by a real activewear brand (Operation Beast) and bu
 - Members can be in several communities; sessions live in a community or a pack; packs are private to their members.
 - Revenue: B2B licences first, then a cut of paid sessions (prepared, switched off), coach subscriptions, featured venues, healthy-restaurant partnerships. No ads, no selling data, no paywall on joining sessions.
 
+## Train (decided 2026-10-02)
+
+- A Train tab: today's workout, the Operation Beast library (English + Arabic) and coaches' workouts. Workouts are social, not a content race: attach one to a session ("train it with your crew"), finish and share it to a chosen community feed or pack chat (or keep it private), see how many trained it this week (counts only, never who).
+- Coaches write workouts in the partner portal; Operation Beast reviews every one before it goes live, and can scope a workout to one community (a company's coach).
+- Coaches are paid by use: one counted use when a member finishes a live coach workout, trains at least 40% of its length (5 min minimum), once per member per workout per day, never the coach's own. The admin sets a rate per use or a monthly pool; payouts happen outside the app until payments are on. Funded from B2B revenue at first.
+- Wearables later: workout logs carry source, external id and metrics (Whoop over its web API needs no new app build; Apple Health needs the next native build).
+
 ## Product Principles
 
 1. Showing up is the product: every screen should move a member closer to attending or hosting a session.
