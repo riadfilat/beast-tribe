@@ -8,6 +8,7 @@ import { ConfirmButton } from '@/components/ConfirmSubmit';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar, FillBar, btnGhost, card, input } from '@/components/club/ui';
 import { cancelClass, markAllAttended, setAttendance } from '../../club/actions';
+import { markPaid } from '../../facilities/actions';
 
 export const revalidate = 0;
 
@@ -18,7 +19,7 @@ export default async function ClassPage({ params }: { params: { id: string } }) 
 
   const { data: e } = await db
     .from('events')
-    .select('id, title, description, starts_at, ends_at, max_capacity, coach_name, location_name, difficulty, is_women_only, cancelled_at, cancel_reason, class_series_id, partner_id, community_id, sport:sports(name, emoji)')
+    .select('id, title, description, starts_at, ends_at, max_capacity, coach_name, location_name, difficulty, is_women_only, cancelled_at, cancel_reason, class_series_id, partner_id, community_id, guest_open, guest_price_sar, guest_spots, sport:sports(name, emoji)')
     .eq('id', params.id)
     .single();
   if (!e || ((e as any).partner_id !== partner.partner_id && (e as any).community_id !== partner.community_id)) notFound();
@@ -29,6 +30,11 @@ export default async function ClassPage({ params }: { params: { id: string } }) 
   const ids = (rs || []).map((r: any) => r.user_id);
   const { data: profiles } = ids.length ? await db.from('profiles').select('id, full_name, display_name, avatar_url').in('id', ids) : { data: [] as any[] };
   const pById = new Map((profiles || []).map((p: any) => [p.id, p]));
+  // What guests owe for this class (members book free).
+  const { data: dues } = await db.from('session_dues').select('user_id, amount_sar, paid_at').eq('event_id', ev.id).eq('kind', 'guest');
+  const dueOf = new Map(((dues || []) as any[]).map((d) => [d.user_id, d]));
+  const guestDue = ((dues || []) as any[]).reduce((t, d) => t + Number(d.amount_sar), 0);
+  const guestPaid = ((dues || []) as any[]).filter((d) => d.paid_at).reduce((t, d) => t + Number(d.amount_sar), 0);
   const going = (rs || []).filter((r: any) => r.status === 'going');
   const waiting = (rs || []).filter((r: any) => r.status === 'waitlist');
   const starts = new Date(ev.starts_at);
@@ -55,6 +61,12 @@ export default async function ClassPage({ params }: { params: { id: string } }) 
         <p className="text-sm text-gray-500 mt-1">
           {[ev.coach_name, ev.sport ? `${ev.sport.emoji || ''} ${ev.sport.name}`.trim() : null, ev.location_name, ev.difficulty, ev.is_women_only ? 'Women only' : null].filter(Boolean).join(' · ')}
         </p>
+        {ev.guest_open ? (
+          <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-[#FFF1DC] text-[#9A5A0B] px-3 py-1 text-xs font-semibold">
+            Open to guests · {ev.guest_price_sar ? `SAR ${Number(ev.guest_price_sar)}` : 'free'}
+            {ev.guest_spots != null ? ` · ${ev.guest_spots} guest spots` : ''}
+          </p>
+        ) : null}
         {ev.cancelled_at ? (
           <p className="mt-3 rounded-lg bg-[#FCEBEA] text-[#9E3A33] text-sm px-4 py-2">Cancelled{ev.cancel_reason ? `: ${ev.cancel_reason}` : ''}. Booked members were notified.</p>
         ) : null}
@@ -66,6 +78,11 @@ export default async function ClassPage({ params }: { params: { id: string } }) 
           <p className="text-sm text-gray-600 mt-3">
             <span className="font-semibold tabular-nums">{attended}</span> of {going.length} checked in
             {going.length ? ` · ${Math.round((attended / going.length) * 100)}% show-up` : ''}
+          </p>
+        ) : null}
+        {dueOf.size ? (
+          <p className="text-sm text-gray-600 mt-3">
+            <span className="font-semibold tabular-nums">{dueOf.size}</span> guest{dueOf.size === 1 ? '' : 's'} · SAR {guestDue} to collect at the desk · <span className="font-semibold tabular-nums">SAR {guestPaid}</span> marked paid
           </p>
         ) : null}
       </div>
@@ -87,7 +104,20 @@ export default async function ClassPage({ params }: { params: { id: string } }) 
             return (
               <li key={r.user_id} className="flex items-center gap-3 px-5 py-2.5">
                 <Avatar name={nameOf(r.user_id)} src={(pById.get(r.user_id) as any)?.avatar_url || null} />
-                <span className="flex-1 text-sm font-medium text-gray-900">{nameOf(r.user_id)}</span>
+                <span className="flex-1 text-sm font-medium text-gray-900">
+                  {nameOf(r.user_id)}
+                  {dueOf.has(r.user_id) ? <span className="ml-2 rounded-full bg-[#FFF1DC] text-[#9A5A0B] px-2 py-0.5 text-[11px] font-semibold">Guest · SAR {Number((dueOf.get(r.user_id) as any).amount_sar)}</span> : null}
+                </span>
+                {dueOf.has(r.user_id) && mine ? (
+                  <form action={markPaid.bind(null, ev.id, r.user_id, !(dueOf.get(r.user_id) as any).paid_at)}>
+                    <SubmitButton
+                      pendingLabel="…"
+                      className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${(dueOf.get(r.user_id) as any).paid_at ? 'bg-[#E8F5EE] text-[#25704F] border-[#CDE9D9]' : 'bg-white text-[#9A5A0B] border-[#F3DDBD] hover:border-[#E8B96B]'}`}
+                    >
+                      {(dueOf.get(r.user_id) as any).paid_at ? '✓ Paid' : 'Mark paid'}
+                    </SubmitButton>
+                  </form>
+                ) : null}
                 {started && mine ? (
                   <form action={setAttendance.bind(null, ev.id, r.user_id, !came)}>
                     <SubmitButton

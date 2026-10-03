@@ -11,6 +11,11 @@ const TYPE_LABELS: Record<string, { label: string; icon: 'coach' | 'gym' | 'even
   coach: { label: 'Coach', icon: 'coach' },
   gym: { label: 'Gym', icon: 'gym' },
   event_company: { label: 'Event Company', icon: 'eventCompany' },
+  company: { label: 'Company', icon: 'gym' },
+  school: { label: 'School', icon: 'gym' },
+  venue: { label: 'Courts and venues', icon: 'gym' },
+  leader: { label: 'Club leader', icon: 'coach' },
+  nutritionist: { label: 'Nutritionist', icon: 'coach' },
 };
 
 export default async function PartnersPage() {

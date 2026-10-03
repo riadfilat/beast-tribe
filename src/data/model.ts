@@ -39,6 +39,12 @@ export interface Session {
   communityPrivate: boolean;
   /** Price per spot in SAR, when paid sessions are switched on (PAYMENTS_ENABLED). */
   priceSar: number | null;
+  /** A class open to people outside its community, for this guest price. */
+  guestOpen: boolean;
+  guestPrice: number | null;
+  /** A booked court: what each player owes (the court price split per person). */
+  share: number | null;
+  facilityId: string | null;
   /** The plan for the session, when the host attached a workout the viewer can see. */
   workout: { id: string; title: string; titleAr: string | null; minutes: number | null } | null;
   host: Person | null;
@@ -58,6 +64,7 @@ export const SESSION_SELECT = `
   id, title, description, event_type, starts_at, ends_at, location_name, location_city, gym_name,
   country, location_lat, location_lng, image_url, max_capacity, going_count, created_by,
   is_women_only, visibility, pack_id, community_id, price_sar, difficulty, coach_name, cancelled_at, workout_id, drop_in, captain_hosted,
+  guest_open, guest_price_sar, guest_spots, share_sar, facility_id,
   pack:packs(id, name),
   workout:workouts(id, title, title_ar, duration_minutes),
   community:communities(id, name, visibility, is_default),
@@ -124,9 +131,13 @@ export function toSession(row: any, meId: string | null | undefined, myStatus?: 
     packId: row.pack_id || null,
     packName: row.pack?.name || null,
     communityId: row.community_id || null,
-    communityName: row.community?.name || null,
+    communityName: row.community?.name || row.gym_name || null,
     communityPrivate: row.community?.visibility === 'private',
     priceSar: row.price_sar != null ? Number(row.price_sar) : null,
+    guestOpen: !!row.guest_open,
+    guestPrice: row.guest_price_sar != null ? Number(row.guest_price_sar) : null,
+    share: row.share_sar != null ? Number(row.share_sar) : null,
+    facilityId: row.facility_id || null,
     workout: row.workout?.id
       ? { id: row.workout.id, title: row.workout.title || '', titleAr: row.workout.title_ar || null, minutes: row.workout.duration_minutes ?? null }
       : null,

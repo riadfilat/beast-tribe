@@ -92,7 +92,12 @@ export default function ExploreScreen() {
           </Txt>
           <IconButton name="plus" label={t('board.hostA11y')} onPress={() => router.push('/host')} />
         </View>
-        <View style={s.tiles}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tiles}>
+          <Press onPress={() => router.push('/courts')} feedback="light" accessibilityRole="button" style={s.tile}>
+            <Icon name="calendar" size={20} color={p.marker} />
+            <Txt v="row" size={14}>{t('courts.title')}</Txt>
+            <Txt v="caption" numberOfLines={2}>{t('courts.tileSub')}</Txt>
+          </Press>
           <Press onPress={() => router.push('/partners')} feedback="light" accessibilityRole="button" style={s.tile}>
             <Icon name="people" size={20} color={p.aqua} />
             <Txt v="row" size={14}>{t('partners.title')}</Txt>
@@ -103,7 +108,7 @@ export default function ExploreScreen() {
             <Txt v="row" size={14}>{t('assistant.title')}</Txt>
             <Txt v="caption" numberOfLines={2}>{t('assistant.tileSub')}</Txt>
           </Press>
-        </View>
+        </ScrollView>
 
         {/* Filters stay pinned while the schedule scrolls */}
         <View style={s.filters}>
@@ -178,8 +183,8 @@ export default function ExploreScreen() {
 const useStyles = makeStyles(({ p }) => ({
   screen: { flex: 1, backgroundColor: p.board },
   header: { flexDirection: 'row', alignItems: 'center', paddingStart: 16, paddingEnd: 8, paddingTop: 6, paddingBottom: 8 },
-  tiles: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingBottom: 10 },
-  tile: { flex: 1, gap: 4, padding: 12, borderRadius: 12, borderWidth: 1.5, borderColor: p.rule },
+  tiles: { gap: 10, paddingHorizontal: 16, paddingBottom: 10 },
+  tile: { width: 168, gap: 4, padding: 12, borderRadius: 12, borderWidth: 1.5, borderColor: p.rule },
   filters: { backgroundColor: p.board, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: p.rule, gap: 2, paddingTop: 4 },
   chipRow: { paddingHorizontal: 16, paddingTop: 10, gap: 8 },
   empty: { paddingHorizontal: 32, paddingTop: 48, gap: 18, alignItems: 'center' },

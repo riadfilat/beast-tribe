@@ -204,6 +204,13 @@ export default function ForGymsPage() {
                   <span className="text-sm text-white/60"> SAR / month</span>
                 </p>
               </div>
+              <div className="rounded-2xl p-6 border border-[#E88F24]/50 bg-[#E88F24]/10">
+                <p className="text-[#F3B565] text-xs font-semibold uppercase tracking-[0.18em]">Included · new customers</p>
+                <h3 className={`${H} mt-1 text-xl font-extrabold`}>Sell your empty spots to guests</h3>
+                <p className="mt-1 text-sm text-white/70">
+                  Open any class to people outside your club for a guest price. They see it on their city&rsquo;s board, join in one tap and pay at your desk. If you have courts or a hall, list them too: players book a time and each one sees their share. All of it is yours; we take nothing from it.
+                </p>
+              </div>
               <div className="rounded-2xl p-6 border border-dashed border-white/20">
                 <p className="text-[#56C4C4] text-xs font-semibold uppercase tracking-[0.18em]">Optional add-on</p>
                 <h3 className={`${H} mt-1 text-xl font-extrabold`}>A Beast Captain for your club</h3>

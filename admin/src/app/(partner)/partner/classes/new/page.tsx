@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase-server';
 import SubmitButton from '@/components/SubmitButton';
 import { Icon } from '@/components/ui/Icon';
 import { btnPrimary, card, input, label } from '@/components/club/ui';
+import { can } from '@/lib/capabilities';
 import { createClass } from '../../club/actions';
 
 export default async function NewClassPage() {
@@ -110,6 +111,31 @@ export default async function NewClassPage() {
         <label className="flex items-center gap-2 text-sm text-gray-600">
           <input type="checkbox" name="is_women_only" /> Women only
         </label>
+
+        {can(partner.partner_type, 'guests') ? (
+          <div className="rounded-lg border border-[#F3DDBD] bg-[#FFF8EC] p-4 space-y-3">
+            <label className="flex items-start gap-2 text-sm text-gray-900 font-medium">
+              <input type="checkbox" name="guest_open" className="mt-1" />
+              <span>
+                Open to guests
+                <span className="block text-xs font-normal text-gray-600">
+                  People in your city who are not your members see this class on their Board and can join for the guest price. They pay at your front desk; you tick them as paid. All of it is yours, Beast Tribe takes nothing.
+                </span>
+              </span>
+            </label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={label}>Guest price (SAR)</label>
+                <input name="guest_price_sar" type="number" min={0} step="0.01" defaultValue={60} className={input} />
+              </div>
+              <div>
+                <label className={label}>Guest spots (empty = any free spot)</label>
+                <input name="guest_spots" type="number" min={0} max={500} placeholder="4" className={input} />
+              </div>
+            </div>
+            <p className="text-xs text-gray-600">Your members always book free and are counted first in the total spots.</p>
+          </div>
+        ) : null}
 
         <SubmitButton pendingLabel="Scheduling…" className={`${btnPrimary} w-full py-2.5`}>
           Schedule class

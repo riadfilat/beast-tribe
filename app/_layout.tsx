@@ -59,6 +59,8 @@ function AuthGate() {
       <Stack.Screen name="programs" />
       <Stack.Screen name="program/[slug]" />
       <Stack.Screen name="partners" />
+      <Stack.Screen name="courts" />
+      <Stack.Screen name="court/[id]" />
       <Stack.Screen name="assistant" />
       <Stack.Screen name="club-new" options={{ presentation: 'modal' }} />
     </Stack>

@@ -2,17 +2,11 @@ import { requirePartner } from '@/lib/auth';
 import Sidebar from '@/components/layout/Sidebar';
 import NavigationProgress from '@/components/NavigationProgress';
 import Link from 'next/link';
+import { kindOf } from '@/lib/capabilities';
 
 export default async function PartnerLayout({ children }: { children: React.ReactNode }) {
   const partner = await requirePartner();
 
-  const TYPE_LABELS: Record<string, string> = {
-    coach: 'Coach',
-    gym: 'Gym',
-    event_company: 'Event Company',
-    company: 'Company',
-    nutritionist: 'Nutritionist',
-  };
 
   // Trial and payment status, always in view: nobody should be surprised when a trial ends.
   const daysLeft = partner.trial_ends_at ? Math.ceil((new Date(partner.trial_ends_at).getTime() - Date.now()) / 86400000) : null;
@@ -32,7 +26,7 @@ export default async function PartnerLayout({ children }: { children: React.Reac
         type="partner"
         partnerType={partner.partner_type}
         userName={partner.business_name}
-        roleBadge={TYPE_LABELS[partner.partner_type] || partner.partner_type}
+        roleBadge={kindOf(partner.partner_type).label}
       />
       <main className="flex-1 bg-gray-50 print:bg-white overflow-auto">
         {banner ? (

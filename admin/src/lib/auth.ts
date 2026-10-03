@@ -5,10 +5,10 @@ import { createAdminClient } from './supabase-server';
 import { redirect } from 'next/navigation';
 
 export type AdminRole = 'super_admin' | 'admin' | 'moderator';
-export type PartnerType = 'coach' | 'gym' | 'event_company' | 'company' | 'nutritionist';
+export type PartnerType = 'coach' | 'gym' | 'event_company' | 'company' | 'nutritionist' | 'venue' | 'school' | 'leader' | 'nutrition';
 
-/** Gyms and companies run a community of their own from the portal. */
-export const ownsCommunity = (t: string) => t === 'gym' || t === 'company';
+/** Gyms, companies, schools and club leaders run a community of their own from the dashboard. */
+export const ownsCommunity = (t: string) => t === 'gym' || t === 'company' || t === 'school' || t === 'leader';
 
 export interface AdminUser {
   id: string;

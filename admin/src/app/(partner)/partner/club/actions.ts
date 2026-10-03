@@ -3,6 +3,7 @@
 import { randomUUID } from 'crypto';
 import { createAdminClient } from '@/lib/supabase-server';
 import { ownsCommunity, requirePartner, type PartnerUser } from '@/lib/auth';
+import { can } from '@/lib/capabilities';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
@@ -10,7 +11,7 @@ const SEATS: Record<string, number | null> = { studio: 300, club: 1500, multi: n
 
 async function requireGym(): Promise<PartnerUser> {
   const partner = await requirePartner();
-  if (!ownsCommunity(partner.partner_type)) throw new Error('Only gyms and companies can do this');
+  if (!ownsCommunity(partner.partner_type)) throw new Error('This account does not run a community');
   return partner;
 }
 
@@ -37,7 +38,7 @@ export async function createClub() {
         logo_url: (p as any)?.logo_url || null,
         city: (p as any)?.city || null,
         country: (p as any)?.country || 'SA',
-        kind: partner.partner_type === 'company' ? 'company' : 'gym',
+        kind: partner.partner_type === 'company' ? 'company' : partner.partner_type === 'school' ? 'school' : partner.partner_type === 'leader' ? 'club' : 'gym',
         visibility: 'private',
         is_active: true,
         seat_limit: partner.plan ? (SEATS[partner.plan] ?? null) : 300,
@@ -86,6 +87,11 @@ export async function createClass(formData: FormData) {
   const duration = Math.min(480, Math.max(10, parseInt(str('duration')) || 60));
   const capacity = parseInt(str('capacity')) || null;
   const weeks = Math.min(12, Math.max(1, parseInt(str('repeat')) || 1));
+  // Guests: people outside the community can join for a guest price and pay at the desk.
+  const guestOpen = can(partner.partner_type, 'guests') && formData.get('guest_open') === 'on';
+  const guestPrice = guestOpen ? Math.round(parseFloat(str('guest_price_sar') || '0') * 100) / 100 : null;
+  if (guestOpen && !(guestPrice! >= 0 && guestPrice! <= 5000)) throw new Error('The guest price is not valid');
+  const guestSpots = guestOpen && str('guest_spots') ? Math.max(0, parseInt(str('guest_spots')) || 0) : null;
   const first = new Date(`${date}T${time}:00+03:00`);
   if (isNaN(first.getTime())) throw new Error('That date or time is not valid');
   if (first.getTime() < Date.now() - 3600000) throw new Error('Pick a time in the future');
@@ -116,6 +122,9 @@ export async function createClass(formData: FormData) {
       visibility: 'community',
       is_class: true,
       class_series_id: series,
+      guest_open: guestOpen,
+      guest_price_sar: guestOpen && guestPrice! > 0 ? guestPrice : null,
+      guest_spots: guestSpots,
     };
   });
   const { error } = await db.from('events').insert(rows);

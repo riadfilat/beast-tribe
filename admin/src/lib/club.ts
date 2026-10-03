@@ -50,6 +50,11 @@ export interface ClubClass {
   byMember: boolean;
   sport: string | null;
   seriesId: string | null;
+  /** Open to people outside the community; null price means guests join free. */
+  guestOpen: boolean;
+  guestPrice: number | null;
+  /** A member's court booking that landed in this community. */
+  court: boolean;
 }
 
 export interface ClubData {
@@ -99,7 +104,7 @@ export const loadClub = cache(async (partner: PartnerUser, communityId: string):
     fetchAll((a, b) =>
       db
         .from('events')
-        .select('id, title, starts_at, ends_at, max_capacity, is_class, class_series_id, created_by, partner_id, coach_name, cancelled_at, sport:sports(name, emoji)')
+        .select('id, title, starts_at, ends_at, max_capacity, is_class, class_series_id, created_by, partner_id, coach_name, cancelled_at, guest_open, guest_price_sar, facility_id, sport:sports(name, emoji)')
         .eq('community_id', communityId)
         .gte('starts_at', since90.toISOString())
         .lte('starts_at', until.toISOString())
@@ -232,6 +237,9 @@ export const loadClub = cache(async (partner: PartnerUser, communityId: string):
       byMember: e.partner_id !== partner.partner_id && memberSet.has(e.created_by),
       sport: e.sport ? `${e.sport.emoji || ''} ${e.sport.name}`.trim() : null,
       seriesId: e.class_series_id,
+      guestOpen: !!e.guest_open,
+      guestPrice: e.guest_price_sar != null ? Number(e.guest_price_sar) : null,
+      court: !!e.facility_id,
     };
   });
   const upcoming = classes.filter((c) => c.startsAt > now);

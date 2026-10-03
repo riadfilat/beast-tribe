@@ -109,7 +109,8 @@ function ClassRow({ c, past }: { c: ClubClass; past?: boolean }) {
         <div className="flex-1 min-w-0">
           <p className={`text-sm font-medium truncate ${c.cancelled ? 'line-through text-gray-400' : 'text-gray-900'}`}>{c.title}</p>
           <p className="text-xs text-gray-400 truncate">
-            {[c.byMember ? 'Set up by a member' : c.coach, c.sport, c.seriesId ? 'Weekly' : null].filter(Boolean).join(' · ') || 'Class'}
+            {[c.byMember ? 'Set up by a member' : c.coach, c.sport, c.seriesId ? 'Weekly' : null, c.court ? 'Court booking' : null].filter(Boolean).join(' · ') || 'Class'}
+            {c.guestOpen ? <span className="ml-2 inline-block rounded-full bg-[#FFF1DC] text-[#9A5A0B] px-2 py-0.5 text-[11px] font-semibold">{c.guestPrice ? `Guests SAR ${c.guestPrice}` : 'Guests welcome'}</span> : null}
           </p>
         </div>
         {c.cancelled ? (

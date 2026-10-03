@@ -12,6 +12,9 @@ import { useSession, useSessionActions, SessionError } from '../../../src/data/s
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { SESSION_LINK_BASE } from '../../../src/lib/constants';
 import { Txt } from '../../../src/components/board/Txt';
+import { PayBlock } from '../../../src/components/board/pay';
+import { money } from '../../../src/data/dues';
+import { useMyCommunities } from '../../../src/data/communities';
 import { RatePeople } from '../../../src/components/board/ratings';
 import { rateable } from '../../../src/data/ratings';
 import { Icon } from '../../../src/components/board/Icon';
@@ -34,6 +37,7 @@ export default function SessionScreen() {
   const { user, profile } = useAuth();
   const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
   const q = useSession(id);
+  const myCommunities = useMyCommunities();
   const { join, leave, cancel } = useSessionActions();
   const now = useNow();
   const [busy, setBusy] = useState(false);
@@ -64,6 +68,8 @@ export default function SessionScreen() {
   }
 
   const going = x.myStatus === 'going' || x.isHost;
+  // Outside the class's own community: joining takes a guest spot at the guest price.
+  const isGuest = x.guestOpen && !!x.communityId && !!myCommunities.data && !myCommunities.data.some((c) => c.id === x.communityId);
   const waiting = x.myStatus === 'waitlist';
   const { time, suffix } = clockParts(x.startsAt, lang);
   const nowDate = new Date(now);
@@ -273,6 +279,15 @@ export default function SessionScreen() {
             </View>
           </View>
 
+          {x.share != null || (x.guestOpen && isGuest && x.guestPrice) ? (
+            <>
+              <Rule style={s.rule} />
+              <View style={s.section}>
+                <PayBlock x={x} meId={meId} isGuest={isGuest} />
+              </View>
+            </>
+          ) : null}
+
           {/* The plan, when the host attached a workout */}
           {x.workout ? (
             <>
@@ -427,7 +442,11 @@ export default function SessionScreen() {
                 {t('session.dropInNote')}
               </Txt>
             ) : null}
-            <MarkerButton label={t('session.imIn')} onPress={onJoin} loading={busy} />
+            <MarkerButton
+              label={isGuest && x.guestPrice ? t('pay.joinGuest', { amount: money(x.guestPrice) }) : x.share != null ? t('pay.joinShare', { amount: money(x.share) }) : t('session.imIn')}
+              onPress={onJoin}
+              loading={busy}
+            />
           </>
         )}
       </View>

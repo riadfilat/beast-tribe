@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
 // Partner kinds the app understands. 'nutrition' = a healthy restaurant with a member offer.
-const TYPES = ['coach', 'gym', 'company', 'nutritionist', 'event_company', 'nutrition'] as const;
+const TYPES = ['coach', 'gym', 'company', 'school', 'venue', 'leader', 'nutritionist', 'event_company', 'nutrition'] as const;
 
 function slugify(raw: string) {
   return raw.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '') || 'partner';
@@ -25,7 +25,7 @@ function readFields(formData: FormData) {
   const offer = str('offer');
   const offer_ar = str('offer_ar');
   const code = str('offer_code').toUpperCase();
-  const plan = ['coach', 'studio', 'club', 'multi', 'company'].includes(str('plan')) ? str('plan') : null;
+  const plan = ['coach', 'studio', 'club', 'multi', 'company', 'venue'].includes(str('plan')) ? str('plan') : null;
   const plan_status = ['trial', 'active', 'past_due', 'paused', 'cancelled'].includes(str('plan_status')) ? str('plan_status') : 'trial';
   const date = (k: string) => (/^\d{4}-\d{2}-\d{2}$/.test(str(k)) ? `${str(k)}T00:00:00+03:00` : null);
   return {

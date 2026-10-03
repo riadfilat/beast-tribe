@@ -8,7 +8,8 @@ export const revalidate = 0;
 
 export default async function PlanPage() {
   const partner = await requirePartner();
-  const audience = partner.partner_type === 'gym' ? 'gym' : partner.partner_type === 'company' ? 'company' : 'coach';
+  const t = partner.partner_type;
+  const audience = t === 'gym' || t === 'school' ? 'gym' : t === 'company' ? 'company' : t === 'venue' ? 'venue' : 'coach';
   const current = planOf(partner.plan);
   const options = PLANS.filter((p) => p.audience === audience);
   const trialDays =
@@ -21,6 +22,12 @@ export default async function PlanPage() {
         <h1 className="text-2xl font-bold text-gray-900">Your plan</h1>
         <p className="text-sm text-gray-500">One flat monthly fee. We never take a cut of what you earn.</p>
       </div>
+
+      {t === 'leader' ? (
+        <div className="rounded-lg bg-[#E6F6F6] text-[#0F5A5A] text-sm px-4 py-3">
+          Running a free club costs nothing: your dashboard, members and sessions stay free. A plan is only needed if you start charging for coaching.
+        </div>
+      ) : null}
 
       <section className={`${card} p-6 flex flex-wrap items-center justify-between gap-4`}>
         <div>

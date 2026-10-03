@@ -4,6 +4,7 @@ import Animated, { FadeOut, LinearTransition } from 'react-native-reanimated';
 import { useKit } from '../../theme';
 import { useI18n } from '../../i18n';
 import { cityLabel } from '../../lib/cities';
+import { money } from '../../data/dues';
 import { clockParts, fmtClock, fmtDay, fmtIn } from '../../i18n/format';
 import type { Session } from '../../data/model';
 import { Txt } from './Txt';
@@ -40,6 +41,8 @@ export function SessionTags({ s, now }: { s: Session; now: number }) {
   if (s.state === 'live') tags.push(<Tag key="l" label={t('session.live')} tone="marker" solid />);
   if (s.state !== 'cancelled' && s.isFull) tags.push(<Tag key="f" label={t('session.full')} tone="ink" />);
   if (s.dropIn && s.state !== 'cancelled') tags.push(<Tag key="o" label={t('session.dropIn')} tone="marker" />);
+  if (s.share != null && s.state !== 'cancelled') tags.push(<Tag key="sh" label={t('pay.eachTag', { amount: money(s.share) })} tone="marker" />);
+  if (s.guestOpen && s.state !== 'cancelled') tags.push(<Tag key="g" label={s.guestPrice ? t('pay.guestTag', { amount: money(s.guestPrice) }) : t('pay.guestFree')} tone="aqua" />);
   if (s.womenOnly) tags.push(<Tag key="w" label={t('session.womenOnly')} tone="coral" />);
   if (s.communityPrivate && s.communityName && !s.packOnly) tags.push(<Tag key="cm" icon="shield" label={s.communityName} tone="aqua" />);
   if (s.packOnly) tags.push(<Tag key="p" icon="lock" label={s.packName ? t('session.packOnly', { pack: s.packName }) : t('session.packOnlyGeneric')} tone="aqua" />);

@@ -43,6 +43,7 @@ export const PLANS: Plan[] = [
     features: [
       'Your private club inside the app, joined with your code',
       'Class schedule with booking, waitlist and attendance',
+      'Guest spots: sell empty places to non-members, 0% taken',
       'Member dashboard: who is active, who is drifting',
       'Busiest-times map and monthly results',
       'Club feed and packs that keep members talking',
@@ -94,9 +95,9 @@ PLANS.push({
   audience: 'venue',
   name: 'Venue',
   monthly: 1000,
-  tagline: 'For healthy restaurants and courts',
-  limit: 'One listing, every community that can see you',
-  features: ['Your offer in front of active members', 'A member code to track what it brings in', 'Featured when sessions happen near you'],
+  tagline: 'For courts, pitches, halls and healthy restaurants',
+  limit: 'Every court you run, every community that can see you',
+  features: ['Courts booked in the app, price split per player', 'A bookings page: who is coming, who has paid', 'Restaurants: your offer in front of active members', '0% taken from bookings'],
 });
 
 export const planOf = (id: string | null | undefined) => PLANS.find((p) => p.id === id) || null;

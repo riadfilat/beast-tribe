@@ -122,7 +122,7 @@ export default function BoardScreen() {
     />
   );
 
-  const city = profile?.city || t(`onboarding.countries.${country}`);
+  const city = profile?.city ? cityLabel(profile.city, lang) : t(`onboarding.countries.${country}`);
   const count = upcoming.length + live.length;
 
   return (

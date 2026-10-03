@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase-browser';
 import { Lockup } from '@/components/brand/Logo';
 import { Icon, type IconName } from '@/components/ui/Icon';
+import { navFor } from '@/lib/capabilities';
 
 interface NavItem {
   label: string;
@@ -29,41 +30,6 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Workouts', href: '/workouts', icon: 'workouts' },
 ];
 
-const PARTNER_NAV: NavItem[] = [
-  { label: 'Dashboard', href: '/partner/dashboard', icon: 'dashboard' },
-  { label: 'My Events', href: '/partner/events', icon: 'events' },
-  { label: 'My Workouts', href: '/partner/workouts', icon: 'workouts' },
-  { label: 'Plan', href: '/partner/plan', icon: 'payouts' },
-  { label: 'Profile', href: '/partner/profile', icon: 'settings' },
-];
-
-// Companies run their people's community: same tools, sessions instead of classes, no workouts.
-const COMPANY_NAV: NavItem[] = [
-  { label: 'Community', href: '/partner/club', icon: 'dashboard' },
-  { label: 'People', href: '/partner/members', icon: 'users' },
-  { label: 'Sessions', href: '/partner/classes', icon: 'events' },
-  { label: 'Teams', href: '/partner/teams', icon: 'communities' },
-  { label: 'Challenges', href: '/partner/challenges', icon: 'steps' },
-  { label: 'Monthly report', href: '/partner/report', icon: 'business' },
-  { label: 'Join poster', href: '/partner/poster', icon: 'print' },
-  { label: 'Plan', href: '/partner/plan', icon: 'payouts' },
-  { label: 'Profile', href: '/partner/profile', icon: 'settings' },
-];
-
-// Gyms run a club: members, classes and the numbers that keep members coming back.
-const GYM_NAV: NavItem[] = [
-  { label: 'Club', href: '/partner/club', icon: 'dashboard' },
-  { label: 'Members', href: '/partner/members', icon: 'users' },
-  { label: 'Classes', href: '/partner/classes', icon: 'events' },
-  { label: 'Teams', href: '/partner/teams', icon: 'communities' },
-  { label: 'Challenges', href: '/partner/challenges', icon: 'steps' },
-  { label: 'Monthly report', href: '/partner/report', icon: 'business' },
-  { label: 'Join poster', href: '/partner/poster', icon: 'print' },
-  { label: 'Workouts', href: '/partner/workouts', icon: 'workouts' },
-  { label: 'Plan', href: '/partner/plan', icon: 'payouts' },
-  { label: 'Profile', href: '/partner/profile', icon: 'settings' },
-];
-
 interface SidebarProps {
   type: 'admin' | 'partner';
   partnerType?: string;
@@ -75,7 +41,7 @@ interface SidebarProps {
 export default function Sidebar({ type, partnerType, userName, roleBadge, pendingModeration }: SidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const nav = type === 'admin' ? ADMIN_NAV : partnerType === 'gym' ? GYM_NAV : partnerType === 'company' ? COMPANY_NAV : PARTNER_NAV;
+  const nav: NavItem[] = type === 'admin' ? ADMIN_NAV : (navFor(partnerType || '') as NavItem[]);
 
   // Inject moderation badge
   const navWithBadges = nav.map((item) => {
@@ -130,7 +96,7 @@ export default function Sidebar({ type, partnerType, userName, roleBadge, pendin
           <div className="flex flex-col gap-2">
             <Lockup height={20} ink="#F4F1EA" id="bt-sidebar" />
             <p className="text-xs text-white/60 leading-tight">
-              {type === 'admin' ? 'Admin Dashboard' : partnerType === 'gym' ? 'Club Portal' : partnerType === 'company' ? 'Company Portal' : 'Partner Portal'}
+              {type === 'admin' ? 'Admin Dashboard' : 'Partner Dashboard'}
             </p>
           </div>
         </div>
