@@ -145,8 +145,10 @@ Demo account: `appreview@operationbeast.com` (password in CLAUDE.md › reviewer
 - **Account deletion URL:** https://beast-tribe.vercel.app/support (section "How do I delete my account?").
 
 **Data safety**
-- Collected: Personal info (name, email address, user IDs); Health and fitness (health info, fitness info); Photos and videos (photos); Messages (other in-app messages); App activity (other user-generated content, app interactions).
-- Shared with third parties: **No** (Supabase hosts the data as a service provider).
+- Collected: Personal info (name, email address, user IDs, other info: gender, date of birth, city); Health and fitness (health info: body measurements and nutrition logs; fitness info: workouts, sessions, and on iPhone only daily steps); Photos and videos (photos); Messages (other in-app messages); App activity (other user-generated content, app interactions, in-app search history: Ask Beast questions).
+- Shared with third parties: **No.** Supabase hosts the data and Anthropic answers Ask Beast questions, both as service providers processing for us, which Google does not count as sharing. Private level ratings from teammates are used only for matching and never shown.
+- Purposes: app functionality, account management, personalisation (training-partner and session suggestions). No advertising, no analytics sold or shared.
+- Android does not read steps yet (Health Connect comes in a later build), so no Health Connect declaration is needed for this release.
 - Encrypted in transit: **Yes** · Users can request deletion: **Yes** (in the app, or by email).
 - Required: name, email. Optional: everything else.
 
