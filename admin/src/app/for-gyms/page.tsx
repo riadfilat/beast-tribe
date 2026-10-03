@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Montserrat, Poppins } from 'next/font/google';
 import { Lockup } from '@/components/brand/Logo';
-import { PLANS, PROMISES, SALES_EMAIL, TRIAL_DAYS, sar } from '@/lib/plans';
+import { PLANS, PROMISES, TRIAL_DAYS, sar } from '@/lib/plans';
+import LeadForm from '@/components/LeadForm';
 
 const display = Montserrat({ subsets: ['latin'], weight: ['700', '800', '900'], variable: '--font-display' });
 const body = Poppins({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--font-body' });
@@ -13,8 +14,7 @@ export const metadata: Metadata = {
   openGraph: { images: ['/og-default.png'] },
 };
 
-const TRIAL = `mailto:${SALES_EMAIL}?subject=${encodeURIComponent('Beast Tribe for my gym: free trial')}`;
-const DEMO = `mailto:${SALES_EMAIL}?subject=${encodeURIComponent('Beast Tribe for my gym: a demo')}`;
+const TRIAL = '#start';
 
 const H = 'font-[family-name:var(--font-display)] tracking-tight';
 
@@ -258,18 +258,15 @@ export default function ForGymsPage() {
         </div>
       </section>
 
-      {/* ───────── Close ───────── */}
-      <section className="bg-[#E88F24] text-[#023C3C]">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16 md:py-20 flex flex-wrap items-center justify-between gap-8">
-          <h2 className={`${H} text-3xl sm:text-5xl font-black max-w-2xl leading-[1.02]`}>Give your members a reason to come back tomorrow.</h2>
-          <div className="flex flex-wrap gap-3">
-            <a href={TRIAL} className="inline-flex px-6 py-3 rounded-xl bg-[#023C3C] text-white font-semibold hover:opacity-90">
-              Start a free trial
-            </a>
-            <a href={DEMO} className="inline-flex px-6 py-3 rounded-xl border-2 border-[#023C3C] font-semibold hover:bg-[#023C3C]/5">
-              Book a demo
-            </a>
+      {/* ───────── Start ───────── */}
+      <section id="start" className="bg-[#E88F24] text-[#023C3C] scroll-mt-4">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16 md:py-20 grid lg:grid-cols-[1fr_1.1fr] gap-10 items-start">
+          <div>
+            <h2 className={`${H} text-3xl sm:text-5xl font-black leading-[1.02]`}>Give your members a reason to come back tomorrow.</h2>
+            <p className="mt-5 text-lg text-[#023C3C]/80 max-w-md">Tell us about your club. We set it up with you, your members join with your code, and you see it working within the week.</p>
+            <p className="mt-6 text-sm font-semibold">Running a company? <Link href="/for-companies" className="underline">See Beast Tribe for companies</Link></p>
           </div>
+          <LeadForm kind="gym" source="for-gyms" />
         </div>
       </section>
 

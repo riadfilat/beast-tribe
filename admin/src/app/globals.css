@@ -18,3 +18,9 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Printed pages (the join poster) keep their colours and drop the app chrome. */
+@media print {
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff; }
+  @page { size: A4; margin: 10mm; }
+}

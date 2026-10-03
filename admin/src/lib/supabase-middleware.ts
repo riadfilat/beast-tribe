@@ -39,6 +39,8 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/support') ||
     // The public pitch to gyms and coaches
     request.nextUrl.pathname.startsWith('/for-gyms') ||
+    request.nextUrl.pathname.startsWith('/for-companies') ||
+    request.nextUrl.pathname.startsWith('/get') ||
     // Shared session links from the app's Share sheet
     request.nextUrl.pathname.startsWith('/s/');
   if (isPublicPage) {

@@ -16,6 +16,8 @@ interface NavItem {
 
 const ADMIN_NAV: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: 'dashboard' },
+  { label: 'Business', href: '/business', icon: 'business' },
+  { label: 'Leads', href: '/leads', icon: 'leads' },
   { label: 'Users', href: '/users', icon: 'users' },
   { label: 'Communities', href: '/communities', icon: 'communities' },
   { label: 'Events', href: '/events', icon: 'events' },
@@ -39,7 +41,8 @@ const COMPANY_NAV: NavItem[] = [
   { label: 'Community', href: '/partner/club', icon: 'dashboard' },
   { label: 'People', href: '/partner/members', icon: 'users' },
   { label: 'Sessions', href: '/partner/classes', icon: 'events' },
-  { label: 'Challenges', href: '/partner/challenges', icon: 'star' },
+  { label: 'Challenges', href: '/partner/challenges', icon: 'steps' },
+  { label: 'Join poster', href: '/partner/poster', icon: 'print' },
   { label: 'Plan', href: '/partner/plan', icon: 'payouts' },
   { label: 'Profile', href: '/partner/profile', icon: 'settings' },
 ];
@@ -49,7 +52,8 @@ const GYM_NAV: NavItem[] = [
   { label: 'Club', href: '/partner/club', icon: 'dashboard' },
   { label: 'Members', href: '/partner/members', icon: 'users' },
   { label: 'Classes', href: '/partner/classes', icon: 'events' },
-  { label: 'Challenges', href: '/partner/challenges', icon: 'star' },
+  { label: 'Challenges', href: '/partner/challenges', icon: 'steps' },
+  { label: 'Join poster', href: '/partner/poster', icon: 'print' },
   { label: 'Workouts', href: '/partner/workouts', icon: 'workouts' },
   { label: 'Plan', href: '/partner/plan', icon: 'payouts' },
   { label: 'Profile', href: '/partner/profile', icon: 'settings' },
@@ -97,7 +101,7 @@ export default function Sidebar({ type, partnerType, userName, roleBadge, pendin
         type="button"
         aria-label="Toggle navigation"
         onClick={() => setOpen((v) => !v)}
-        className="md:hidden fixed top-3 left-3 z-50 w-11 h-11 rounded-lg bg-brand-teal text-white flex items-center justify-center shadow-lg"
+        className="print:hidden md:hidden fixed top-3 left-3 z-50 w-11 h-11 rounded-lg bg-brand-teal text-white flex items-center justify-center shadow-lg"
       >
         <Icon name={open ? 'close' : 'menu'} size="lg" weight="bold" />
       </button>
@@ -112,7 +116,7 @@ export default function Sidebar({ type, partnerType, userName, roleBadge, pendin
       )}
 
       <aside
-        className={`fixed md:static top-0 left-0 z-40 w-64 bg-brand-teal min-h-screen flex flex-col text-white flex-none transform transition-transform duration-200 md:w-64 md:translate-x-0 ${
+        className={`print:hidden fixed md:static top-0 left-0 z-40 w-64 bg-brand-teal min-h-screen flex flex-col text-white flex-none transform transition-transform duration-200 md:w-64 md:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

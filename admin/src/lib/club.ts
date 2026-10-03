@@ -1,6 +1,7 @@
 import { cache } from 'react';
 import { createAdminClient } from './supabase-server';
 import type { PartnerUser } from './auth';
+import { fetchAll } from './fetch-all';
 
 // A gym's club, measured. Everything per member is club activity only: booking or coming to the
 // club's classes and sessions, and posting or commenting in the club feed. Training a member does
@@ -91,17 +92,22 @@ export const loadClub = cache(async (partner: PartnerUser, communityId: string):
   const since30 = new Date(now.getTime() - 30 * DAY);
   const until = new Date(now.getTime() + 60 * DAY);
 
-  const [{ data: community }, { data: memberRows }, { data: eventRows }, { data: postRows }] = await Promise.all([
+  // Read in pages: a full club passes the API's 1,000-row limit on every one of these.
+  const [{ data: community }, memberRows, eventRows, postRows] = await Promise.all([
     db.from('communities').select('id, name, join_code, seat_limit, kind').eq('id', communityId).single(),
-    db.from('community_members').select('user_id, joined_at').eq('community_id', communityId),
-    db
-      .from('events')
-      .select('id, title, starts_at, ends_at, max_capacity, is_class, class_series_id, created_by, partner_id, coach_name, cancelled_at, sport:sports(name, emoji)')
-      .eq('community_id', communityId)
-      .gte('starts_at', since90.toISOString())
-      .lte('starts_at', until.toISOString())
-      .order('starts_at'),
-    db.from('feed_posts').select('id, user_id, created_at').eq('community_id', communityId).gte('created_at', since90.toISOString()),
+    fetchAll((a, b) => db.from('community_members').select('user_id, joined_at').eq('community_id', communityId).order('user_id').range(a, b)),
+    fetchAll((a, b) =>
+      db
+        .from('events')
+        .select('id, title, starts_at, ends_at, max_capacity, is_class, class_series_id, created_by, partner_id, coach_name, cancelled_at, sport:sports(name, emoji)')
+        .eq('community_id', communityId)
+        .gte('starts_at', since90.toISOString())
+        .lte('starts_at', until.toISOString())
+        .order('starts_at')
+        .order('id')
+        .range(a, b),
+    ),
+    fetchAll((a, b) => db.from('feed_posts').select('id, user_id, created_at').eq('community_id', communityId).gte('created_at', since90.toISOString()).order('id').range(a, b)),
   ]);
   if (!community) return null;
 
@@ -112,9 +118,9 @@ export const loadClub = cache(async (partner: PartnerUser, communityId: string):
 
   const [profiles, rsvps, comments, logs] = await Promise.all([
     Promise.all(chunk(ids).map((c) => db.from('profiles').select('id, full_name, display_name, avatar_url').in('id', c))).then((rs) => rs.flatMap((r) => r.data || [])),
-    Promise.all(chunk(eventIds).map((c) => db.from('event_rsvps').select('event_id, user_id, status, created_at, attended_at').in('event_id', c))).then((rs) => rs.flatMap((r) => r.data || [])),
-    Promise.all(chunk(postIds).map((c) => db.from('feed_comments').select('user_id, created_at').in('post_id', c).gte('created_at', since90.toISOString()))).then((rs) => rs.flatMap((r) => r.data || [])),
-    Promise.all(chunk(ids).map((c) => db.from('workout_logs').select('user_id').in('user_id', c).gte('completed_at', since30.toISOString()))).then((rs) => rs.flatMap((r) => r.data || [])),
+    Promise.all(chunk(eventIds, 60).map((c) => fetchAll((a, b) => db.from('event_rsvps').select('event_id, user_id, status, created_at, attended_at').in('event_id', c).order('id').range(a, b)))).then((rs) => rs.flat()),
+    Promise.all(chunk(postIds).map((c) => fetchAll((a, b) => db.from('feed_comments').select('user_id, created_at').in('post_id', c).gte('created_at', since90.toISOString()).order('id').range(a, b)))).then((rs) => rs.flat()),
+    Promise.all(chunk(ids).map((c) => fetchAll((a, b) => db.from('workout_logs').select('user_id').in('user_id', c).gte('completed_at', since30.toISOString()).order('id').range(a, b)))).then((rs) => rs.flat()),
   ]);
 
   const memberSet = new Set(ids);

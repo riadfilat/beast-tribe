@@ -15,7 +15,7 @@ export default function PrivacyPolicyPage() {
           <Lockup height={22} id="bt-privacy" className="mb-6" />
           <h1 className="text-3xl font-bold text-gray-900">Privacy Policy</h1>
           <p className="mt-2 text-sm text-gray-500">Beast Tribe by Operation Beast</p>
-          <p className="text-sm text-gray-500">Last updated: June 2026</p>
+          <p className="text-sm text-gray-500">Last updated: October 2026</p>
         </header>
 
         <div className="space-y-8 leading-relaxed">
@@ -49,6 +49,19 @@ export default function PrivacyPolicyPage() {
                 activity within community packs.
               </li>
               <li>
+                <strong>About you</strong> — optional details such as your city, country, date of birth and
+                gender (gender is used for women-only and men-only sessions and packs).
+              </li>
+              <li>
+                <strong>Training and nutrition</strong> — the workouts and sets you log, your training plan,
+                meal and water logs, nutrition targets, and body measurements you or a coach you work with
+                record.
+              </li>
+              <li>
+                <strong>Steps from Apple Health</strong> — only if you choose to connect Apple Health, we read
+                your daily step count. We read nothing else from Apple Health and never write to it.
+              </li>
+              <li>
                 <strong>Device push token</strong> — an anonymous device identifier used solely to send you
                 push notifications (for example, event reminders and community activity).
               </li>
@@ -69,12 +82,46 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-gray-900">Who Can See What</h2>
+            <ul className="list-disc space-y-1 pl-6">
+              <li>
+                <strong>Other members</strong> see your name and photo, the sessions you join and the posts
+                you share, only in the communities and packs you share with them. They never see your date
+                of birth, gender, training log, food log or measurements.
+              </li>
+              <li>
+                <strong>A gym, club or company whose community you join</strong> sees that you are a member,
+                your bookings and attendance at its sessions, and your posts in its community. It does not
+                see what you train on your own, what you eat, or your measurements.
+              </li>
+              <li>
+                <strong>Step challenges</strong> — your steps appear on a challenge ranking only if you choose
+                to join that challenge. Community step averages are shown only when at least five members
+                are included, so no one person&rsquo;s steps can be worked out.
+              </li>
+              <li>
+                <strong>A coach or nutritionist</strong> sees your food log or measurements only if you switch
+                that on for them, and you can switch it off or stop working with them at any time.
+              </li>
+            </ul>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-gray-900">Apple Health</h2>
+            <p>
+              Step counts read from Apple Health are used only to show your steps to you and to run the
+              challenges you join. We do not use Apple Health data for advertising or marketing, we do not
+              sell it, and we do not share it with third parties. You can disconnect at any time in the
+              iPhone Health app under Sharing › Apps.
+            </p>
+          </section>
+
+          <section className="space-y-3">
             <h2 className="text-xl font-semibold text-gray-900">3. Where Your Data Is Stored</h2>
             <p>
-              Your data is stored securely using Supabase, our backend and database provider. Access to
-              your data is restricted by row-level security policies so that you and authorized community
-              moderators can only access what is appropriate. Data is transmitted over encrypted
-              connections (HTTPS).
+              Your data is stored with Supabase, our database provider, on Amazon Web Services servers in
+              Mumbai, India. Access is restricted so that each person and organisation can only reach what
+              is described above. Data is transmitted over encrypted connections (HTTPS).
             </p>
           </section>
 

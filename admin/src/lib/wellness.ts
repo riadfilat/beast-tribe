@@ -1,4 +1,5 @@
 import { createAdminClient } from './supabase-server';
+import { fetchAll } from './fetch-all';
 
 // Wellness for a gym's or company's community: step challenges (entrants only on the ranking) and
 // a steps total that is only shown when at least five members have connected Apple Health, so no
@@ -22,6 +23,7 @@ export interface BoardRow {
   steps: number;
   days_active: number;
   place: number;
+  entrants?: number;
 }
 
 export async function loadChallenges(communityId: string): Promise<ChallengeRow[]> {
@@ -66,9 +68,9 @@ export async function loadStepsSummary(memberIds: string[]): Promise<{ connected
   const db = createAdminClient();
   const since = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
   const rows: any[] = [];
-  for (let i = 0; i < memberIds.length; i += 150) {
-    const { data } = await db.from('daily_activity').select('user_id, steps').in('user_id', memberIds.slice(i, i + 150)).gte('day', since);
-    rows.push(...(data || []));
+  for (let i = 0; i < memberIds.length; i += 100) {
+    const part = memberIds.slice(i, i + 100); // 100 members × 7 days stays under the 1,000-row limit
+    rows.push(...(await fetchAll((a, b) => db.from('daily_activity').select('user_id, steps').in('user_id', part).gte('day', since).order('user_id').order('day').range(a, b))));
   }
   const people = new Set(rows.map((r) => r.user_id));
   if (people.size < 5) return { connected: people.size, avgDaily: null, total: null };

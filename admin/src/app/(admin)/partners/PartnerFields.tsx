@@ -118,6 +118,7 @@ export default function PartnerFields({ p = {}, communities }: { p?: PartnerValu
               <option value="club">Club · 1,590 SAR</option>
               <option value="multi">Multi-branch · custom</option>
               <option value="company">Company · 10 SAR per seat</option>
+              <option value="venue">Venue · 1,000 SAR</option>
             </select>
           </div>
           <div>

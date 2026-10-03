@@ -71,7 +71,7 @@ export async function createPartner(formData: FormData) {
   }
 
   const slug = `${slugify(fields.business_name)}-${Math.random().toString(36).slice(2, 6)}`;
-  const { error } = await db.from('partners').insert({
+  const { data: created, error } = await db.from('partners').insert({
     ...fields,
     user_id: userId,
     slug,
@@ -80,8 +80,15 @@ export async function createPartner(formData: FormData) {
     status: 'active',
     is_active: true,
     is_verified: true,
-  });
+  }).select('id').single();
   if (error) throw new Error(`Partner error: ${error.message}`);
+
+  // Created from a lead: the lead moves to Trial and points at the account.
+  const leadId = ((formData.get('lead_id') as string) || '').trim();
+  if (leadId && created) {
+    await db.from('partner_leads').update({ status: 'trial', partner_id: created.id, updated_at: new Date().toISOString() }).eq('id', leadId);
+    revalidatePath('/leads');
+  }
 
   await db.from('admin_audit_log').insert({
     admin_user_id: admin.id,

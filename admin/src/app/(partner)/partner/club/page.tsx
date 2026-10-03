@@ -76,6 +76,38 @@ export default async function ClubPage() {
         </div>
       </div>
 
+      {/* Getting started: shown until the club is really running */}
+      {(() => {
+        const steps = [
+          { done: counts.members >= 10, t: `Bring in your first 10 ${isCompany ? 'people' : 'members'}`, d: `${counts.members} joined so far. Print the poster or share your code.`, href: '/partner/poster', cta: 'Open the join poster' },
+          { done: club.upcoming.some((c) => c.isClass) || club.past.some((c) => c.isClass), t: isCompany ? 'Put your first session on the board' : 'Schedule your first week of classes', d: 'People can only book what you post. Repeat it weekly in one step.', href: '/partner/classes/new', cta: isCompany ? 'New session' : 'New class' },
+          { done: challenges.length > 0, t: 'Start a step challenge', d: 'A week or a month. It gets people opening the app every day.', href: '/partner/challenges', cta: 'Start a challenge' },
+        ];
+        const left = steps.filter((x) => !x.done).length;
+        if (!left) return null;
+        return (
+          <section className={`${card} p-5`}>
+            <SectionTitle title={`Get your ${isCompany ? 'community' : 'club'} running · ${steps.length - left} of ${steps.length} done`} />
+            <ol className="grid md:grid-cols-3 gap-4">
+              {steps.map((x, i) => (
+                <li key={x.t} className={`rounded-xl border p-4 ${x.done ? 'border-[#CDE9D9] bg-[#F3FAF6]' : 'border-gray-200'}`}>
+                  <p className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                    <span className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center flex-none ${x.done ? 'bg-brand-green text-white' : 'bg-brand-teal text-white'}`}>{x.done ? '✓' : i + 1}</span>
+                    {x.t}
+                  </p>
+                  <p className="mt-2 text-xs text-gray-500">{x.d}</p>
+                  {!x.done ? (
+                    <Link href={x.href} className="mt-3 inline-block text-sm font-semibold text-[#B86A10] hover:underline">
+                      {x.cta}
+                    </Link>
+                  ) : null}
+                </li>
+              ))}
+            </ol>
+          </section>
+        );
+      })()}
+
       {/* What Beast Tribe did for you */}
       <section className="rounded-2xl bg-brand-teal text-white p-6 md:p-7 overflow-hidden relative">
         <div className="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-brand-aqua/10" aria-hidden />
