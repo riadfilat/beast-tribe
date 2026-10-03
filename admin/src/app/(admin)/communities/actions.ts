@@ -28,7 +28,7 @@ function readCommunityFields(formData: FormData) {
   const is_active = formData.get('is_active') !== 'off' && formData.get('is_active') !== null;
   const visibility = formData.get('visibility') === 'open' ? 'open' : 'private';
   const kindRaw = (formData.get('kind') as string) || 'club';
-  const kind = ['club', 'company', 'compound', 'city', 'brand'].includes(kindRaw) ? kindRaw : 'club';
+  const kind = ['club', 'gym', 'company', 'compound', 'city', 'brand'].includes(kindRaw) ? kindRaw : 'club';
   const seats = parseInt((formData.get('seat_limit') as string) || '', 10);
   const seat_limit = Number.isFinite(seats) && seats > 0 ? seats : null;
   const ends = ((formData.get('contract_ends_at') as string) || '').trim();

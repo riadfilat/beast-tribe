@@ -48,12 +48,9 @@ export async function createPartnerEvent(formData: FormData) {
   if (error) throw new Error(error.message);
 
   // Link in partner_events using the id returned from the insert above
-  const role = partner.partner_type === 'coach' ? 'coach' :
-               partner.partner_type === 'gym' ? 'venue' : 'organizer';
   const { error: linkError } = await db.from('partner_events').insert({
     partner_id: partner.partner_id,
     event_id: newEvent.id,
-    role,
   });
   if (linkError) throw new Error(linkError.message);
 

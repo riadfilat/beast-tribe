@@ -25,7 +25,15 @@ function readFields(formData: FormData) {
   const offer = str('offer');
   const offer_ar = str('offer_ar');
   const code = str('offer_code').toUpperCase();
+  const plan = ['coach', 'studio', 'club', 'multi'].includes(str('plan')) ? str('plan') : null;
+  const plan_status = ['trial', 'active', 'past_due', 'paused', 'cancelled'].includes(str('plan_status')) ? str('plan_status') : 'trial';
+  const date = (k: string) => (/^\d{4}-\d{2}-\d{2}$/.test(str(k)) ? `${str(k)}T00:00:00+03:00` : null);
   return {
+    plan,
+    plan_status,
+    billing_cycle: str('billing_cycle') === 'yearly' ? 'yearly' : 'monthly',
+    trial_ends_at: date('trial_ends_at'),
+    plan_renews_at: date('plan_renews_at'),
     partner_type,
     business_name,
     name: business_name,
@@ -68,6 +76,7 @@ export async function createPartner(formData: FormData) {
     user_id: userId,
     slug,
     contact_email: fields.contact_email || email || null,
+    trial_ends_at: fields.trial_ends_at || new Date(Date.now() + 30 * 86400000).toISOString(),
     status: 'active',
     is_active: true,
     is_verified: true,

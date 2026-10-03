@@ -22,6 +22,13 @@ export interface PartnerUser {
   partner_type: PartnerType;
   business_name: string;
   is_verified: boolean;
+  /** A gym's own club community. */
+  community_id: string | null;
+  plan: string | null;
+  plan_status: string;
+  billing_cycle: string;
+  trial_ends_at: string | null;
+  plan_renews_at: string | null;
 }
 
 /**
@@ -91,7 +98,7 @@ export const requirePartner = cache(async (): Promise<PartnerUser> => {
     db.from('profiles').select('full_name').eq('id', user.id).single(),
     db
       .from('partners')
-      .select('id, partner_type, business_name, is_verified')
+      .select('id, partner_type, business_name, is_verified, community_id, plan, plan_status, billing_cycle, trial_ends_at, plan_renews_at')
       .eq('user_id', user.id)
       .eq('is_active', true)
       .single(),
@@ -107,6 +114,12 @@ export const requirePartner = cache(async (): Promise<PartnerUser> => {
     partner_type: partnerResult.data.partner_type as PartnerType,
     business_name: partnerResult.data.business_name,
     is_verified: partnerResult.data.is_verified,
+    community_id: partnerResult.data.community_id ?? null,
+    plan: partnerResult.data.plan ?? null,
+    plan_status: partnerResult.data.plan_status || 'trial',
+    billing_cycle: partnerResult.data.billing_cycle || 'monthly',
+    trial_ends_at: partnerResult.data.trial_ends_at ?? null,
+    plan_renews_at: partnerResult.data.plan_renews_at ?? null,
   };
 });
 

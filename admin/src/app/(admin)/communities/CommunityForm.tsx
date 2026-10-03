@@ -174,6 +174,7 @@ export default function CommunityForm({ action, community }: CommunityFormProps)
               <option value="company">Company</option>
               <option value="compound">Compound</option>
               <option value="club">Club</option>
+              <option value="gym">Gym</option>
               <option value="city">City</option>
               <option value="brand">Beast Tribe (brand)</option>
             </select>

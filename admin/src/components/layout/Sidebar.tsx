@@ -30,20 +30,32 @@ const PARTNER_NAV: NavItem[] = [
   { label: 'Dashboard', href: '/partner/dashboard', icon: 'dashboard' },
   { label: 'My Events', href: '/partner/events', icon: 'events' },
   { label: 'My Workouts', href: '/partner/workouts', icon: 'workouts' },
+  { label: 'Plan', href: '/partner/plan', icon: 'payouts' },
+  { label: 'Profile', href: '/partner/profile', icon: 'settings' },
+];
+
+// Gyms run a club: members, classes and the numbers that keep members coming back.
+const GYM_NAV: NavItem[] = [
+  { label: 'Club', href: '/partner/club', icon: 'dashboard' },
+  { label: 'Members', href: '/partner/members', icon: 'users' },
+  { label: 'Classes', href: '/partner/classes', icon: 'events' },
+  { label: 'Workouts', href: '/partner/workouts', icon: 'workouts' },
+  { label: 'Plan', href: '/partner/plan', icon: 'payouts' },
   { label: 'Profile', href: '/partner/profile', icon: 'settings' },
 ];
 
 interface SidebarProps {
   type: 'admin' | 'partner';
+  partnerType?: string;
   userName: string;
   roleBadge: string;
   pendingModeration?: number;
 }
 
-export default function Sidebar({ type, userName, roleBadge, pendingModeration }: SidebarProps) {
+export default function Sidebar({ type, partnerType, userName, roleBadge, pendingModeration }: SidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const nav = type === 'admin' ? ADMIN_NAV : PARTNER_NAV;
+  const nav = type === 'admin' ? ADMIN_NAV : partnerType === 'gym' ? GYM_NAV : PARTNER_NAV;
 
   // Inject moderation badge
   const navWithBadges = nav.map((item) => {
@@ -55,7 +67,7 @@ export default function Sidebar({ type, userName, roleBadge, pendingModeration }
 
   function isActive(href: string) {
     // Exact match for dashboard to avoid matching all /d* paths
-    if (href === '/dashboard' || href === '/partner/dashboard') {
+    if (href === '/dashboard' || href === '/partner/dashboard' || href === '/partner/club') {
       return pathname === href;
     }
     return pathname === href || pathname.startsWith(href + '/');
@@ -98,7 +110,7 @@ export default function Sidebar({ type, userName, roleBadge, pendingModeration }
           <div className="flex flex-col gap-2">
             <Lockup height={20} ink="#F4F1EA" id="bt-sidebar" />
             <p className="text-xs text-white/60 leading-tight">
-              {type === 'admin' ? 'Admin Dashboard' : 'Partner Portal'}
+              {type === 'admin' ? 'Admin Dashboard' : partnerType === 'gym' ? 'Club Portal' : 'Partner Portal'}
             </p>
           </div>
         </div>

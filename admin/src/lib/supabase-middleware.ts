@@ -37,6 +37,8 @@ export async function updateSession(request: NextRequest) {
   const isPublicPage =
     request.nextUrl.pathname.startsWith('/legal') ||
     request.nextUrl.pathname.startsWith('/support') ||
+    // The public pitch to gyms and coaches
+    request.nextUrl.pathname.startsWith('/for-gyms') ||
     // Shared session links from the app's Share sheet
     request.nextUrl.pathname.startsWith('/s/');
   if (isPublicPage) {

@@ -64,7 +64,9 @@ A sports community app owned by a real activewear brand (Operation Beast) and bu
 
 - Community-driven and B2B first: companies, compounds and clubs buy a PRIVATE community (seats + contract) that their people join with an invite code. Open communities anyone can join; everyone starts in the open "Beast Tribe".
 - Members can be in several communities; sessions live in a community or a pack; packs are private to their members.
-- Revenue: B2B licences first, then a cut of paid sessions (prepared, switched off), coach subscriptions, featured venues, healthy-restaurant partnerships. No ads, no selling data, no paywall on joining sessions.
+- Revenue: B2B licences first, then coach and gym subscriptions, featured venues, healthy-restaurant partnerships. No ads, no selling data, no paywall on joining sessions.
+- Coaches and gyms pay a FLAT SUBSCRIPTION, never a commission (decided 2026-10-03): no cut of memberships, classes, PT or paid sessions, so partners never have a reason to take members off the app, and pricing scales simply. Proposed prices (SAR/month, excl. VAT, yearly = 10 months, 30-day trial): Coach 149 · Studio 790 (≤300 members, 5 coaches) · Club 1,590 (≤1,500, unlimited coaches) · Multi-branch custom. Source of truth: `admin/src/lib/plans.ts`. Billing is off-app for now (admin sets plan/status on the partner).
+- Gyms: a gym partner owns a private club community (kind `gym`). Club Portal (`/partner/club`, members, classes, plan) shows club activity only — bookings, check-ins, posts; a member's own training is shown only as a club total (5+ members), never per person. Public pitch page: `/for-gyms`.
 
 ## Train (decided 2026-10-02)
 

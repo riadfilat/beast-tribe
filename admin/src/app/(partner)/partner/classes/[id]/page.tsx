@@ -1,0 +1,150 @@
+import Link from 'next/link';
+import { notFound, redirect } from 'next/navigation';
+import { requirePartner } from '@/lib/auth';
+import { createAdminClient } from '@/lib/supabase-server';
+import { fmtDay, fmtTime } from '@/lib/club';
+import SubmitButton from '@/components/SubmitButton';
+import { ConfirmButton } from '@/components/ConfirmSubmit';
+import { Icon } from '@/components/ui/Icon';
+import { Avatar, FillBar, btnGhost, card, input } from '@/components/club/ui';
+import { cancelClass, markAllAttended, setAttendance } from '../../club/actions';
+
+export const revalidate = 0;
+
+export default async function ClassPage({ params }: { params: { id: string } }) {
+  const partner = await requirePartner();
+  if (partner.partner_type !== 'gym') redirect('/partner/dashboard');
+  const db = createAdminClient();
+
+  const { data: e } = await db
+    .from('events')
+    .select('id, title, description, starts_at, ends_at, max_capacity, coach_name, location_name, difficulty, is_women_only, cancelled_at, cancel_reason, class_series_id, partner_id, community_id, sport:sports(name, emoji)')
+    .eq('id', params.id)
+    .single();
+  if (!e || ((e as any).partner_id !== partner.partner_id && (e as any).community_id !== partner.community_id)) notFound();
+  const ev: any = e;
+  const mine = ev.partner_id === partner.partner_id;
+
+  const { data: rs } = await db.from('event_rsvps').select('user_id, status, created_at, attended_at').eq('event_id', ev.id).in('status', ['going', 'waitlist']).order('created_at');
+  const ids = (rs || []).map((r: any) => r.user_id);
+  const { data: profiles } = ids.length ? await db.from('profiles').select('id, full_name, display_name, avatar_url').in('id', ids) : { data: [] as any[] };
+  const pById = new Map((profiles || []).map((p: any) => [p.id, p]));
+  const going = (rs || []).filter((r: any) => r.status === 'going');
+  const waiting = (rs || []).filter((r: any) => r.status === 'waitlist');
+  const starts = new Date(ev.starts_at);
+  const started = starts.getTime() <= Date.now();
+  const attended = going.filter((r: any) => r.attended_at).length;
+  const nameOf = (id: string) => {
+    const p: any = pById.get(id) || {};
+    return p.display_name || p.full_name || 'Member';
+  };
+
+  return (
+    <div className="max-w-3xl space-y-6">
+      <Link href="/partner/classes" className="text-sm text-[#147070] hover:underline inline-flex items-center gap-1">
+        <Icon name="back" size="sm" /> Classes
+      </Link>
+
+      <div>
+        <p className="text-sm text-gray-500">
+          {fmtDay(starts)} · {fmtTime(starts)}
+          {ev.ends_at ? `–${fmtTime(new Date(ev.ends_at))}` : ''}
+          {ev.class_series_id ? ' · Weekly' : ''}
+        </p>
+        <h1 className={`text-2xl font-bold ${ev.cancelled_at ? 'line-through text-gray-400' : 'text-gray-900'}`}>{ev.title}</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          {[ev.coach_name, ev.sport ? `${ev.sport.emoji || ''} ${ev.sport.name}`.trim() : null, ev.location_name, ev.difficulty, ev.is_women_only ? 'Women only' : null].filter(Boolean).join(' · ')}
+        </p>
+        {ev.cancelled_at ? (
+          <p className="mt-3 rounded-lg bg-[#FCEBEA] text-[#9E3A33] text-sm px-4 py-2">Cancelled{ev.cancel_reason ? `: ${ev.cancel_reason}` : ''}. Booked members were notified.</p>
+        ) : null}
+      </div>
+
+      <div className={`${card} p-5`}>
+        <FillBar going={going.length} capacity={ev.max_capacity} waitlist={waiting.length} />
+        {started && going.length ? (
+          <p className="text-sm text-gray-600 mt-3">
+            <span className="font-semibold tabular-nums">{attended}</span> of {going.length} checked in
+            {going.length ? ` · ${Math.round((attended / going.length) * 100)}% show-up` : ''}
+          </p>
+        ) : null}
+      </div>
+
+      <section className={card}>
+        <div className="flex items-center justify-between px-5 pt-4 pb-2">
+          <h2 className="font-semibold text-gray-900">Booked ({going.length})</h2>
+          {started && mine && going.length > attended ? (
+            <form action={markAllAttended.bind(null, ev.id)}>
+              <SubmitButton pendingLabel="Saving…" className="text-sm text-[#147070] hover:underline">
+                Everyone came
+              </SubmitButton>
+            </form>
+          ) : null}
+        </div>
+        <ul className="divide-y divide-gray-50">
+          {going.map((r: any) => {
+            const came = !!r.attended_at;
+            return (
+              <li key={r.user_id} className="flex items-center gap-3 px-5 py-2.5">
+                <Avatar name={nameOf(r.user_id)} src={(pById.get(r.user_id) as any)?.avatar_url || null} />
+                <span className="flex-1 text-sm font-medium text-gray-900">{nameOf(r.user_id)}</span>
+                {started && mine ? (
+                  <form action={setAttendance.bind(null, ev.id, r.user_id, !came)}>
+                    <SubmitButton
+                      pendingLabel="…"
+                      className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${came ? 'bg-[#E8F5EE] text-[#25704F] border-[#CDE9D9]' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'}`}
+                    >
+                      {came ? '✓ Came' : 'Mark came'}
+                    </SubmitButton>
+                  </form>
+                ) : (
+                  <span className="text-xs text-gray-400">Booked {new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                )}
+              </li>
+            );
+          })}
+          {!going.length ? <li className="px-5 py-6 text-sm text-gray-400 text-center">No bookings yet.</li> : null}
+        </ul>
+      </section>
+
+      {waiting.length ? (
+        <section className={card}>
+          <h2 className="font-semibold text-gray-900 px-5 pt-4 pb-2">Waitlist ({waiting.length})</h2>
+          <ol className="divide-y divide-gray-50">
+            {waiting.map((r: any, i: number) => (
+              <li key={r.user_id} className="flex items-center gap-3 px-5 py-2.5">
+                <span className="w-5 text-xs text-gray-400 tabular-nums">{i + 1}</span>
+                <Avatar name={nameOf(r.user_id)} src={(pById.get(r.user_id) as any)?.avatar_url || null} size={28} />
+                <span className="text-sm text-gray-800">{nameOf(r.user_id)}</span>
+              </li>
+            ))}
+          </ol>
+          <p className="px-5 pb-4 pt-1 text-xs text-gray-400">When a booked member leaves, the first person here gets the spot and a notification.</p>
+        </section>
+      ) : null}
+
+      {mine && !ev.cancelled_at && !started ? (
+        <section className={`${card} p-5`}>
+          <h2 className="font-semibold text-gray-900">Cancel</h2>
+          <p className="text-xs text-gray-500 mb-3">Everyone booked or waiting gets a notification in the app.</p>
+          <form action={cancelClass.bind(null, ev.id)} className="space-y-3">
+            <input name="reason" className={input} placeholder="Reason (optional), e.g. coach unwell" />
+            {ev.class_series_id ? (
+              <div className="flex gap-4 text-sm text-gray-600">
+                <label className="flex items-center gap-2">
+                  <input type="radio" name="scope" value="one" defaultChecked /> Only this class
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="radio" name="scope" value="series" /> This and all later weeks
+                </label>
+              </div>
+            ) : null}
+            <ConfirmButton confirmMessage="Cancel and notify everyone booked?" className={`${btnGhost} text-[#9E3A33] border-[#F3CFCC] hover:bg-[#FCEBEA]`}>
+              Cancel class
+            </ConfirmButton>
+          </form>
+        </section>
+      ) : null}
+    </div>
+  );
+}

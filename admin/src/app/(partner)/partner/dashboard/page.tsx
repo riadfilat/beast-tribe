@@ -2,9 +2,11 @@ import { requirePartner } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import Link from 'next/link';
 import { Icon } from '@/components/ui/Icon';
+import { redirect } from 'next/navigation';
 
 export default async function PartnerDashboardPage() {
   const partner = await requirePartner();
+  if (partner.partner_type === 'gym') redirect('/partner/club');
   const db = createAdminClient();
 
   // Get partner's events with RSVP counts

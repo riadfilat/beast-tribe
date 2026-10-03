@@ -16,6 +16,7 @@ export default async function PartnerLayout({ children }: { children: React.Reac
       <NavigationProgress />
       <Sidebar
         type="partner"
+        partnerType={partner.partner_type}
         userName={partner.business_name}
         roleBadge={TYPE_LABELS[partner.partner_type] || partner.partner_type}
       />

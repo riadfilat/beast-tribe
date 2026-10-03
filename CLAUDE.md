@@ -115,6 +115,28 @@ User wants to launch the app to limited public testers via TestFlight.
 
 ## Session Log (append-only — newest at top)
 
+### 2026-10-03 (later) — Train upgrade shipped + gym Club Portal + subscription model
+- Train upgrade OTA'd (group 766cd3a1, runtime f96462…): 104-exercise library with depth (setup, cues, mistakes, safety, dose), 7 programs (Calisthenics Start, Strength Base, Home Strength, First 5K, Padel Fit, Hyrox Ready, Busy Week), goal → recommended plan → Next up (Train + Board strip), weekly focus, sport cards, set logging with last-time numbers + double-progression suggestion + personal bests, You-page training metrics, 6 PM plan reminder. DB 041–045.
+- User: gyms get a dynamic dashboard (members, interactivity, classes) and it must show why it matters; coaches + gyms pay a SUBSCRIPTION, not a percentage (PRODUCT.md › Business Model).
+- DB 046 (applied): communities.kind + 'gym'; partners.plan/plan_status/billing_cycle/trial_ends_at/plan_renews_at; events.is_class/class_series_id; event_rsvps.attended_at; bt_notify granted to service_role (portal cancels notify members).
+- Admin (Club Portal for gym partners): /partner/club (value receipt "what your club did between visits", members/active/at-risk, weekly actives, busiest-times heat map, upcoming classes, members to nudge, create-my-club self-serve), /partner/members (status filters, search, sort), /partner/classes (+ new with weekly repeat up to 12 weeks, detail with roster, mark attendance / everyone came, waitlist, cancel one or series), /partner/plan (all partners). Public /for-gyms pitch page with pricing. Admin partner form: plan fields; community kind Gym. Fixed: partner event creation inserted a non-existent partner_events.role column (always failed).
+- App strings: community kind "Gym" + join-code privacy line (OTA).
+- Verified: club metrics logic run against seeded data (statuses, fill, waitlist, came-back, heat map) then all QA data deleted; /for-gyms checked at desktop + phone width. NOT visually checked: logged-in portal pages (no partner login available to me; auth bypass for QA was refused — correct). `next build` passes.
+
+### 2026-10-03 — First store build + onboarding fixes
+- iOS production build 7 built and uploaded to TestFlight (App Store Connect app 6762473448). Apple agreement + login done by user. OTAs go to channel `production` with `--platform ios`; runtime must match build 7 (fingerprint f96462ed…). Do NOT edit eas.json without a new build — it changes the fingerprint.
+- Onboarding bugs found by tapping through the real app (web, live backend) and fixed (OTA group 2d661cf2):
+  1. Sign-up signed the new member out right after creating the account (Supabase confirmation is OFF, so sign-up returns a session) → onboarding opened then bounced to sign-in, so buttons looked dead. Now stays signed in and goes straight to onboarding; "check your email" only when confirmation is on.
+  2. Create account / Continue (About you, Your sports) were silently disabled → now always tappable and say what's missing.
+  3. Date-of-birth wheels ignored taps → values are tappable.
+  4. Train tab failed for everyone ("Couldn't load workouts"): workouts query embedded profiles via partners.user_id (FK is to auth.users) → coach profiles fetched separately.
+- DB 041: trigger creates a profile for every new auth user (+ backfill).
+
+### 2026-10-02 (night) — Investor deck
+- 20-slide investor deck (English) as a Slides artifact: https://claude.ai/artifact/T8bnTgnRVqpZQEhVS3Fu4y — "Uber for sports, nutrition and health communities", real app screens, animated backdrops, founder slide (Riad Abualfailat + photo) with three open founding seats.
+- Every market figure fact-checked with a researcher + independent skeptic; stale/unsupported figures replaced (see memory beast-tribe-investor-deck). Contrast audited by rendering each slide and sampling real pixels: all text ≥4.5:1 (≥3:1 at 44px+).
+- Open: email/phone, Operation Beast traction numbers, raise amount/stage. iOS store build still waiting on the Apple login in Terminal tab "iOS store build".
+
 ### 2026-10-02 (later) — Train: workouts, coach pay by use
 - User: add workouts so Beast Tribe feels all-in-one — coach-posted workouts, coaches paid by use, our own library, wearables (Whoop) later. Decision and rules in PRODUCT.md › Train.
 - DB 040 (dry-run 21/21, applied): extends the first app's `workouts` (bilingual `blocks`, sport id, format, equipment, source library|coach, status draft|pending|published|rejected|archived, author_partner_id, community scope, featured) and `workout_logs` (result, rpe, event_id, metrics, `counted` + coach_partner_id set by trigger `bt_workout_logs_before`), `workout_saves`, `events.workout_id`, `feed_posts.workout_id`, RPC `workout_done_counts` (counts only), `app_settings` (service role; `coach_pay` = rate | pool). 58 old English-only workouts archived; 12 OB library workouts seeded EN+AR (fixed ids 0b7e0000-…-0001..12).

@@ -14,7 +14,14 @@ export interface PartnerValues {
   sports?: string[] | null;
   community_id?: string | null;
   metadata?: { offer?: string | null; offer_ar?: string | null; code?: string | null } | null;
+  plan?: string | null;
+  plan_status?: string | null;
+  billing_cycle?: string | null;
+  trial_ends_at?: string | null;
+  plan_renews_at?: string | null;
 }
+
+const day = (v?: string | null) => (v ? v.slice(0, 10) : '');
 
 export default function PartnerFields({ p = {}, communities }: { p?: PartnerValues; communities: { id: string; name: string }[] }) {
   const m = p.metadata || {};
@@ -97,8 +104,52 @@ export default function PartnerFields({ p = {}, communities }: { p?: PartnerValu
         </div>
       </div>
 
+      <div className="rounded-lg border border-dashed border-gray-200 p-4 space-y-3">
+        <p className="text-xs font-semibold text-gray-700">Subscription (coaches and gyms, flat fee, no commission)</p>
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className={label}>Plan</label>
+            <select name="plan" defaultValue={p.plan || ''} className={input}>
+              <option value="">None yet</option>
+              <option value="coach">Coach · 149 SAR</option>
+              <option value="studio">Studio · 790 SAR</option>
+              <option value="club">Club · 1,590 SAR</option>
+              <option value="multi">Multi-branch · custom</option>
+            </select>
+          </div>
+          <div>
+            <label className={label}>Status</label>
+            <select name="plan_status" defaultValue={p.plan_status || 'trial'} className={input}>
+              <option value="trial">Free trial</option>
+              <option value="active">Active</option>
+              <option value="past_due">Payment due</option>
+              <option value="paused">Paused</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div>
+            <label className={label}>Billing</label>
+            <select name="billing_cycle" defaultValue={p.billing_cycle || 'monthly'} className={input}>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={label}>Trial ends</label>
+            <input name="trial_ends_at" type="date" defaultValue={day(p.trial_ends_at)} className={input} />
+          </div>
+          <div>
+            <label className={label}>Renews on</label>
+            <input name="plan_renews_at" type="date" defaultValue={day(p.plan_renews_at)} className={input} />
+          </div>
+        </div>
+        <p className="text-[11px] text-gray-400">Billing happens outside the app for now; this is what the partner sees on their Plan page.</p>
+      </div>
+
       <div>
-        <label className={label}>Visible to</label>
+        <label className={label}>Visible to · a gym&apos;s own club</label>
         <select name="community_id" defaultValue={p.community_id || ''} className={input}>
           <option value="">Everyone</option>
           {communities.map((c) => (
