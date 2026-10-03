@@ -11,7 +11,10 @@ import {
   removeCommunityDefaultPack,
   removeUserFromCommunity,
   regenerateJoinCode,
+  addCommunityPartner,
+  removeCommunityPartner,
 } from '../actions';
+import SubmitButton from '@/components/SubmitButton';
 import { ConfirmButton } from '@/components/ConfirmSubmit';
 import { Icon } from '@/components/ui/Icon';
 
@@ -28,6 +31,12 @@ export default async function EditCommunityPage({ params }: { params: { id: stri
     .maybeSingle();
 
   if (!community) notFound();
+
+  const [{ data: pkg }, { data: candidates }] = await Promise.all([
+    db.from('community_partners').select('partner_id, role, perk, perk_ar, partner:partners(business_name, partner_type)').eq('community_id', community.id),
+    db.from('partners').select('id, business_name, partner_type').in('partner_type', ['nutritionist', 'coach', 'gym', 'nutrition']).eq('is_active', true).order('business_name'),
+  ]);
+  const ROLE_LABEL: Record<string, string> = { nutritionist: 'Nutritionist', coach: 'Coach', gym: 'Gym', kitchen: 'Healthy kitchen' };
 
   const [membersRes, defaultPacksRes, locationsRes, availablePacksRes] = await Promise.all([
     db
@@ -177,6 +186,64 @@ export default async function EditCommunityPage({ params }: { params: { id: stri
               ))}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Package */}
+      <section className="mt-10">
+        <div className="mb-3">
+          <h2 className="text-lg font-bold text-gray-900">Package</h2>
+          <p className="text-xs text-gray-500">Experts and venues included for this community&apos;s members. Members see them on the community page; they connect to a nutritionist or coach themselves and choose what to share.</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 space-y-4">
+          {(pkg || []).length ? (
+            <div className="divide-y divide-gray-50">
+              {(pkg || []).map((x: any) => (
+                <div key={x.partner_id} className="flex items-center gap-3 py-2">
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 w-28 text-center">{ROLE_LABEL[x.role] || x.role}</span>
+                  <span className="flex-1 text-sm text-gray-900">{x.partner?.business_name}</span>
+                  <span className="text-xs text-gray-400 truncate max-w-[240px]">{x.perk}</span>
+                  <form action={removeCommunityPartner.bind(null, community.id, x.partner_id)}>
+                    <ConfirmButton confirmMessage="Remove from this package?" className="text-xs text-red-500 hover:underline">
+                      Remove
+                    </ConfirmButton>
+                  </form>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400">Nothing included yet.</p>
+          )}
+          <form action={addCommunityPartner.bind(null, community.id)} className="grid md:grid-cols-5 gap-3 items-end border-t border-gray-50 pt-4">
+            <div className="md:col-span-2">
+              <label className="block text-xs font-medium text-gray-600 mb-1">Partner</label>
+              <select name="partner_id" required className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+                {(candidates || []).map((c: any) => (
+                  <option key={c.id} value={c.id}>
+                    {c.business_name} ({c.partner_type})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Included as</label>
+              <select name="role" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+                <option value="nutritionist">Nutritionist</option>
+                <option value="coach">Coach</option>
+                <option value="gym">Gym</option>
+                <option value="kitchen">Healthy kitchen</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Perk (optional)</label>
+              <input name="perk" placeholder="Free monthly check-in" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+              <input name="perk_ar" dir="rtl" placeholder="بالعربية" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mt-2" />
+            </div>
+            <SubmitButton pendingLabel="Adding…" className="px-4 py-2 bg-brand-orange text-brand-teal rounded-lg text-sm font-semibold">
+              Add to package
+            </SubmitButton>
+          </form>
+          <p className="text-[11px] text-gray-400">No partner in the list? Add them under Partners first (type Nutritionist, Coach, Gym or Healthy restaurant).</p>
         </div>
       </section>
 

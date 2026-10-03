@@ -34,11 +34,22 @@ const PARTNER_NAV: NavItem[] = [
   { label: 'Profile', href: '/partner/profile', icon: 'settings' },
 ];
 
+// Companies run their people's community: same tools, sessions instead of classes, no workouts.
+const COMPANY_NAV: NavItem[] = [
+  { label: 'Community', href: '/partner/club', icon: 'dashboard' },
+  { label: 'People', href: '/partner/members', icon: 'users' },
+  { label: 'Sessions', href: '/partner/classes', icon: 'events' },
+  { label: 'Challenges', href: '/partner/challenges', icon: 'star' },
+  { label: 'Plan', href: '/partner/plan', icon: 'payouts' },
+  { label: 'Profile', href: '/partner/profile', icon: 'settings' },
+];
+
 // Gyms run a club: members, classes and the numbers that keep members coming back.
 const GYM_NAV: NavItem[] = [
   { label: 'Club', href: '/partner/club', icon: 'dashboard' },
   { label: 'Members', href: '/partner/members', icon: 'users' },
   { label: 'Classes', href: '/partner/classes', icon: 'events' },
+  { label: 'Challenges', href: '/partner/challenges', icon: 'star' },
   { label: 'Workouts', href: '/partner/workouts', icon: 'workouts' },
   { label: 'Plan', href: '/partner/plan', icon: 'payouts' },
   { label: 'Profile', href: '/partner/profile', icon: 'settings' },
@@ -55,7 +66,7 @@ interface SidebarProps {
 export default function Sidebar({ type, partnerType, userName, roleBadge, pendingModeration }: SidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const nav = type === 'admin' ? ADMIN_NAV : partnerType === 'gym' ? GYM_NAV : PARTNER_NAV;
+  const nav = type === 'admin' ? ADMIN_NAV : partnerType === 'gym' ? GYM_NAV : partnerType === 'company' ? COMPANY_NAV : PARTNER_NAV;
 
   // Inject moderation badge
   const navWithBadges = nav.map((item) => {
@@ -110,7 +121,7 @@ export default function Sidebar({ type, partnerType, userName, roleBadge, pendin
           <div className="flex flex-col gap-2">
             <Lockup height={20} ink="#F4F1EA" id="bt-sidebar" />
             <p className="text-xs text-white/60 leading-tight">
-              {type === 'admin' ? 'Admin Dashboard' : partnerType === 'gym' ? 'Club Portal' : 'Partner Portal'}
+              {type === 'admin' ? 'Admin Dashboard' : partnerType === 'gym' ? 'Club Portal' : partnerType === 'company' ? 'Company Portal' : 'Partner Portal'}
             </p>
           </div>
         </div>

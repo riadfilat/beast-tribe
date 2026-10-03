@@ -33,6 +33,8 @@ export default function PartnerFields({ p = {}, communities }: { p?: PartnerValu
           <select name="partner_type" defaultValue={p.partner_type || 'coach'} className={input}>
             <option value="coach">Coach</option>
             <option value="gym">Gym</option>
+            <option value="company">Company</option>
+            <option value="nutritionist">Nutritionist</option>
             <option value="event_company">Event company</option>
             <option value="nutrition">Healthy restaurant</option>
           </select>
@@ -115,6 +117,7 @@ export default function PartnerFields({ p = {}, communities }: { p?: PartnerValu
               <option value="studio">Studio · 790 SAR</option>
               <option value="club">Club · 1,590 SAR</option>
               <option value="multi">Multi-branch · custom</option>
+              <option value="company">Company · 10 SAR per seat</option>
             </select>
           </div>
           <div>

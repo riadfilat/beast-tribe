@@ -2,11 +2,13 @@
 // they sell or book through Beast Tribe, so there is never a reason to take members off the app.
 // Prices are in SAR, before VAT. Yearly = 10 months (two months free).
 
-export type PlanId = 'coach' | 'studio' | 'club' | 'multi';
+export type PlanId = 'coach' | 'studio' | 'club' | 'multi' | 'company';
 
 export interface Plan {
   id: PlanId;
-  audience: 'coach' | 'gym';
+  audience: 'coach' | 'gym' | 'company';
+  /** Price unit when it isn't per month for the whole account. */
+  unit?: string;
   name: string;
   monthly: number | null; // null = talk to us
   tagline: string;
@@ -70,6 +72,22 @@ export const PLANS: Plan[] = [
     features: ['Everything in Club', 'One club per branch, rolled up for head office', 'Dedicated account manager'],
   },
 ];
+
+PLANS.push({
+  id: 'company',
+  audience: 'company',
+  name: 'Company',
+  monthly: 10,
+  unit: 'per seat a month',
+  tagline: 'For employers and compounds',
+  limit: 'Pay for the seats you use',
+  features: [
+    'A private community for your people, joined with your code',
+    'Sessions, packs and step challenges across teams and offices',
+    'A dashboard of participation, never personal health data',
+    'Nutritionists, gyms and coaches included in your package',
+  ],
+});
 
 export const planOf = (id: string | null | undefined) => PLANS.find((p) => p.id === id) || null;
 

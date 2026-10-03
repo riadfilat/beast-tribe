@@ -20,6 +20,7 @@ import { e1rm, historyFor, History, saveSets } from '../../../src/data/sets';
 import { useExercises } from '../../../src/data/exercises';
 import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
+import { useKeepAwake } from 'expo-keep-awake';
 
 // How a block runs: a countdown (AMRAP), a minute clock (EMOM), timed steps (intervals or a
 // fully timed flow), or a stopwatch with a rounds counter (rounds, for time, strength, steady).
@@ -54,6 +55,8 @@ const clock = (secs: number) => {
 };
 
 export default function PlayScreen() {
+  // The screen stays on while a workout runs.
+  useKeepAwake();
   const { id, event, ps } = useLocalSearchParams<{ id: string; event?: string; ps?: string }>();
   const s = useStyles();
   const { p, lang } = useKit();

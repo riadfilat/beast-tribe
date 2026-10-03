@@ -5,7 +5,10 @@ import { createAdminClient } from './supabase-server';
 import { redirect } from 'next/navigation';
 
 export type AdminRole = 'super_admin' | 'admin' | 'moderator';
-export type PartnerType = 'coach' | 'gym' | 'event_company';
+export type PartnerType = 'coach' | 'gym' | 'event_company' | 'company' | 'nutritionist';
+
+/** Gyms and companies run a community of their own from the portal. */
+export const ownsCommunity = (t: string) => t === 'gym' || t === 'company';
 
 export interface AdminUser {
   id: string;

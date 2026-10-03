@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { requirePartner } from '@/lib/auth';
+import { ownsCommunity, requirePartner } from '@/lib/auth';
 import { loadClub, ago, STATUS_LABEL, STATUS_HINT, type MemberStatus } from '@/lib/club';
 import { Avatar, StatusChip, card } from '@/components/club/ui';
 
@@ -11,7 +11,7 @@ const SORTS = { last: 'Last active', joined: 'Joined', booked: 'Bookings' } as c
 
 export default async function MembersPage({ searchParams }: { searchParams: { status?: string; q?: string; sort?: string } }) {
   const partner = await requirePartner();
-  if (partner.partner_type !== 'gym') redirect('/partner/dashboard');
+  if (!ownsCommunity(partner.partner_type)) redirect('/partner/dashboard');
   if (!partner.community_id) redirect('/partner/club');
   const club = await loadClub(partner, partner.community_id);
   if (!club) redirect('/partner/club');

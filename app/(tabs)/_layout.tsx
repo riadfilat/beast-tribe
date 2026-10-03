@@ -5,6 +5,7 @@ import { Icon, IconName } from '../../src/components/board/Icon';
 import { useKit } from '../../src/theme';
 import { useI18n } from '../../src/i18n';
 import { useInboxLive } from '../../src/data/inbox';
+import { useStepsSync } from '../../src/components/board/wellness';
 
 function TabIcon({ name, color }: { name: IconName; color: string }) {
   return <Icon name={name} size={22} color={color} weight="semibold" />;
@@ -17,6 +18,7 @@ export default function TabLayout() {
   // Same 54pt for icon + label on every device; only the padding below changes.
   const bottom = insets.bottom > 0 ? insets.bottom - 2 : 8;
   useInboxLive();
+  useStepsSync();
   return (
     <Tabs
       screenOptions={{

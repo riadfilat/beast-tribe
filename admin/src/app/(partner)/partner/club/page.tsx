@@ -1,25 +1,30 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { requirePartner } from '@/lib/auth';
+import { ownsCommunity, requirePartner } from '@/lib/auth';
 import { loadClub, fmtDay, fmtTime, ago } from '@/lib/club';
 import { PLAN_STATUS_LABEL, planOf } from '@/lib/plans';
 import { Icon } from '@/components/ui/Icon';
 import SubmitButton from '@/components/SubmitButton';
 import { Avatar, FillBar, HeatMap, SectionTitle, Stat, StatusChip, WeekBars, btnGhost, btnPrimary, card } from '@/components/club/ui';
 import { createClub, newClubCode } from './actions';
+import { loadBoard, loadChallenges, loadStepsSummary, stateOf, fmtDate } from '@/lib/wellness';
 
 export const revalidate = 0;
 
 export default async function ClubPage() {
   const partner = await requirePartner();
-  if (partner.partner_type !== 'gym') redirect('/partner/dashboard');
+  if (!ownsCommunity(partner.partner_type)) redirect('/partner/dashboard');
 
   if (!partner.community_id) return <ClubSetup name={partner.business_name} />;
 
   const club = await loadClub(partner, partner.community_id);
   if (!club) return <ClubSetup name={partner.business_name} />;
+  const [challenges, steps] = await Promise.all([loadChallenges(partner.community_id), loadStepsSummary(club.members.map((m) => m.id))]);
+  const live = challenges.find((c) => stateOf(c) === 'live') || challenges.find((c) => stateOf(c) === 'upcoming') || null;
+  const top = live ? (await loadBoard(live.id)).slice(0, 5) : [];
 
   const { counts, month } = club;
+  const isCompany = partner.partner_type === 'company';
   const pct = (n: number) => (counts.members ? Math.round((n / counts.members) * 100) : 0);
   const nudge = club.members
     .filter((m) => m.status === 'at_risk' || m.status === 'quiet')
@@ -42,7 +47,7 @@ export default async function ClubPage() {
       {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Your club</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">{isCompany ? "Your community" : "Your club"}</p>
           <h1 className="text-2xl font-bold text-gray-900">{club.community.name}</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {counts.members} member{counts.members === 1 ? '' : 's'}
@@ -66,7 +71,7 @@ export default async function ClubPage() {
             </form>
           </div>
           <Link href="/partner/classes/new" className={btnPrimary}>
-            + New class
+            {isCompany ? '+ New session' : '+ New class'}
           </Link>
         </div>
       </div>
@@ -75,7 +80,7 @@ export default async function ClubPage() {
       <section className="rounded-2xl bg-brand-teal text-white p-6 md:p-7 overflow-hidden relative">
         <div className="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-brand-aqua/10" aria-hidden />
         <p className="text-xs font-semibold uppercase tracking-wider text-brand-aqua">Last 30 days with Beast Tribe</p>
-        <h2 className="mt-1 text-xl font-bold max-w-xl">What your club did between visits</h2>
+        <h2 className="mt-1 text-xl font-bold max-w-xl">{isCompany ? "What your people did together" : "What your club did between visits"}</h2>
         <div className="mt-5 grid grid-cols-2 md:grid-cols-5 gap-5">
           {receipt.map((r) => (
             <div key={r.l}>
@@ -110,6 +115,50 @@ export default async function ClubPage() {
           <SectionTitle title="Busiest times" />
           <HeatMap heat={club.heat} />
           <p className="mt-3 text-xs text-gray-400">Bookings by class start time, last 90 days (Riyadh time). Add classes where it glows.</p>
+        </div>
+      </section>
+
+
+      {/* Wellness */}
+      <section className={`${card} p-5`}>
+        <SectionTitle
+          title="Wellness"
+          action={
+            <Link href="/partner/challenges" className="text-sm text-[#147070] hover:underline">
+              {live ? 'Challenges' : 'Start a challenge'}
+            </Link>
+          }
+        />
+        <div className="grid md:grid-cols-3 gap-6">
+          <div>
+            <p className="text-xs text-gray-500">Average steps a day, last 7 days</p>
+            <p className="text-3xl font-bold tabular-nums text-brand-teal mt-1">{steps.avgDaily != null ? steps.avgDaily.toLocaleString() : '—'}</p>
+            <p className="text-xs text-gray-400 mt-1">
+              {steps.avgDaily != null ? `Across ${steps.connected} members with Apple Health connected` : `Shown once 5 members connect Apple Health (${steps.connected} so far)`}
+            </p>
+          </div>
+          <div className="md:col-span-2">
+            {live ? (
+              <>
+                <p className="text-sm font-semibold text-gray-900">
+                  {live.title} <span className="font-normal text-gray-400">· {fmtDate(live.startsOn)} – {fmtDate(live.endsOn)} · {live.entrants} joined</span>
+                </p>
+                <ol className="mt-2 space-y-1.5">
+                  {top.map((r) => (
+                    <li key={r.user_id} className="flex items-center gap-3 text-sm">
+                      <span className={`w-5 font-bold tabular-nums ${r.place === 1 ? 'text-[#B86A10]' : 'text-gray-400'}`}>{r.place}</span>
+                      <Avatar name={r.name} src={r.avatar_url} size={26} />
+                      <span className="flex-1 text-gray-800">{r.name}</span>
+                      <span className="tabular-nums font-semibold text-brand-teal">{r.steps.toLocaleString()}</span>
+                    </li>
+                  ))}
+                  {!top.length ? <li className="text-sm text-gray-400">No one has joined yet.</li> : null}
+                </ol>
+              </>
+            ) : (
+              <p className="text-sm text-gray-500">Run a step challenge for a week or a month. People join from the app; only those who join appear on the ranking.</p>
+            )}
+          </div>
         </div>
       </section>
 

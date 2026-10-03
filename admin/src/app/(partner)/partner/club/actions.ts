@@ -2,7 +2,7 @@
 
 import { randomUUID } from 'crypto';
 import { createAdminClient } from '@/lib/supabase-server';
-import { requirePartner, type PartnerUser } from '@/lib/auth';
+import { ownsCommunity, requirePartner, type PartnerUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
@@ -10,7 +10,7 @@ const SEATS: Record<string, number | null> = { studio: 300, club: 1500, multi: n
 
 async function requireGym(): Promise<PartnerUser> {
   const partner = await requirePartner();
-  if (partner.partner_type !== 'gym') throw new Error('Only gyms can do this');
+  if (!ownsCommunity(partner.partner_type)) throw new Error('Only gyms and companies can do this');
   return partner;
 }
 
@@ -37,7 +37,7 @@ export async function createClub() {
         logo_url: (p as any)?.logo_url || null,
         city: (p as any)?.city || null,
         country: (p as any)?.country || 'SA',
-        kind: 'gym',
+        kind: partner.partner_type === 'company' ? 'company' : 'gym',
         visibility: 'private',
         is_active: true,
         seat_limit: partner.plan ? (SEATS[partner.plan] ?? null) : 300,
@@ -188,3 +188,44 @@ export async function markAllAttended(eventId: string) {
   revalidatePath(`/partner/classes/${eventId}`);
 }
 
+
+/** Start a step challenge in the community (up to 3 months). Members opt in from the app. */
+export async function createChallenge(formData: FormData) {
+  const partner = await requireGym();
+  if (!partner.community_id) throw new Error('Create your community first');
+  const str = (k: string) => ((formData.get(k) as string) || '').trim();
+  const title = str('title');
+  const starts = str('starts_on');
+  const ends = str('ends_on');
+  if (title.length < 2 || !/^\d{4}-\d{2}-\d{2}$/.test(starts) || !/^\d{4}-\d{2}-\d{2}$/.test(ends)) throw new Error('A name and dates are needed');
+  if (ends < starts) throw new Error('The end date is before the start');
+  const goal = parseInt(str('daily_goal')) || null;
+  const db = createAdminClient();
+  const { data, error } = await db
+    .from('challenges')
+    .insert({
+      community_id: partner.community_id,
+      title,
+      title_ar: str('title_ar') || null,
+      starts_on: starts,
+      ends_on: ends,
+      daily_goal: goal ? Math.min(50000, Math.max(1000, goal)) : null,
+      partner_id: partner.partner_id,
+      created_by: partner.id,
+    })
+    .select('id')
+    .single();
+  if (error) throw new Error(/challenges_dates_chk/.test(error.message) ? 'A challenge can run for up to 3 months' : error.message);
+  revalidatePath('/partner/challenges');
+  revalidatePath('/partner/club');
+  redirect(`/partner/challenges?c=${(data as any).id}`);
+}
+
+export async function cancelChallenge(challengeId: string) {
+  const partner = await requireGym();
+  const db = createAdminClient();
+  const { error } = await db.from('challenges').update({ cancelled_at: new Date().toISOString() }).eq('id', challengeId).eq('community_id', partner.community_id);
+  if (error) throw new Error(error.message);
+  revalidatePath('/partner/challenges');
+  revalidatePath('/partner/club');
+}

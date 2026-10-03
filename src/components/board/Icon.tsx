@@ -63,6 +63,8 @@ const ICONS = {
   timer: { sf: 'timer', ion: 'timer-outline' },
   bookmark: { sf: 'bookmark', ion: 'bookmark-outline' },
   bookmarkFill: { sf: 'bookmark.fill', ion: 'bookmark' },
+  steps: { sf: 'figure.walk', ion: 'walk' },
+  heart: { sf: 'heart.fill', ion: 'heart' },
 } as const;
 
 export type IconName = keyof typeof ICONS;

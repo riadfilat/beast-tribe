@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { requirePartner } from '@/lib/auth';
+import { ownsCommunity, requirePartner } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import SubmitButton from '@/components/SubmitButton';
 import { Icon } from '@/components/ui/Icon';
@@ -9,7 +9,7 @@ import { createClass } from '../../club/actions';
 
 export default async function NewClassPage() {
   const partner = await requirePartner();
-  if (partner.partner_type !== 'gym') redirect('/partner/dashboard');
+  if (!ownsCommunity(partner.partner_type)) redirect('/partner/dashboard');
   if (!partner.community_id) redirect('/partner/club');
   const db = createAdminClient();
   const { data: sports } = await db.from('sports').select('id, name, emoji').eq('is_active', true).order('name');

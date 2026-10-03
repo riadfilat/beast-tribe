@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { requirePartner } from '@/lib/auth';
+import { ownsCommunity, requirePartner } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import { fmtDay, fmtTime } from '@/lib/club';
 import SubmitButton from '@/components/SubmitButton';
@@ -13,7 +13,7 @@ export const revalidate = 0;
 
 export default async function ClassPage({ params }: { params: { id: string } }) {
   const partner = await requirePartner();
-  if (partner.partner_type !== 'gym') redirect('/partner/dashboard');
+  if (!ownsCommunity(partner.partner_type)) redirect('/partner/dashboard');
   const db = createAdminClient();
 
   const { data: e } = await db

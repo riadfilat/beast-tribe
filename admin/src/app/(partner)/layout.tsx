@@ -9,6 +9,8 @@ export default async function PartnerLayout({ children }: { children: React.Reac
     coach: 'Coach',
     gym: 'Gym',
     event_company: 'Event Company',
+    company: 'Company',
+    nutritionist: 'Nutritionist',
   };
 
   return (

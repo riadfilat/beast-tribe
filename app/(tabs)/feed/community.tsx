@@ -17,6 +17,7 @@ import { CommunityTile } from '../../../src/components/board/communities';
 import { SessionRow, useNow } from '../../../src/components/board/session';
 import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
+import { CommunityWellness } from '../../../src/components/board/wellness';
 
 export default function CommunityScreen() {
   const s = useStyles();
@@ -124,6 +125,8 @@ export default function CommunityScreen() {
             </View>
           )
         ) : null}
+
+        {c?.isMember ? <CommunityWellness communityId={c.id} /> : null}
 
         {c?.isMember && !c.isDefault ? <TextButton label={t('community.leave')} onPress={confirmLeave} color={p.danger} style={{ alignSelf: 'center', marginTop: 24 }} /> : null}
       </ScrollView>

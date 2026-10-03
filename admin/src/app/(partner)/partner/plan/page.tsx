@@ -8,7 +8,7 @@ export const revalidate = 0;
 
 export default async function PlanPage() {
   const partner = await requirePartner();
-  const audience = partner.partner_type === 'gym' ? 'gym' : 'coach';
+  const audience = partner.partner_type === 'gym' ? 'gym' : partner.partner_type === 'company' ? 'company' : 'coach';
   const current = planOf(partner.plan);
   const options = PLANS.filter((p) => p.audience === audience);
   const trialDays =
@@ -35,7 +35,7 @@ export default async function PlanPage() {
             {trialDays != null
               ? `${trialDays} day${trialDays === 1 ? '' : 's'} left in your trial. Everything is open while you try it.`
               : current && current.monthly
-                ? `${sar(partner.billing_cycle === 'yearly' ? current.monthly * 10 : current.monthly)} / ${partner.billing_cycle === 'yearly' ? 'year' : 'month'}${partner.plan_renews_at ? ` · renews ${new Date(partner.plan_renews_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}`
+                ? `${sar(partner.billing_cycle === 'yearly' ? current.monthly * 10 : current.monthly)} ${current.unit ? current.unit : `/ ${partner.billing_cycle === 'yearly' ? 'year' : 'month'}`}${partner.plan_renews_at ? ` · renews ${new Date(partner.plan_renews_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}`
                 : 'Talk to us to set up billing.'}
           </p>
         </div>
@@ -64,13 +64,13 @@ export default async function PlanPage() {
                 {p.monthly ? (
                   <>
                     <span className="text-3xl font-bold text-brand-teal tabular-nums">{p.monthly.toLocaleString('en-US')}</span>
-                    <span className="text-sm text-gray-500"> SAR / month</span>
+                    <span className="text-sm text-gray-500"> SAR {p.unit || '/ month'}</span>
                   </>
                 ) : (
                   <span className="text-2xl font-bold text-brand-teal">Let&rsquo;s talk</span>
                 )}
               </p>
-              {p.monthly ? <p className="text-xs text-gray-400 mt-0.5">or {sar(p.monthly * 10)} a year, two months free · excl. VAT</p> : null}
+              {p.monthly && !p.unit ? <p className="text-xs text-gray-400 mt-0.5">or {sar(p.monthly * 10)} a year, two months free · excl. VAT</p> : p.unit ? <p className="text-xs text-gray-400 mt-0.5">excl. VAT</p> : null}
               <p className="text-sm font-medium text-gray-700 mt-3">{p.limit}</p>
               <ul className="mt-3 space-y-2 text-sm text-gray-600 flex-1">
                 {p.features.map((f) => (

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { requirePartner } from '@/lib/auth';
+import { ownsCommunity, requirePartner } from '@/lib/auth';
 import { loadClub, fmtDay, fmtTime, type ClubClass } from '@/lib/club';
 import { FillBar, Stat, btnPrimary, card } from '@/components/club/ui';
 
@@ -17,7 +17,7 @@ function byDay(list: ClubClass[]) {
 
 export default async function ClassesPage({ searchParams }: { searchParams: { created?: string } }) {
   const partner = await requirePartner();
-  if (partner.partner_type !== 'gym') redirect('/partner/dashboard');
+  if (!ownsCommunity(partner.partner_type)) redirect('/partner/dashboard');
   if (!partner.community_id) redirect('/partner/club');
   const club = await loadClub(partner, partner.community_id);
   if (!club) redirect('/partner/club');

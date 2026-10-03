@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation';
 
 export default async function PartnerDashboardPage() {
   const partner = await requirePartner();
-  if (partner.partner_type === 'gym') redirect('/partner/club');
+  if (partner.partner_type === 'gym' || partner.partner_type === 'company') redirect('/partner/club');
   const db = createAdminClient();
 
   // Get partner's events with RSVP counts

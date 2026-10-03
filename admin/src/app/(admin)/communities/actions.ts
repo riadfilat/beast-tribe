@@ -242,3 +242,29 @@ export async function regenerateJoinCode(communityId: string) {
   await db.from('admin_audit_log').insert({ admin_user_id: admin.id, action: 'regenerate_join_code', target_table: 'communities', target_id: communityId });
   revalidatePath(`/communities/${communityId}`);
 }
+
+// ─── Package: experts and venues included with a community ─────────────────
+const PACKAGE_ROLES = ['nutritionist', 'coach', 'gym', 'kitchen'] as const;
+
+export async function addCommunityPartner(communityId: string, formData: FormData) {
+  const admin = await requireAdmin();
+  const db = createAdminClient();
+  const partnerId = (formData.get('partner_id') as string) || '';
+  const role = (formData.get('role') as string) || '';
+  if (!partnerId || !PACKAGE_ROLES.includes(role as any)) throw new Error('Pick a partner and what they are');
+  const perk = ((formData.get('perk') as string) || '').trim() || null;
+  const perk_ar = ((formData.get('perk_ar') as string) || '').trim() || null;
+  const { error } = await db.from('community_partners').upsert({ community_id: communityId, partner_id: partnerId, role, perk, perk_ar }, { onConflict: 'community_id,partner_id' });
+  if (error) throw new Error(error.message);
+  await db.from('admin_audit_log').insert({ admin_user_id: admin.id, action: 'add_community_partner', target_table: 'community_partners', target_id: communityId, details: { partner_id: partnerId, role } });
+  revalidatePath(`/communities/${communityId}`);
+}
+
+export async function removeCommunityPartner(communityId: string, partnerId: string) {
+  const admin = await requireAdmin();
+  const db = createAdminClient();
+  const { error } = await db.from('community_partners').delete().eq('community_id', communityId).eq('partner_id', partnerId);
+  if (error) throw new Error(error.message);
+  await db.from('admin_audit_log').insert({ admin_user_id: admin.id, action: 'remove_community_partner', target_table: 'community_partners', target_id: communityId, details: { partner_id: partnerId } });
+  revalidatePath(`/communities/${communityId}`);
+}

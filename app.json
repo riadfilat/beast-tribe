@@ -55,6 +55,15 @@
         {
           "color": "#E88F24"
         }
+      ],
+      "expo-video",
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "Beast Tribe reads your daily step count so you can see your steps and take part in step challenges with your company or gym. Your steps are only shared with a challenge you choose to join.",
+          "NSHealthUpdateUsageDescription": false,
+          "background": false
+        }
       ]
     ],
     "experiments": {

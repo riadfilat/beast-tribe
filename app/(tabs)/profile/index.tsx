@@ -18,6 +18,7 @@ import { Press } from '../../../src/components/board/Press';
 import { Magnet } from '../../../src/components/board/people';
 import { MarkerButton, OutlineButton, SectionHeading } from '../../../src/components/board/controls';
 import { TrainingMetricsSection } from '../../../src/components/board/metrics';
+import { StepsCard } from '../../../src/components/board/wellness';
 import { Sheet } from '../../../src/components/board/sheet';
 import { Group, GroupRow } from '../../../src/components/board/list';
 import { SessionRow, useNow } from '../../../src/components/board/session';
@@ -139,6 +140,7 @@ export default function YouScreen() {
 
         {/* Training, measured */}
         <TrainingMetricsSection />
+        <StepsCard />
 
         {/* Next up */}
         <SectionHeading title={t('you.mySessions')} action={t('common.seeAll')} onAction={() => router.push('/my-sessions')} style={s.section} />
