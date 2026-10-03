@@ -26,7 +26,7 @@ const ITEM = 48;
 export default function AboutYouScreen() {
   const s = useStyles();
   const { p, lang } = useKit();
-  const { t } = useI18n();
+  const { t, setLanguage } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { edit } = useLocalSearchParams<{ edit?: string }>();
@@ -84,7 +84,7 @@ export default function AboutYouScreen() {
         <Txt v="label" color={p.inkSoft}>
           {editing ? t('onboarding.editTitle') : t('onboarding.step', { n: 1, total: 3 })}
         </Txt>
-        <View style={{ width: 44 }} />
+        {editing ? <View style={{ width: 44 }} /> : <TextButton label={t('auth.langSwitch')} onPress={() => setLanguage(lang === 'ar' ? 'en' : 'ar')} />}
       </View>
 
       <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
@@ -266,7 +266,7 @@ function DobSheet({ visible, value, months, onClose, onDone }: { visible: boolea
 
 const useStyles = makeStyles(({ p }) => ({
   screen: { flex: 1, backgroundColor: p.board },
-  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 6 },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 6, paddingEnd: 16 },
   body: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 32 },
   stage: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 64, paddingHorizontal: 18, borderRadius: 32, borderWidth: 2, borderColor: p.ruleStrong },
   label: { marginTop: 26, marginBottom: 10 },

@@ -11,13 +11,13 @@ import { SPORT_LIST } from '../../src/lib/sports';
 import { Txt } from '../../src/components/board/Txt';
 import { Icon } from '../../src/components/board/Icon';
 import { Press } from '../../src/components/board/Press';
-import { IconButton, MarkerButton } from '../../src/components/board/controls';
+import { IconButton, MarkerButton, TextButton } from '../../src/components/board/controls';
 import { toast } from '../../src/components/board/toast';
 
 export default function PickSportsScreen() {
   const s = useStyles();
-  const { p } = useKit();
-  const { t } = useI18n();
+  const { p, lang } = useKit();
+  const { t, setLanguage } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { edit } = useLocalSearchParams<{ edit?: string }>();
@@ -61,7 +61,7 @@ export default function PickSportsScreen() {
         <Txt v="label" color={p.inkSoft}>
           {editing ? t('you.mySports') : t('onboarding.step', { n: 2, total: 3 })}
         </Txt>
-        <View style={{ width: 44 }} />
+        {editing ? <View style={{ width: 44 }} /> : <TextButton label={t('auth.langSwitch')} onPress={() => setLanguage(lang === 'ar' ? 'en' : 'ar')} />}
       </View>
       <ScrollView contentContainerStyle={s.body} showsVerticalScrollIndicator={false}>
         <Txt v="title" size={30} accessibilityRole="header">
@@ -102,7 +102,7 @@ export default function PickSportsScreen() {
 
 const useStyles = makeStyles(({ p }) => ({
   screen: { flex: 1, backgroundColor: p.board },
-  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 6 },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 6, paddingEnd: 16 },
   body: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 32 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   tile: { width: '48%', flexGrow: 1, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, paddingHorizontal: 14, borderRadius: 10, borderWidth: 1.5, borderColor: p.rule },

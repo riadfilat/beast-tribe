@@ -104,7 +104,7 @@ export function useLiveChat(type: 'event' | 'pack', targetId?: string | null) {
       setLoading(false);
 
       channel = supabase
-        .channel(`chat:${room.id}`)
+        .channel(`chat:${room.id}:${Math.random().toString(36).slice(2, 8)}`)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `room_id=eq.${room.id}` }, async (payload: any) => {
           const row = payload.new;
           if (!row || seen.current.has(row.id)) return;

@@ -7,7 +7,7 @@ import { useI18n } from '../../src/i18n';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { useMyCommunities, useOpenCommunities } from '../../src/data/communities';
 import { Txt } from '../../src/components/board/Txt';
-import { IconButton, MarkerButton, SectionHeading } from '../../src/components/board/controls';
+import { IconButton, MarkerButton, SectionHeading, TextButton } from '../../src/components/board/controls';
 import { CommunityRow, JoinCommunityForm } from '../../src/components/board/communities';
 import { toast } from '../../src/components/board/toast';
 
@@ -15,8 +15,8 @@ import { toast } from '../../src/components/board/toast';
 // private community; open communities are one tap. Everyone is already in the open Beast Tribe.
 export default function JoinCommunityScreen() {
   const s = useStyles();
-  const { p } = useKit();
-  const { t } = useI18n();
+  const { p, lang } = useKit();
+  const { t, setLanguage } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { completeOnboarding } = useAuth();
@@ -48,7 +48,7 @@ export default function JoinCommunityScreen() {
         <Txt v="label" color={p.inkSoft}>
           {t('onboarding.step', { n: 3, total: 3 })}
         </Txt>
-        <View style={{ width: 44 }} />
+        <TextButton label={t('auth.langSwitch')} onPress={() => setLanguage(lang === 'ar' ? 'en' : 'ar')} />
       </View>
       <ScrollView contentContainerStyle={s.body} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Txt v="title" size={30} accessibilityRole="header">
@@ -87,7 +87,7 @@ export default function JoinCommunityScreen() {
 
 const useStyles = makeStyles(({ p }) => ({
   screen: { flex: 1, backgroundColor: p.board },
-  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 6 },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 6, paddingEnd: 16 },
   body: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 32 },
   bar: { paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1, borderTopColor: p.rule, backgroundColor: p.boardDeep },
 }));

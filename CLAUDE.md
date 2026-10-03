@@ -115,6 +115,13 @@ User wants to launch the app to limited public testers via TestFlight.
 
 ## Session Log (append-only — newest at top)
 
+### 2026-10-04 (later) — Phone was on build 7; onboarding trap; language switch in onboarding
+- User (in Arabic): no way to change language during onboarding, and "ادخل المجتمع" (last onboarding button) did nothing.
+- ROOT CAUSE: the phone was still on **build 7** (runtime f96462…). Expo update insights show its last installed OTA was 70ad57f5 (10:27 UTC, 3 Oct); every OTA after build 10 went to runtime 5fa84627 with 0 installs. Build 7's code reads `profiles.select('*')`, which migration 050 no longer allows, so the profile came back empty → gate sent the member into onboarding → the last step saved but could not read the profile back → stuck. None of the day's later work (wellness, captains, Arabic pass) had reached the phone either.
+- CHECK BEFORE BELIEVING AN OTA LANDED: `updatesByGroup(group).insights` on api.expo.dev/graphql (installs / failed installs per update), script pattern in this log's session. Build 10 was uploaded to TestFlight 12:57 UTC; the user has to install it from TestFlight.
+- App: language switch (auth.langSwitch) on all three onboarding screens; completeOnboarding lets the member in even if the profile can't be read back; realtime topics are unique per subscription (reusing `inbox:<id>` threw "cannot add postgres_changes callbacks after subscribe()" and crashed the tabs); profile.locale is synced to the app language at start (was only saved on a manual switch, so Arabic phones got English pushes); needLevel string said باحث where the level is مبادر.
+- Xcode IS installed on this Mac now (/Applications/Xcode.app, iOS 27 runtime; no simulator booted). The "no Xcode" note in memory is out of date; eas.json `development` profile is a simulator dev-client build.
+
 ### 2026-10-04 — Arabic pass: one vocabulary, workout names, places
 - User: "double check the RTL, the Arabic journey is not smooth; naming of workouts needs to be double checked, some are wrong".
 - Finding: layout was already direction-safe (start/end everywhere, 999/999 strings translated). The roughness was wording: "session" was تمرين in 51 strings, جلسة in 15, حصة in 5, while تمرين also meant a workout and a single exercise.

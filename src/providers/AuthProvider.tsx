@@ -5,7 +5,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { savePushToken } from '../lib/notifications';
 import { Profile } from '../types/models';
 import { PREVIEW, previewProfile } from '../data/preview';
-import { registerLanguageListener } from '../i18n';
+import { i18n, registerLanguageListener } from '../i18n';
 import { saveLocale } from '../data/locale';
 
 /** Preview starts signed in unless the web URL asks for the auth screens (?auth=1). */
@@ -97,6 +97,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userId = session?.user?.id;
     registerLanguageListener((lang) => saveLocale(userId, lang));
   }, [session?.user?.id]);
+
+  // Keep the language on the profile in step with the app (push notifications are sent in it),
+  // including when the app starts in Arabic because the phone is in Arabic.
+  useEffect(() => {
+    const saved = (profile as any)?.locale;
+    if (profile?.id && saved !== undefined && saved !== i18n.lang) saveLocale(profile.id, i18n.lang);
+  }, [profile?.id, (profile as any)?.locale]);
 
   async function fetchProfile(userId: string) {
     // Guard against concurrent fetches, but never block the caller's
@@ -253,8 +260,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await fetchProfile(session.user.id);
     }
 
-    // Optimistic update — ensures AuthGate sees onboarding_completed = true
-    setProfile((prev) => prev ? { ...prev, onboarding_completed: true } : prev);
+    // Optimistic update — ensures AuthGate sees onboarding_completed = true. If the profile could not
+    // be read back, a minimal one still lets the member in; the next refresh fills in the rest.
+    setProfile((prev) =>
+      prev
+        ? { ...prev, onboarding_completed: true }
+        : session?.user
+          ? ({ id: session.user.id, full_name: session.user.email?.split('@')[0] || '', onboarding_completed: true } as Profile)
+          : prev,
+    );
   }
 
   async function refreshProfile() {
