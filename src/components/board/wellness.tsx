@@ -3,12 +3,13 @@ import { Switch, View } from 'react-native';
 import { useKit } from '../../theme';
 import { useI18n } from '../../i18n';
 import { useAuth } from '../../providers/AuthProvider';
-import { Challenge, PackagePartner, connectExpert, joinChallenge, leaveChallenge, useChallengeBoard, useChallenges, useMySteps, usePackagePartners } from '../../data/wellness';
+import { Challenge, ChallengeMetric, PackagePartner, chooseTeam, connectExpert, joinChallenge, leaveChallenge, useChallengeBoard, useChallenges, useCommunityExtras, useMySteps, usePackagePartners, useTeamBoard, useTeams } from '../../data/wellness';
 import { connectHealth, healthAvailable, healthConnected, syncSteps } from '../../lib/health';
 import { invalidate } from '../../data/query';
 import { Txt } from './Txt';
-import { Icon } from './Icon';
-import { MarkerButton, OutlineButton, SectionHeading, TextButton } from './controls';
+import { Icon, IconName } from './Icon';
+import { Press } from './Press';
+import { MarkerButton, OutlineButton, SectionHeading, Segmented, TextButton } from './controls';
 import { Magnet } from './people';
 import { Sheet } from './sheet';
 import { toast } from './toast';
@@ -96,55 +97,159 @@ export function useStepsSync() {
   }, [user?.id]);
 }
 
+const METRIC_ICON: Record<ChallengeMetric, IconName> = { steps: 'steps', active_days: 'calendar', workouts: 'train', minutes: 'timer', sessions: 'people' };
+
+/** Pick or change your team in a community. */
+function TeamSheet({ communityId, visible, onClose, onPicked }: { communityId: string; visible: boolean; onClose: () => void; onPicked?: () => void }) {
+  const { p, lang } = useKit();
+  const { t, tn } = useI18n();
+  const q = useTeams(communityId, lang);
+  const [busy, setBusy] = useState<string | null>(null);
+  if (!visible) return null;
+  async function pick(team: { id: string; name: string }) {
+    setBusy(team.id);
+    try {
+      await chooseTeam(team.id);
+      haptic('success');
+      toast.show(t('wellness.teamSaved', { team: team.name }), 'yours');
+      onClose();
+      onPicked?.();
+    } catch {
+      toast.show(t('wellness.joinError'), 'error');
+    } finally {
+      setBusy(null);
+    }
+  }
+  return (
+    <Sheet visible title={t('wellness.pickTeam')} onClose={onClose}>
+      <View style={{ gap: 10 }}>
+        <Txt v="body" color={p.inkSoft}>
+          {t('wellness.pickTeamSub')}
+        </Txt>
+        {(q.data?.teams ?? []).map((team) => {
+          const mine = q.data?.mine === team.id;
+          return (
+            <Press key={team.id} onPress={() => pick(team)} disabled={!!busy} feedback="selection" style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: mine ? p.marker : p.rule }}>
+              <Txt v="row" size={16} style={{ flex: 1 }} numberOfLines={1}>
+                {team.name}
+              </Txt>
+              <Txt v="meta">{tn('wellness.teamPeople', team.members)}</Txt>
+              {mine ? <Icon name="check" size={16} color={p.marker} /> : null}
+            </Press>
+          );
+        })}
+      </View>
+    </Sheet>
+  );
+}
+
 function ChallengeCard({ c }: { c: Challenge }) {
   const { p, lang } = useKit();
-  const { t } = useI18n();
+  const { t, tn } = useI18n();
   const { user } = useAuth();
-  const board = useChallengeBoard(c.joined || c.entrants ? c.id : null);
+  const show = c.joined || c.entrants > 0;
+  const board = useChallengeBoard(show ? c.id : null);
+  const teamBoard = useTeamBoard(show && c.byTeam ? c.id : null, lang);
+  const teams = useTeams(c.byTeam ? c.communityId : null, lang);
+  const [tab, setTab] = useState<'teams' | 'people'>(c.byTeam ? 'teams' : 'people');
   const [busy, setBusy] = useState(false);
+  const [picking, setPicking] = useState(false);
   const today = new Date();
   const started = c.startsOn <= today;
   const ended = new Date(c.endsOn.getTime() + 86400000) <= today;
   const rows = board.data ?? [];
   const mine = rows.find((r) => r.userId === user?.id);
   const top = rows.slice(0, 5);
+  const teamRows = teamBoard.data ?? [];
+  const score = (n: number) => tn(`wellness.score.${c.metric}`, Math.round(n), { n: fmt(Math.round(n), lang) });
 
-  async function toggle() {
+  async function join() {
     if (!user) return;
     setBusy(true);
     try {
-      if (c.joined) await leaveChallenge(user.id, c.id);
-      else {
-        await joinChallenge(user.id, c.id);
-        if (healthAvailable() && !(await healthConnected())) await connectHealth(user.id).catch(() => {});
-        haptic('success');
-      }
+      await joinChallenge(user.id, c.id);
+      // Only a steps challenge needs Apple Health; the others count what the app already knows.
+      if (c.metric === 'steps' && healthAvailable() && !(await healthConnected())) await connectHealth(user.id).catch(() => {});
+      haptic('success');
     } catch {
       toast.show(t('wellness.joinError'), 'error');
     } finally {
       setBusy(false);
     }
   }
+  async function leave() {
+    if (!user) return;
+    setBusy(true);
+    try {
+      await leaveChallenge(user.id, c.id);
+    } catch {
+      toast.show(t('wellness.joinError'), 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+  // A team challenge needs a team first.
+  const needsTeam = c.byTeam && (teams.data?.teams.length ?? 0) > 0 && !teams.data?.mine;
+  const onJoin = () => (needsTeam ? setPicking(true) : join());
 
   return (
     <View style={{ marginHorizontal: 16, marginTop: 12, padding: 16, borderRadius: 14, borderWidth: 1.5, borderColor: c.joined ? p.marker : p.rule, gap: 12 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Icon name="steps" size={18} color={p.marker} />
+        <Icon name={METRIC_ICON[c.metric]} size={18} color={p.marker} />
         <Txt v="title" size={18} style={{ flex: 1 }} numberOfLines={2}>
           {c.title}
         </Txt>
       </View>
       <Txt v="meta">
         {[
+          c.byTeam ? t('wellness.byTeam') : null,
+          t(`wellness.types.${c.metric}`),
           `${dayLabel(c.startsOn, lang)} – ${dayLabel(c.endsOn, lang)}`,
-          c.dailyGoal ? t('wellness.goal', { n: fmt(c.dailyGoal, lang) }) : null,
+          c.metric === 'steps' && c.dailyGoal ? t('wellness.goal', { n: fmt(c.dailyGoal, lang) }) : null,
           t('wellness.joinedCount', { n: c.entrants }),
         ]
           .filter(Boolean)
           .join(' · ')}
       </Txt>
+      {c.prize ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Icon name="sparkle" size={14} color={p.marker} />
+          <Txt v="label" size={13} color={p.markerText} style={{ flex: 1 }}>
+            {t('wellness.prize', { prize: c.prize })}
+          </Txt>
+        </View>
+      ) : null}
 
-      {top.length && started ? (
+      {c.byTeam && started && show ? (
+        <Segmented options={[{ value: 'teams', label: t('wellness.tabTeams') }, { value: 'people', label: t('wellness.tabPeople') }]} value={tab} onChange={setTab} />
+      ) : null}
+
+      {started && show && tab === 'teams' && c.byTeam ? (
+        teamRows.length ? (
+          <View style={{ gap: 8 }}>
+            {teamRows.slice(0, 6).map((r) => (
+              <View key={r.teamId} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Txt v="time" size={15} style={{ width: 22 }} color={r.place === 1 ? p.marker : p.inkSoft}>
+                  {r.place}
+                </Txt>
+                <View style={{ flex: 1 }}>
+                  <Txt v="row" size={15} numberOfLines={1} color={r.mine ? p.markerText : p.ink}>
+                    {r.name}
+                  </Txt>
+                  <Txt v="caption">{tn('wellness.teamPeople', r.people)}</Txt>
+                </View>
+                <Txt v="time" size={14}>
+                  {t('wellness.teamAvg', { score: score(r.average) })}
+                </Txt>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Txt v="meta">{t('wellness.noTeamsYet')}</Txt>
+        )
+      ) : null}
+
+      {started && show && tab === 'people' && top.length ? (
         <View style={{ gap: 8 }}>
           {top.map((r) => (
             <View key={r.userId} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -152,17 +257,18 @@ function ChallengeCard({ c }: { c: Challenge }) {
                 {r.place}
               </Txt>
               <Magnet person={{ id: r.userId, name: r.name, avatarUrl: r.avatarUrl } as any} size={28} yours={r.userId === user?.id} />
-              <Txt v="row" size={15} style={{ flex: 1 }} numberOfLines={1}>
-                {r.name}
-              </Txt>
-              <Txt v="time" size={15}>
-                {fmt(r.steps, lang)}
+              <View style={{ flex: 1 }}>
+                <Txt v="row" size={15} numberOfLines={1}>
+                  {r.name}
+                </Txt>
+                {r.team ? <Txt v="caption">{r.team}</Txt> : null}
+              </View>
+              <Txt v="time" size={14}>
+                {score(r.score)}
               </Txt>
             </View>
           ))}
-          {mine && mine.place > 5 ? (
-            <Txt v="meta">{t('wellness.yourPlace', { place: mine.place, steps: fmt(mine.steps, lang) })}</Txt>
-          ) : null}
+          {mine && mine.place > 5 ? <Txt v="meta">{t('wellness.yourScore', { place: mine.place, score: score(mine.score) })}</Txt> : null}
         </View>
       ) : null}
 
@@ -172,15 +278,51 @@ function ChallengeCard({ c }: { c: Challenge }) {
             <Txt v="meta" color={p.aqua}>
               {started ? t('wellness.youreIn') : t('wellness.startsOn', { date: dayLabel(c.startsOn, lang) })}
             </Txt>
-            <TextButton label={t('wellness.leave')} onPress={toggle} color={p.inkSoft} disabled={busy} />
+            <TextButton label={t('wellness.leave')} onPress={leave} color={p.inkSoft} disabled={busy} />
           </View>
         ) : (
-          <MarkerButton label={t('wellness.join')} icon="plus" loading={busy} onPress={toggle} />
+          <MarkerButton label={t('wellness.join')} icon="plus" loading={busy} onPress={onJoin} />
         )
       ) : (
         <Txt v="meta">{t('wellness.ended')}</Txt>
       )}
-      <Txt v="caption">{t('wellness.privacy')}</Txt>
+      <Txt v="caption">{[t(`wellness.typeHint.${c.metric}`), t('wellness.privacy')].join(' ')}</Txt>
+      {c.byTeam ? <TeamSheet communityId={c.communityId} visible={picking} onClose={() => setPicking(false)} onPicked={join} /> : null}
+    </View>
+  );
+}
+
+/** A notice from the community and its plan of the month, near the top of the community page. */
+export function CommunityHighlights({ communityId, name, onOpenPlan }: { communityId: string; name: string; onOpenPlan: (slug: string) => void }) {
+  const { p, lang } = useKit();
+  const { t } = useI18n();
+  const x = useCommunityExtras(communityId, lang).data;
+  if (!x || (!x.notice && !x.plan)) return null;
+  return (
+    <View style={{ gap: 10, marginTop: 16 }}>
+      {x.notice ? (
+        <View style={{ padding: 14, borderRadius: 12, backgroundColor: p.wash, gap: 4 }}>
+          <Txt v="label" size={12} color={p.inkSoft}>
+            {t('wellness.notice', { name })}
+          </Txt>
+          <Txt v="body">{x.notice}</Txt>
+        </View>
+      ) : null}
+      {x.plan ? (
+        <Press onPress={() => onOpenPlan(x.plan!.slug)} feedback="light" style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: p.ruleStrong }}>
+          <Icon name="train" size={20} color={p.marker} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Txt v="label" size={12} color={p.inkSoft}>
+              {t('wellness.planOfMonth')}
+            </Txt>
+            <Txt v="row" size={16} numberOfLines={1}>
+              {x.plan.title}
+            </Txt>
+            <Txt v="caption">{t('wellness.planOfMonthSub', { weeks: x.plan.weeks, days: x.plan.days, minutes: x.plan.minutes })}</Txt>
+          </View>
+          <Icon name="chevron" size={16} color={p.inkSoft} />
+        </Press>
+      ) : null}
     </View>
   );
 }
@@ -238,11 +380,30 @@ export function CommunityWellness({ communityId }: { communityId: string }) {
   const { t } = useI18n();
   const challenges = useChallenges(communityId, lang).data ?? [];
   const partners = usePackagePartners(communityId, lang).data ?? [];
+  const teams = useTeams(communityId, lang).data;
   const [open, setOpen] = useState<PackagePartner | null>(null);
-  if (!challenges.length && !partners.length) return null;
+  const [picking, setPicking] = useState(false);
+  const hasTeams = (teams?.teams.length ?? 0) > 0;
+  const myTeam = teams?.teams.find((x) => x.id === teams.mine) ?? null;
+  if (!challenges.length && !partners.length && !hasTeams) return null;
 
   return (
     <View style={{ marginTop: 8 }}>
+      {hasTeams ? (
+        <View style={{ marginHorizontal: 16, marginTop: 20, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: p.rule, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Icon name="people" size={18} color={p.aqua} />
+          <View style={{ flex: 1 }}>
+            <Txt v="label" size={12} color={p.inkSoft}>
+              {t('wellness.yourTeam')}
+            </Txt>
+            <Txt v="row" size={16} numberOfLines={1}>
+              {myTeam ? myTeam.name : t('wellness.pickTeam')}
+            </Txt>
+          </View>
+          <TextButton label={myTeam ? t('wellness.changeTeam') : t('wellness.pickTeam')} onPress={() => setPicking(true)} />
+        </View>
+      ) : null}
+      <TeamSheet communityId={communityId} visible={picking} onClose={() => setPicking(false)} />
       {challenges.length ? (
         <>
           <SectionHeading title={t('wellness.challenges')} style={{ paddingHorizontal: 16, marginTop: 20 }} />

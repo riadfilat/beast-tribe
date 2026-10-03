@@ -17,7 +17,7 @@ import { CommunityTile } from '../../../src/components/board/communities';
 import { SessionRow, useNow } from '../../../src/components/board/session';
 import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
-import { CommunityWellness } from '../../../src/components/board/wellness';
+import { CommunityHighlights, CommunityWellness } from '../../../src/components/board/wellness';
 
 export default function CommunityScreen() {
   const s = useStyles();
@@ -108,6 +108,8 @@ export default function CommunityScreen() {
                 <Txt v="caption">{t('community.inviteAdminsOnly')}</Txt>
               </View>
             ) : null}
+
+            {c.isMember ? <CommunityHighlights communityId={c.id} name={c.name} onOpenPlan={(slug) => router.push({ pathname: '/program/[slug]', params: { slug } })} /> : null}
 
             <View style={{ marginTop: 14 }}>
               <OutlineButton label={t('board.hostA11y')} icon="plus" onPress={() => router.push({ pathname: '/host', params: { community: c.id } })} />

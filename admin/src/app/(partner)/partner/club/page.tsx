@@ -6,8 +6,10 @@ import { PLAN_STATUS_LABEL, planOf } from '@/lib/plans';
 import { Icon } from '@/components/ui/Icon';
 import SubmitButton from '@/components/SubmitButton';
 import { Avatar, FillBar, HeatMap, SectionTitle, Stat, StatusChip, WeekBars, btnGhost, btnPrimary, card } from '@/components/club/ui';
-import { createClub, newClubCode } from './actions';
-import { loadBoard, loadChallenges, loadStepsSummary, stateOf, fmtDate } from '@/lib/wellness';
+import { createClub, newClubCode, saveCommunityPage } from './actions';
+import { loadBoard, loadChallenges, loadStepsSummary, stateOf, fmtDate, fmtScore } from '@/lib/wellness';
+import { createAdminClient } from '@/lib/supabase-server';
+import { input, label } from '@/components/club/ui';
 
 export const revalidate = 0;
 
@@ -19,7 +21,14 @@ export default async function ClubPage() {
 
   const club = await loadClub(partner, partner.community_id);
   if (!club) return <ClubSetup name={partner.business_name} />;
-  const [challenges, steps] = await Promise.all([loadChallenges(partner.community_id), loadStepsSummary(club.members.map((m) => m.id))]);
+  const db = createAdminClient();
+  const [challenges, steps, { data: pageRow }, { data: programs }] = await Promise.all([
+    loadChallenges(partner.community_id),
+    loadStepsSummary(club.members.map((m) => m.id)),
+    db.from('communities').select('notice, notice_ar, notice_until, featured_program_id').eq('id', partner.community_id).single(),
+    db.from('programs').select('id, title, weeks, days_per_week').eq('status', 'published').order('sort'),
+  ]);
+  const page: any = pageRow || {};
   const live = challenges.find((c) => stateOf(c) === 'live') || challenges.find((c) => stateOf(c) === 'upcoming') || null;
   const top = live ? (await loadBoard(live.id)).slice(0, 5) : [];
 
@@ -181,17 +190,55 @@ export default async function ClubPage() {
                       <span className={`w-5 font-bold tabular-nums ${r.place === 1 ? 'text-[#B86A10]' : 'text-gray-400'}`}>{r.place}</span>
                       <Avatar name={r.name} src={r.avatar_url} size={26} />
                       <span className="flex-1 text-gray-800">{r.name}</span>
-                      <span className="tabular-nums font-semibold text-brand-teal">{r.steps.toLocaleString()}</span>
+                      <span className="tabular-nums font-semibold text-brand-teal">{fmtScore(live.metric, r.score)}</span>
                     </li>
                   ))}
                   {!top.length ? <li className="text-sm text-gray-400">No one has joined yet.</li> : null}
                 </ol>
               </>
             ) : (
-              <p className="text-sm text-gray-500">Run a step challenge for a week or a month. People join from the app; only those who join appear on the ranking.</p>
+              <p className="text-sm text-gray-500">Run a challenge for a week or a month: active days, workouts, minutes, sessions or steps, by person or by team. People join from the app; only those who join appear on the ranking.</p>
             )}
           </div>
         </div>
+      </section>
+
+      {/* What members see on the community page in the app */}
+      <section className={`${card} p-5`}>
+        <SectionTitle title="Your page in the app" />
+        <form action={saveCommunityPage} className="grid lg:grid-cols-2 gap-5">
+          <div className="space-y-3">
+            <div>
+              <label className={label} htmlFor="cp-notice">Notice (shown at the top of your community page)</label>
+              <textarea id="cp-notice" name="notice" maxLength={280} defaultValue={page.notice || ''} className={`${input} h-20 resize-none`} placeholder="Wellness day this Thursday. Lunch walk at 12:30 from the lobby." />
+            </div>
+            <div>
+              <label className={label} htmlFor="cp-notice-ar">Notice in Arabic (optional)</label>
+              <textarea id="cp-notice-ar" name="notice_ar" dir="rtl" maxLength={280} defaultValue={page.notice_ar || ''} className={`${input} h-16 resize-none`} />
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <label className={label} htmlFor="cp-until">Show the notice until (optional)</label>
+              <input id="cp-until" name="notice_until" type="date" defaultValue={page.notice_until || ''} className={input} />
+            </div>
+            <div>
+              <label className={label} htmlFor="cp-plan">Plan of the month</label>
+              <select id="cp-plan" name="featured_program_id" defaultValue={page.featured_program_id || ''} className={input}>
+                <option value="">None</option>
+                {(programs || []).map((p: any) => (
+                  <option key={p.id} value={p.id}>
+                    {p.title} · {p.weeks} weeks, {p.days_per_week} days a week
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-400">A training plan you recommend to everyone. They start it with one tap.</p>
+            </div>
+            <SubmitButton pendingLabel="Saving…" className={btnPrimary}>
+              Save
+            </SubmitButton>
+          </div>
+        </form>
       </section>
 
       <section className="grid lg:grid-cols-2 gap-4">

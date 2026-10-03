@@ -3,7 +3,7 @@ import QRCode from 'qrcode';
 import { ownsCommunity, requirePartner } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import { Lockup } from '@/components/brand/Logo';
-import PrintButton from './PrintButton';
+import PrintButton from '@/components/club/PrintButton';
 
 export const revalidate = 0;
 
@@ -27,7 +27,7 @@ export default async function PosterPage() {
           <h1 className="text-2xl font-bold text-gray-900">Join poster</h1>
           <p className="text-sm text-gray-500">Print it for the front desk, the changing room or the office kitchen. Members scan it, get the app and enter your code.</p>
         </div>
-        <PrintButton />
+        <PrintButton label="Print poster" />
       </div>
 
       <div id="poster" className="mx-auto bg-[#F4F1EA] text-[#023C3C] rounded-2xl print:rounded-none shadow-sm print:shadow-none" style={{ width: '100%', maxWidth: 620, aspectRatio: '210 / 297' }}>

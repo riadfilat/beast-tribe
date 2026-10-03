@@ -200,6 +200,7 @@ export async function createChallenge(formData: FormData) {
   if (title.length < 2 || !/^\d{4}-\d{2}-\d{2}$/.test(starts) || !/^\d{4}-\d{2}-\d{2}$/.test(ends)) throw new Error('A name and dates are needed');
   if (ends < starts) throw new Error('The end date is before the start');
   const goal = parseInt(str('daily_goal')) || null;
+  const metric = ['steps', 'active_days', 'workouts', 'minutes', 'sessions'].includes(str('metric')) ? str('metric') : 'steps';
   const db = createAdminClient();
   const { data, error } = await db
     .from('challenges')
@@ -209,7 +210,11 @@ export async function createChallenge(formData: FormData) {
       title_ar: str('title_ar') || null,
       starts_on: starts,
       ends_on: ends,
-      daily_goal: goal ? Math.min(50000, Math.max(1000, goal)) : null,
+      metric,
+      by_team: formData.get('by_team') === 'on',
+      prize: str('prize').slice(0, 160) || null,
+      prize_ar: str('prize_ar').slice(0, 160) || null,
+      daily_goal: goal && (metric === 'steps' || metric === 'active_days') ? Math.min(50000, Math.max(1000, goal)) : null,
       partner_id: partner.partner_id,
       created_by: partner.id,
     })
@@ -227,5 +232,49 @@ export async function cancelChallenge(challengeId: string) {
   const { error } = await db.from('challenges').update({ cancelled_at: new Date().toISOString() }).eq('id', challengeId).eq('community_id', partner.community_id);
   if (error) throw new Error(error.message);
   revalidatePath('/partner/challenges');
+  revalidatePath('/partner/club');
+}
+
+// ─── Teams, the community page, challenge options ──────────────────────────
+export async function addTeam(formData: FormData) {
+  const partner = await requireGym();
+  if (!partner.community_id) throw new Error('Create your community first');
+  const name = ((formData.get('name') as string) || '').trim();
+  const name_ar = ((formData.get('name_ar') as string) || '').trim() || null;
+  if (name.length < 2 || name.length > 40) throw new Error('Give the team a name of 2 to 40 characters');
+  const db = createAdminClient();
+  const { count } = await db.from('community_teams').select('id', { count: 'exact', head: true }).eq('community_id', partner.community_id);
+  if ((count ?? 0) >= 100) throw new Error('A community can have up to 100 teams');
+  const { error } = await db.from('community_teams').insert({ community_id: partner.community_id, name, name_ar });
+  if (error) throw new Error(error.message);
+  revalidatePath('/partner/teams');
+}
+
+export async function removeTeam(teamId: string) {
+  const partner = await requireGym();
+  const db = createAdminClient();
+  const { error } = await db.from('community_teams').delete().eq('id', teamId).eq('community_id', partner.community_id);
+  if (error) throw new Error(error.message);
+  revalidatePath('/partner/teams');
+}
+
+/** The notice and plan of the month members see on the community's page in the app. */
+export async function saveCommunityPage(formData: FormData) {
+  const partner = await requireGym();
+  if (!partner.community_id) throw new Error('Create your community first');
+  const str = (k: string, max: number) => ((formData.get(k) as string) || '').trim().slice(0, max) || null;
+  const until = str('notice_until', 10);
+  const plan = str('featured_program_id', 40);
+  const db = createAdminClient();
+  const { error } = await db
+    .from('communities')
+    .update({
+      notice: str('notice', 280),
+      notice_ar: str('notice_ar', 280),
+      notice_until: until && /^\d{4}-\d{2}-\d{2}$/.test(until) ? until : null,
+      featured_program_id: plan && /^[0-9a-f-]{36}$/.test(plan) ? plan : null,
+    })
+    .eq('id', partner.community_id);
+  if (error) throw new Error(error.message);
   revalidatePath('/partner/club');
 }

@@ -35,8 +35,8 @@ export default function ForCompaniesPage() {
               Wellness your people <span className="text-[#E88F24]">actually show up for.</span>
             </h1>
             <p className="mt-6 text-lg text-white/75 max-w-xl leading-relaxed">
-              Give your company a private community in the Beast Tribe app. Teams train together, join step challenges, and get a nutritionist and gyms in their package. You see
-              participation. Their health data stays theirs.
+              Give your company a private community in the Beast Tribe app. Departments compete in challenges, colleagues train together, and everyone gets a plan, a
+              nutritionist and gyms in their package. You get a report every month. Their health data stays theirs.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <a href="#start" className="inline-flex px-6 py-3 rounded-xl bg-[#E88F24] text-[#023C3C] font-semibold hover:brightness-95">
@@ -74,13 +74,15 @@ export default function ForCompaniesPage() {
       <section id="how" className="bg-white scroll-mt-4">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-20 md:py-28">
           <p className="text-[#147070] text-sm font-semibold uppercase tracking-[0.18em]">What your people get</p>
-          <h2 className={`${H} mt-3 text-3xl sm:text-5xl font-extrabold max-w-3xl leading-[1.05]`}>One community. Four ways to take part.</h2>
-          <div className="mt-12 grid sm:grid-cols-2 gap-5">
+          <h2 className={`${H} mt-3 text-3xl sm:text-5xl font-extrabold max-w-3xl leading-[1.05]`}>One community. A whole wellness programme.</h2>
+          <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
-              { n: '01', t: 'Train together', d: 'Anyone can put a session on the board: a lunch walk, padel after work, a Friday run. Colleagues tap I’M IN and show up.' },
-              { n: '02', t: 'Step challenges', d: 'Run one for a week or a month. People choose to join, steps come from Apple Health, and the ranking shows only those who joined.' },
-              { n: '03', t: 'Experts in the package', d: 'Add a nutritionist, gyms and coaches. Employees connect themselves and decide what to share.' },
-              { n: '04', t: 'Train on their own', d: 'A full exercise library and plans for strength, running, padel and more, for the days nobody else is free.' },
+              { n: '01', t: 'Challenges for everyone', d: 'Active days, workouts, minutes trained, sessions joined or steps. People choose to join, and only those who joined appear on the ranking.' },
+              { n: '02', t: 'Department against department', d: 'Add your teams and run a team challenge. Teams are ranked by the average per person, so a small team can beat a big one.' },
+              { n: '03', t: 'Train together', d: 'Anyone can put a session on the board: a lunch walk, padel after work, a Friday run. Colleagues tap I’M IN and show up.' },
+              { n: '04', t: 'A plan of the month', d: 'Recommend one training plan to everyone, from a 20-minute plan for busy weeks to a first 5K, with a full exercise library behind it.' },
+              { n: '05', t: 'Experts in the package', d: 'Add a nutritionist, gyms and coaches. Employees connect themselves and decide what to share.' },
+              { n: '06', t: 'Prizes and notices', d: 'Put a prize on a challenge and a notice at the top of your community: wellness day, a new challenge, the winners.' },
             ].map((x) => (
               <div key={x.n} className="rounded-2xl bg-[#F4F1EA] p-7">
                 <span className={`${H} text-4xl font-black text-[#E88F24]`}>{x.n}</span>
@@ -100,7 +102,7 @@ export default function ForCompaniesPage() {
           <div className="rounded-2xl bg-[#023C3C] text-white p-7">
             <h3 className={`${H} text-xl font-bold text-[#56C4C4]`}>What your dashboard shows</h3>
             <ul className="mt-4 space-y-3 text-white/85">
-              {['Who has joined your community', 'Bookings and attendance at your sessions', 'Challenge rankings of the people who chose to join', 'Community totals, like average steps a day'].map((p) => (
+              {['Who has joined, and how many took part each week', 'Participation by team', 'Challenge rankings of the people who chose to join', 'A one-page report every month, ready for leadership'].map((p) => (
                 <li key={p} className="flex gap-3">
                   <span className="mt-2 w-1.5 h-1.5 rounded-full bg-[#56C4C4] flex-none" />
                   {p}
@@ -150,9 +152,9 @@ export default function ForCompaniesPage() {
             {[
               { q: 'How do employees join?', a: 'They download the app and enter your company code. Only your admins can share the code or invite people.' },
               { q: 'Is taking part optional?', a: 'Yes. Joining the community, each session and each challenge is the employee’s choice. Nothing is tracked until they opt in.' },
-              { q: 'Which phones does it work on?', a: 'iPhone first, with step counts from Apple Health. Android is next.' },
+              { q: 'Which phones does it work on?', a: 'iPhone first; Android is next. Step counts come from Apple Health. Every other challenge counts what people do in the app, so it needs no health data at all.' },
               { q: 'Can we have women-only groups?', a: 'Yes. Packs and sessions can be women only or men only.' },
-              { q: 'How do we start?', a: 'Most companies start with one four-week step challenge. It fits inside the free trial, and you see the numbers before you pay anything.' },
+              { q: 'How do we start?', a: 'Most companies start with one four-week team challenge. It fits inside the free trial, and you see the numbers before you pay anything.' },
             ].map((f) => (
               <details key={f.q} className="group py-5">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-lg">
@@ -171,7 +173,7 @@ export default function ForCompaniesPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16 md:py-20 grid lg:grid-cols-[1fr_1.1fr] gap-10 items-start">
           <div>
             <h2 className={`${H} text-3xl sm:text-5xl font-black leading-[1.02]`}>Start with one challenge.</h2>
-            <p className="mt-5 text-lg text-[#023C3C]/80 max-w-md">Four weeks, free. We set up your community, you share the code, and your people start walking together.</p>
+            <p className="mt-5 text-lg text-[#023C3C]/80 max-w-md">Four weeks, free. We set up your community and your teams, you share the code, and your people start moving together.</p>
             <p className="mt-6 text-sm font-semibold">
               Running a gym? <Link href="/for-gyms" className="underline">See Beast Tribe for gyms</Link>
             </p>
@@ -197,21 +199,21 @@ export default function ForCompaniesPage() {
 
 function ChallengeMock() {
   const rows: [string, string, number][] = [
-    ['Noura A.', '212,480', 100],
-    ['Faisal K.', '198,150', 93],
-    ['Reem S.', '176,900', 83],
-    ['Omar H.', '161,320', 76],
-    ['Lama A.', '149,870', 70],
+    ['Finance', '18.4', 100],
+    ['Engineering', '16.9', 92],
+    ['Sales', '15.2', 83],
+    ['Operations', '13.6', 74],
+    ['People team', '12.8', 70],
   ];
   return (
     <div className="relative">
       <div className="absolute -inset-6 bg-[#56C4C4]/10 blur-3xl rounded-full" aria-hidden />
       <div className="relative rounded-2xl bg-[#F4F1EA] text-[#0B2626] p-6 shadow-2xl -rotate-[0.6deg]">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[#147070]">Step challenge · example</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[#147070]">Team challenge · example</p>
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#023C3C] text-white">214 joined</span>
         </div>
-        <p className={`${H} mt-3 text-2xl font-extrabold`}>Four-week steps</p>
+        <p className={`${H} mt-3 text-2xl font-extrabold`}>Active days in March</p>
         <ol className="mt-4 space-y-3">
           {rows.map(([n, s, w], i) => (
             <li key={n} className="flex items-center gap-3">
@@ -220,11 +222,11 @@ function ChallengeMock() {
               <div className="flex-1 h-2 rounded-full bg-[#0B2626]/10 overflow-hidden">
                 <div className={`h-full rounded-full ${i === 0 ? 'bg-[#E88F24]' : 'bg-[#56C4C4]'}`} style={{ width: `${w}%` }} />
               </div>
-              <span className="w-16 text-right text-sm font-semibold tabular-nums">{s}</span>
+              <span className="w-20 text-right text-sm font-semibold tabular-nums">{s} days</span>
             </li>
           ))}
         </ol>
-        <p className="mt-5 pt-4 border-t border-[#0B2626]/10 text-xs text-[#0B2626]/55">Only people who joined appear. Everyone else stays private.</p>
+        <p className="mt-5 pt-4 border-t border-[#0B2626]/10 text-xs text-[#0B2626]/55">Average active days per person. Prize: kit for the winning team.</p>
       </div>
     </div>
   );
