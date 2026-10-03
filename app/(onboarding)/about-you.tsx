@@ -63,7 +63,10 @@ export default function AboutYouScreen() {
     : t('onboarding.dobPlaceholder');
 
   async function save() {
-    if (!stage) return;
+    if (!stage) {
+      toast.show(t('onboarding.needLevel'), 'error');
+      return;
+    }
     setSaving(true);
     try {
       if (user) {
@@ -181,7 +184,7 @@ export default function AboutYouScreen() {
       </ScrollView>
 
       <View style={[s.bar, { paddingBottom: 12 + insets.bottom }]}>
-        <MarkerButton label={saving ? t('common.saving') : editing ? t('common.save') : t('common.continue')} onPress={save} loading={saving} disabled={!stage} />
+        <MarkerButton label={saving ? t('common.saving') : editing ? t('common.save') : t('common.continue')} onPress={save} loading={saving} />
       </View>
 
       <DobSheet visible={dobOpen} value={dob} months={months} onClose={() => setDobOpen(false)} onDone={(v) => { setDob(v); setDobOpen(false); }} />
@@ -217,12 +220,24 @@ function Wheel<T extends string | number>({ items, value, onChange, label }: { i
         onScrollEndDrag={settle}
         contentContainerStyle={{ paddingVertical: ITEM * 2 }}
       >
-        {items.map((it) => (
-          <View key={String(it)} style={{ height: ITEM, alignItems: 'center', justifyContent: 'center' }}>
+        {items.map((it, i) => (
+          <Press
+            key={String(it)}
+            feedback="selection"
+            depress={1}
+            accessibilityRole="button"
+            accessibilityState={{ selected: it === value }}
+            onPress={() => {
+              // Tapping a value picks it, as well as scrolling the wheel to it.
+              ref.current?.scrollTo({ y: i * ITEM, animated: true });
+              onChange(it);
+            }}
+            style={{ height: ITEM, alignItems: 'center', justifyContent: 'center' }}
+          >
             <Txt v={it === value ? 'time' : 'body'} size={it === value ? 20 : 16} color={it === value ? p.ink : p.inkFaint}>
               {label(it)}
             </Txt>
-          </View>
+          </Press>
         ))}
       </ScrollView>
     </View>

@@ -164,3 +164,36 @@ export async function syncEventReminders(events: Array<{ id: string; title: stri
     await scheduleEventReminder(event);
   }
 }
+
+const PLAN_REMINDER = 'plan-next';
+
+/**
+ * One gentle nudge for the member's plan: 6 PM today if they haven't trained yet (and it's
+ * still before 6), otherwise 6 PM tomorrow. Re-scheduled whenever the plan loads, so it always
+ * names the real next session and never piles up. Only when notifications are already allowed.
+ */
+export async function schedulePlanReminder(next: { focus: string; minutes: number } | null, trainedToday: boolean): Promise<void> {
+  const Notifications = N();
+  if (!Notifications) return;
+  try {
+    await Notifications.cancelScheduledNotificationAsync(PLAN_REMINDER);
+    if (!next) return;
+    const perm = await Notifications.getPermissionsAsync();
+    if (perm.status !== 'granted') return;
+    const at = new Date();
+    at.setHours(18, 0, 0, 0);
+    if (trainedToday || at.getTime() <= Date.now()) at.setDate(at.getDate() + 1);
+    await Notifications.scheduleNotificationAsync({
+      identifier: PLAN_REMINDER,
+      content: {
+        title: i18n.t('plan.reminderTitle'),
+        body: i18n.t('plan.reminderBody', { focus: next.focus, min: next.minutes }),
+        sound: true,
+        data: { url: '/train' },
+      },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: at },
+    });
+  } catch (err) {
+    console.warn('[notifications] schedulePlanReminder failed:', err);
+  }
+}

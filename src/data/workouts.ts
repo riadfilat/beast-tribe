@@ -15,6 +15,8 @@ export type WorkoutLevel = 'easy' | 'medium' | 'hard' | 'any';
 
 export interface WorkoutItem {
   name: string;
+  /** Exercise library slug, when the move is in the library. */
+  ex: string | null;
   reps: string | null;
   note: string | null;
 }
@@ -84,6 +86,7 @@ function toBlocks(raw: any, lang: string): WorkoutBlock[] {
     note: pick(lang, b?.note, b?.note_ar) || null,
     items: (Array.isArray(b?.items) ? b.items : []).map((i: any) => ({
       name: pick(lang, i?.name, i?.name_ar),
+      ex: typeof i?.ex === 'string' && i.ex ? i.ex : null,
       reps: pick(lang, i?.reps, i?.reps_ar) || null,
       note: pick(lang, i?.note, i?.note_ar) || null,
     })),
@@ -94,8 +97,18 @@ export const WORKOUT_SELECT = `
   id, title, title_ar, description, description_ar, sport, format, difficulty, duration_minutes,
   equipment, image_url, blocks, source, featured, published_at, community_id,
   community:communities(id, name),
-  author:partners!workouts_author_partner_id_fkey(id, business_name, name, logo_url, user_id, profile:profiles!user_id(id, display_name, full_name, avatar_url))
+  author:partners!workouts_author_partner_id_fkey(id, business_name, name, logo_url, user_id)
 `;
+
+// partners.user_id points at auth.users, not profiles, so PostgREST can't embed the coach's
+// profile (asking for it failed the whole query and emptied the Train tab). Fetch it separately.
+async function withAuthorProfiles(rows: any[]) {
+  const ids = Array.from(new Set(rows.map((r) => r.author?.user_id).filter(Boolean)));
+  if (!ids.length) return rows;
+  const { data } = await supabase.from('profiles').select('id, display_name, full_name, avatar_url').in('id', ids);
+  const byId = new Map((data || []).map((p: any) => [p.id, p]));
+  return rows.map((r) => (r.author?.user_id ? { ...r, author: { ...r.author, profile: byId.get(r.author.user_id) ?? null } } : r));
+}
 
 export function toWorkout(r: any, lang: string, counts?: Map<string, { week: number; total: number }>, saved?: Set<string>): Workout {
   const a = r.author;
@@ -168,11 +181,12 @@ export function useWorkouts(lang: string) {
       .from('workouts')
       .select(WORKOUT_SELECT)
       .eq('status', 'published')
+      .eq('program_only', false)
       .order('featured', { ascending: false })
       .order('published_at', { ascending: false })
       .limit(80);
     if (error) throw error;
-    const rows = data || [];
+    const rows = await withAuthorProfiles(data || []);
     const [counts, saved] = await Promise.all([countsFor(rows.map((r: any) => r.id)), savedSet(me!)]);
     return rows.map((r: any) => toWorkout(r, lang, counts, saved));
   });
@@ -188,8 +202,9 @@ export function useWorkout(id: string | null | undefined, lang: string) {
     const { data, error } = await supabase.from('workouts').select(WORKOUT_SELECT).eq('id', id!).maybeSingle();
     if (error) throw error;
     if (!data) return null;
-    const [counts, saved] = await Promise.all([countsFor([data.id]), savedSet(me!)]);
-    return toWorkout(data, lang, counts, saved);
+    const [row] = await withAuthorProfiles([data]);
+    const [counts, saved] = await Promise.all([countsFor([row.id]), savedSet(me!)]);
+    return toWorkout(row, lang, counts, saved);
   });
 }
 
@@ -230,6 +245,8 @@ export interface LogInput {
   rpe?: number | null;
   notes?: string | null;
   eventId?: string | null;
+  /** The plan session this finishes, when it's part of a program. */
+  programSessionId?: string | null;
 }
 
 /** Save what the member did. The database decides whether it counts as a coach's paid use. */
@@ -252,12 +269,15 @@ export async function logWorkout(meId: string, input: LogInput): Promise<{ id: s
       rpe: input.rpe ?? null,
       notes: input.notes?.trim() || null,
       event_id: input.eventId ?? null,
+      program_session_id: input.programSessionId ?? null,
       source: 'app',
     })
     .select('id')
     .single();
   if (error) throw error;
   invalidate('workouts:');
+  invalidate('programs:');
+  invalidate('metrics:');
   return { id: data.id };
 }
 

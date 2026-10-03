@@ -310,7 +310,7 @@ export default function SignInScreen() {
             {step === 'email' || step === 'name' ? (
               <MarkerButton label={t('common.continue')} onPress={next} />
             ) : step === 'signup-password' ? (
-              <MarkerButton label={t('auth.createAccount')} onPress={doSignUp} loading={loading} disabled={!agreed} />
+              <MarkerButton label={t('auth.createAccount')} onPress={doSignUp} loading={loading} />
             ) : step === 'signin-password' ? (
               <MarkerButton label={t('auth.signIn')} onPress={doSignIn} loading={loading} />
             ) : (

@@ -100,7 +100,7 @@ export function WorkoutRow({ w, onPress, last }: { w: Workout; onPress: () => vo
 }
 
 /** One block of the workout as written on the board: heading, format, then each line. */
-export function BlockView({ b, highlight }: { b: WorkoutBlock; highlight?: number | null }) {
+export function BlockView({ b, highlight, onExercise }: { b: WorkoutBlock; highlight?: number | null; onExercise?: (slug: string) => void }) {
   const { p, lang } = useKit();
   const { t, tn } = useI18n();
   const line = blockLine(b, t, tn);
@@ -120,9 +120,14 @@ export function BlockView({ b, highlight }: { b: WorkoutBlock; highlight?: numbe
       <View>
         {b.items.map((it, i) => {
           const on = highlight === i;
+          const tappable = !!(it.ex && onExercise);
+          const Row: any = tappable ? Press : View;
           return (
-            <View
+            <Row
               key={i}
+              {...(tappable
+                ? { onPress: () => onExercise!(it.ex!), feedback: 'selection' as const, depress: 0.99, accessibilityRole: 'button' as const, accessibilityHint: t('ex.tapForHow') }
+                : {})}
               style={{
                 flexDirection: 'row',
                 alignItems: 'flex-start',
@@ -140,12 +145,13 @@ export function BlockView({ b, highlight }: { b: WorkoutBlock; highlight?: numbe
                 {it.reps || '—'}
               </Txt>
               <View style={{ flex: 1, gap: 2 }}>
-                <Txt v="body" size={16}>
+                <Txt v="body" size={16} style={tappable ? { textDecorationLine: 'underline', textDecorationColor: p.ruleStrong } : null}>
                   {it.name}
                 </Txt>
                 {it.note ? <Txt v="meta">{it.note}</Txt> : null}
               </View>
-            </View>
+              {tappable ? <Icon name="info" size={16} color={p.inkFaint} style={{ marginTop: 3 }} /> : null}
+            </Row>
           );
         })}
       </View>

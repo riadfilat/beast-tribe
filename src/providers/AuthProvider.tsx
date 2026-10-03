@@ -153,41 +153,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const { error, data } = await supabase.auth.signUp({ email, password });
+    const { error, data } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName } } });
     if (error) throw error;
 
-    // If Supabase returned a session immediately (email confirmation disabled),
-    // create the profile then sign out — the user MUST confirm their email
-    // before they can access the app, regardless of Supabase project settings.
+    // Email confirmation is off in this Supabase project, so sign-up returns a live session.
+    // Keep the member signed in and let AuthGate take them straight into onboarding.
+    // (Signing them out here raced AuthGate: onboarding opened, then everything bounced to
+    // sign-in, so the onboarding buttons looked dead.) The DB trigger creates the profile;
+    // this upsert also sets the name in case the trigger isn't there.
     if (data.user && data.session) {
-      try {
-        const { data: existing } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', data.user.id)
-          .maybeSingle();
-
-        if (!existing) {
-          const { error: profileError } = await supabase.from('profiles').insert({
-            id: data.user.id,
-            full_name: fullName,
-            display_name: fullName.split(' ')[0],
-          });
-          if (profileError) {
-            console.error('Profile insert error:', profileError);
-            throw profileError;
-          }
-        }
-      } catch (err) {
-        await supabase.auth.signOut();
-        throw err;
-      }
-      // Sign out so the user can't enter the app until email is confirmed
-      await supabase.auth.signOut();
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({ id: data.user.id, full_name: fullName, display_name: fullName.split(' ')[0] }, { onConflict: 'id' });
+      if (profileError) console.warn('[AuthProvider] profile upsert:', profileError.message);
+      setSession(data.session);
+      fetchingRef.current = false;
+      await fetchProfile(data.user.id);
+      return;
     }
 
-    // Always end signup with the "check your email" prompt —
-    // whether Supabase confirmation is enabled or disabled.
+    // Confirmation is on: they must tap the link in their email first.
     throw new Error('CHECK_EMAIL_CONFIRMATION');
   }
 

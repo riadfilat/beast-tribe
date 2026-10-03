@@ -20,6 +20,7 @@ import { DayHeading, NowMarker, SessionRow, useNow } from '../../../src/componen
 import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
 import { syncEventReminders } from '../../../src/lib/notifications';
+import { useMyPlan } from '../../../src/data/programs';
 
 
 export default function BoardScreen() {
@@ -36,6 +37,7 @@ export default function BoardScreen() {
   const country = profile?.region || 'SA';
   const spots = usePopularSpots(country);
   const { join } = useSessionActions();
+  const myPlan = useMyPlan(lang).data;
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [justJoined, setJustJoined] = useState<string | null>(null);
 
@@ -141,6 +143,28 @@ export default function BoardScreen() {
             </Txt>
           </Press>
         </View>
+
+        {/* Your plan, one line: what's next and one tap to it */}
+        {myPlan?.next ? (
+          <Press
+            onPress={() => router.push({ pathname: '/workout/[id]', params: { id: myPlan.next!.workoutId, ps: myPlan.next!.id } })}
+            feedback="selection"
+            depress={0.99}
+            accessibilityRole="button"
+            style={s.planStrip}
+          >
+            <Icon name="train" size={18} color={p.markerText} />
+            <View style={{ flex: 1 }}>
+              <Txt v="label" size={12} color={p.inkSoft}>
+                {t('plan.boardNext')}
+              </Txt>
+              <Txt v="row" size={15} numberOfLines={1}>
+                {`${myPlan.next.focus} · ${myPlan.next.minutes} ${lang === 'ar' ? 'د' : 'min'}`}
+              </Txt>
+            </View>
+            <Icon name="chevron" size={13} color={p.inkFaint} weight="bold" />
+          </Press>
+        ) : null}
 
         {/* Hero */}
         <View style={s.hero}>
@@ -295,4 +319,5 @@ const useStyles = makeStyles(({ p }) => ({
   empty: { paddingBottom: 16 },
   spot: { width: 168 },
   spotImg: { width: 168, height: 104, borderRadius: 8 },
+  planStrip: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 16, marginTop: 6, marginBottom: 4, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1.5, borderColor: p.ruleStrong },
 }));

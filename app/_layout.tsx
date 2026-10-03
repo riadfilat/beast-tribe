@@ -55,6 +55,9 @@ function AuthGate() {
       <Stack.Screen name="host" options={{ presentation: 'modal' }} />
       <Stack.Screen name="inbox" />
       <Stack.Screen name="my-sessions" />
+      <Stack.Screen name="moves" />
+      <Stack.Screen name="programs" />
+      <Stack.Screen name="program/[slug]" />
     </Stack>
   );
 }

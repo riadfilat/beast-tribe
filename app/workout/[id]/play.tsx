@@ -14,6 +14,10 @@ import { Tally } from '../../../src/components/board/marks';
 import { Chip, Field, IconButton, MarkerButton, OutlineButton } from '../../../src/components/board/controls';
 import { Sheet } from '../../../src/components/board/sheet';
 import { BlockView, blockLine } from '../../../src/components/board/workout';
+import { ExerciseSheet } from '../../../src/components/board/exercise';
+import { buildEntries, prefill, SetEntry, SetLogger } from '../../../src/components/board/sets';
+import { e1rm, historyFor, History, saveSets } from '../../../src/data/sets';
+import { useExercises } from '../../../src/data/exercises';
 import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
 
@@ -50,7 +54,7 @@ const clock = (secs: number) => {
 };
 
 export default function PlayScreen() {
-  const { id, event } = useLocalSearchParams<{ id: string; event?: string }>();
+  const { id, event, ps } = useLocalSearchParams<{ id: string; event?: string; ps?: string }>();
   const s = useStyles();
   const { p, lang } = useKit();
   const { t, tn } = useI18n();
@@ -70,6 +74,7 @@ export default function PlayScreen() {
   const [rounds, setRounds] = useState<number[]>([]);
   const [now, setNow] = useState(Date.now());
   const [logOpen, setLogOpen] = useState(false);
+  const [exSlug, setExSlug] = useState<string | null>(null);
   const [endedAt, setEndedAt] = useState<number | null>(null);
 
   const running = blockAt != null && pausedAt == null && !logOpen;
@@ -262,7 +267,7 @@ export default function PlayScreen() {
         ) : null}
 
         <View style={{ marginTop: 22 }}>
-          <BlockView b={block} highlight={started ? current : null} />
+          <BlockView b={block} highlight={started ? current : null} onExercise={setExSlug} />
         </View>
         {!isLast ? (
           <Txt v="meta" style={{ marginTop: 16 }}>
@@ -298,6 +303,8 @@ export default function PlayScreen() {
         workoutId={w.id}
         workoutCommunity={w.community}
         eventId={event ?? null}
+        programSessionId={ps ?? null}
+        blocks={w.blocks}
         meId={meId}
         startedAt={new Date(startedAt ?? Date.now())}
         activeSecs={startedAt ? ((endedAt ?? Date.now()) - startedAt - totalPausedMs) / 1000 : 0}
@@ -312,6 +319,7 @@ export default function PlayScreen() {
           leave();
         }}
       />
+      <ExerciseSheet slug={exSlug} onClose={() => setExSlug(null)} />
     </View>
   );
 }
@@ -331,6 +339,8 @@ function LogSheet({
   workoutId,
   workoutCommunity,
   eventId,
+  programSessionId,
+  blocks,
   meId,
   startedAt,
   activeSecs,
@@ -343,14 +353,32 @@ function LogSheet({
   workoutId: string;
   workoutCommunity: { id: string; name: string } | null;
   eventId: string | null;
+  programSessionId: string | null;
+  blocks: WorkoutBlock[];
   meId: string | null;
   startedAt: Date;
   activeSecs: number;
   suggested: string;
   onSaved: () => void;
 }) {
-  const { p } = useKit();
+  const { p, lang } = useKit();
   const { t } = useI18n();
+  const lib = useExercises(lang).data;
+  const [entries, setEntries] = useState<SetEntry[]>([]);
+  const [history, setHistory] = useState<Map<string, History>>(new Map());
+  useEffect(() => {
+    if (!visible) return;
+    const base = buildEntries(blocks, lib);
+    setEntries(base);
+    if (meId && base.length) {
+      historyFor(meId, base.map((e) => e.exercise))
+        .then((h) => {
+          setHistory(h);
+          setEntries((cur) => prefill(cur.length ? cur : base, h));
+        })
+        .catch(() => {});
+    }
+  }, [visible, lib]);
   const [result, setResult] = useState('');
   const [effort, setEffort] = useState<number | null>(null);
   const [notes, setNotes] = useState('');
@@ -394,7 +422,29 @@ function LogSheet({
         rpe: effort,
         notes,
         eventId,
+        programSessionId,
       });
+      // Sets, then any new personal best.
+      const logged = entries.map((e) => ({
+        exercise: e.exercise,
+        sets: e.sets.map((x) => ({ reps: x.reps ? Math.round(Number(x.reps)) : null, kg: e.loaded && x.kg ? Number(x.kg) : null })),
+      }));
+      await saveSets(meId, id, logged).catch(() => {});
+      for (const e of logged) {
+        const h = history.get(e.exercise);
+        const ent = entries.find((x) => x.exercise === e.exercise)!;
+        const best = e.sets.reduce<{ v: number; kg: number; reps: number } | null>((b, x) => {
+          if (!x.reps) return b;
+          const v = x.kg ? e1rm(x.kg, x.reps) : x.reps;
+          return !b || v > b.v ? { v, kg: x.kg ?? 0, reps: x.reps } : b;
+        }, null);
+        if (!best || !h) continue;
+        const prev = ent.loaded ? h.bestE1rm : h.bestReps;
+        if (prev != null && best.v > prev + 0.01) {
+          toast.show(ent.loaded && best.kg ? t('train.sets.newBest', { name: ent.name, kg: best.kg, reps: best.reps }) : t('train.sets.newBestReps', { name: ent.name, reps: best.reps }), 'yours');
+          break;
+        }
+      }
       if (chosen.kind !== 'none') {
         const content = result ? t('train.shareTextResult', { title, result }) : t('train.shareText', { title, time });
         await shareWorkout(meId, { logId: id, workoutId, content: notes.trim() ? `${content}\n${notes.trim()}` : content, target: chosen }).catch(() => {});
@@ -429,6 +479,7 @@ function LogSheet({
         </Txt>
         <Field value={result} onChangeText={setResult} placeholder={t('train.resultPlaceholder')} maxLength={80} />
       </View>
+      <SetLogger entries={entries} onChange={setEntries} history={history} />
       <View style={{ gap: 8 }}>
         <Txt v="title" size={17}>
           {t('train.effort')}

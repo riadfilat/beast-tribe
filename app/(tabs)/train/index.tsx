@@ -11,8 +11,18 @@ import { Icon } from '../../../src/components/board/Icon';
 import { Press } from '../../../src/components/board/Press';
 import { Magnet } from '../../../src/components/board/people';
 import { Rule } from '../../../src/components/board/marks';
-import { Chip, MarkerButton, SectionHeading } from '../../../src/components/board/controls';
+import { Chip, MarkerButton, SectionHeading, TextButton } from '../../../src/components/board/controls';
 import { mainBlock, workoutLine, WorkoutRow } from '../../../src/components/board/workout';
+import { useExercises } from '../../../src/data/exercises';
+import { activeWeekFocus, Goal, GOAL_SPORT, ProgramSession, recommendedSlug, startPlan, TrainLevel, useFocusSessions, useMyPlan, usePrograms } from '../../../src/data/programs';
+import { useMySports } from '../../../src/data/member';
+import { useAuth } from '../../../src/providers/AuthProvider';
+import { FindPlanCard, FocusSheet, NextUpCard, RecommendedCard, SessionRows, WeekFocusSheet } from '../../../src/components/board/plan';
+import { toast } from '../../../src/components/board/toast';
+import { schedulePlanReminder } from '../../../src/lib/notifications';
+
+// A sport's plan, when there is one; otherwise the sport filters the workouts.
+const SPORT_PLAN: Record<string, string> = { padel: 'padel-fit', running: 'first-5k', walking: 'first-5k', hyrox: 'hyrox-ready', gym: 'strength-base', crossfit: 'busy-week' };
 
 type Filter = 'all' | 'saved' | 'nokit' | 'short' | string;
 
@@ -23,6 +33,42 @@ export default function TrainScreen() {
   const router = useRouter();
   const q = useWorkouts(lang);
   const logs = useMyWorkoutLogs(5).data ?? [];
+  const moves = useExercises(lang).data?.size ?? 0;
+  const { user, profile } = useAuth();
+  const prof: any = profile;
+  const goal: Goal | null = prof?.train_goal ?? null;
+  const level: TrainLevel | null = prof?.train_level ?? null;
+  const planQ = useMyPlan(lang);
+  const plan = planQ.data ?? null;
+  const programs = usePrograms(lang).data ?? [];
+  const recommended = goal ? programs.find((pr) => pr.slug === recommendedSlug(goal, level)) ?? null : null;
+  const weekFocus = activeWeekFocus(prof);
+  const planGoal: Goal | null = plan?.program.goal ?? goal;
+  const focusOther = weekFocus && weekFocus !== planGoal ? weekFocus : null;
+  const picks = useFocusSessions(focusOther, level, lang);
+  const mySports = useMySports().data ?? [];
+  const [focusOpen, setFocusOpen] = useState(false);
+  const [weekOpen, setWeekOpen] = useState(false);
+  const [starting, setStarting] = useState(false);
+  React.useEffect(() => {
+    if (planQ.loading) return;
+    const trainedToday = logs.some((l) => new Date(l.completedAt).toDateString() === new Date().toDateString());
+    schedulePlanReminder(plan?.next ? { focus: plan.next.focus, minutes: plan.next.minutes } : null, trainedToday);
+  }, [plan?.next?.id, planQ.loading, logs.length]);
+  const openSession = (ps: ProgramSession) => router.push({ pathname: '/workout/[id]', params: { id: ps.workoutId, ps: ps.id } });
+  const playSession = (ps: ProgramSession) => router.push({ pathname: '/workout/[id]/play', params: { id: ps.workoutId, ps: ps.id } });
+  const begin = async (programId: string) => {
+    if (!user) return;
+    setStarting(true);
+    try {
+      await startPlan(user.id, programId);
+      planQ.refetch();
+    } catch {
+      toast.show(t('onboarding.saveError'), 'error');
+    } finally {
+      setStarting(false);
+    }
+  };
   const [filter, setFilter] = useState<Filter>('all');
 
   const all = q.data ?? [];
@@ -58,8 +104,100 @@ export default function TrainScreen() {
           </Txt>
         </View>
 
-        {/* Today's workout, written on the board */}
-        {today && filter === 'all' ? renderToday(today, () => open(today), () => router.push({ pathname: '/workout/[id]/play', params: { id: today.id } })) : null}
+        {/* Your plan: what's next, or the plan that fits your goal, or the one question to get there */}
+        {filter === 'all' ? (
+          plan ? (
+            <NextUpCard plan={plan} onStart={playSession} onOpenSession={openSession} onOpenPlan={() => router.push({ pathname: '/program/[slug]', params: { slug: plan.program.slug } })} />
+          ) : goal && recommended ? (
+            <RecommendedCard program={recommended} busy={starting} onStart={() => begin(recommended.id)} onSee={() => router.push({ pathname: '/program/[slug]', params: { slug: recommended.slug } })} />
+          ) : !planQ.loading ? (
+            <FindPlanCard onPress={() => setFocusOpen(true)} />
+          ) : null
+        ) : null}
+
+        {/* This week: stay on the plan, or focus on something else for a week */}
+        {filter === 'all' && (plan || goal) ? (
+          <View style={s.weekRow}>
+            <Press onPress={() => setWeekOpen(true)} feedback="selection" accessibilityRole="button" style={s.weekChip}>
+              <Txt v="label" size={13} color={p.inkSoft}>
+                {t('plan.thisWeek')}
+              </Txt>
+              <Txt v="row" size={14}>
+                {focusOther ? t(`plan.goals.${focusOther}`) : t('plan.onPlan')}
+              </Txt>
+              <Icon name="chevron" size={11} color={p.inkSoft} weight="bold" style={{ transform: [{ rotate: '90deg' }] }} />
+            </Press>
+            <TextButton label={t('plan.changeGoal')} onPress={() => setFocusOpen(true)} />
+          </View>
+        ) : null}
+        {focusOther && picks.sessions.length && filter === 'all' ? (
+          <View style={s.section}>
+            <SectionHeading title={t('plan.focusPicks')} style={s.heading} />
+            <SessionRows sessions={picks.sessions} onOpen={(ps) => router.push({ pathname: '/workout/[id]', params: { id: ps.workoutId } })} />
+          </View>
+        ) : null}
+
+        {/* For your sports: one tap to the plan or workouts for the sports you play */}
+        {filter === 'all' && mySports.length ? (
+          <View style={{ marginTop: 14 }}>
+            <SectionHeading title={t('plan.forSports')} style={s.heading} />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 16 }}>
+              {mySports.map((sp) => {
+                const slug = SPORT_PLAN[sp];
+                const pr = slug ? programs.find((x) => x.slug === slug) : null;
+                return (
+                  <Press
+                    key={sp}
+                    onPress={() => (pr ? router.push({ pathname: '/program/[slug]', params: { slug: pr.slug } }) : setFilter(sp))}
+                    feedback="selection"
+                    accessibilityRole="button"
+                    style={s.sportCard}
+                  >
+                    <Icon sport={sp} size={22} color={p.ink} />
+                    <Txt v="row" size={14} numberOfLines={1}>
+                      {t(`sports.${sp}`)}
+                    </Txt>
+                    <Txt v="meta" numberOfLines={2}>
+                      {pr ? pr.title : t('plan.sportWorkouts')}
+                    </Txt>
+                  </Press>
+                );
+              })}
+            </ScrollView>
+          </View>
+        ) : null}
+
+        {/* Today's workout, written on the board (when there's no plan to follow) */}
+        {today && filter === 'all' && !plan ? renderToday(today, () => open(today), () => router.push({ pathname: '/workout/[id]/play', params: { id: today.id } })) : null}
+
+        {filter === 'all' ? (
+          <Press onPress={() => router.push('/moves')} feedback="selection" depress={0.99} accessibilityRole="button" style={s.libraryRow}>
+            <View style={s.libraryIcon}>
+              <Icon name="doc" size={18} color={p.board} />
+            </View>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Txt v="row" size={15}>
+                {t('ex.library')}
+              </Txt>
+              {moves ? <Txt v="meta">{t('ex.librarySub', { n: moves })}</Txt> : null}
+            </View>
+            <Icon name="chevron" size={13} color={p.inkFaint} weight="bold" />
+          </Press>
+        ) : null}
+        {filter === 'all' && programs.length ? (
+          <Press onPress={() => router.push('/programs')} feedback="selection" depress={0.99} accessibilityRole="button" style={s.libraryRow}>
+            <View style={s.libraryIcon}>
+              <Icon name="calendar" size={18} color={p.board} />
+            </View>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Txt v="row" size={15}>
+                {t('plan.plans')}
+              </Txt>
+              <Txt v="meta">{t('plan.plansSub', { n: programs.length })}</Txt>
+            </View>
+            <Icon name="chevron" size={13} color={p.inkFaint} weight="bold" />
+          </Press>
+        ) : null}
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipRow}>
           <Chip label={t('train.all')} selected={filter === 'all'} onPress={() => setFilter('all')} />
@@ -125,6 +263,8 @@ export default function TrainScreen() {
           </View>
         ) : null}
       </ScrollView>
+      <FocusSheet visible={focusOpen} onClose={() => setFocusOpen(false)} />
+      <WeekFocusSheet visible={weekOpen} onClose={() => setWeekOpen(false)} current={focusOther} planGoal={planGoal} />
     </SafeAreaView>
   );
 
@@ -180,4 +320,9 @@ const useStyles = makeStyles(({ p }) => ({
   section: { marginTop: 6 },
   heading: { paddingHorizontal: 16 },
   logRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: p.rule },
+  libraryRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 16, marginTop: 4, marginBottom: 6, padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: p.ruleStrong },
+  libraryIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: p.ink, alignItems: 'center', justifyContent: 'center' },
+  weekRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginTop: 14 },
+  weekChip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1.5, borderColor: p.ruleStrong },
+  sportCard: { width: 132, gap: 6, padding: 12, borderRadius: 12, borderWidth: 1.5, borderColor: p.rule },
 }));

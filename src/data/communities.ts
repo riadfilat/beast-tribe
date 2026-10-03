@@ -7,7 +7,7 @@ import { PREVIEW, PREVIEW_COMPANY, PREVIEW_ME, previewCommunities } from './prev
 // (companies, compounds, clubs) are joined with their invite code. Members can be in several.
 // The database decides what each member sees (migration 039); these hooks only shape it.
 
-export type CommunityKind = 'club' | 'company' | 'compound' | 'city' | 'brand';
+export type CommunityKind = 'club' | 'gym' | 'company' | 'compound' | 'city' | 'brand';
 export interface Community {
   id: string;
   name: string;

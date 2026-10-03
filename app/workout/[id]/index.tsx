@@ -15,11 +15,12 @@ import { Magnet } from '../../../src/components/board/people';
 import { Rule, Tag, ZigZag } from '../../../src/components/board/marks';
 import { IconButton, MarkerButton, TextButton } from '../../../src/components/board/controls';
 import { BlockView, equipmentLine, workoutLine } from '../../../src/components/board/workout';
+import { ExerciseSheet } from '../../../src/components/board/exercise';
 import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
 
 export default function WorkoutScreen() {
-  const { id, event } = useLocalSearchParams<{ id: string; event?: string }>();
+  const { id, event, ps } = useLocalSearchParams<{ id: string; event?: string; ps?: string }>();
   const s = useStyles();
   const { p, lang } = useKit();
   const { t, tn } = useI18n();
@@ -29,6 +30,7 @@ export default function WorkoutScreen() {
   const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
   const q = useWorkout(id, lang);
   const [saving, setSaving] = useState(false);
+  const [exSlug, setExSlug] = useState<string | null>(null);
   const w = q.data;
   const back = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/train'));
 
@@ -114,7 +116,7 @@ export default function WorkoutScreen() {
           {w.blocks.map((b, i) => (
             <View key={i}>
               {i > 0 ? <ZigZag style={{ marginVertical: 18 }} /> : null}
-              <BlockView b={b} />
+              <BlockView b={b} onExercise={setExSlug} />
             </View>
           ))}
         </View>
@@ -141,13 +143,14 @@ export default function WorkoutScreen() {
       </View>
 
       <View style={[s.bar, { paddingBottom: 12 + insets.bottom }]}>
-        <MarkerButton label={t('train.start')} icon="play" onPress={() => router.push({ pathname: '/workout/[id]/play', params: event ? { id: w.id, event } : { id: w.id } })} />
+        <MarkerButton label={t('train.start')} icon="play" onPress={() => router.push({ pathname: '/workout/[id]/play', params: { id: w.id, ...(event ? { event } : {}), ...(ps ? { ps } : {}) } })} />
         <TextButton
           label={t('train.withCrewLong')}
           onPress={() => router.push({ pathname: '/host', params: { workout: w.id } })}
           style={{ alignSelf: 'center', marginTop: 4 }}
         />
       </View>
+      <ExerciseSheet slug={exSlug} onClose={() => setExSlug(null)} />
     </View>
   );
 }

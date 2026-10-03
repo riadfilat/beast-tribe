@@ -35,6 +35,10 @@ export default function PickSportsScreen() {
   const toggle = (id: string) => setPicked((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
   async function done() {
+    if (!picked.length) {
+      toast.show(t('onboarding.needSport'), 'error');
+      return;
+    }
     setBusy(true);
     try {
       if (meId) await saveMySports(meId, picked);
@@ -90,7 +94,7 @@ export default function PickSportsScreen() {
         </View>
       </ScrollView>
       <View style={[s.bar, { paddingBottom: 12 + insets.bottom }]}>
-        <MarkerButton label={editing ? t('common.save') : t('common.continue')} onPress={done} loading={busy} disabled={!picked.length} />
+        <MarkerButton label={editing ? t('common.save') : t('common.continue')} onPress={done} loading={busy} />
       </View>
     </SafeAreaView>
   );
