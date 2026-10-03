@@ -148,7 +148,7 @@ export default function PackScreen() {
                 <Txt v="row" size={24} numberOfLines={2}>
                   {d.name}
                 </Txt>
-                <Txt v="meta">{tn('tribe.members', d.members.length)}</Txt>
+                <Txt v="meta">{[tn('tribe.members', d.members.length), d.audience === 'women' ? t('pack.womenOnly') : d.audience === 'men' ? t('pack.menOnly') : null, d.communityName].filter(Boolean).join(' · ')}</Txt>
                 {d.isLeader ? (
                   <Txt v="label" size={13} color={p.markerText}>
                     {t('pack.leader')}
@@ -174,8 +174,16 @@ export default function PackScreen() {
 
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
               <OutlineButton label={t('pack.chat')} icon="chat" style={{ flex: 1 }} onPress={() => router.push({ pathname: '/(tabs)/feed/pack-chat', params: { packId: d.id, packName: d.name, memberCount: String(d.members.length) } })} />
-              <OutlineButton label={t('pack.invite')} icon="personAdd" style={{ flex: 1 }} onPress={() => router.push({ pathname: '/(tabs)/feed/pack-invite', params: { packId: d.id } })} />
+              {d.canInvite ? (
+                <OutlineButton label={t('pack.invite')} icon="personAdd" style={{ flex: 1 }} onPress={() => router.push({ pathname: '/(tabs)/feed/pack-invite', params: { packId: d.id } })} />
+              ) : null}
             </View>
+            {!d.canInvite ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 }}>
+                <Icon name="lock" size={12} color={p.inkSoft} />
+                <Txt v="caption">{d.communityName ? t('pack.inviteCommunityOnly', { community: d.communityName }) : t('pack.inviteLeaderOnly')}</Txt>
+              </View>
+            ) : null}
 
             <Rule style={{ marginVertical: 20 }} />
             <SectionHeading title={tn('tribe.members', d.members.length)} />

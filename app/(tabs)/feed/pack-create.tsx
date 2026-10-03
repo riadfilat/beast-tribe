@@ -5,11 +5,11 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { makeStyles, useKit } from '../../../src/theme';
 import { useI18n } from '../../../src/i18n';
 import { useAuth } from '../../../src/providers/AuthProvider';
-import { createPack, PackError } from '../../../src/data/packs';
+import { createPack, PackAudience, PackError } from '../../../src/data/packs';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { randomEmblem } from '../../../src/lib/emblem';
 import { Txt } from '../../../src/components/board/Txt';
-import { Field, IconButton, MarkerButton, SectionHeading } from '../../../src/components/board/controls';
+import { Field, IconButton, MarkerButton, SectionHeading, Segmented } from '../../../src/components/board/controls';
 import { PatchPreview } from '../../../src/components/board/Patch';
 import { PatchPicker } from '../../../src/components/board/PatchPicker';
 import { toast } from '../../../src/components/board/toast';
@@ -25,6 +25,7 @@ export default function PackCreateScreen() {
   const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
   const [name, setName] = useState('');
   const [emblem, setEmblem] = useState(randomEmblem);
+  const [audience, setAudience] = useState<PackAudience>('everyone');
   const [busy, setBusy] = useState(false);
   const shown = name.trim() || t('pack.namePlaceholder').replace(/^e\.g\.\s*|^مثال:\s*/, '');
 
@@ -32,7 +33,7 @@ export default function PackCreateScreen() {
     if (!meId || !name.trim()) return;
     setBusy(true);
     try {
-      const pack = await createPack(meId, name, emblem);
+      const pack = await createPack(meId, name, emblem, audience);
       haptic('success');
       router.replace({ pathname: '/(tabs)/feed/pack', params: { packId: pack.id } });
     } catch (e: any) {
@@ -66,6 +67,16 @@ export default function PackCreateScreen() {
 
           <SectionHeading title={t('pack.name')} />
           <Field value={name} onChangeText={setName} placeholder={t('pack.namePlaceholder')} maxLength={32} returnKeyType="done" />
+
+          <SectionHeading title={t('pack.audience')} style={{ marginTop: 18 }} />
+          <Segmented
+            options={(['everyone', 'women', 'men'] as PackAudience[]).map((k) => ({ value: k, label: t(`pack.audiences.${k}`) }))}
+            value={audience}
+            onChange={setAudience}
+          />
+          <Txt v="caption" style={{ marginTop: 6 }}>
+            {t(`pack.audienceHint.${audience}`)}
+          </Txt>
 
           <SectionHeading title={t('pack.patch')} style={{ marginTop: 18 }} />
           <PatchPicker value={emblem} onChange={setEmblem} name={shown} />

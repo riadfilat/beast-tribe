@@ -64,7 +64,7 @@ export function Patch({ emblem, name = '', size, style, stitch }: { emblem: Embl
         <Circle cx={50} cy={50} r={50} fill={ground} />
         <G clipPath={`url(#${clipId})`}>
           <G transform={`translate(${tx} ${ty}) scale(${s})`}>
-            {stitch ? <StitchedGlyph glyph={g} ink={ink} stroke={1.6 / ((size * s) / 100)} progress={stitch} /> : <Path d={g.d} fill={ink} />}
+            {stitch ? <StitchedGlyph glyph={g} ink={ink} stroke={1.6 / ((size * s) / 100)} progress={stitch} /> : <Path d={g.d} fill={ink} fillRule={g.rule} />}
           </G>
         </G>
         {edge ? <Circle cx={50} cy={50} r={50 - edgeW / 2} fill="none" stroke={edge} strokeWidth={edgeW} /> : null}
@@ -89,7 +89,7 @@ function StitchedGlyph({ glyph, ink, stroke, progress }: { glyph: Glyph; ink: st
       strokeOpacity: 1 - Math.min(1, Math.max(0, (t - 0.85) / 0.15)),
     };
   });
-  return <AnimatedPath d={glyph.d} fill={ink} stroke={ink} strokeWidth={stroke} strokeLinejoin="round" strokeDasharray={[len, len]} animatedProps={props} />;
+  return <AnimatedPath d={glyph.d} fill={ink} fillRule={glyph.rule} stroke={ink} strokeWidth={stroke} strokeLinejoin="round" strokeDasharray={[len, len]} animatedProps={props} />;
 }
 
 /** The big preview while choosing: the patch springs, and a new glyph is stitched on. */

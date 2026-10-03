@@ -41,7 +41,7 @@ function useMe() {
   return PREVIEW ? PREVIEW_ME : user?.id ?? null;
 }
 
-const SELECT = 'id, name, description, kind, visibility, is_default, city, logo_url, join_code, members:community_members(count)';
+const SELECT = 'id, name, description, kind, visibility, is_default, city, logo_url, members:community_members(count)';
 
 function toCommunity(r: any, mine: Set<string>): Community {
   return {
@@ -54,7 +54,8 @@ function toCommunity(r: any, mine: Set<string>): Community {
     city: r.city ?? null,
     logoUrl: r.logo_url ?? null,
     members: r.members?.[0]?.count ?? 0,
-    joinCode: r.visibility === 'private' && mine.has(r.id) ? r.join_code ?? null : null,
+    // Only community admins get the code (community_invite_code); members ask an admin to invite.
+    joinCode: null,
     isMember: mine.has(r.id),
   };
 }
@@ -97,9 +98,12 @@ export function useCommunity(id?: string | null) {
   return useQuery<Community | null>(id && me ? `communities:one:${id}` : null, async () => {
     if (PREVIEW) return previewCommunities.find((c) => c.id === id) ?? null;
     const ids = await myIds(me!);
-    const { data, error } = await supabase.from('communities').select(SELECT).eq('id', id!).maybeSingle();
+    const [{ data, error }, { data: code }] = await Promise.all([
+      supabase.from('communities').select(SELECT).eq('id', id!).maybeSingle(),
+      supabase.rpc('community_invite_code', { p_community: id! }),
+    ]);
     if (error) throw error;
-    return data ? toCommunity(data, ids) : null;
+    return data ? { ...toCommunity(data, ids), joinCode: (code as string | null) ?? null } : null;
   });
 }
 

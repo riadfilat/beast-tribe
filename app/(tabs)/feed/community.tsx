@@ -102,6 +102,11 @@ export default function CommunityScreen() {
                 </View>
                 <Icon name="share" size={20} />
               </Press>
+            ) : !c.open && c.isMember ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16 }}>
+                <Icon name="lock" size={12} color={p.inkSoft} />
+                <Txt v="caption">{t('community.inviteAdminsOnly')}</Txt>
+              </View>
             ) : null}
 
             <View style={{ marginTop: 14 }}>

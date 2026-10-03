@@ -10,6 +10,8 @@ export const PATCH_PAINT: Record<string, { ground: string; ink: string }> = {
   aqua: { ground: '#56C4C4', ink: '#023C3C' },
   orange: { ground: '#E88F24', ink: '#023C3C' },
   chalk: { ground: '#F4F1EA', ink: '#023C3C' },
+  blush: { ground: '#023C3C', ink: '#F2A7C3' },
+  rose: { ground: '#F2A7C3', ink: '#023C3C' },
 };
 export const PATCH_COLOR_NAMES: Record<string, string> = {
   slate: 'Teal',
@@ -18,6 +20,8 @@ export const PATCH_COLOR_NAMES: Record<string, string> = {
   aqua: 'Aqua',
   orange: 'Orange',
   chalk: 'Chalk',
+  blush: 'Teal and pink',
+  rose: 'Pink',
 };
 export const GLYPH_GROUPS = GLYPH_FAMILIES;
 export const GLYPH_IDS = Object.keys(GLYPHS);
@@ -84,7 +88,7 @@ export function PackPatch({ pack, size }: { pack: PatchRow; size: number }) {
       <circle cx="50" cy="50" r="50" fill={paint.ground} />
       <g clipPath={`url(#${clip})`}>
         <g transform={`translate(${tx} ${ty}) scale(${s})`}>
-          <path d={g.d} fill={paint.ink} />
+          <path d={g.d} fill={paint.ink} fillRule={g.rule} />
         </g>
       </g>
       {edge ? <circle cx="50" cy="50" r={50 - edgeW / 2} fill="none" stroke={edge} strokeWidth={edgeW} /> : null}

@@ -18,7 +18,11 @@ FAMILIES = {
     'beasts': ['wolf', 'falcon', 'horse', 'camel', 'ibex', 'tiger', 'lion', 'rhino', 'bull', 'shark', 'scorpion', 'fox'],
     'myths': ['spartan', 'shield', 'pegasus', 'griffin', 'hydra', 'minotaur', 'centaur', 'trident', 'laurel', 'torch', 'hermes'],
     'marks': ['bolt', 'peak', 'waves', 'flame', 'tally', 'claws', 'chevrons', 'spark', 'trophy', 'fist', 'shoe', 'lift'],
+    # Operation Beast's own sport icons, from the brand guidelines (page 44), in source/brand/.
+    'sport': ['dumbbell', 'kettlebell', 'boxing', 'stopwatch', 'medal', 'cup', 'target', 'football', 'basketball', 'volleyball', 'tennis', 'padel',
+              'racket', 'pingpong', 'rugby', 'baseball', 'golf', 'hockey', 'bowling', 'skate', 'sailing', 'climbing', 'sneaker', 'bottle', 'watch', 'tactics'],
 }
+BRAND = set(FAMILIES['sport'])
 SIZE = 58  # the glyph's longer side in a 100-unit patch
 # Optical corrections: (scale multiplier, dx, dy) in patch units.
 TUNE = {
@@ -34,8 +38,9 @@ def build():
     glyphs = {}
     for fam, ids in FAMILIES.items():
         for gid in ids:
-            svg = open(os.path.join(HERE, 'source', f'{gid}.svg')).read()
+            svg = open(os.path.join(HERE, 'source', 'brand' if gid in BRAND else '', f'{gid}.svg')).read()
             d = re.search(r' d="([^"]+)"', svg).group(1)
+            rule = 'evenodd' if 'fill-rule="evenodd"' in svg else None
             p = Path(d)
             x0, y0, x1, y1 = p.bbox()
             w, h = x1 - x0, y1 - y0
@@ -44,6 +49,8 @@ def build():
             tx = 50 - (x0 + w / 2) * s + dx
             ty = 50 - (y0 + h / 2) * s + dy
             glyphs[gid] = {'d': d, 't': [round(tx, 2), round(ty, 2), round(s, 5)], 'len': int(round(p.length(error=1e-4)))}
+            if rule:
+                glyphs[gid]['rule'] = rule
             assert gid in sources, gid
     return glyphs
 
@@ -54,7 +61,7 @@ def ts(glyphs):
         "// Pack patch glyphs: professionally drawn icons from game-icons.net by Lorc, Delapouite,",
         '// Skoll and Carl Olsen (CC BY 3.0, credited in Settings › About), fitted to the round patch.',
         '',
-        "export type GlyphFamily = 'beasts' | 'myths' | 'marks';",
+        "export type GlyphFamily = 'beasts' | 'myths' | 'marks' | 'sport';",
         'export interface Glyph {',
         '  /** Silhouette in a 512-unit box (nonzero fill). */',
         '  d: string;',
@@ -62,6 +69,8 @@ def ts(glyphs):
         '  t: [number, number, number];',
         '  /** Outline length in the glyph\'s own units, for the stitch animation. */',
         '  len: number;',
+        "  /** Fill rule when the drawing has holes cut by overlap. */",
+        "  rule?: 'evenodd';",
         '}',
         '',
         f'export const GLYPH_CREDIT = {json.dumps(CREDIT)};',
@@ -71,7 +80,8 @@ def ts(glyphs):
         'export const GLYPHS: Record<string, Glyph> = {',
     ]
     for gid, g in glyphs.items():
-        lines.append(f"  {gid}: {{ t: {json.dumps(g['t'])}, len: {g['len']}, d: '{g['d']}' }},")
+        rule = f", rule: '{g['rule']}'" if g.get('rule') else ''
+        lines.append(f"  {gid}: {{ t: {json.dumps(g['t'])}, len: {g['len']}{rule}, d: '{g['d']}' }},")
     lines += ['};', '']
     return '\n'.join(lines)
 
@@ -87,7 +97,7 @@ def sheet(glyphs, out):
         x, y = gap + (i % cols) * (D + gap), gap + (i // cols) * (D + gap)
         tx, ty, sc = g['t']
         s.append(f'<g transform="translate({x} {y}) scale({D / 100})"><circle cx="50" cy="50" r="50" fill="#023C3C"/><circle cx="50" cy="50" r="49.3" fill="none" stroke="#F4F1EA" stroke-opacity=".32" stroke-width="1.4"/>'
-                 f'<g transform="translate({tx} {ty}) scale({sc})"><path d="{g["d"]}" fill="#F4F1EA"/></g></g>')
+                 f'<g transform="translate({tx} {ty}) scale({sc})"><path d="{g["d"]}" fill="#F4F1EA" fill-rule="{g.get("rule", "nonzero")}"/></g></g>')
     # small sizes row
     for i, gid in enumerate(ids[:24]):
         g = glyphs[gid]
@@ -111,12 +121,14 @@ if __name__ == '__main__':
     sources = json.load(open(os.path.join(HERE, 'source', 'sources.json')))
     for gid, g in glyphs.items():
         src = sources[gid]
+        note = f'{src["source"]}' if gid in BRAND else f'"{src["source"]}" by {src["author"]}, game-icons.net, CC BY 3.0'
         open(os.path.join(gdir, f'{gid}.svg'), 'w').write(
-            f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><title>{gid}</title><!-- "{src["source"]}" by {src["author"]}, game-icons.net, CC BY 3.0 --><path fill="currentColor" d="{g["d"]}"/></svg>\n')
+            f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><title>{gid}</title><!-- {note} --><path fill="currentColor" fill-rule="{g.get("rule", "nonzero")}" d="{g["d"]}"/></svg>\n')
     open(os.path.join(gdir, 'CREDITS.md'), 'w').write(
         '# Pack patch glyphs\n\nFrom [game-icons.net](https://game-icons.net), licensed [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). '
         'Recoloured and fitted to Beast Tribe patches.\n\n| Glyph | Source icon | Author |\n|---|---|---|\n'
-        + ''.join(f'| {gid} | {sources[gid]["source"]} | {sources[gid]["author"]} |\n' for gid in glyphs))
+        + ''.join(f'| {gid} | {sources[gid]["source"]} | {sources[gid]["author"]} |\n' for gid in glyphs if gid not in BRAND)
+        + '\nThe Sport family is Operation Beast\'s own icon set from its brand guidelines (page 44), not part of the CC BY set.\n')
     if '--sheet' in sys.argv:
         print(*sheet(glyphs, sys.argv[sys.argv.index('--sheet') + 1]))
     print(len(glyphs), 'glyphs;', sum(len(g['d']) for g in glyphs.values()), 'chars of path data')

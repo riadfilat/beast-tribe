@@ -39,3 +39,5 @@ From [game-icons.net](https://game-icons.net), licensed [CC BY 3.0](https://crea
 | fist | fist | Lorc |
 | shoe | running-shoe | Delapouite |
 | lift | weight-lifting-up | Delapouite |
+
+The Sport family is Operation Beast's own icon set from its brand guidelines (page 44), not part of the CC BY set.

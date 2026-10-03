@@ -10,7 +10,7 @@ import { Txt } from './Txt';
 import { Field, SectionHeading, Segmented } from './controls';
 
 type Tab = GlyphFamily | 'emoji' | 'letters';
-const TABS: Tab[] = ['beasts', 'myths', 'marks', 'emoji', 'letters'];
+const TABS: Tab[] = ['sport', 'beasts', 'myths', 'marks', 'emoji', 'letters'];
 const EDGE: Record<string, string> = { '#023C3C': 'rgba(244,241,234,0.32)', '#F4F1EA': 'rgba(2,60,60,0.30)' };
 
 /** Choose a pack's patch: a symbol (beasts, myths, marks, emoji, letters) and a colourway. */

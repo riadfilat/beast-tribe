@@ -7,7 +7,14 @@ import { Emblem, emblemColumns, emblemOf } from '../lib/emblem';
 import type { Person } from '../components/board/people';
 
 export const MAX_PACKS = 20;
-export type PackErrorCode = 'INVALID' | 'FULL' | 'LIMIT' | 'ALREADY' | 'generic';
+export type PackErrorCode = 'INVALID' | 'FULL' | 'LIMIT' | 'ALREADY' | 'PACK_WOMEN_ONLY' | 'PACK_MEN_ONLY' | 'PACK_GENDER_NEEDED' | 'COMMUNITY_ONLY' | 'generic';
+export type PackAudience = 'everyone' | 'women' | 'men';
+
+/** The database's reason for refusing a join, when it's one we can explain. */
+export const packErrorOf = (e: any): PackError => {
+  const hit = String(e?.message || '').match(/PACK_WOMEN_ONLY|PACK_MEN_ONLY|PACK_GENDER_NEEDED|COMMUNITY_ONLY|INVALID|FULL|LIMIT|ALREADY/);
+  return new PackError((hit?.[0] as PackErrorCode) || 'generic');
+};
 export class PackError extends Error {
   code: PackErrorCode;
   constructor(code: PackErrorCode) {
@@ -23,7 +30,12 @@ export interface PackDetail {
   id: string;
   name: string;
   emblem: Emblem;
+  /** Only people who may invite get the code (community admins, or the leader of a personal pack). */
   inviteCode: string | null;
+  canInvite: boolean;
+  /** Set when the pack belongs to a community: then only its admins add people. */
+  communityName: string | null;
+  audience: PackAudience;
   isLeader: boolean;
   /** Only the pack's creator can restyle it (packs_update_own). */
   canEdit: boolean;
@@ -44,11 +56,12 @@ export function usePack(packId?: string | null) {
   return useQuery<PackDetail | null>(packId && me ? `packs:one:${packId}` : null, async () => {
     if (PREVIEW) {
       const pk = previewPacks.find((x) => x.id === packId) ?? previewPacks[0];
-      return { id: pk.id, name: pk.name, emblem: pk.emblem, inviteCode: PREVIEW_PACK_CODE(pk.id), isLeader: true, canEdit: true, members: previewMembers(pk.id) };
+      return { id: pk.id, name: pk.name, emblem: pk.emblem, inviteCode: PREVIEW_PACK_CODE(pk.id), canInvite: true, communityName: null, audience: 'everyone', isLeader: true, canEdit: true, members: previewMembers(pk.id) };
     }
-    const [{ data: pack, error }, { data: rows }] = await Promise.all([
-      supabase.from('packs').select(`id, name, invite_code, created_by, ${PACK_EMBLEM_COLUMNS}`).eq('id', packId!).maybeSingle(),
+    const [{ data: pack, error }, { data: rows }, { data: code }] = await Promise.all([
+      supabase.from('packs').select(`id, name, created_by, audience, community:communities(name), ${PACK_EMBLEM_COLUMNS}`).eq('id', packId!).maybeSingle(),
       supabase.from('pack_members').select('role, joined_at, profile:profiles(id, display_name, full_name, avatar_url)').eq('pack_id', packId!).order('joined_at', { ascending: true }),
+      supabase.rpc('pack_invite_code', { p_pack: packId! }),
     ]);
     if (error) throw error;
     if (!pack) return null;
@@ -62,7 +75,10 @@ export function usePack(packId?: string | null) {
       id: pack.id,
       name: pack.name,
       emblem: emblemOf(pack),
-      inviteCode: pack.invite_code ?? null,
+      inviteCode: (code as string | null) ?? null,
+      canInvite: !!code,
+      communityName: (pack as any).community?.name ?? null,
+      audience: ((pack as any).audience as PackAudience) || 'everyone',
       isLeader: members.some((m) => m.id === me && m.role === 'leader'),
       canEdit: !!me && pack.created_by === me,
       members,
@@ -99,19 +115,23 @@ export function usePackSessions(packId?: string | null, memberIds: string[] = []
   });
 }
 
-export async function createPack(meId: string, name: string, emblem: Emblem) {
+export async function createPack(meId: string, name: string, emblem: Emblem, audience: PackAudience = 'everyone') {
   if (PREVIEW) return { id: 'pk-andoraa' };
   const { count } = await supabase.from('pack_members').select('*', { count: 'exact', head: true }).eq('user_id', meId);
   if ((count ?? 0) >= MAX_PACKS) throw new PackError('LIMIT');
   const code = Math.random().toString(36).substring(2, 8).toUpperCase();
   const { data: pack, error } = await supabase
     .from('packs')
-    .insert({ name: name.trim(), created_by: meId, invite_code: code, is_system: false, ...emblemColumns(emblem) })
+    .insert({ name: name.trim(), created_by: meId, invite_code: code, is_system: false, audience, ...emblemColumns(emblem) })
     .select('id')
     .single();
   if (error) throw new PackError('generic');
   const { error: memberErr } = await supabase.from('pack_members').insert({ pack_id: pack.id, user_id: meId, role: 'leader' });
-  if (memberErr) throw new PackError('generic');
+  if (memberErr) {
+    // The creator doesn't fit the pack's audience: don't leave an empty pack behind.
+    await supabase.from('packs').delete().eq('id', pack.id);
+    throw packErrorOf(memberErr);
+  }
   invalidate('member:packs');
   return pack;
 }
@@ -128,10 +148,7 @@ export async function joinPackByCode(meId: string, code: string): Promise<{ id: 
   if (PREVIEW) return { id: 'pk-dawn', name: 'Dawn Patrol' };
   // Packs are private to their members, so the code is checked on the server.
   const { data, error } = await supabase.rpc('join_pack_by_code', { p_code: code.trim() });
-  if (error) {
-    const hit = String(error.message || '').match(/INVALID|FULL|LIMIT|ALREADY/);
-    throw new PackError((hit?.[0] as PackErrorCode) || 'generic');
-  }
+  if (error) throw packErrorOf(error);
   invalidate('member:packs');
   const row = Array.isArray(data) ? data[0] : data;
   return { id: row.id, name: row.name };
@@ -185,7 +202,7 @@ export async function respondToInvite(meId: string, inv: PackInvite, accept: boo
   const { count } = await supabase.from('pack_members').select('*', { count: 'exact', head: true }).eq('user_id', meId);
   if ((count ?? 0) >= MAX_PACKS) throw new PackError('LIMIT');
   const { error } = await supabase.from('pack_members').insert({ pack_id: inv.packId, user_id: meId, role: 'member' });
-  if (error) throw new PackError('generic');
+  if (error) throw packErrorOf(error);
   await supabase.from('pack_invites').update({ status: 'accepted' }).eq('id', inv.id);
   invalidate('packs:invites');
   invalidate('member:packs');
