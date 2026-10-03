@@ -61,7 +61,7 @@
         "@kingstinct/react-native-healthkit",
         {
           "NSHealthShareUsageDescription": "Beast Tribe reads your daily step count so you can see your steps and take part in step challenges with your company or gym. Your steps are only shared with a challenge you choose to join.",
-          "NSHealthUpdateUsageDescription": false,
+          "NSHealthUpdateUsageDescription": "Beast Tribe does not write to Apple Health. It only reads your daily step count so you can see your steps and join step challenges you choose.",
           "background": false
         }
       ]
