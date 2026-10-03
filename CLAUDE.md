@@ -115,6 +115,13 @@ User wants to launch the app to limited public testers via TestFlight.
 
 ## Session Log (append-only — newest at top)
 
+### 2026-10-03 (late night) — Company wellness beyond steps
+- User: "for companies feels a bit too little, add something more than just the step challenge".
+- DB 052 (applied): challenges.metric steps|active_days|workouts|minutes|sessions + by_team + prize/prize_ar; community_teams + community_team_members (one team per member per community; choose_team()/leave_team() RPCs; cleared on leaving the community); bt_challenge_scores() (Riyadh days), challenge_board() now returns score (+steps alias) and team, challenge_team_board() ranks teams by average per entrant; communities.notice/notice_ar/notice_until/featured_program_id (column GRANT added — communities is read by column).
+- App (OTA 11812c20 → build 10): challenge card shows type, prize, Teams/People tabs; joining a team challenge asks for a team first; "Your team" row; community page shows the notice and "Plan of the month" (opens /program/[slug]). Apple Health is asked only for steps challenges. Verified on web with seeded data (then removed).
+- Portal: Challenges (what counts, team challenge, prize), Teams page, "Your page in the app" on the overview (notice + plan of the month), Monthly report (/partner/report, printable). /for-companies rewritten; exec brief "Why companies pay" slide now six points.
+- Proposed, NOT built (asked the user): anonymous weekly wellbeing pulse for HR (sensitive data).
+
 ### 2026-10-03 (night) — Scale rehearsal, privacy, commercial tooling, six-month plan
 - User: "make sure everything is scalable", make the app more competitive, build a commercial plan + 3–6 month guide.
 - Scale rehearsal (`scripts/scale/simulate.js`: 20k members / 40k sessions / 320k bookings in a rolled-back transaction, times the app's queries as a member, before and after a migration). Before: Board 8.3 s, feed 11.4 s, session roster 7.5 s. After 050: 0.12 s, 3 ms, 2 ms.
