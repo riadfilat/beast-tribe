@@ -21,6 +21,13 @@ export interface Community {
   /** Only members of a private community see its code (to invite colleagues). */
   joinCode: string | null;
   isMember: boolean;
+  /** A member-run club (run club, padel group): its leader. */
+  leaderId: string | null;
+  leaderName: string | null;
+  sport: string | null;
+  listing: 'invite' | 'public';
+  verified: boolean;
+  notice: string | null;
 }
 
 export type CommunityErrorCode = 'INVALID' | 'ALREADY' | 'FULL' | 'EXPIRED' | 'TOO_MANY' | 'generic';
@@ -41,7 +48,7 @@ function useMe() {
   return PREVIEW ? PREVIEW_ME : user?.id ?? null;
 }
 
-const SELECT = 'id, name, description, kind, visibility, is_default, city, logo_url, members:community_members(count)';
+const SELECT = 'id, name, description, kind, visibility, is_default, city, logo_url, leader_id, sport, listing, verified_at, notice, members:community_members(count)';
 
 function toCommunity(r: any, mine: Set<string>): Community {
   return {
@@ -57,6 +64,12 @@ function toCommunity(r: any, mine: Set<string>): Community {
     // Only community admins get the code (community_invite_code); members ask an admin to invite.
     joinCode: null,
     isMember: mine.has(r.id),
+    leaderId: r.leader_id ?? null,
+    leaderName: null,
+    sport: r.sport ?? null,
+    listing: r.listing === 'public' ? 'public' : 'invite',
+    verified: !!r.verified_at,
+    notice: r.notice ?? null,
   };
 }
 
@@ -103,7 +116,13 @@ export function useCommunity(id?: string | null) {
       supabase.rpc('community_invite_code', { p_community: id! }),
     ]);
     if (error) throw error;
-    return data ? { ...toCommunity(data, ids), joinCode: (code as string | null) ?? null } : null;
+    if (!data) return null;
+    let leaderName: string | null = null;
+    if (data.leader_id) {
+      const { data: lp } = await supabase.from('profiles').select('display_name, full_name').eq('id', data.leader_id).maybeSingle();
+      leaderName = lp?.display_name || lp?.full_name || null;
+    }
+    return { ...toCommunity(data, ids), joinCode: (code as string | null) ?? null, leaderName };
   });
 }
 

@@ -198,6 +198,8 @@ export default function YouScreen() {
 
         <Group style={{ marginHorizontal: 16, marginTop: 28 }}>
           <GroupRow icon="calendar" label={t('you.mySessions')} onPress={() => router.push('/my-sessions')} />
+          <GroupRow icon="people" label={t('partners.title')} onPress={() => router.push('/partners')} />
+          <GroupRow icon="sparkle" label={t('assistant.title')} onPress={() => router.push('/assistant')} />
           <GroupRow icon="nutrition" label={t('you.nutrition')} onPress={() => router.push('/(tabs)/home/nutrition')} />
           {isCoach ? <GroupRow icon="coach" label={t('you.coach')} onPress={() => router.push('/(tabs)/profile/coach-dashboard')} /> : null}
           {SHOP_URL ? <GroupRow icon="bag" label={t('you.shop')} onPress={() => Linking.openURL(SHOP_URL)} /> : null}

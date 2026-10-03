@@ -243,6 +243,26 @@ export async function regenerateJoinCode(communityId: string) {
   revalidatePath(`/communities/${communityId}`);
 }
 
+// ─── Member-run clubs: verify to list them for everyone ────────────────────
+export async function verifyClub(communityId: string, verified: boolean) {
+  const admin = await requireAdmin();
+  const db = createAdminClient();
+  const { data: c, error: readErr } = await db.from('communities').select('id, name, leader_id, listing').eq('id', communityId).single();
+  if (readErr || !c) throw new Error(readErr?.message || 'Club not found');
+  const { error } = await db
+    .from('communities')
+    .update({ verified_at: verified ? new Date().toISOString() : null, visibility: verified && c.listing === 'public' ? 'open' : 'private' })
+    .eq('id', communityId);
+  if (error) throw new Error(error.message);
+  if (verified && c.leader_id) {
+    await db.rpc('bt_notify', { p_user_ids: [c.leader_id], p_type: 'club_verified', p_actor: null, p_data: { event_title: c.name, community_id: c.id } });
+    await db.from('partner_leads').update({ status: 'won', updated_at: new Date().toISOString() }).eq('community_id', communityId).eq('kind', 'leader');
+  }
+  await db.from('admin_audit_log').insert({ admin_user_id: admin.id, action: verified ? 'verify_club' : 'unverify_club', target_table: 'communities', target_id: communityId });
+  revalidatePath(`/communities/${communityId}`);
+  revalidatePath('/leads');
+}
+
 // ─── Package: experts and venues included with a community ─────────────────
 const PACKAGE_ROLES = ['nutritionist', 'coach', 'gym', 'kitchen'] as const;
 

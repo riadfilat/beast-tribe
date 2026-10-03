@@ -11,6 +11,7 @@ import { useFeed, toggleBeast, createPost, deletePost, reportPost, blockMember, 
 import { useMyPackList, PackSummary } from '../../../src/data/member';
 import { Community, useMyCommunities, useOpenCommunities } from '../../../src/data/communities';
 import { CommunityRow, JoinCommunityForm } from '../../../src/components/board/communities';
+import { StartClubCard } from '../../../src/components/board/clubs';
 import { useMySessions } from '../../../src/data/sessions';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { Txt } from '../../../src/components/board/Txt';
@@ -266,6 +267,8 @@ function PostItem({ post, meId, onBeast, onMore, onOpenEvent, onOpenWorkout }: {
 function CommunitiesPane({ mine, open, refreshing, onRefresh, onOpen }: { mine: Community[]; open: Community[]; refreshing: boolean; onRefresh: () => void; onOpen: (c: Community) => void }) {
   const { p } = useKit();
   const { t } = useI18n();
+  const { user } = useAuth();
+  const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={p.ink} />}>
       <SectionHeading title={t('community.mine')} />
@@ -277,6 +280,11 @@ function CommunitiesPane({ mine, open, refreshing, onRefresh, onOpen }: { mine: 
       <View style={{ marginTop: 24 }}>
         <JoinCommunityForm onJoined={onRefresh} />
       </View>
+      {!mine.some((c) => c.leaderId && c.leaderId === meId) ? (
+        <View style={{ marginTop: 20 }}>
+          <StartClubCard />
+        </View>
+      ) : null}
       {open.length ? (
         <View style={{ marginTop: 24 }}>
           <SectionHeading title={t('community.discover')} />

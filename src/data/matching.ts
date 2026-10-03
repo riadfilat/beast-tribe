@@ -1,0 +1,111 @@
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../providers/AuthProvider';
+import { useQuery, invalidate } from './query';
+import { PREVIEW, PREVIEW_ME } from './preview';
+import { cityKeys } from '../lib/cities';
+
+// Training partners (migration 059). Members opt in; only open members can look, and only open
+// members are suggested. The database scores sport, level (with private teammate ratings), usual
+// training times, running pace, a shared club and sessions done together. It never returns a level.
+
+export type PartnerTime = 'early' | 'morning' | 'midday' | 'evening' | 'night';
+export const PARTNER_TIMES: PartnerTime[] = ['early', 'morning', 'midday', 'evening', 'night'];
+
+export interface PartnerProfile {
+  open: boolean;
+  womenOnly: boolean;
+  times: PartnerTime[];
+  /** Easy running pace, seconds per km. */
+  paceS: number | null;
+  note: string;
+}
+
+export interface Partner {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  sport: string | null;
+  sports: string[];
+  times: PartnerTime[];
+  paceS: number | null;
+  note: string | null;
+  closeLevel: boolean;
+  club: string | null;
+  together: number;
+}
+
+export type PartnerErrorCode = 'NOT_OPEN' | 'NOT_AVAILABLE' | 'EVENT_OVER' | 'NOT_THERE' | 'ALREADY' | 'ALREADY_INVITED' | 'WOMEN_ONLY' | 'CANT_SEE' | 'TOO_MANY' | 'generic';
+export class PartnerError extends Error {
+  code: PartnerErrorCode;
+  constructor(code: PartnerErrorCode) {
+    super(code);
+    this.code = code;
+  }
+}
+const toError = (e: any) => {
+  const hit = String(e?.message || '').match(/NOT_OPEN|NOT_AVAILABLE|EVENT_OVER|NOT_THERE|ALREADY_INVITED|ALREADY|WOMEN_ONLY|CANT_SEE|TOO_MANY/);
+  return new PartnerError((hit?.[0] as PartnerErrorCode) || 'generic');
+};
+
+/** "5:30" for 330 seconds per km. */
+export const fmtPace = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+const meOf = (id?: string | null) => (PREVIEW ? PREVIEW_ME : id ?? null);
+
+export function usePartnerProfile() {
+  const { user } = useAuth();
+  const me = meOf(user?.id);
+  return useQuery<PartnerProfile>(me ? `partners:me:${me}` : null, async () => {
+    if (PREVIEW) return { open: false, womenOnly: false, times: [], paceS: null, note: '' };
+    const { data, error } = await supabase.from('partner_profiles').select('open, women_only, times, run_pace_s, note').eq('user_id', me!).maybeSingle();
+    if (error) throw error;
+    return {
+      open: !!data?.open,
+      womenOnly: !!data?.women_only,
+      times: ((data?.times as PartnerTime[]) || []).filter((x) => PARTNER_TIMES.includes(x)),
+      paceS: data?.run_pace_s ?? null,
+      note: data?.note || '',
+    };
+  });
+}
+
+export async function savePartnerProfile(meId: string, p: PartnerProfile) {
+  if (PREVIEW) return;
+  const { error } = await supabase.from('partner_profiles').upsert(
+    { user_id: meId, open: p.open, women_only: p.womenOnly, times: p.times, run_pace_s: p.paceS, note: p.note.trim().slice(0, 140) || null },
+    { onConflict: 'user_id' },
+  );
+  if (error) throw error;
+  invalidate('partners:');
+}
+
+/** Suggestions for an open member, best first. `sport` narrows to one sport. */
+export function usePartners(open: boolean, sport: string | null) {
+  const { user, profile } = useAuth();
+  const me = meOf(user?.id);
+  return useQuery<Partner[]>(me && open ? `partners:list:${me}:${sport ?? 'all'}` : null, async () => {
+    if (PREVIEW) return [];
+    const { data, error } = await supabase.rpc('find_partners', { p_cities: cityKeys(profile?.city), p_sport: sport, p_limit: 30 });
+    if (error) throw toError(error);
+    return ((data as any[]) || []).map((r) => ({
+      id: r.user_id,
+      name: r.name || '',
+      avatarUrl: r.avatar_url || null,
+      sport: r.sport || null,
+      sports: r.sports || [],
+      times: (r.times || []).filter((x: any) => PARTNER_TIMES.includes(x)),
+      paceS: r.pace_s ?? null,
+      note: r.note || null,
+      closeLevel: !!r.close_level,
+      club: r.club || null,
+      together: r.together || 0,
+    }));
+  });
+}
+
+/** Invite a partner to one of your upcoming sessions. They get a notification that opens it. */
+export async function invitePartner(userId: string, eventId: string) {
+  if (PREVIEW) return;
+  const { error } = await supabase.rpc('invite_partner', { p_user: userId, p_event: eventId });
+  if (error) throw toError(error);
+}

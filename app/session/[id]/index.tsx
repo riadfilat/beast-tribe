@@ -12,6 +12,8 @@ import { useSession, useSessionActions, SessionError } from '../../../src/data/s
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { SESSION_LINK_BASE } from '../../../src/lib/constants';
 import { Txt } from '../../../src/components/board/Txt';
+import { RatePeople } from '../../../src/components/board/ratings';
+import { rateable } from '../../../src/data/ratings';
 import { Icon } from '../../../src/components/board/Icon';
 import { Press } from '../../../src/components/board/Press';
 import { Magnet } from '../../../src/components/board/people';
@@ -296,6 +298,15 @@ export default function SessionScreen() {
                   <Icon name="chevron" size={14} color={p.inkFaint} weight="bold" />
                 </View>
               </Press>
+            </>
+          ) : null}
+
+          {x.state === 'finished' && going && rateable(x.sport) && Date.now() - x.endsAt.getTime() < 14 * 86400000 ? (
+            <>
+              <Rule style={s.rule} />
+              <View style={s.section}>
+                <RatePeople eventId={x.id} sport={x.sport} people={[...x.roster, ...(x.host && !x.roster.some((r) => r.id === x.host!.id) ? [x.host] : [])].filter((r) => r.id !== meId)} />
+              </View>
             </>
           ) : null}
 

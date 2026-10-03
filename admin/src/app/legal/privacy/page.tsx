@@ -117,6 +117,31 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-gray-900">Training Partners and Level Ratings</h2>
+            <p>
+              Training partners is off until you switch it on. When it is on, other members who switched it on can
+              see your name, photo, sports, the times you usually train, your running pace if you add it, and the
+              short line you write. Women can choose to be matched with women only. Switch it off at any time.
+            </p>
+            <p>
+              After a session, people who took part can rate each other&rsquo;s level in that sport. These ratings
+              are private: no member can see them, including the person rated. We use them only to suggest
+              training partners at a similar level.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-gray-900">Ask Beast (AI Assistant)</h2>
+            <p>
+              When you use Ask Beast, your question and the results it looks up for you (sessions, workouts,
+              clubs and training partners you can already see in the app) are sent to Anthropic, the company
+              that provides the AI model, to write the answer. We do not send your email, date of birth, body
+              measurements, nutrition logs or level ratings. Anthropic does not use this data to train its
+              models. Ask Beast is optional.
+            </p>
+          </section>
+
+          <section className="space-y-3">
             <h2 className="text-xl font-semibold text-gray-900">3. Where Your Data Is Stored</h2>
             <p>
               Your data is stored with Supabase, our database provider, on Amazon Web Services servers in

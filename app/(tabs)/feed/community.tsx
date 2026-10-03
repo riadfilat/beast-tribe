@@ -20,6 +20,7 @@ import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
 import { CommunityHighlights, CommunityWellness } from '../../../src/components/board/wellness';
 import { CommunityCaptains } from '../../../src/components/board/captain';
+import { ClubByline, ClubLeaderPanel } from '../../../src/components/board/clubs';
 
 export default function CommunityScreen() {
   const s = useStyles();
@@ -86,6 +87,7 @@ export default function CommunityScreen() {
                 </View>
               </View>
             </View>
+            <ClubByline c={c} meId={meId} />
             {c.description ? (
               <Txt v="body" color={p.inkSoft} style={{ marginTop: 14 }}>
                 {c.description}
@@ -111,6 +113,7 @@ export default function CommunityScreen() {
               </View>
             ) : null}
 
+            {c.leaderId && (c.leaderId === meId || c.joinCode) ? <ClubLeaderPanel c={c} /> : null}
             {c.isMember ? <CommunityCaptains communityId={c.id} /> : null}
             {c.isMember ? <CommunityHighlights communityId={c.id} name={c.name} onOpenPlan={(slug) => router.push({ pathname: '/program/[slug]', params: { slug } })} /> : null}
 

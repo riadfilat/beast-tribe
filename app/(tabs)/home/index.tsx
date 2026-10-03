@@ -18,6 +18,7 @@ import { Press } from '../../../src/components/board/Press';
 import { Icon } from '../../../src/components/board/Icon';
 import { IconButton, MarkerButton, OutlineButton, TextButton } from '../../../src/components/board/controls';
 import { CaptainWeek } from '../../../src/components/board/captain';
+import { RateNudge } from '../../../src/components/board/ratings';
 import { DayHeading, NowMarker, SessionRow, useNow } from '../../../src/components/board/session';
 import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
@@ -169,6 +170,7 @@ export default function BoardScreen() {
         ) : null}
 
         <CaptainWeek onHost={(communityId) => router.push({ pathname: '/host', params: { community: communityId } })} />
+        <RateNudge />
         {/* Hero */}
         <View style={s.hero}>
           <Txt v="hero" accessibilityRole="header">

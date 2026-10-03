@@ -15,6 +15,7 @@ import type { Session } from '../../../src/data/model';
 import { Txt } from '../../../src/components/board/Txt';
 import { Icon } from '../../../src/components/board/Icon';
 import { Chip, Field, IconButton, MarkerButton, SectionHeading } from '../../../src/components/board/controls';
+import { Press } from '../../../src/components/board/Press';
 import { DayHeading, SessionRow, useNow } from '../../../src/components/board/session';
 
 type SportFilter = 'all' | 'mine' | string;
@@ -79,7 +80,7 @@ export default function ExploreScreen() {
   return (
     <SafeAreaView style={s.screen} edges={['top']}>
       <ScrollView
-        stickyHeaderIndices={[1]}
+        stickyHeaderIndices={[2]}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
         keyboardDismissMode="on-drag"
@@ -90,6 +91,18 @@ export default function ExploreScreen() {
             {t('tabs.explore')}
           </Txt>
           <IconButton name="plus" label={t('board.hostA11y')} onPress={() => router.push('/host')} />
+        </View>
+        <View style={s.tiles}>
+          <Press onPress={() => router.push('/partners')} feedback="light" accessibilityRole="button" style={s.tile}>
+            <Icon name="people" size={20} color={p.aqua} />
+            <Txt v="row" size={14}>{t('partners.title')}</Txt>
+            <Txt v="caption" numberOfLines={2}>{t('partners.tileSub')}</Txt>
+          </Press>
+          <Press onPress={() => router.push('/assistant')} feedback="light" accessibilityRole="button" style={s.tile}>
+            <Icon name="sparkle" size={20} color={p.marker} />
+            <Txt v="row" size={14}>{t('assistant.title')}</Txt>
+            <Txt v="caption" numberOfLines={2}>{t('assistant.tileSub')}</Txt>
+          </Press>
         </View>
 
         {/* Filters stay pinned while the schedule scrolls */}
@@ -165,6 +178,8 @@ export default function ExploreScreen() {
 const useStyles = makeStyles(({ p }) => ({
   screen: { flex: 1, backgroundColor: p.board },
   header: { flexDirection: 'row', alignItems: 'center', paddingStart: 16, paddingEnd: 8, paddingTop: 6, paddingBottom: 8 },
+  tiles: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingBottom: 10 },
+  tile: { flex: 1, gap: 4, padding: 12, borderRadius: 12, borderWidth: 1.5, borderColor: p.rule },
   filters: { backgroundColor: p.board, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: p.rule, gap: 2, paddingTop: 4 },
   chipRow: { paddingHorizontal: 16, paddingTop: 10, gap: 8 },
   empty: { paddingHorizontal: 32, paddingTop: 48, gap: 18, alignItems: 'center' },

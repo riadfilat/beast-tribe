@@ -10,7 +10,7 @@ import {
   deleteCommunity,
   removeCommunityDefaultPack,
   removeUserFromCommunity,
-  regenerateJoinCode,
+  regenerateJoinCode, verifyClub,
   addCommunityPartner,
   removeCommunityPartner,
 } from '../actions';
@@ -99,6 +99,29 @@ export default async function EditCommunityPage({ params }: { params: { id: stri
           </div>
         </div>
       </div>
+
+      {community.leader_id ? (
+        <div className="mb-6 rounded-xl border border-[#E88F24]/40 bg-[#FDF6EC] px-5 py-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="text-sm text-gray-700">
+            <p className="font-semibold text-gray-900">Member-run club{community.sport ? ` · ${community.sport}` : ''}</p>
+            <p className="mt-0.5">
+              {community.listing === 'public' ? 'The leader wants it listed for everyone.' : 'Invite only (join with the code).'}{' '}
+              {community.verified_at ? `Verified ${new Date(community.verified_at).toLocaleDateString()}.` : 'Not verified yet.'}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">Free for the leader. Verifying shows a Verified badge and, if they chose it, lists the club in Discover.</p>
+          </div>
+          <form
+            action={async () => {
+              'use server';
+              await verifyClub(community.id, !community.verified_at);
+            }}
+          >
+            <button className={community.verified_at ? 'text-xs px-3 py-1.5 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50' : 'text-sm px-4 py-2 rounded-lg bg-brand-orange text-brand-teal font-semibold hover:brightness-95'}>
+              {community.verified_at ? 'Remove verification' : 'Verify club'}
+            </button>
+          </form>
+        </div>
+      ) : null}
 
       {community.visibility === 'private' ? (
         <div className="mb-6 flex items-center justify-between gap-4 rounded-xl border-2 border-dashed border-brand-teal/30 bg-white px-5 py-4">

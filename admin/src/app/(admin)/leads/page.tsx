@@ -14,7 +14,7 @@ const STATUS: { id: string; label: string; hint: string }[] = [
   { id: 'won', label: 'Won', hint: 'Paying' },
   { id: 'lost', label: 'Lost', hint: '' },
 ];
-const KIND: Record<string, string> = { gym: 'Gym or club', company: 'Company', coach: 'Coach', venue: 'Restaurant or venue' };
+const KIND: Record<string, string> = { gym: 'Gym or club', company: 'Company', coach: 'Coach', venue: 'Restaurant or venue', leader: 'Club leader (free)' };
 const KIND_TO_TYPE: Record<string, string> = { gym: 'gym', company: 'company', coach: 'coach', venue: 'nutrition' };
 const input = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm';
 
@@ -86,7 +86,10 @@ export default async function LeadsPage({ searchParams }: { searchParams: { stat
                 {l.source === 'captain request' ? (
                   <Link href="/captains" className="inline-block mt-3 me-4 text-sm font-semibold text-[#B86A10] hover:underline">Assign a Beast Captain</Link>
                 ) : null}
-                {l.partner_id ? (
+                {l.kind === 'leader' && l.community_id ? (
+                  <Link href={`/communities/${l.community_id}`} className="inline-block mt-3 me-4 text-sm font-semibold text-[#B86A10] hover:underline">Open the club to verify it</Link>
+                ) : null}
+                {l.kind === 'leader' ? null : l.partner_id ? (
                   <Link href={`/partners/${l.partner_id}`} className="inline-block mt-3 text-sm text-brand-aqua hover:underline">Open partner account</Link>
                 ) : (
                   <Link href={`${newPartner}&type=${KIND_TO_TYPE[l.kind] || 'gym'}`} className="inline-block mt-3 text-sm font-semibold text-[#B86A10] hover:underline">

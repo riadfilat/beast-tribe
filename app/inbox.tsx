@@ -27,6 +27,8 @@ const TYPE_ICON: Record<string, IconName> = {
   coach_accepted: 'coach',
   captain_assigned: 'flag',
   captain_nudge: 'flag',
+  partner_invite: 'people',
+  club_verified: 'check',
 };
 
 export default function InboxScreen() {
@@ -56,6 +58,7 @@ export default function InboxScreen() {
 
   function openItem(n: InboxItem) {
     if (n.type === 'captain_nudge' || n.type === 'captain_assigned') router.push(n.communityId ? { pathname: '/host', params: { community: n.communityId } } : '/host');
+    else if (n.type === 'club_verified' && n.communityId) router.push({ pathname: '/(tabs)/feed/community', params: { id: n.communityId } });
     else if (n.type === 'coach_request') router.push('/(tabs)/profile');
     else if (n.type === 'coach_accepted') router.push('/(tabs)/profile/coach-dashboard');
     else if (n.eventId) router.push({ pathname: '/session/[id]', params: { id: n.eventId } });
