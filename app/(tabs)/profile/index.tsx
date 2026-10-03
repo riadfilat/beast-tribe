@@ -51,8 +51,8 @@ export default function YouScreen() {
   const upcoming = (mine.data ?? []).filter((x) => x.state === 'upcoming' || x.state === 'live').slice(0, 2);
 
   async function changePhoto() {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (perm.status !== 'granted' || !meId) return;
+    // The system photo picker needs no photo-library permission.
+    if (!meId) return;
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.85 });
     if (res.canceled || !res.assets[0]) return;
     setLocalAvatar(res.assets[0].uri);

@@ -143,11 +143,6 @@ export default function HostScreen() {
   }
 
   async function pickCover() {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (perm.status !== 'granted') {
-      setError(t('host.photoPermission'));
-      return;
-    }
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [16, 10], quality: 0.85 });
     if (!res.canceled && res.assets[0]) setCover(res.assets[0].uri);
   }

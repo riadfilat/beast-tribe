@@ -344,8 +344,6 @@ function ComposeSheet({ visible, eventId, meId, onClose, onPosted, communities }
   }, [visible, eventId]);
 
   async function pick() {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (perm.status !== 'granted') return;
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.85 });
     if (!res.canceled && res.assets[0]) setPhoto(await compressImage(res.assets[0].uri, 'post'));
   }
