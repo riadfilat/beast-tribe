@@ -31,7 +31,30 @@ interface Props extends TextProps {
   children?: React.ReactNode;
 }
 
-const WEB_AR_START = Platform.OS === 'web';
+// Where Arabic text starts and ends, by platform. The web takes 'left' and 'right' literally. Native
+// swaps the two when the layout is right-to-left, so there the start edge is spelled 'left'.
+// 'auto' is not enough on iOS: it follows the phone's own language setup, not the app's direction,
+// so Arabic titles ended up on the left.
+const AR_START: TextStyle['textAlign'] = Platform.OS === 'web' ? 'right' : 'left';
+const AR_END: TextStyle['textAlign'] = Platform.OS === 'web' ? 'left' : 'right';
+const HAS_ARABIC = /[\u0600-\u06FF]/;
+
+/** Text alignment for the leading edge, for text that is not drawn with Txt. */
+export function alignStart(lang: string): TextStyle['textAlign'] {
+  return lang === 'ar' ? AR_START : 'auto';
+}
+
+/** Text alignment for the trailing edge (numbers at the end of a row), right in both directions. */
+export function alignEnd(lang: string): TextStyle['textAlign'] {
+  return lang === 'ar' ? AR_END : 'right';
+}
+
+function plainText(children: React.ReactNode): string {
+  if (typeof children === 'string') return children;
+  if (typeof children === 'number') return String(children);
+  if (Array.isArray(children)) return children.map(plainText).join('');
+  return '';
+}
 
 export function Txt({ v = 'body', size, color, align, style, children, ...rest }: Props) {
   const { p, f, lang } = useKit();
@@ -78,9 +101,14 @@ export function Txt({ v = 'body', size, color, align, style, children, ...rest }
   return (
     <Text
       {...rest}
-      // Native aligns 'auto' text with the layout direction; the web aligns by each string's own
-      // script, so Latin names in Arabic screens need the start edge spelled out.
-      style={[base, { color: tone, textAlign: align ?? (WEB_AR_START && ar ? 'right' : 'auto') }, style]}
+      // In Arabic every line starts at the right edge, Latin names included. A line that has Arabic
+      // in it also reads right to left as a whole, so "Hyrox · 35 د" keeps its order.
+      style={[
+        base,
+        { color: tone, textAlign: align ?? (ar ? AR_START : 'auto') },
+        ar && Platform.OS === 'ios' && HAS_ARABIC.test(plainText(children)) ? { writingDirection: 'rtl' } : null,
+        style,
+      ]}
     >
       {children}
     </Text>

@@ -8,7 +8,7 @@ import { useI18n } from '../../src/i18n';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { supabase } from '../../src/lib/supabase';
 import { journeyStage, Stage, STAGE_TO_LEVEL } from '../../src/lib/journey';
-import { Txt } from '../../src/components/board/Txt';
+import { Txt, alignEnd } from '../../src/components/board/Txt';
 import { Icon } from '../../src/components/board/Icon';
 import { Press } from '../../src/components/board/Press';
 import { Chip, Field, IconButton, MarkerButton, Segmented, TextButton } from '../../src/components/board/controls';
@@ -120,7 +120,7 @@ export default function AboutYouScreen() {
                 <Txt v="hero" size={28} color={on ? text : p.ink}>
                   {lang === 'ar' ? t(`onboarding.levels.${st}`) : t(`onboarding.levels.${st}`).toUpperCase()}
                 </Txt>
-                <Txt v="meta" color={on ? text : p.inkSoft} style={{ flex: 1, textAlign: lang === 'ar' ? 'left' : 'right' }} numberOfLines={2}>
+                <Txt v="meta" color={on ? text : p.inkSoft} style={{ flex: 1, textAlign: alignEnd(lang) }} numberOfLines={2}>
                   {t(`onboarding.levels.${st}Sub`)}
                 </Txt>
               </Press>

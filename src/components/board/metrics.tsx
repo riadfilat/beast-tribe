@@ -4,7 +4,7 @@ import { useKit } from '../../theme';
 import { useI18n } from '../../i18n';
 import { useTrainingMetrics } from '../../data/metrics';
 import { groupOf, MUSCLE_GROUPS, MuscleGroup, useExercises } from '../../data/exercises';
-import { Txt } from './Txt';
+import { Txt, alignEnd } from './Txt';
 import { Icon } from './Icon';
 import { SectionHeading } from './controls';
 
@@ -163,7 +163,7 @@ export function TrainingMetricsSection() {
                     {b.kg ? `${b.kg} kg × ${b.reps}` : t('metrics.repsOnly', { n: b.reps })}
                   </Txt>
                   {b.e1rm ? (
-                    <Txt v="caption" style={{ width: 70, textAlign: 'right' }}>
+                    <Txt v="caption" style={{ width: 70, textAlign: alignEnd(lang) }}>
                       {t('metrics.e1rm', { kg: Math.round(b.e1rm) })}
                     </Txt>
                   ) : null}

@@ -7,7 +7,7 @@ import { useI18n } from '../../src/i18n';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { supabase } from '../../src/lib/supabase';
 import { PRIVACY_URL, TERMS_URL } from '../../src/lib/constants';
-import { Txt } from '../../src/components/board/Txt';
+import { Txt, alignStart } from '../../src/components/board/Txt';
 import { Icon } from '../../src/components/board/Icon';
 import { Press } from '../../src/components/board/Press';
 import { Field, IconButton, MarkerButton, TextButton } from '../../src/components/board/controls';
@@ -30,7 +30,7 @@ function strength(pw: string) {
 export default function SignInScreen() {
   const s = useStyles();
   const { p } = useKit();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const router = useRouter();
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isSignUp = mode === 'signup';
@@ -277,7 +277,7 @@ export default function SignInScreen() {
           {step === 'signup-password' ? (
             <Press onPress={() => { setAgreed(!agreed); clear(); }} feedback="selection" style={s.terms} accessibilityRole="checkbox" accessibilityState={{ checked: agreed }}>
               <View style={[s.box, agreed ? { backgroundColor: p.ink, borderColor: p.ink } : null]}>{agreed ? <Icon name="check" size={13} color={p.board} weight="bold" /> : null}</View>
-              <Text style={[s.termsText]}>
+              <Text style={[s.termsText, { textAlign: alignStart(lang) }]}>
                 {t('auth.agree', { terms: '\u0001', privacy: '\u0002' })
                   .split(/(\u0001|\u0002)/)
                   .map((part, i) =>

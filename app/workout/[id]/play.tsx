@@ -9,7 +9,7 @@ import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { logWorkout, shareWorkout, ShareTarget, stepSeconds, useWorkout, WorkoutBlock } from '../../../src/data/workouts';
 import { useMyCommunities } from '../../../src/data/communities';
 import { useMyPackList } from '../../../src/data/member';
-import { Txt } from '../../../src/components/board/Txt';
+import { Txt, alignEnd } from '../../../src/components/board/Txt';
 import { Tally } from '../../../src/components/board/marks';
 import { Chip, Field, IconButton, MarkerButton, OutlineButton } from '../../../src/components/board/controls';
 import { Sheet } from '../../../src/components/board/sheet';
@@ -472,7 +472,7 @@ function LogSheet({
             {time}
           </Txt>
         </View>
-        <Txt v="row" size={14} color={p.inkSoft} numberOfLines={2} style={{ flex: 1, textAlign: 'right', marginStart: 16 }}>
+        <Txt v="row" size={14} color={p.inkSoft} numberOfLines={2} style={{ flex: 1, textAlign: alignEnd(lang), marginStart: 16 }}>
           {title}
         </Txt>
       </View>

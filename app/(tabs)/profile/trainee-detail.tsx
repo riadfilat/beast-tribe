@@ -25,7 +25,7 @@ import {
   useTrainees,
 } from '../../../src/data/coaching';
 import { Magnet } from '../../../src/components/board/people';
-import { Txt } from '../../../src/components/board/Txt';
+import { Txt, alignEnd } from '../../../src/components/board/Txt';
 import { Icon } from '../../../src/components/board/Icon';
 import { Press } from '../../../src/components/board/Press';
 import { Tag, TagTone } from '../../../src/components/board/marks';
@@ -247,7 +247,7 @@ export default function TraineeDetailScreen() {
                     {d.meals ? (
                       <>
                         <Txt v="meta">{t('coach.proteinDay', { n: fmtNum(d.protein) })}</Txt>
-                        <Txt v="time" size={16} style={{ minWidth: 64, textAlign: 'right' }}>
+                        <Txt v="time" size={16} style={{ minWidth: 64, textAlign: alignEnd(lang) }}>
                           {fmtNum(d.calories)}
                         </Txt>
                       </>
