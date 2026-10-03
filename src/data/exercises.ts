@@ -35,6 +35,8 @@ export interface Exercise {
   harder: string | null;
   videoUrl: string | null;
   posterUrl: string | null;
+  /** ExerciseDB id of the animated demonstration (loaded live, never stored). */
+  demoId: string | null;
 }
 
 export const CATEGORIES: ExerciseCategory[] = ['strength', 'core', 'conditioning', 'cardio', 'warmup', 'mobility', 'stretch'];
@@ -90,6 +92,7 @@ function toExercise(r: any, lang: string): Exercise {
     harder: r.harder ?? null,
     videoUrl: r.video_url ?? null,
     posterUrl: r.poster_url ?? null,
+    demoId: r.demo_id ?? null,
   };
 }
 

@@ -1106,6 +1106,8 @@ export const ar: Strings = {
     boardNext: 'خطتك · التالي',
   },
   ex: {
+    demoLabel: 'رسم متحرك للحركة',
+    demoCredit: 'الرسم المتحرك: ExerciseDB',
     library: 'مكتبة الحركات',
     librarySub: '{n} من الحركات مع إرشادات المدرب',
     search: 'ابحث عن حركة',

@@ -1057,6 +1057,8 @@ export const en = {
     boardNext: 'Your plan · next up',
   },
   ex: {
+    demoLabel: 'Animation of the move',
+    demoCredit: 'Animation: ExerciseDB',
     library: 'Exercise library',
     librarySub: '{n} moves with coaching cues',
     search: 'Search exercises',

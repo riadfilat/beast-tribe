@@ -8,6 +8,7 @@ import { Txt } from './Txt';
 import { Icon, IconName } from './Icon';
 import { Press } from './Press';
 import { Tag } from './marks';
+import { MoveDemo } from './MoveDemo';
 
 type Goal = 'strength' | 'muscle' | 'endurance' | 'hold' | 'easy' | 'hard' | 'warm' | 'stretch';
 
@@ -111,7 +112,9 @@ export function ExerciseSheet({ slug, onClose }: { slug: string | null; onClose:
     <Sheet visible={!!slug} title={ex?.name ?? ''} onClose={onClose}>
       {!ex ? null : (
         <>
-          {ex.posterUrl ? (
+          {ex.demoId ? (
+            <MoveDemo id={ex.demoId} size={240} />
+          ) : ex.posterUrl ? (
             <Image source={{ uri: ex.posterUrl }} style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 12, backgroundColor: p.wash }} resizeMode="cover" accessibilityIgnoresInvertColors />
           ) : null}
 

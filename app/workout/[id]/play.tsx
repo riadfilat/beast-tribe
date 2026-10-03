@@ -14,6 +14,7 @@ import { Txt, alignEnd } from '../../../src/components/board/Txt';
 import { Chip, Field, IconButton, MarkerButton, TextButton } from '../../../src/components/board/controls';
 import { Sheet } from '../../../src/components/board/sheet';
 import { ExerciseSheet } from '../../../src/components/board/exercise';
+import { MoveDemo } from '../../../src/components/board/MoveDemo';
 import { buildEntries, prefill, SetEntry, SetLogger } from '../../../src/components/board/sets';
 import { e1rm, historyFor, History, saveSets } from '../../../src/data/sets';
 import { useExercises } from '../../../src/data/exercises';
@@ -231,8 +232,12 @@ export default function PlayScreen() {
           </View>
         ) : null}
 
-        {/* The move's picture; its video goes here once the library has them. */}
-        {ex?.posterUrl ? <Image source={{ uri: ex.posterUrl }} style={s.media} resizeMode="cover" accessibilityIgnoresInvertColors /> : null}
+        {/* The move, animated (ExerciseDB); a picture when there is no animation. */}
+        {!isRest && ex?.demoId ? (
+          <MoveDemo key={ex.demoId} id={ex.demoId} size={220} style={{ marginTop: 12 }} />
+        ) : ex?.posterUrl ? (
+          <Image source={{ uri: ex.posterUrl }} style={s.media} resizeMode="cover" accessibilityIgnoresInvertColors />
+        ) : null}
 
         <View style={s.hero}>
           <Txt v="title" size={34} align="center" accessibilityRole="header">
