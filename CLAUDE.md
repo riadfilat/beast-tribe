@@ -115,6 +115,12 @@ User wants to launch the app to limited public testers via TestFlight.
 
 ## Session Log (append-only — newest at top)
 
+### 2026-10-04 (evening) — Workout player: one exercise at a time
+- User: "each exercise on its own, you click next and jump to the next exercise… super simple, a nine-year-old can train with it; videos later to show the exact movement".
+- `src/data/guide.ts` (buildGuide, nextStep) lays a workout out as single steps: rounds in order, "3 × 10" as three sets with a rest between them in strength blocks (rest from the exercise library), every-minute blocks as one step per minute, as-many-rounds blocks as a loop until the block clock ends (laps counted as rounds for the log). Walked all 32 distinct workouts in the database.
+- `app/workout/[id]/play.tsx` rewritten around it: exercise name, one big number (countdown, or reps), two coaching cues + "How to do it", "Up next", Previous / Pause / big NEXT, progress bar. Timed steps count down and move on by themselves (ticks on the last 3 s); everything else waits for Next. The log sheet at the end is unchanged.
+- Media slot: shows `exercises.poster_url` when set; videos (`video_url`) are the next step — none recorded yet.
+
 ### 2026-10-04 (later) — Phone was on build 7; onboarding trap; language switch in onboarding
 - User (in Arabic): no way to change language during onboarding, and "ادخل المجتمع" (last onboarding button) did nothing.
 - ROOT CAUSE: the phone was still on **build 7** (runtime f96462…). Expo update insights show its last installed OTA was 70ad57f5 (10:27 UTC, 3 Oct); every OTA after build 10 went to runtime 5fa84627 with 0 installs. Build 7's code reads `profiles.select('*')`, which migration 050 no longer allows, so the profile came back empty → gate sent the member into onboarding → the last step saved but could not read the profile back → stuck. None of the day's later work (wellness, captains, Arabic pass) had reached the phone either.

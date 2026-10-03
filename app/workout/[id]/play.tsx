@@ -1,19 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Platform, ScrollView, View } from 'react-native';
+import { Alert, Image, Platform, ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { makeStyles, useKit } from '../../../src/theme';
 import { useI18n } from '../../../src/i18n';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
-import { logWorkout, shareWorkout, ShareTarget, stepSeconds, useWorkout, WorkoutBlock } from '../../../src/data/workouts';
+import { logWorkout, shareWorkout, ShareTarget, useWorkout, WorkoutBlock } from '../../../src/data/workouts';
+import { buildGuide, nextStep } from '../../../src/data/guide';
 import { useMyCommunities } from '../../../src/data/communities';
 import { useMyPackList } from '../../../src/data/member';
 import { Txt, alignEnd } from '../../../src/components/board/Txt';
-import { Tally } from '../../../src/components/board/marks';
-import { Chip, Field, IconButton, MarkerButton, OutlineButton } from '../../../src/components/board/controls';
+import { Chip, Field, IconButton, MarkerButton, TextButton } from '../../../src/components/board/controls';
 import { Sheet } from '../../../src/components/board/sheet';
-import { BlockView, blockLine } from '../../../src/components/board/workout';
 import { ExerciseSheet } from '../../../src/components/board/exercise';
 import { buildEntries, prefill, SetEntry, SetLogger } from '../../../src/components/board/sets';
 import { e1rm, historyFor, History, saveSets } from '../../../src/data/sets';
@@ -22,38 +21,14 @@ import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 
-// How a block runs: a countdown (AMRAP), a minute clock (EMOM), timed steps (intervals or a
-// fully timed flow), or a stopwatch with a rounds counter (rounds, for time, strength, steady).
-type Mode = 'amrap' | 'emom' | 'steps' | 'stopwatch';
-
-interface Plan {
-  mode: Mode;
-  /** Total seconds when the block has an end (AMRAP, EMOM, timed steps, a time cap). */
-  limit: number | null;
-  steps: { idx: number; secs: number }[];
-  rounds: number;
-  counts: boolean;
-}
-
-function planOf(b: WorkoutBlock): Plan {
-  const timed = b.items.length > 0 && b.items.every((i) => stepSeconds(i.reps) != null);
-  if (b.format === 'amrap' && b.minutes) return { mode: 'amrap', limit: b.minutes * 60, steps: [], rounds: 0, counts: true };
-  if (b.format === 'emom' && b.minutes) return { mode: 'emom', limit: b.minutes * 60, steps: [], rounds: 0, counts: false };
-  if ((b.format === 'intervals' || b.format === 'flow' || b.format === 'steady') && timed) {
-    const steps = b.items.map((i, idx) => ({ idx, secs: stepSeconds(i.reps)! }));
-    const rounds = b.rounds || 1;
-    return { mode: 'steps', limit: steps.reduce((a, s) => a + s.secs, 0) * rounds, steps, rounds, counts: false };
-  }
-  const counts = b.format === 'rounds' || b.format === 'for_time';
-  return { mode: 'stopwatch', limit: b.format === 'for_time' && b.minutes ? b.minutes * 60 : null, steps: [], rounds: b.rounds || 0, counts };
-}
-
 const clock = (secs: number) => {
   const s = Math.max(0, Math.round(secs));
   const m = Math.floor(s / 60);
   return `${m}:${String(s % 60).padStart(2, '0')}`;
 };
 
+// One exercise at a time. The screen shows what to do now, a big Next button, and nothing else to
+// decide. Timed moves count down and move on by themselves; everything else waits for Next.
 export default function PlayScreen() {
   // The screen stays on while a workout runs.
   useKeepAwake();
@@ -66,123 +41,93 @@ export default function PlayScreen() {
   const { user } = useAuth();
   const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
   const w = useWorkout(id, lang).data;
+  const lib = useExercises(lang).data;
   const leave = () => (router.canGoBack() ? router.back() : router.replace({ pathname: '/workout/[id]', params: { id } }));
 
-  const [blockIdx, setBlockIdx] = useState(0);
+  const guide = useMemo(() => (w ? buildGuide(w.blocks, (slug) => (slug ? lib?.get(slug)?.restSeconds ?? null : null)) : null), [w, lib]);
+
+  const [idx, setIdx] = useState(0);
   const [startedAt, setStartedAt] = useState<number | null>(null); // whole workout
-  const [blockAt, setBlockAt] = useState<number | null>(null);
+  const [stepAt, setStepAt] = useState(0);
+  const [blockAt, setBlockAt] = useState(0);
   const [pausedAt, setPausedAt] = useState<number | null>(null);
-  const [pausedMs, setPausedMs] = useState(0); // this block
-  const [totalPausedMs, setTotalPausedMs] = useState(0);
-  const [rounds, setRounds] = useState<number[]>([]);
+  const [pausedMs, setPausedMs] = useState(0); // whole workout
+  const [stepBase, setStepBase] = useState(0); // paused time already spent when this step began
+  const [blockBase, setBlockBase] = useState(0);
+  const [laps, setLaps] = useState<Record<number, number>>({});
   const [now, setNow] = useState(Date.now());
   const [logOpen, setLogOpen] = useState(false);
   const [exSlug, setExSlug] = useState<string | null>(null);
   const [endedAt, setEndedAt] = useState<number | null>(null);
 
-  const running = blockAt != null && pausedAt == null && !logOpen;
+  const started = startedAt != null;
+  const running = started && pausedAt == null && !logOpen;
   useEffect(() => {
     if (!running) return;
     const iv = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(iv);
   }, [running]);
 
-  const block = w?.blocks[blockIdx] ?? null;
-  const plan = useMemo(() => (block ? planOf(block) : null), [block]);
-  const elapsed = blockAt == null ? 0 : ((pausedAt ?? now) - blockAt - pausedMs) / 1000;
-  const over = !!plan?.limit && elapsed >= plan.limit;
+  const step = guide?.steps[idx] ?? null;
+  const block = guide && step ? guide.blocks.find((b) => b.idx === step.blockIdx) ?? null : null;
+  const at = pausedAt ?? now;
+  const stepElapsed = started ? Math.max(0, (at - stepAt - (pausedMs - stepBase)) / 1000) : 0;
+  const blockElapsed = started ? Math.max(0, (at - blockAt - (pausedMs - blockBase)) / 1000) : 0;
+  const blockOver = !!block?.loop && !!block.limit && blockElapsed >= block.limit;
+  const stepLeft = step?.secs ? Math.max(0, step.secs - stepElapsed) : 0;
 
-  // Where we are inside the block.
-  let current: number | null = null;
-  let stepLeft = 0;
-  let stepRound = 1;
-  let isRest = false;
-  if (plan && block && blockAt != null) {
-    if (plan.mode === 'emom') {
-      const minute = Math.min(Math.floor(elapsed / 60), Math.max(0, (block.minutes ?? 1) - 1));
-      current = block.items.length ? minute % block.items.length : null;
-      stepLeft = 60 - (elapsed % 60);
-    } else if (plan.mode === 'steps' && plan.steps.length) {
-      const cycle = plan.steps.reduce((a, x) => a + x.secs, 0);
-      const e = Math.min(elapsed, (plan.limit ?? 0) - 0.001);
-      stepRound = Math.floor(e / cycle) + 1;
-      let into = e % cycle;
-      for (const st of plan.steps) {
-        if (into < st.secs) {
-          current = st.idx;
-          stepLeft = st.secs - into;
-          break;
-        }
-        into -= st.secs;
-      }
-      const name = current != null ? block.items[current]?.name?.toLowerCase() ?? '' : '';
-      isRest = block.format === 'intervals' && /rest|walk|jog|راحة|مشي|هرولة/.test(name) && plan.steps.length > 1;
+  function goTo(to: number, tnow = Date.now()) {
+    if (!guide) return;
+    let paused = pausedMs;
+    if (pausedAt != null) {
+      paused += tnow - pausedAt;
+      setPausedMs(paused);
+      setPausedAt(null);
     }
-  }
-
-  // A buzz when the step or the minute turns over, and when time is up.
-  const lastMark = useRef<string>('');
-  useEffect(() => {
-    if (!running || !plan) return;
-    const mark = over ? 'over' : plan.mode === 'emom' ? `m${Math.floor(elapsed / 60)}` : plan.mode === 'steps' ? `s${stepRound}-${current}` : '';
-    if (mark && mark !== lastMark.current) {
-      if (lastMark.current) haptic(over ? 'success' : 'medium');
-      lastMark.current = mark;
+    if (guide.steps[to].blockIdx !== guide.steps[idx].blockIdx) {
+      setBlockAt(tnow);
+      setBlockBase(paused);
     }
-  }, [now, running]);
-
-  if (!w || !block || !plan) {
-    return (
-      <View style={[s.screen, { paddingTop: insets.top }]}>
-        <IconButton name="close" label={t('common.close')} onPress={leave} style={{ marginStart: 6 }} />
-      </View>
-    );
+    setIdx(to);
+    setStepAt(tnow);
+    setStepBase(paused);
+    setNow(tnow);
   }
-
-  const started = blockAt != null;
-  const isLast = blockIdx === w.blocks.length - 1;
-  const myRounds = rounds[blockIdx] ?? 0;
-
   function start() {
     const tnow = Date.now();
-    setStartedAt((v) => v ?? tnow);
+    setStartedAt(tnow);
+    setStepAt(tnow);
     setBlockAt(tnow);
-    setPausedMs(0);
-    setPausedAt(null);
     setNow(tnow);
-    lastMark.current = '';
     haptic('medium');
+  }
+  function next(auto = false) {
+    if (!guide || !step) return;
+    const { idx: to, lapped } = nextStep(guide, idx, blockOver);
+    if (lapped) setLaps((l) => ({ ...l, [step.blockIdx]: (l[step.blockIdx] ?? 0) + 1 }));
+    if (to == null) return finish();
+    haptic(auto ? 'medium' : 'light');
+    goTo(to);
+  }
+  function previous() {
+    if (idx > 0) {
+      haptic('selection');
+      goTo(idx - 1);
+    }
   }
   function togglePause() {
     const tnow = Date.now();
-    if (pausedAt == null) {
-      setPausedAt(tnow);
-    } else {
+    if (pausedAt == null) setPausedAt(tnow);
+    else {
       setPausedMs((v) => v + (tnow - pausedAt));
-      setTotalPausedMs((v) => v + (tnow - pausedAt));
       setPausedAt(null);
       setNow(tnow);
     }
     haptic('selection');
   }
-  function addRound() {
-    setRounds((r) => {
-      const next = [...r];
-      next[blockIdx] = (next[blockIdx] ?? 0) + 1;
-      return next;
-    });
-    haptic('light');
-  }
-  function nextBlock() {
-    if (pausedAt != null) setTotalPausedMs((v) => v + (Date.now() - pausedAt));
-    setBlockIdx((i) => i + 1);
-    setBlockAt(null);
-    setPausedAt(null);
-    setPausedMs(0);
-  }
   function finish() {
     const tnow = Date.now();
-    if (pausedAt != null) setTotalPausedMs((v) => v + (tnow - pausedAt));
+    if (pausedAt != null) setPausedMs((v) => v + (tnow - pausedAt));
     setPausedAt(null);
     setEndedAt(tnow);
     setLogOpen(true);
@@ -190,32 +135,65 @@ export default function PlayScreen() {
   }
   function confirmEnd() {
     if (!startedAt) return leave();
-    const go = () => finish();
     if (Platform.OS === 'web') {
-      if (typeof window !== 'undefined' && window.confirm(t('train.player.endConfirm'))) go();
+      if (typeof window !== 'undefined' && window.confirm(t('train.player.endConfirm'))) finish();
       return;
     }
     Alert.alert(t('train.player.end'), t('train.player.endConfirm'), [
       { text: t('train.player.keepGoing'), style: 'cancel' },
-      { text: t('train.player.end'), style: 'destructive', onPress: go },
+      { text: t('train.player.end'), style: 'destructive', onPress: finish },
     ]);
   }
 
-  // The big number: what's left when the block has an end, otherwise time on the clock.
-  const big =
-    !started ? clock(plan.limit ?? 0) :
-    plan.mode === 'amrap' ? clock((plan.limit ?? 0) - elapsed) :
-    plan.mode === 'emom' || plan.mode === 'steps' ? clock(stepLeft) :
-    clock(elapsed);
-  const context =
-    !started ? blockLine(block, t, tn) :
-    over ? t('train.player.timeUp') :
-    plan.mode === 'emom' ? t('train.player.minuteOf', { n: Math.floor(elapsed / 60) + 1, total: block.minutes }) :
-    plan.mode === 'steps' && plan.rounds > 1 ? t('train.player.roundOf', { n: stepRound, total: plan.rounds }) :
-    plan.mode === 'stopwatch' && plan.rounds ? t('train.player.roundOf', { n: Math.min(myRounds + 1, plan.rounds), total: plan.rounds }) :
-    blockLine(block, t, tn);
-  const currentItem = current != null ? block.items[current] : null;
-  const nextIdx = plan.mode === 'steps' && current != null ? (current + 1) % block.items.length : plan.mode === 'emom' && current != null ? (current + 1) % block.items.length : null;
+  // Timed steps move on by themselves, with a tick on each of the last three seconds.
+  const lastTick = useRef('');
+  useEffect(() => {
+    if (!running || !step?.secs) return;
+    if (stepElapsed >= step.secs) {
+      next(true);
+      return;
+    }
+    const left = Math.ceil(stepLeft);
+    const mark = `${step.key}:${left}`;
+    if (left <= 3 && mark !== lastTick.current) {
+      lastTick.current = mark;
+      haptic('light');
+    }
+  }, [now, running]);
+  // A buzz when an as-many-rounds clock runs out.
+  const wasOver = useRef(false);
+  useEffect(() => {
+    if (blockOver && !wasOver.current) haptic('success');
+    wasOver.current = blockOver;
+  }, [blockOver]);
+
+  if (!w || !guide || !step || !block) {
+    return (
+      <View style={[s.screen, { paddingTop: insets.top }]}>
+        <IconButton name="close" label={t('common.close')} onPress={leave} style={{ marginStart: 6 }} />
+      </View>
+    );
+  }
+
+  const total = guide.steps.length;
+  const ex = step.ex ? lib?.get(step.ex) ?? null : null;
+  const isRest = step.kind === 'rest';
+  const { idx: afterIdx } = nextStep(guide, idx, blockOver);
+  const after = afterIdx != null ? guide.steps[afterIdx] : null;
+  const isLast = afterIdx == null;
+  const myLaps = laps[step.blockIdx] ?? 0;
+  const countOnly = step.dose != null && /^\d+$/.test(step.dose.trim());
+  // Where this step sits: "Round 2 of 4 · Set 1 of 3", "Minute 3 of 15".
+  const place = [
+    step.minute ? t('train.player.minuteOf', { n: step.minute, total: step.minutes }) : null,
+    step.round ? t('train.player.roundOf', { n: step.round, total: step.rounds }) : null,
+    step.set ? t('train.player.setOf', { n: step.set, total: step.sets }) : null,
+    block.loop ? tn('train.player.roundsDone', myLaps) : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const blockClock = block.loop && block.limit ? (blockOver ? t('train.player.timeUp') : t('train.player.timeLeft', { time: clock(block.limit - blockElapsed) })) : block.stopwatch && started ? clock(blockElapsed) : null;
+  const doseOf = (x: typeof step) => (x.secs && !x.dose ? clock(x.secs) : x.dose || '');
 
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
@@ -225,75 +203,111 @@ export default function PlayScreen() {
           <Txt v="row" size={14} numberOfLines={1}>
             {block.title}
           </Txt>
-          <Txt v="caption">{`${blockIdx + 1} / ${w.blocks.length} · ${w.title}`}</Txt>
+          <Txt v="caption">{t('train.player.stepOf', { n: idx + 1, total })}</Txt>
         </View>
         <View style={{ width: 44 }} />
       </View>
+      <View style={s.track} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: total, now: idx + 1 }}>
+        <View style={[s.trackFill, { width: `${((idx + (started ? 1 : 0)) / total) * 100}%` }]} />
+      </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
-        <View style={s.clockWrap}>
-          <Txt v="label" size={14} color={over ? p.markerText : isRest ? p.aqua : p.inkSoft} style={lang === 'en' ? { textTransform: 'uppercase', letterSpacing: 1 } : null}>
-            {started && plan.mode === 'steps' && block.format === 'intervals' && !over ? (isRest ? t('train.player.rest') : t('train.player.work')) : started ? '' : t('train.player.ready')}
-          </Txt>
-          <Txt v="stencil" size={112} accessibilityLiveRegion="polite" color={over ? p.markerText : p.ink} style={{ fontVariant: ['tabular-nums'] }}>
-            {big}
-          </Txt>
-          <Txt v="headline" size={16} color={p.inkSoft} align="center">
-            {context}
-          </Txt>
-        </View>
-
-        {started && currentItem ? (
-          <View style={s.now}>
-            <Txt v="time" size={18} color={p.markerText}>
-              {currentItem.reps || ''}
-            </Txt>
-            <Txt v="title" size={26} align="center">
-              {currentItem.name}
-            </Txt>
-            {nextIdx != null && block.items[nextIdx] ? (
-              <Txt v="meta" align="center">
-                {t('train.player.upNext', { title: block.items[nextIdx].name })}
+      <ScrollView contentContainerStyle={s.body} showsVerticalScrollIndicator={false}>
+        {blockClock || place ? (
+          <View style={s.placeRow}>
+            {place ? (
+              <Txt v="label" size={13} color={p.inkSoft} style={{ flex: 1 }}>
+                {place}
               </Txt>
+            ) : (
+              <View style={{ flex: 1 }} />
+            )}
+            {blockClock ? (
+              <View style={[s.pill, blockOver ? { borderColor: p.marker } : null]}>
+                <Txt v="time" size={14} color={blockOver ? p.markerText : p.ink}>
+                  {blockClock}
+                </Txt>
+              </View>
             ) : null}
           </View>
         ) : null}
 
-        {started && plan.counts ? (
-          <View style={s.rounds}>
-            <View style={{ flex: 1, gap: 6 }}>
-              <Txt v="headline">{tn('train.player.roundsDone', myRounds)}</Txt>
-              {myRounds > 0 && myRounds <= 20 ? <Tally count={myRounds} capacity={plan.rounds > myRounds ? plan.rounds : null} size={18} /> : null}
+        {/* The move's picture; its video goes here once the library has them. */}
+        {ex?.posterUrl ? <Image source={{ uri: ex.posterUrl }} style={s.media} resizeMode="cover" accessibilityIgnoresInvertColors /> : null}
+
+        <View style={s.hero}>
+          <Txt v="title" size={34} align="center" accessibilityRole="header">
+            {isRest ? t('train.player.rest') : step.name}
+          </Txt>
+
+          {step.secs && !step.dose ? (
+            <Txt v="stencil" size={120} accessibilityLiveRegion="polite" color={isRest ? p.aqua : p.ink} style={{ fontVariant: ['tabular-nums'] }}>
+              {clock(started ? stepLeft : step.secs)}
+            </Txt>
+          ) : (
+            <View style={{ alignItems: 'center' }}>
+              <Txt v="stencil" size={countOnly ? 120 : 64} align="center" color={p.markerText}>
+                {step.dose || ''}
+              </Txt>
+              {countOnly ? (
+                <Txt v="headline" size={18} color={p.inkSoft}>
+                  {tn('train.player.repsWord', Number(step.dose))}
+                </Txt>
+              ) : null}
+              {step.secs ? (
+                <Txt v="time" size={22} color={p.inkSoft} style={{ marginTop: 10 }}>
+                  {clock(started ? stepLeft : step.secs)}
+                </Txt>
+              ) : null}
+              {step.minute ? <Txt v="meta">{t('train.player.restOfMinute')}</Txt> : null}
             </View>
-            <OutlineButton label={t('train.player.addRound')} onPress={addRound} style={{ minWidth: 130 }} />
+          )}
+
+          {step.note ? (
+            <Txt v="body" color={p.inkSoft} align="center">
+              {step.note}
+            </Txt>
+          ) : null}
+        </View>
+
+        {ex && ex.cues.length ? (
+          <View style={s.cues}>
+            {ex.cues.slice(0, 2).map((c) => (
+              <View key={c} style={{ flexDirection: 'row', gap: 10 }}>
+                <Txt v="body" color={p.markerText}>
+                  •
+                </Txt>
+                <Txt v="body" style={{ flex: 1 }}>
+                  {c}
+                </Txt>
+              </View>
+            ))}
+            <TextButton label={t('ex.howTo')} onPress={() => setExSlug(step.ex)} />
           </View>
         ) : null}
 
-        <View style={{ marginTop: 22 }}>
-          <BlockView b={block} highlight={started ? current : null} onExercise={setExSlug} />
-        </View>
-        {!isLast ? (
-          <Txt v="meta" style={{ marginTop: 16 }}>
-            {t('train.player.upNext', { title: w.blocks[blockIdx + 1].title })}
+        {block.note && !isRest ? (
+          <Txt v="meta" align="center" style={{ marginTop: 14 }}>
+            {block.note}
           </Txt>
         ) : null}
       </ScrollView>
 
       <View style={[s.bar, { paddingBottom: 12 + insets.bottom }]}>
+        {after ? (
+          <Txt v="meta" numberOfLines={1} style={{ marginBottom: 10 }}>
+            {t('train.player.upNext', { title: [after.kind === 'rest' ? t('train.player.rest') : after.name, doseOf(after)].filter(Boolean).join(' · ') })}
+          </Txt>
+        ) : null}
         {!started ? (
-          <MarkerButton label={blockIdx === 0 ? t('train.start') : t('train.player.startBlock', { title: block.title })} icon="play" onPress={start} />
+          <MarkerButton label={t('train.start')} icon="play" onPress={start} />
         ) : (
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <OutlineButton
-              label={pausedAt == null ? t('train.player.pause') : t('train.player.resume')}
-              icon={pausedAt == null ? 'pause' : 'play'}
-              onPress={togglePause}
-              style={{ flex: 1 }}
-            />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <IconButton name="back" label={t('train.player.previous')} onPress={previous} color={idx > 0 ? p.ink : p.inkFaint} style={s.round} />
+            <IconButton name={pausedAt == null ? 'pause' : 'play'} label={pausedAt == null ? t('train.player.pause') : t('train.player.resume')} onPress={togglePause} style={s.round} />
             {isLast ? (
-              <MarkerButton label={t('train.player.finish')} icon="check" onPress={finish} style={{ flex: 1.3 }} />
+              <MarkerButton label={t('train.player.finish')} icon="check" onPress={finish} style={{ flex: 1 }} />
             ) : (
-              <MarkerButton label={t('train.player.next')} icon="next" onPress={nextBlock} style={{ flex: 1.3 }} />
+              <MarkerButton label={t('train.player.next')} icon="next" onPress={() => next()} style={{ flex: 1 }} />
             )}
           </View>
         )}
@@ -310,11 +324,10 @@ export default function PlayScreen() {
         blocks={w.blocks}
         meId={meId}
         startedAt={new Date(startedAt ?? Date.now())}
-        activeSecs={startedAt ? ((endedAt ?? Date.now()) - startedAt - totalPausedMs) / 1000 : 0}
+        activeSecs={startedAt ? ((endedAt ?? Date.now()) - startedAt - pausedMs) / 1000 : 0}
         suggested={(() => {
-          // The result is the main piece's rounds (the AMRAP, not the warm-up).
-          const main = w.blocks.findIndex((b) => b.format === w.format && planOf(b).counts);
-          const r = main >= 0 ? rounds[main] ?? 0 : Math.max(0, ...w.blocks.map((_, i) => rounds[i] ?? 0));
+          // The result of an as-many-rounds workout is the rounds finished.
+          const r = Math.max(0, ...guide.blocks.filter((b) => b.loop).map((b) => laps[b.idx] ?? 0));
           return r > 0 ? tn('train.player.roundsDone', r) : '';
         })()}
         onSaved={() => {
@@ -528,9 +541,15 @@ function LogSheet({
 
 const useStyles = makeStyles(({ p }) => ({
   screen: { flex: 1, backgroundColor: p.board },
-  top: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: p.rule },
-  clockWrap: { alignItems: 'center', paddingTop: 22, paddingBottom: 6, gap: 2 },
-  now: { alignItems: 'center', gap: 4, paddingVertical: 16, marginTop: 12, borderTopWidth: 1.5, borderBottomWidth: 1.5, borderColor: p.ruleStrong },
-  rounds: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 16, paddingVertical: 12, borderTopWidth: 1, borderBottomWidth: 1, borderColor: p.rule },
+  top: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingBottom: 6 },
+  track: { height: 4, backgroundColor: p.rule },
+  trackFill: { height: 4, backgroundColor: p.marker },
+  body: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 30 },
+  placeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 30 },
+  pill: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 16, borderWidth: 1.5, borderColor: p.ruleStrong },
+  media: { width: '100%', aspectRatio: 16 / 9, borderRadius: 14, backgroundColor: p.wash, marginTop: 12 },
+  hero: { alignItems: 'center', gap: 6, paddingTop: 26, paddingBottom: 10 },
+  cues: { gap: 8, marginTop: 14, paddingTop: 16, borderTopWidth: 1, borderTopColor: p.rule },
   bar: { paddingHorizontal: 20, paddingTop: 12, backgroundColor: p.boardDeep, borderTopWidth: 1, borderTopColor: p.rule },
+  round: { width: 54, height: 54, borderRadius: 12, borderWidth: 1.5, borderColor: p.ruleStrong, alignItems: 'center', justifyContent: 'center' },
 }));
