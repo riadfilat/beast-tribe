@@ -135,7 +135,7 @@ export default function ForCompaniesPage() {
             <p className="mt-6 text-white/75 text-lg leading-relaxed">Pay for the people who join, not your whole headcount. Free for employees. Prices exclude VAT.</p>
           </div>
           <ul className="grid grid-cols-2 gap-3">
-            {[`${TRIAL_DAYS} days free`, 'No setup fee', 'Cancel any time', 'Nutritionist and gyms can be added'].map((p) => (
+            {[`${TRIAL_DAYS} days free`, 'No setup fee', 'Cancel any time', 'Nutritionist and gyms can be added', 'A Beast Captain to host weekly sessions, by the hour'].map((p) => (
               <li key={p} className="rounded-xl border border-white/15 px-4 py-4 text-sm font-medium">
                 {p}
               </li>
@@ -153,6 +153,10 @@ export default function ForCompaniesPage() {
               { q: 'How do employees join?', a: 'They download the app and enter your company code. Only your admins can share the code or invite people.' },
               { q: 'Is taking part optional?', a: 'Yes. Joining the community, each session and each challenge is the employee’s choice. Nothing is tracked until they opt in.' },
               { q: 'Which phones does it work on?', a: 'iPhone first; Android is next. Step counts come from Apple Health. Every other challenge counts what people do in the app, so it needs no health data at all.' },
+              {
+                q: 'Who sets up the sessions?',
+                a: 'Your people can, and many do. If you want it handled, add a Beast Captain: a coach we assign who hosts three open sessions a week for your employees. Anyone can drop in, with no pressure if they can’t make it. It is paid by the hour, only for sessions that were held, on top of the seat price.',
+              },
               { q: 'Can we have women-only groups?', a: 'Yes. Packs and sessions can be women only or men only.' },
               { q: 'How do we start?', a: 'Most companies start with one four-week team challenge. It fits inside the free trial, and you see the numbers before you pay anything.' },
             ].map((f) => (

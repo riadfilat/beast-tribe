@@ -38,6 +38,7 @@ export function SessionTags({ s, now }: { s: Session; now: number }) {
   if (s.state === 'cancelled') tags.push(<Tag key="c" label={t('session.cancelled')} tone="danger" />);
   if (s.state === 'live') tags.push(<Tag key="l" label={t('session.live')} tone="marker" solid />);
   if (s.state !== 'cancelled' && s.isFull) tags.push(<Tag key="f" label={t('session.full')} tone="ink" />);
+  if (s.dropIn && s.state !== 'cancelled') tags.push(<Tag key="o" label={t('session.dropIn')} tone="marker" />);
   if (s.womenOnly) tags.push(<Tag key="w" label={t('session.womenOnly')} tone="coral" />);
   if (s.communityPrivate && s.communityName && !s.packOnly) tags.push(<Tag key="cm" icon="shield" label={s.communityName} tone="aqua" />);
   if (s.packOnly) tags.push(<Tag key="p" icon="lock" label={s.packName ? t('session.packOnly', { pack: s.packName }) : t('session.packOnlyGeneric')} tone="aqua" />);

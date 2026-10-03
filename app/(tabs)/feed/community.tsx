@@ -18,6 +18,7 @@ import { SessionRow, useNow } from '../../../src/components/board/session';
 import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
 import { CommunityHighlights, CommunityWellness } from '../../../src/components/board/wellness';
+import { CommunityCaptains } from '../../../src/components/board/captain';
 
 export default function CommunityScreen() {
   const s = useStyles();
@@ -109,6 +110,7 @@ export default function CommunityScreen() {
               </View>
             ) : null}
 
+            {c.isMember ? <CommunityCaptains communityId={c.id} /> : null}
             {c.isMember ? <CommunityHighlights communityId={c.id} name={c.name} onOpenPlan={(slug) => router.push({ pathname: '/program/[slug]', params: { slug } })} /> : null}
 
             <View style={{ marginTop: 14 }}>

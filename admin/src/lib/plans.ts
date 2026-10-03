@@ -112,6 +112,6 @@ export const PLAN_STATUS_LABEL: Record<string, string> = {
 };
 
 /** Everyone's promise, whatever the plan. */
-export const PROMISES = ['0% commission, ever', 'Members always free', `${TRIAL_DAYS}-day free trial`, 'Cancel any time'];
+export const PROMISES = ['0% commission on what you sell', 'Members always free', `${TRIAL_DAYS}-day free trial`, 'Cancel any time'];
 
 export const SALES_EMAIL = 'support@operationbeast.com';

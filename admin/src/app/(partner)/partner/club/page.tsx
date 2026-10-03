@@ -6,7 +6,8 @@ import { PLAN_STATUS_LABEL, planOf } from '@/lib/plans';
 import { Icon } from '@/components/ui/Icon';
 import SubmitButton from '@/components/SubmitButton';
 import { Avatar, FillBar, HeatMap, SectionTitle, Stat, StatusChip, WeekBars, btnGhost, btnPrimary, card } from '@/components/club/ui';
-import { createClub, newClubCode, saveCommunityPage } from './actions';
+import { createClub, newClubCode, requestCaptain, saveCommunityPage } from './actions';
+import { loadCaptains, loadStatement, monthRange, sar } from '@/lib/captains';
 import { loadBoard, loadChallenges, loadStepsSummary, stateOf, fmtDate, fmtScore } from '@/lib/wellness';
 import { createAdminClient } from '@/lib/supabase-server';
 import { input, label } from '@/components/club/ui';
@@ -29,6 +30,16 @@ export default async function ClubPage() {
     db.from('programs').select('id, title, weeks, days_per_week').eq('status', 'published').order('sort'),
   ]);
   const page: any = pageRow || {};
+  const thisMonth = monthRange();
+  const [captainRows, captainMonth, { data: captainAsk }] = await Promise.all([
+    loadCaptains(partner.community_id),
+    loadStatement(thisMonth.from, thisMonth.to, partner.community_id),
+    db.from('partner_leads').select('id').eq('partner_id', partner.partner_id).eq('source', 'captain request').in('status', ['new', 'contacted', 'demo']).limit(1),
+  ]);
+  const captains = captainRows.filter((c) => c.active);
+  const captainHours = captainMonth.reduce((t, r) => t + r.hours, 0);
+  const captainCost = captainMonth.reduce((t, r) => t + r.billed, 0);
+  const captainJoined = captainMonth.reduce((t, r) => t + r.joined, 0);
   const live = challenges.find((c) => stateOf(c) === 'live') || challenges.find((c) => stateOf(c) === 'upcoming') || null;
   const top = live ? (await loadBoard(live.id)).slice(0, 5) : [];
 
@@ -159,6 +170,78 @@ export default async function ClubPage() {
         </div>
       </section>
 
+
+      {/* Beast Captain: open sessions every week, hosted for you */}
+      <section className={`${card} p-5`}>
+        <SectionTitle title={captains.length > 1 ? 'Your Beast Captains' : 'Your Beast Captain'} />
+        {captains.length ? (
+          <div className="grid md:grid-cols-2 gap-5 items-start">
+            <ul className="space-y-3">
+              {captains.map((c) => (
+                <li key={c.userId} className="flex items-center gap-3">
+                  <Avatar name={c.name} src={c.avatarUrl} size={40} />
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-sm font-semibold text-gray-900 truncate">{c.name}</span>
+                    <span className="block text-xs text-gray-500">
+                      {c.target} open sessions a week{c.rate !== null ? ` · ${sar(c.rate)} an hour` : ''}
+                    </span>
+                  </span>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${c.thisWeek < c.target ? 'bg-[#FDF2E3] text-[#8A4F0B]' : 'bg-[#E8F5EE] text-[#25704F]'}`}>
+                    {c.thisWeek} of {c.target} this week
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <div className="rounded-lg bg-gray-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">{thisMonth.label} so far</p>
+              <div className="mt-2 grid grid-cols-3 gap-3">
+                <div>
+                  <p className="text-2xl font-bold tabular-nums text-brand-teal">{captainHours.toFixed(1)}</p>
+                  <p className="text-xs text-gray-500">Hours held</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold tabular-nums text-brand-teal">{captainJoined}</p>
+                  <p className="text-xs text-gray-500">Times people joined</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold tabular-nums text-brand-teal">{sar(captainCost)}</p>
+                  <p className="text-xs text-gray-500">Billed by the hour</p>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-gray-400">You pay only for sessions that were held. Cancelled sessions cost nothing. This is billed separately from your plan.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-5 gap-5 items-start">
+            <div className="md:col-span-3 text-sm text-gray-600 space-y-2">
+              <p>
+                A quiet board is the main reason a new {isCompany ? 'community' : 'club'} stalls. A Beast Captain is a vetted coach we assign to you who puts <strong className="text-gray-900">three open sessions a week</strong> on
+                your board, so there is always something to join.
+              </p>
+              <ul className="space-y-1 text-gray-600">
+                <li>· Open sessions: no limit, no waitlist, and no pressure on anyone who can&apos;t make it.</li>
+                <li>· We follow up every week so the sessions are really there.</li>
+                <li>· Paid by the hour, only for sessions that were held. Separate from your plan.</li>
+              </ul>
+            </div>
+            <form action={requestCaptain} className="md:col-span-2 space-y-3">
+              {captainAsk?.length ? (
+                <p className="rounded-lg bg-[#E8F5EE] text-[#25704F] text-sm px-4 py-3">We have your request. We&apos;ll come back to you within one working day with a coach and an hourly rate.</p>
+              ) : (
+                <>
+                  <div>
+                    <label className={label} htmlFor="cap-wish">What would suit your people? (optional)</label>
+                    <textarea id="cap-wish" name="wish" rows={3} maxLength={1500} className={input} placeholder="Running and padel, evenings after 6, women-only on Tuesdays…" />
+                  </div>
+                  <SubmitButton pendingLabel="Sending…" className={`${btnPrimary} w-full`}>
+                    Ask for a Beast Captain
+                  </SubmitButton>
+                </>
+              )}
+            </form>
+          </div>
+        )}
+      </section>
 
       {/* Wellness */}
       <section className={`${card} p-5`}>

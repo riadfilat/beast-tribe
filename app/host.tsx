@@ -10,6 +10,7 @@ import { useAuth } from '../src/providers/AuthProvider';
 import { hostSession, SessionError } from '../src/data/sessions';
 import { useCoaches, useMyPackList, useMySports, usePopularSpots } from '../src/data/member';
 import { useMyCommunities } from '../src/data/communities';
+import { useMyCaptaincies } from '../src/data/captains';
 import { PREVIEW, PREVIEW_ME } from '../src/data/preview';
 import { SPORT_LIST, SportId } from '../src/lib/sports';
 import { PAYMENTS_ENABLED, SESSION_LINK_BASE } from '../src/lib/constants';
@@ -75,6 +76,8 @@ export default function HostScreen() {
   const [duration, setDuration] = useState(60);
   const [level, setLevel] = useState<'any' | 'easy' | 'medium' | 'hard'>('any');
   const [womenOnly, setWomenOnly] = useState(false);
+  const [dropIn, setDropIn] = useState(true);
+  const [repeat, setRepeat] = useState<'1' | '4' | '8'>('1');
   // Every session lives somewhere: one of my communities or one of my packs.
   const [audience, setAudience] = useState<{ kind: 'community' | 'pack'; id: string } | null>(
     params.pack ? { kind: 'pack', id: params.pack } : params.community ? { kind: 'community', id: params.community } : null,
@@ -96,6 +99,9 @@ export default function HostScreen() {
   const packId = where?.kind === 'pack' ? where.id : null;
   const communityId = where?.kind === 'community' ? where.id : null;
   const coachSlots = useCoachSlots(coachId, dayKey).data ?? [];
+  // A Beast Captain hosting in their community: open sessions, repeated weekly.
+  const captaincy = (useMyCaptaincies().data ?? []).find((c) => c.communityId === communityId) ?? null;
+  const open = !!captaincy && dropIn;
 
   // Preselect a spot handed over from the board.
   useEffect(() => {
@@ -174,7 +180,9 @@ export default function HostScreen() {
         city,
         lat: spot?.lat ?? null,
         lng: spot?.lng ?? null,
-        capacity: spotsCount,
+        capacity: open ? null : spotsCount,
+        dropIn: open,
+        repeatWeeks: captaincy ? Number(repeat) : 1,
         difficulty: level === 'any' ? null : level,
         womenOnly,
         packId,
@@ -386,8 +394,27 @@ export default function HostScreen() {
         <SectionHeading title={t('host.name')} style={s.gap} />
         <Field value={name} onChangeText={setName} placeholder={t('host.namePlaceholder', { example })} maxLength={80} />
 
-        <SectionHeading title={t('host.spots')} style={s.gap} />
-        <View style={s.stepper}>
+        {captaincy ? (
+          <View style={{ gap: 10 }}>
+            <SectionHeading title={t('captain.hostTitle')} style={s.gap} />
+            <Group>
+              <GroupRow label={t('captain.openSession')} sub={t('captain.openSessionSub')} toggle={dropIn} onToggle={setDropIn} />
+            </Group>
+            <Segmented
+              options={[
+                { value: '1', label: t('captain.once') },
+                { value: '4', label: t('captain.weeks', { n: 4 }) },
+                { value: '8', label: t('captain.weeks', { n: 8 }) },
+              ]}
+              value={repeat}
+              onChange={setRepeat}
+            />
+            <Txt v="caption">{t('captain.weekHint', { have: captaincy.thisWeek, target: captaincy.target })}</Txt>
+          </View>
+        ) : null}
+
+        {open ? null : <SectionHeading title={t('host.spots')} style={s.gap} />}
+        <View style={[s.stepper, open ? { display: 'none' } : null]}>
           <Press
             onPress={() => { setSpotsTouched(true); setSpotsCount((n) => (n == null ? null : n <= 2 ? null : n - 1)); }}
             feedback="selection"

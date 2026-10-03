@@ -218,6 +218,10 @@ export interface HostInput {
   /** A workout from Train as the session's plan. */
   workoutId?: string | null;
   coachName?: string | null;
+  /** An open session (captains): come if you can. */
+  dropIn?: boolean;
+  /** Repeat weekly for this many weeks in total (captains). */
+  repeatWeeks?: number;
   notes?: string;
   /** http(s) URL (popular spot photo) or a local file to upload */
   cover?: string | null;
@@ -243,18 +247,16 @@ export async function hostSession(meId: string, input: HostInput): Promise<{ id:
     }
   }
   const endsAt = new Date(input.startsAt.getTime() + input.durationMin * 60000);
-  const { data, error } = await supabase
-    .from('events')
-    .insert({
+  const row = (week: number, series: string | null) => ({
       title: input.title.trim(),
       event_type: input.sport,
-      starts_at: input.startsAt.toISOString(),
-      ends_at: endsAt.toISOString(),
+      starts_at: new Date(input.startsAt.getTime() + week * 7 * 86400000).toISOString(),
+      ends_at: new Date(endsAt.getTime() + week * 7 * 86400000).toISOString(),
       location_name: input.place?.trim() || null,
       location_city: input.city?.trim() || null,
       location_lat: input.lat ?? null,
       location_lng: input.lng ?? null,
-      max_capacity: input.capacity ?? null,
+      max_capacity: input.dropIn ? null : input.capacity ?? null,
       difficulty: input.difficulty ?? null,
       is_women_only: !!input.womenOnly,
       pack_id: input.packId ?? null,
@@ -267,11 +269,23 @@ export async function hostSession(meId: string, input: HostInput): Promise<{ id:
       image_url: imageUrl,
       country: input.country,
       created_by: meId,
-    })
-    .select('id')
-    .single();
+      drop_in: !!input.dropIn,
+      class_series_id: series,
+  });
+  const { data, error } = await supabase.from('events').insert(row(0, null)).select('id').single();
   if (error) throw toSessionError(error);
-  await supabase.from('event_rsvps').upsert({ event_id: data.id, user_id: meId, status: 'going' }, { onConflict: 'event_id,user_id' });
+  const ids = [data.id];
+  // The same slot for the following weeks, tied together as one series.
+  const weeks = Math.min(12, Math.max(1, Math.round(input.repeatWeeks ?? 1)));
+  if (weeks > 1) {
+    await supabase.from('events').update({ class_series_id: data.id }).eq('id', data.id);
+    const { data: more } = await supabase
+      .from('events')
+      .insert(Array.from({ length: weeks - 1 }, (_, i) => row(i + 1, data.id)))
+      .select('id');
+    (more || []).forEach((m: any) => ids.push(m.id));
+  }
+  await supabase.from('event_rsvps').upsert(ids.map((id) => ({ event_id: id, user_id: meId, status: 'going' })), { onConflict: 'event_id,user_id' });
   invalidate('sessions:');
   return { id: data.id, photoFailed };
 }

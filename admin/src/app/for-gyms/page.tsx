@@ -204,6 +204,13 @@ export default function ForGymsPage() {
                   <span className="text-sm text-white/60"> SAR / month</span>
                 </p>
               </div>
+              <div className="rounded-2xl p-6 border border-dashed border-white/20">
+                <p className="text-[#56C4C4] text-xs font-semibold uppercase tracking-[0.18em]">Optional add-on</p>
+                <h3 className={`${H} mt-1 text-xl font-extrabold`}>A Beast Captain for your club</h3>
+                <p className="mt-1 text-sm text-white/60">
+                  A coach we assign who puts three open sessions a week on your board, so there is always something to join. Paid by the hour, only for sessions that were held.
+                </p>
+              </div>
               <p className="text-xs text-white/45">Prices exclude VAT. Pay yearly and get two months free ({sar(gymPlans[0].monthly! * 10)} a year for Studio).</p>
             </div>
           </div>
@@ -242,6 +249,10 @@ export default function ForGymsPage() {
               {
                 q: 'What can we see about our members?',
                 a: 'Activity in your club: bookings, check-ins, posts and sessions. What a member trains on their own, what they eat and their body measurements stay private, unless they choose to share with a coach.',
+              },
+              {
+                q: 'What is a Beast Captain?',
+                a: 'An optional extra. We assign a vetted coach to your club who hosts three open sessions a week that any member can drop into, and we follow up every week so they really happen. You pay by the hour, only for sessions that were held, separately from your plan.',
               },
               { q: 'Is it in Arabic?', a: 'Yes. The app is fully Arabic and English, right to left included.' },
               { q: 'What if it doesn’t work for us?', a: `You have ${TRIAL_DAYS} days free with everything open, and you can cancel any time after that.` },

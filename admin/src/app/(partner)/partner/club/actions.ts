@@ -278,3 +278,26 @@ export async function saveCommunityPage(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath('/partner/club');
 }
+
+/** Ask Beast Tribe for a Beast Captain: lands in the admin Leads pipeline. One open request at a time. */
+export async function requestCaptain(formData: FormData) {
+  const partner = await requirePartner();
+  if (!ownsCommunity(partner.partner_type)) throw new Error('Not available for this account');
+  const db = createAdminClient();
+  const { data: open } = await db.from('partner_leads').select('id').eq('partner_id', partner.partner_id).eq('source', 'captain request').in('status', ['new', 'contacted', 'demo']).limit(1);
+  if (!open?.length) {
+    const wish = ((formData.get('wish') as string) || '').trim().slice(0, 1500);
+    const { error } = await db.from('partner_leads').insert({
+      kind: partner.partner_type === 'company' ? 'company' : 'gym',
+      business_name: partner.business_name || 'Partner',
+      contact_name: partner.full_name || partner.business_name || 'Partner',
+      email: partner.email,
+      source: 'captain request',
+      message: wish || 'Asked for a Beast Captain from the portal.',
+      partner_id: partner.partner_id,
+    });
+    if (error) throw new Error(error.message);
+  }
+  revalidatePath('/partner/club');
+  revalidatePath('/leads');
+}

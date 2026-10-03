@@ -83,6 +83,9 @@ export default async function LeadsPage({ searchParams }: { searchParams: { stat
                   ) : null}
                 </p>
                 {l.message ? <p className="text-sm text-gray-500 mt-2">{l.message}</p> : null}
+                {l.source === 'captain request' ? (
+                  <Link href="/captains" className="inline-block mt-3 me-4 text-sm font-semibold text-[#B86A10] hover:underline">Assign a Beast Captain</Link>
+                ) : null}
                 {l.partner_id ? (
                   <Link href={`/partners/${l.partner_id}`} className="inline-block mt-3 text-sm text-brand-aqua hover:underline">Open partner account</Link>
                 ) : (

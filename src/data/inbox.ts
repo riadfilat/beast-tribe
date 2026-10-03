@@ -12,6 +12,7 @@ export interface InboxItem {
   eventId: string | null;
   eventTitle: string | null;
   postId: string | null;
+  communityId: string | null;
   read: boolean;
   createdAt: Date;
 }
@@ -26,6 +27,7 @@ function toItem(r: any): InboxItem {
     eventId: d.event_id ?? null,
     eventTitle: d.event_title ?? null,
     postId: d.post_id ?? null,
+    communityId: d.community_id ?? null,
     read: !!r.read_at,
     createdAt: new Date(r.created_at),
   };

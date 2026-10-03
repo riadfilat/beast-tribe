@@ -18,6 +18,7 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: 'dashboard' },
   { label: 'Business', href: '/business', icon: 'business' },
   { label: 'Leads', href: '/leads', icon: 'leads' },
+  { label: 'Captains', href: '/captains', icon: 'captain' },
   { label: 'Users', href: '/users', icon: 'users' },
   { label: 'Communities', href: '/communities', icon: 'communities' },
   { label: 'Events', href: '/events', icon: 'events' },

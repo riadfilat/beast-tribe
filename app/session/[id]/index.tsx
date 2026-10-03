@@ -333,7 +333,7 @@ export default function SessionScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 }}>
                 <Magnet person={x.host} size={28} yours={x.host.id === meId} />
                 <Txt v="meta" size={14}>
-                  {t('session.hostedBy', { name: x.host.id === meId ? t('common.you') : x.host.name })}
+                  {t(x.captainHosted ? 'session.hostedByCaptain' : 'session.hostedBy', { name: x.host.id === meId ? t('common.you') : x.host.name })}
                 </Txt>
               </View>
             ) : null}
@@ -409,7 +409,14 @@ export default function SessionScreen() {
         ) : x.isFull ? (
           <OutlineButton label={t('session.joinWaitlist')} icon="hourglass" onPress={onJoin} loading={busy} />
         ) : (
-          <MarkerButton label={t('session.imIn')} onPress={onJoin} loading={busy} />
+          <>
+            {x.dropIn ? (
+              <Txt v="caption" align="center" style={{ marginBottom: 8 }}>
+                {t('session.dropInNote')}
+              </Txt>
+            ) : null}
+            <MarkerButton label={t('session.imIn')} onPress={onJoin} loading={busy} />
+          </>
         )}
       </View>
     </View>

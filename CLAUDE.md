@@ -115,12 +115,19 @@ User wants to launch the app to limited public testers via TestFlight.
 
 ## Session Log (append-only — newest at top)
 
+### 2026-10-03 (after midnight) — Beast Captains
+- User: assign someone ("beast coach or a cool name") to follow up and create activities three times a week when the community doesn't, easy to join, no pressure for a no-show; paid by the hour, outside the subscription, and Beast Tribe takes a cut from the coach. Named **Beast Captain** (Arabic: كابتن).
+- DB 053 (applied): community_captains (weekly_target, hourly_rate_sar, cut_pct; members may read who/where only), app_settings 'captain' {cut_pct: 20}, events.drop_in + events.captain_hosted (set by trigger, never by the client), bt_week_start() (Sunday, Riyadh), my_captaincies(), captain_statement(from, to) (service role), push texts captain_assigned / captain_nudge, bt_captain_nudges(). 054: pg_cron 'captain-nudges' Sun/Tue/Thu 09:00 Riyadh. 055: bt_user_id_by_email(), captain_week() (service role).
+- App: Board card for a captain (week against target, tap → Host in that community); Host shows "As Beast Captain": Open session (no capacity) + repeat weekly 4/8 weeks (class_series_id); sessions show an "Open session" tag, "Hosted by … · Beast Captain" and a no-pressure line above I'M IN; community page shows "Your Beast Captain"; inbox opens Host for captain notifications. Verified on web with a seeded test community (then deleted).
+- Admin: /captains (this week vs target, assign by the coach's app email, edit rate/share/end, standard share, monthly statement: hours, community pays, our share, captain gets; printable), Business page line, Leads link for 'captain request'. Portal: "Your Beast Captain" card on the overview (hours, joins, billed this month) or "Ask for a Beast Captain" (lands in Leads). /for-gyms and /for-companies mention the add-on; promise reworded to "0% commission on what you sell".
+- Logged-in admin/portal pages still not visually checked (no login available to me); `next build` passes.
+
 ### 2026-10-03 (late night) — Company wellness beyond steps
 - User: "for companies feels a bit too little, add something more than just the step challenge".
 - DB 052 (applied): challenges.metric steps|active_days|workouts|minutes|sessions + by_team + prize/prize_ar; community_teams + community_team_members (one team per member per community; choose_team()/leave_team() RPCs; cleared on leaving the community); bt_challenge_scores() (Riyadh days), challenge_board() now returns score (+steps alias) and team, challenge_team_board() ranks teams by average per entrant; communities.notice/notice_ar/notice_until/featured_program_id (column GRANT added — communities is read by column).
 - App (OTA 11812c20 → build 10): challenge card shows type, prize, Teams/People tabs; joining a team challenge asks for a team first; "Your team" row; community page shows the notice and "Plan of the month" (opens /program/[slug]). Apple Health is asked only for steps challenges. Verified on web with seeded data (then removed).
 - Portal: Challenges (what counts, team challenge, prize), Teams page, "Your page in the app" on the overview (notice + plan of the month), Monthly report (/partner/report, printable). /for-companies rewritten; exec brief "Why companies pay" slide now six points.
-- Proposed, NOT built (asked the user): anonymous weekly wellbeing pulse for HR (sensitive data).
+- Weekly wellbeing pulse for HR: user said "not for go-live" — parked until after launch.
 
 ### 2026-10-03 (night) — Scale rehearsal, privacy, commercial tooling, six-month plan
 - User: "make sure everything is scalable", make the app more competitive, build a commercial plan + 3–6 month guide.

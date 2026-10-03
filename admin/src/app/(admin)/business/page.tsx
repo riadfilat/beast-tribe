@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import { TARGETS, TARGET_DATE, YEAR_END_2027 } from '@/lib/targets';
+import { loadCaptains, loadStatement, monthRange } from '@/lib/captains';
 import SubmitButton from '@/components/SubmitButton';
 
 export const revalidate = 0;
@@ -46,6 +47,11 @@ export default async function BusinessPage() {
   const db = createAdminClient();
   const [{ data: o }, { data: links }] = await Promise.all([db.rpc('business_overview'), db.from('app_settings').select('value').eq('key', 'app_links').maybeSingle()]);
   const b: any = o || {};
+  const capMonth = monthRange();
+  const [capRows, capStatement] = await Promise.all([loadCaptains(), loadStatement(capMonth.from, capMonth.to)]);
+  const cap = capStatement.reduce((t, r) => ({ hours: t.hours + r.hours, billed: t.billed + r.billed, ours: t.ours + r.ourShare }), { hours: 0, billed: 0, ours: 0 });
+  const capActive = capRows.filter((c) => c.active);
+  const capBehind = capActive.filter((c) => c.thisWeek < c.target).length;
   const paying = b.paying || {};
   const leads = b.leads || {};
   const open = (leads.new || 0) + (leads.contacted || 0) + (leads.demo || 0);
@@ -149,6 +155,31 @@ export default async function BusinessPage() {
           </div>
         </div>
       </section>
+
+      <Link href="/captains" className={`${card} p-6 block hover:border-gray-200`}>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-semibold text-gray-900">Beast Captains, {capMonth.label}</h2>
+          <p className="text-xs text-gray-400">Paid by the hour, on top of subscriptions. Not counted in monthly recurring revenue.</p>
+        </div>
+        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="rounded-lg bg-gray-50 px-4 py-3">
+            <p className="text-2xl font-bold text-gray-900 tabular-nums">{capActive.length}</p>
+            <p className="text-xs text-gray-500">Captains{capBehind ? ` · ${capBehind} behind this week` : ''}</p>
+          </div>
+          <div className="rounded-lg bg-gray-50 px-4 py-3">
+            <p className="text-2xl font-bold text-gray-900 tabular-nums">{cap.hours.toFixed(1)}</p>
+            <p className="text-xs text-gray-500">Hours held</p>
+          </div>
+          <div className="rounded-lg bg-gray-50 px-4 py-3">
+            <p className="text-2xl font-bold text-gray-900 tabular-nums">{sar(cap.billed)}</p>
+            <p className="text-xs text-gray-500">Billed to communities</p>
+          </div>
+          <div className="rounded-lg bg-gray-50 px-4 py-3">
+            <p className="text-2xl font-bold text-[#147070] tabular-nums">{sar(cap.ours)}</p>
+            <p className="text-xs text-gray-500">Our share</p>
+          </div>
+        </div>
+      </Link>
 
       <section className={`${card} p-6`}>
         <h2 className="font-semibold text-gray-900">Pipeline</h2>
