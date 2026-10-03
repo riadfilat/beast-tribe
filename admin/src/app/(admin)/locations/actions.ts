@@ -75,6 +75,7 @@ export async function createLocation(formData: FormData) {
 
   const { error } = await db.from('popular_locations').insert({
     name,
+    name_ar: ((formData.get('name_ar') as string) || '').trim() || null,
     city,
     country,
     description,
@@ -108,6 +109,7 @@ export async function updateLocation(locationId: string, formData: FormData) {
   if (!name || !city) throw new Error('Name and city are required');
 
   updates.name = name;
+  updates.name_ar = ((formData.get('name_ar') as string) || '').trim() || null;
   updates.city = city;
   updates.country = ((formData.get('country') as string) || 'SA').trim();
   updates.description = ((formData.get('description') as string) || '').trim() || null;

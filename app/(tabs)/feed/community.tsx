@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { makeStyles, useKit } from '../../../src/theme';
 import { useI18n } from '../../../src/i18n';
+import { cityLabel } from '../../../src/lib/cities';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { leaveCommunity, useCommunity } from '../../../src/data/communities';
 import { useBoardSessions } from '../../../src/data/sessions';
@@ -23,7 +24,7 @@ import { CommunityCaptains } from '../../../src/components/board/captain';
 export default function CommunityScreen() {
   const s = useStyles();
   const { p } = useKit();
-  const { t, tn } = useI18n();
+  const { t, tn, lang } = useI18n();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
@@ -80,7 +81,7 @@ export default function CommunityScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   {!c.open ? <Icon name="lock" size={12} color={p.aqua} /> : null}
                   <Txt v="meta">
-                    {[c.open ? t('community.open') : t('community.private'), c.isDefault ? null : t(`community.kinds.${c.kind}`), c.city, tn('tribe.members', c.members)].filter(Boolean).join(' · ')}
+                    {[c.open ? t('community.open') : t('community.private'), c.isDefault ? null : t(`community.kinds.${c.kind}`), cityLabel(c.city, lang), tn('tribe.members', c.members)].filter(Boolean).join(' · ')}
                   </Txt>
                 </View>
               </View>

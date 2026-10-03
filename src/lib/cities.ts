@@ -11,6 +11,18 @@ export const CITIES: Record<string, [string, string][]> = {
   JO: [['Amman', 'عمّان'], ['Aqaba', 'العقبة'], ['Irbid', 'إربد']],
 };
 
+/** A known city in the reader's language ("Riyadh" ↔ "الرياض"); anything else is shown as written. */
+export function cityLabel(city: string | null | undefined, lang: string): string {
+  const k = cityKey(city);
+  if (!k) return '';
+  for (const list of Object.values(CITIES)) {
+    for (const pair of list) {
+      if (pair.some((n) => cityKey(n) === k)) return pair[lang === 'ar' ? 1 : 0];
+    }
+  }
+  return (city || '').trim();
+}
+
 /** Same normalisation as the database's bt_city_key(). */
 export const cityKey = (city?: string | null) => (city || '').trim().replace(/\s+/g, ' ').toLowerCase();
 

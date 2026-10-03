@@ -5,6 +5,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient';
 import { makeStyles, useKit } from '../../../src/theme';
 import { useI18n } from '../../../src/i18n';
+import { cityLabel } from '../../../src/lib/cities';
 import { clockParts, dayOffset, fmtClock, fmtDateLong, fmtDay, fmtDuration, fmtIn } from '../../../src/i18n/format';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { useSession, useSessionActions, SessionError } from '../../../src/data/sessions';
@@ -264,7 +265,7 @@ export default function SessionScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <View style={{ flex: 1 }}>
                 <Txt v="headline">{x.place || t(`sports.${x.sport}`)}</Txt>
-                {x.city ? <Txt v="meta">{x.city}</Txt> : null}
+                {x.city ? <Txt v="meta">{cityLabel(x.city, lang)}</Txt> : null}
               </View>
               {x.place ? <OutlineButton label={t('session.directions')} icon="directions" onPress={directions} style={{ height: 40 }} /> : null}
             </View>

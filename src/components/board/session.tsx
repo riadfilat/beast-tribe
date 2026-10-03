@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import Animated, { FadeOut, LinearTransition } from 'react-native-reanimated';
 import { useKit } from '../../theme';
 import { useI18n } from '../../i18n';
+import { cityLabel } from '../../lib/cities';
 import { clockParts, fmtClock, fmtDay, fmtIn } from '../../i18n/format';
 import type { Session } from '../../data/model';
 import { Txt } from './Txt';
@@ -27,8 +28,8 @@ export function sportLabel(t: (k: string) => string, sport: string) {
 }
 
 /** Place line: "Padel · Olaya Courts · Riyadh" */
-function placeLine(s: Session, t: (k: string) => string) {
-  return [sportLabel(t, s.sport), s.place, s.city].filter(Boolean).join(' · ');
+function placeLine(s: Session, t: (k: string) => string, lang: string) {
+  return [sportLabel(t, s.sport), s.place, cityLabel(s.city, lang)].filter(Boolean).join(' · ');
 }
 
 // ─── Tags for a session's state ─────────────────────────────────────────────
@@ -141,7 +142,7 @@ export function SessionRow({ s, size = 'normal', now, meId, showDay, rail = true
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <Icon sport={s.sport} size={14} color={p.inkSoft} />
         <Txt v="meta" numberOfLines={1} style={{ flex: 1 }}>
-          {placeLine(s, t)}
+          {placeLine(s, t, lang)}
         </Txt>
       </View>
       {statusLine ? (
@@ -183,7 +184,7 @@ export function SessionRow({ s, size = 'normal', now, meId, showDay, rail = true
         onPress={onPress}
         feedback="selection"
         depress={0.985}
-        accessibilityLabel={`${s.title}, ${fmtClock(s.startsAt, lang)}, ${placeLine(s, t)}`}
+        accessibilityLabel={`${s.title}, ${fmtClock(s.startsAt, lang)}, ${placeLine(s, t, lang)}`}
         style={{ flexDirection: 'row', alignItems: 'stretch' }}
       >
         {rail ? (

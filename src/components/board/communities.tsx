@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Image, View } from 'react-native';
 import { useKit } from '../../theme';
 import { useI18n } from '../../i18n';
+import { cityLabel } from '../../lib/cities';
 import { Community, CommunityError, joinCommunityByCode, joinOpenCommunity } from '../../data/communities';
 import { Txt } from './Txt';
 import { Icon } from './Icon';
@@ -38,9 +39,9 @@ function Tap({ onPress, style, children }: { onPress?: () => void; style: any; c
 /** One community on a list: tile, name, kind · city · members, and a trailing join or chevron. */
 export function CommunityRow({ c, onPress, onJoined, last }: { c: Community; onPress?: () => void; onJoined?: () => void; last?: boolean }) {
   const { p } = useKit();
-  const { t, tn } = useI18n();
+  const { t, tn, lang } = useI18n();
   const [busy, setBusy] = useState(false);
-  const meta = [c.open ? t('community.open') : t('community.private'), c.isDefault ? null : t(`community.kinds.${c.kind}`), c.city, tn('tribe.members', c.members)].filter(Boolean).join(' · ');
+  const meta = [c.open ? t('community.open') : t('community.private'), c.isDefault ? null : t(`community.kinds.${c.kind}`), cityLabel(c.city, lang), tn('tribe.members', c.members)].filter(Boolean).join(' · ');
 
   async function join() {
     setBusy(true);

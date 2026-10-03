@@ -9,6 +9,7 @@ import { useAuth } from '../../../src/providers/AuthProvider';
 import { useBoardSessions, useMySessions, useSessionActions, SessionError } from '../../../src/data/sessions';
 import { useUnreadCount } from '../../../src/data/inbox';
 import { usePopularSpots } from '../../../src/data/member';
+import { cityLabel } from '../../../src/lib/cities';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import type { Session } from '../../../src/data/model';
 import { Txt } from '../../../src/components/board/Txt';
@@ -36,7 +37,7 @@ export default function BoardScreen() {
   const unread = useUnreadCount();
   const now = useNow();
   const country = profile?.region || 'SA';
-  const spots = usePopularSpots(country);
+  const spots = usePopularSpots(country, lang);
   const { join } = useSessionActions();
   const myPlan = useMyPlan(lang).data;
   const [joiningId, setJoiningId] = useState<string | null>(null);
@@ -235,10 +236,10 @@ export default function BoardScreen() {
 
 function countLabel(n: number, lang: string) {
   if (lang === 'ar') {
-    if (n === 1) return 'تمرين واحد';
-    if (n === 2) return 'تمرينان';
-    if (n % 100 >= 3 && n % 100 <= 10) return `${n} تمارين`;
-    return `${n} تمرينًا`;
+    if (n === 1) return 'جلسة واحدة';
+    if (n === 2) return 'جلستان';
+    if (n % 100 >= 3 && n % 100 <= 10) return `${n} جلسات`;
+    return `${n} جلسة`;
   }
   return `${n} session${n === 1 ? '' : 's'}`;
 }
@@ -246,7 +247,7 @@ function countLabel(n: number, lang: string) {
 // ─── Empty board: the cold start ────────────────────────────────────────────
 function EmptyBoard({ spots, onHost, onTrain }: { spots: { id: string; name: string; city: string; imageUrl: string | null }[]; onHost: (spotId?: string) => void; onTrain: () => void }) {
   const s = useStyles();
-  const { p } = useKit();
+  const { p, lang } = useKit();
   const { t } = useI18n();
   return (
     <View style={s.empty}>
@@ -274,7 +275,7 @@ function EmptyBoard({ spots, onHost, onTrain }: { spots: { id: string; name: str
                 <Txt v="label" size={14} numberOfLines={1} style={{ marginTop: 8 }}>
                   {spot.name}
                 </Txt>
-                <Txt v="caption">{spot.city}</Txt>
+                <Txt v="caption">{cityLabel(spot.city, lang)}</Txt>
               </Press>
             ))}
           </ScrollView>

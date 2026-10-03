@@ -115,6 +115,15 @@ User wants to launch the app to limited public testers via TestFlight.
 
 ## Session Log (append-only — newest at top)
 
+### 2026-10-04 — Arabic pass: one vocabulary, workout names, places
+- User: "double check the RTL, the Arabic journey is not smooth; naming of workouts needs to be double checked, some are wrong".
+- Finding: layout was already direction-safe (start/end everywhere, 999/999 strings translated). The roughness was wording: "session" was تمرين in 51 strings, جلسة in 15, حصة in 5, while تمرين also meant a workout and a single exercise.
+- ARABIC VOCABULARY (keep to it): session on the Board = جلسة · workout = تمرين · single exercise = حركة · gym class = حصة · plan = خطة · squat = سكوات · lunge = طعن · deadlift = الرفعة الميتة · row = سحب (تجديف only for the rowing machine) · kettlebell = كيتل بل · band = شريط المقاومة · stretch = إطالة · calves = السمانة · الفخذ is feminine.
+- App: ~75 Arabic strings rewritten with feminine agreement for جلسة (tags مكتملة/جارية/ملغاة/انتهت); Board/profile counts; cities shown in the reader's language (`cityLabel` in src/lib/cities.ts); places use popular_locations.name_ar; "Done lately" shows the workout's current name in the reader's language (was the English title saved with the log).
+- DB 056 (applied): library workout titles/moves corrected ("Engine 20" → Hyrox Engine / تحمّل هايروكس, "No-Kit 15" → No-Kit Circuit / دائرة بدون معدات — the numbers were not the workout's length; "مزدحم 20" (crowded) → 20 دقيقة · اليوم N; "كور مع شريك" → تمرين البطن مع شريك, etc.). 057: popular_locations.name_ar (+ admin form field). 058: Arabic push text says جلسة.
+- scripts/exercises/lib/*.json: all 104 Arabic names on one glossary (63 renamed). scripts/programs/build.js: Arabic units inside set counts ("3 × 10 لكل جهة", was English), clearer workout titles, and it now UPDATES plan workouts in place (same week/day) instead of archiving and recreating them, so plans in progress keep their place. Both re-run against the database.
+- Not verifiable here: the iPhone itself (no Xcode on this Mac). Web in Arabic checked screen by screen: Board, Train, workout, exercise library, Explore, Tribe, You.
+
 ### 2026-10-03 (after midnight) — Beast Captains
 - User: assign someone ("beast coach or a cool name") to follow up and create activities three times a week when the community doesn't, easy to join, no pressure for a no-show; paid by the hour, outside the subscription, and Beast Tribe takes a cut from the coach. Named **Beast Captain** (Arabic: كابتن).
 - DB 053 (applied): community_captains (weekly_target, hourly_rate_sar, cut_pct; members may read who/where only), app_settings 'captain' {cut_pct: 20}, events.drop_in + events.captain_hosted (set by trigger, never by the client), bt_week_start() (Sunday, Riyadh), my_captaincies(), captain_statement(from, to) (service role), push texts captain_assigned / captain_nudge, bt_captain_nudges(). 054: pg_cron 'captain-nudges' Sun/Tue/Thu 09:00 Riyadh. 055: bt_user_id_by_email(), captain_week() (service role).

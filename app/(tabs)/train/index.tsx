@@ -32,7 +32,7 @@ export default function TrainScreen() {
   const { t, tn } = useI18n();
   const router = useRouter();
   const q = useWorkouts(lang);
-  const logs = useMyWorkoutLogs(5).data ?? [];
+  const logs = useMyWorkoutLogs(5, lang).data ?? [];
   const moves = useExercises(lang).data?.size ?? 0;
   const { user, profile } = useAuth();
   const prof: any = profile;

@@ -98,14 +98,14 @@ export interface Spot {
   lat: number | null;
   lng: number | null;
 }
-export function usePopularSpots(country: string) {
-  return useQuery<Spot[]>(`spots:${country}`, async () => {
+export function usePopularSpots(country: string, lang: string = 'en') {
+  return useQuery<Spot[]>(`spots:${country}:${lang}`, async () => {
     const rows: any[] = PREVIEW
       ? previewLocations
       : (
           await supabase
             .from('popular_locations')
-            .select('id, name, city, country, sports, image_url, latitude, longitude, sort_order')
+            .select('id, name, name_ar, city, country, sports, image_url, latitude, longitude, sort_order')
             .eq('is_active', true)
             .order('sort_order', { ascending: true })
         ).data || [];
@@ -113,7 +113,7 @@ export function usePopularSpots(country: string) {
       .sort((a, b) => Number(b.country === country) - Number(a.country === country))
       .map((r) => ({
         id: r.id,
-        name: r.name,
+        name: (lang === 'ar' && r.name_ar) || r.name,
         city: r.city,
         sports: (r.sports || []).map((s: string) => sportIdOf(s)),
         imageUrl: r.image_url || null,

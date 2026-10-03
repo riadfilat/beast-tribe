@@ -11,6 +11,7 @@ import { hostSession, SessionError } from '../src/data/sessions';
 import { useCoaches, useMyPackList, useMySports, usePopularSpots } from '../src/data/member';
 import { useMyCommunities } from '../src/data/communities';
 import { useMyCaptaincies } from '../src/data/captains';
+import { cityLabel } from '../src/lib/cities';
 import { PREVIEW, PREVIEW_ME } from '../src/data/preview';
 import { SPORT_LIST, SportId } from '../src/lib/sports';
 import { PAYMENTS_ENABLED, SESSION_LINK_BASE } from '../src/lib/constants';
@@ -56,7 +57,7 @@ export default function HostScreen() {
   const { user, profile } = useAuth();
   const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
   const country = profile?.region || 'SA';
-  const spots = usePopularSpots(country).data ?? [];
+  const spots = usePopularSpots(country, lang).data ?? [];
   const mySports = useMySports().data ?? [];
   const packs = useMyPackList().data ?? [];
   const communities = useMyCommunities().data ?? [];
@@ -374,7 +375,7 @@ export default function HostScreen() {
                     {x.name}
                   </Txt>
                   <Txt v="caption" size={11}>
-                    {x.city}
+                    {cityLabel(x.city, lang)}
                   </Txt>
                 </View>
                 {spotId === x.id ? (

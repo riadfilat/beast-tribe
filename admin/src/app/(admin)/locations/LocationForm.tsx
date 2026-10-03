@@ -6,6 +6,7 @@ import SubmitButton from '@/components/SubmitButton';
 import { Icon } from '@/components/ui/Icon';
 
 interface Location {
+  name_ar?: string | null;
   id?: string;
   name?: string;
   city?: string;
@@ -93,6 +94,20 @@ export default function LocationForm({ action, location, communities = [] }: Loc
           placeholder="e.g. Wadi Hanifah Path, King Fahd Park, Leejam Olaya"
           className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-aqua focus:border-brand-aqua outline-none"
         />
+      </div>
+
+      {/* Arabic name */}
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-1.5">Name in Arabic</label>
+        <input
+          type="text"
+          name="name_ar"
+          dir="rtl"
+          defaultValue={location?.name_ar || ''}
+          placeholder="ممشى وادي حنيفة"
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-aqua focus:border-brand-aqua outline-none"
+        />
+        <p className="mt-1 text-xs text-gray-400">Shown to members who use the app in Arabic. Without it they see the English name.</p>
       </div>
 
       {/* City + Country */}

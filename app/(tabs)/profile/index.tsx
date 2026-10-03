@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { makeStyles, useKit } from '../../../src/theme';
 import { useI18n } from '../../../src/i18n';
+import { cityLabel } from '../../../src/lib/cities';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { useMyStats, useMySports, useMyPackList, saveAvatar } from '../../../src/data/member';
 import { useMyCommunities } from '../../../src/data/communities';
@@ -71,7 +72,7 @@ export default function YouScreen() {
 
   const facts = stats.data
     ? [
-        lang === 'ar' ? `${stats.data.attended} ${arCount(stats.data.attended, 'تمرين', 'تمرينان', 'تمارين', 'تمرينًا')}` : `${stats.data.attended} session${stats.data.attended === 1 ? '' : 's'}`,
+        lang === 'ar' ? `${stats.data.attended} ${arCount(stats.data.attended, 'جلسة', 'جلستان', 'جلسات', 'جلسة')}` : `${stats.data.attended} session${stats.data.attended === 1 ? '' : 's'}`,
         lang === 'ar' ? `نظّمت ${stats.data.hosted}` : `${stats.data.hosted} hosted`,
         lang === 'ar' ? `قابلت ${stats.data.met} ${arCount(stats.data.met, 'شخصًا', 'شخصين', 'أشخاص', 'شخصًا')}` : `met ${stats.data.met} ${stats.data.met === 1 ? 'person' : 'people'}`,
       ].join(' · ')
@@ -106,7 +107,7 @@ export default function YouScreen() {
               {name}
             </Txt>
             <Txt v="meta" size={14}>
-              {[stage ? t(`onboarding.levels.${stage}`) : null, profile?.city].filter(Boolean).join(' · ')}
+              {[stage ? t(`onboarding.levels.${stage}`) : null, cityLabel(profile?.city, lang)].filter(Boolean).join(' · ')}
             </Txt>
             {privateCommunities.length ? (
               <Press onPress={() => router.push({ pathname: '/(tabs)/feed', params: { tab: 'communities' } })} feedback="selection" style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>

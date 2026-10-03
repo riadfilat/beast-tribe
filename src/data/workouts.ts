@@ -307,13 +307,13 @@ export async function shareWorkout(meId: string, input: { logId: string; workout
 const previewLogs: WorkoutLog[] = [];
 
 /** The member's own training log, newest first. */
-export function useMyWorkoutLogs(limit = 10) {
+export function useMyWorkoutLogs(limit = 10, lang: string = 'en') {
   const me = useMe();
-  return useQuery<WorkoutLog[]>(me ? `workouts:logs:${me}` : null, async () => {
+  return useQuery<WorkoutLog[]>(me ? `workouts:logs:${me}:${lang}` : null, async () => {
     if (PREVIEW) return previewLogs.slice(0, limit);
     const { data, error } = await supabase
       .from('workout_logs')
-      .select('id, workout_id, title, duration_minutes, result, rpe, completed_at')
+      .select('id, workout_id, title, duration_minutes, result, rpe, completed_at, workout:workouts(title, title_ar)')
       .eq('user_id', me!)
       .order('completed_at', { ascending: false })
       .limit(limit);
@@ -321,7 +321,7 @@ export function useMyWorkoutLogs(limit = 10) {
     return (data || []).map((r: any) => ({
       id: r.id,
       workoutId: r.workout_id,
-      title: r.title || '',
+      title: (r.workout ? pick(lang, r.workout.title, r.workout.title_ar).trim() : '') || r.title || '',
       minutes: r.duration_minutes ?? null,
       result: r.result ?? null,
       rpe: r.rpe ?? null,

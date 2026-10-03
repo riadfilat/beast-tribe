@@ -1,7 +1,7 @@
 // Builds the Operation Beast programs from training templates and writes them to the database:
 // one library workout per program session (program_only, so they don't crowd the library),
-// plus programs and program_sessions. Re-running replaces the program's sessions and workouts
-// (finished logs keep their history; their program_session link is cleared by the FK).
+// plus programs and program_sessions. Re-running updates each session's workout in place (same
+// week and day), so plans in progress and finished logs keep their place.
 //
 // Principles used (ACSM progression models; NSCA; standard run-walk and taper practice):
 // - Progressive overload week to week, then a lighter recovery week (about 40–50% less volume).
@@ -22,7 +22,9 @@ const lib = Object.fromEntries(
 
 // ─── small helpers (EN + AR side by side) ─────────────────────────────────────
 const AR_DIGITS = (s) => s; // keep Western digits, as the app does
-const sets = (n, r) => [`${n} × ${r}`, `${n} × ${r}`];
+// Reps inside a set count carry their unit ("30–45 s", "40 m", "10 / side"): say it in Arabic too.
+const arUnits = (r) => String(r).replace(' / side', ' لكل جهة').replace(/ min$/, ' د').replace(/ s$/, ' ث').replace(/ km$/, ' كم').replace(/ m$/, ' م');
+const sets = (n, r) => [`${n} × ${r}`, `${n} × ${arUnits(r)}`];
 const secs = (n) => [`${n} s`, `${n} ث`];
 const mins = (n) => [`${n} min`, `${n} د`];
 const meters = (n) => (n >= 1000 && n % 1000 === 0 ? [`${n / 1000} km`, `${n / 1000} كم`] : [`${n} m`, `${n} م`]);
@@ -62,7 +64,7 @@ function strengthBase() {
   ]);
   const cool = (a, b) => block(COOL, 'flow', { minutes: 5 }, [item(a, perSide(secs(30))), item(b, perSide(secs(30)))]);
   const days = [
-    { key: 'A', focus: ['Squat + bench', 'قرفصاء + ضغط صدر'], build: (w) => [
+    { key: 'A', focus: ['Squat + bench', 'سكوات + ضغط صدر'], build: (w) => [
       warm([item('air_squat', ['10', '10'])]),
       block(MAIN, 'strength', {}, [
         item('back_squat', sets(...w.main), rir(w.rir, '2–3 min')),
@@ -72,7 +74,7 @@ function strengthBase() {
       ]),
       cool('hip_flexor_stretch', 'chest_stretch'),
     ] },
-    { key: 'B', focus: ['Hinge + press', 'انحناء + ضغط علوي'], build: (w) => [
+    { key: 'B', focus: ['Hinge + press', 'رفعة ميتة + ضغط كتف'], build: (w) => [
       warm([item('hip_hinge', ['10', '10'])]),
       block(MAIN, 'strength', {}, [
         item('romanian_deadlift', sets(...w.main), rir(w.rir, '2–3 min')),
@@ -106,7 +108,7 @@ function strengthBase() {
     ],
     sessions: W.flatMap((w, wi) => days.map((d, di) => ({
       week: wi + 1, day: di + 1, focus: d.focus,
-      title: [`Strength ${d.key} · Week ${wi + 1}`, `القوة ${'أبج'[di]} · الأسبوع ${wi + 1}`],
+      title: [`Strength ${d.key} · Week ${wi + 1}`, `تمرين القوة ${'أبج'[di]} · الأسبوع ${wi + 1}`],
       format: 'strength', difficulty: w.deload ? 'intermediate' : 'advanced', minutes: w.deload ? 40 : 55, equipment: ['barbell', 'bench', 'dumbbells'],
       blocks: d.build(w),
     }))),
@@ -120,8 +122,8 @@ function homeStrength() {
   const warm = block(WARM, 'flow', { minutes: 5 }, [item('jumping_jack', secs(60)), item('inchworm', ['5', '5']), item('worlds_greatest_stretch', perSide(['3', '3']))]);
   const cool = block(COOL, 'flow', { minutes: 4 }, [item('childs_pose', secs(45)), item('hip_flexor_stretch', perSide(secs(30)))]);
   const days = [
-    { key: 'A', focus: ['Squat + push', 'قرفصاء + دفع'], moves: (w) => [
-      item('goblet_squat', [String(w.reps), String(w.reps)], ['Air squat if no weight', 'قرفصاء بوزن الجسم إن لم يتوفر وزن']),
+    { key: 'A', focus: ['Squat + push', 'سكوات + ضغط'], moves: (w) => [
+      item('goblet_squat', [String(w.reps), String(w.reps)], ['Air squat if no weight', 'سكوات بوزن الجسم إن لم يتوفر وزن']),
       item('push_up', [String(Math.round(w.reps * 0.8)), String(Math.round(w.reps * 0.8))], ['On knees is fine', 'على الركبتين لا بأس']),
       item('dumbbell_row', perSide([String(w.reps), String(w.reps)])),
       item('glute_bridge', [String(w.reps + 5), String(w.reps + 5)]),
@@ -152,7 +154,7 @@ function homeStrength() {
     ],
     sessions: W.flatMap((w, wi) => days.map((d, di) => ({
       week: wi + 1, day: di + 1, focus: d.focus,
-      title: [`Home ${d.key} · Week ${wi + 1}`, `المنزل ${'أبج'[di]} · الأسبوع ${wi + 1}`],
+      title: [`Home Strength ${d.key} · Week ${wi + 1}`, `قوة منزلية ${'أبج'[di]} · الأسبوع ${wi + 1}`],
       format: 'rounds', difficulty: 'beginner', minutes: 30 + wi * 3, equipment: ['dumbbells'],
       blocks: [warm, block(MAIN, 'rounds', { rounds: w.r, note: rest }, d.moves(w)), cool],
     }))),
@@ -179,7 +181,7 @@ function padelFit() {
         item('med_ball_rotational_throw', perSide(['6', '6'])), item('jump_squat', ['6', '6']),
       ]),
       block(['Strength', 'القوة'], 'rounds', { rounds: w.r - 1, note: ['Rest 60 s between rounds', 'راحة 60 ث بين الجولات'] }, [
-        item('dumbbell_row', perSide(['10', '10'])), item('push_up', ['10', '10']), item('face_pull', ['15', '15'], ['Band works too', 'يمكن استخدام الحبل المطاطي']),
+        item('dumbbell_row', perSide(['10', '10'])), item('push_up', ['10', '10']), item('face_pull', ['15', '15'], ['Band works too', 'يمكن استخدام شريط المقاومة']),
         item('pallof_press', perSide(['10', '10'])), item('side_plank', perSide(secs(30))),
       ]),
       cool('lat_stretch', 'chest_stretch')] },
@@ -223,13 +225,13 @@ function first5k() {
     }
     sessions.push({
       week: wi + 1, day: di + 1, focus: di === 2 ? ['Longest run of the week', 'أطول جري في الأسبوع'] : ['Run-walk', 'جري ومشي'],
-      title: [`5K Run ${di + 1} · Week ${wi + 1}`, `جري 5 كم ${di + 1} · الأسبوع ${wi + 1}`],
+      title: [`5K Plan · Run ${di + 1} · Week ${wi + 1}`, `خطة 5 كم · الجري ${di + 1} · الأسبوع ${wi + 1}`],
       format: W[wi] ? 'intervals' : 'steady', difficulty: 'beginner', minutes, equipment: [],
       blocks: [warm, mainB, cool], sport: 'running',
     });
   }
   return {
-    slug: 'first-5k', title: ['First 5K', 'أول 5 كيلو'], goal: 'running', sport: 'running', level: 'easy', weeks: 6, days: 3, minutes: 30, equipment: [],
+    slug: 'first-5k', title: ['First 5K', 'أول 5 كم'], goal: 'running', sport: 'running', level: 'easy', weeks: 6, days: 3, minutes: 30, equipment: [],
     summary: ['From your first run to running 5 km without stopping. Three short run-walk sessions a week.', 'من أول جري لك إلى 5 كم دون توقف. ثلاث حصص قصيرة من الجري والمشي أسبوعيًا.'],
     principles: [
       ["Run easy: if you can't talk, slow down. Speed comes later.", 'اجرِ بسهولة: إن لم تستطع الكلام فأبطئ. السرعة تأتي لاحقًا.'],
@@ -294,7 +296,7 @@ function busyWeek() {
     ]) },
   ];
   return {
-    slug: 'busy-week', title: ['Busy Week 20', 'أسبوع مزدحم 20'], goal: 'busy', sport: 'crossfit', level: 'easy', weeks: 4, days: 3, minutes: 20, equipment: [],
+    slug: 'busy-week', title: ['Busy Week', 'أسبوع مزدحم'], goal: 'busy', sport: 'crossfit', level: 'easy', weeks: 4, days: 3, minutes: 20, equipment: [],
     summary: ['Twenty minutes, no equipment, three times a week. For the weeks when work takes everything.', 'عشرون دقيقة دون أدوات، ثلاث مرات أسبوعيًا. للأسابيع التي يأخذ فيها العمل كل وقتك.'],
     principles: [
       ['Short sessions done every week beat long ones you skip.', 'الحصص القصيرة المنتظمة أفضل من الطويلة التي تفوتها.'],
@@ -302,7 +304,7 @@ function busyWeek() {
     ],
     sessions: W.flatMap((w, wi) => days.map((d, di) => ({
       week: wi + 1, day: di + 1, focus: d.focus,
-      title: [`Busy 20 · ${di + 1} · Week ${wi + 1}`, `مزدحم 20 · ${di + 1} · الأسبوع ${wi + 1}`],
+      title: [`Quick 20 · Day ${di + 1} · Week ${wi + 1}`, `20 دقيقة · اليوم ${di + 1} · الأسبوع ${wi + 1}`],
       format: d.format, difficulty: 'beginner', minutes: 20, equipment: [], sport: 'crossfit',
       blocks: [warm, d.build(w), block(COOL, 'flow', { minutes: 1 }, [item('standing_forward_fold', secs(30)), item('childs_pose', secs(30))])],
     }))),
@@ -341,7 +343,7 @@ function calisthenics() {
     ]), cool('figure_four_stretch', 'quad_stretch')] },
   ];
   return {
-    slug: 'calisthenics-start', title: ['Calisthenics Start', 'بداية الكاليستنكس'], goal: 'calisthenics', sport: 'gym', level: 'easy', weeks: 6, days: 3, minutes: 40,
+    slug: 'calisthenics-start', title: ['Calisthenics Start', 'بداية الكاليسثينكس'], goal: 'calisthenics', sport: 'gym', level: 'easy', weeks: 6, days: 3, minutes: 40,
     equipment: ['pull_up_bar', 'band', 'bench'],
     summary: ['Master your bodyweight in six weeks: from incline push-ups and rows to full push-ups and your first pull-ups.', 'أتقن وزن جسمك خلال ستة أسابيع: من الضغط المائل والتجديف إلى الضغط الكامل وأول عقلة.'],
     principles: [
@@ -351,7 +353,7 @@ function calisthenics() {
     ],
     sessions: W.flatMap((w, wi) => days.map((d, di) => ({
       week: wi + 1, day: di + 1, focus: d.focus,
-      title: [`Calisthenics ${d.key} · Week ${wi + 1}`, `كاليستنكس ${'أبج'[di]} · الأسبوع ${wi + 1}`],
+      title: [`Calisthenics ${d.key} · Week ${wi + 1}`, `كاليسثينكس ${'أبج'[di]} · الأسبوع ${wi + 1}`],
       format: di === 2 ? 'rounds' : 'strength', difficulty: wi < 2 ? 'beginner' : 'intermediate', minutes: w.deload ? 30 : 40, equipment: ['pull_up_bar', 'band'],
       blocks: d.build(w),
     }))),
@@ -380,17 +382,34 @@ const PROGRAMS = [strengthBase(), calisthenics(), homeStrength(), first5k(), pad
          JSON.stringify(p.principles.map(([en, ar]) => ({ en, ar }))), sort],
       );
       const programId = pr.rows[0].id;
-      const old = await c.query('select workout_id from public.program_sessions where program_id=$1', [programId]);
-      await c.query('delete from public.program_sessions where program_id=$1', [programId]);
-      if (old.rows.length) await c.query(`update public.workouts set status='archived' where id = any($1) and program_only`, [old.rows.map((r) => r.workout_id)]);
+      const old = await c.query('select id, week, day, workout_id from public.program_sessions where program_id=$1', [programId]);
+      const have = new Map(old.rows.map((r) => [`${r.week}:${r.day}`, r]));
       for (const s of p.sessions) {
+        const vals = [s.title[0], s.title[1], s.focus[0], s.focus[1], s.sport || p.sport, s.format, s.difficulty, s.minutes, s.equipment, JSON.stringify(s.blocks)];
+        const was = have.get(`${s.week}:${s.day}`);
+        if (was) {
+          // Same slot: update the workout where it is, so plans in progress and finished logs keep pointing at it.
+          have.delete(`${s.week}:${s.day}`);
+          await c.query(
+            `update public.workouts set title=$1, title_ar=$2, description=$3, description_ar=$4, sport=$5, format=$6, difficulty=$7,
+               duration_minutes=$8, equipment=$9, blocks=$10, status='published', updated_at=now() where id=$11`,
+            [...vals, was.workout_id],
+          );
+          await c.query('update public.program_sessions set focus=$1, focus_ar=$2 where id=$3', [s.focus[0], s.focus[1], was.id]);
+          continue;
+        }
         const w = await c.query(
           `insert into public.workouts (title, title_ar, description, description_ar, sport, format, difficulty, duration_minutes, equipment, blocks, source, status, program_only, xp_reward)
            values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'library','published',true,0) returning id`,
-          [s.title[0], s.title[1], s.focus[0], s.focus[1], s.sport || p.sport, s.format, s.difficulty, s.minutes, s.equipment, JSON.stringify(s.blocks)],
+          vals,
         );
         await c.query('insert into public.program_sessions (program_id, week, day, workout_id, focus, focus_ar) values ($1,$2,$3,$4,$5,$6)',
           [programId, s.week, s.day, w.rows[0].id, s.focus[0], s.focus[1]]);
+      }
+      // Slots the template no longer has.
+      for (const gone of have.values()) {
+        await c.query('delete from public.program_sessions where id=$1', [gone.id]);
+        await c.query(`update public.workouts set status='archived' where id=$1 and program_only`, [gone.workout_id]);
       }
     }
     await c.query('commit');
