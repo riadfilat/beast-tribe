@@ -1,3 +1,4 @@
+import { cityKey, cityKeys } from '../lib/cities';
 import { supabase } from '../lib/supabase';
 import { cancelEventReminder } from '../lib/notifications';
 import { useAuth } from '../providers/AuthProvider';
@@ -60,7 +61,7 @@ function visible(s: Session, gender?: string | null) {
 export function useBoardSessions(days = 8) {
   const { meId, profile } = useMe();
   const country = profile?.region || 'SA';
-  const key = meId ? `sessions:board:${meId}:${country}:${days}` : null;
+  const key = meId ? `sessions:board:${meId}:${country}:${cityKey(profile?.city)}:${days}` : null;
   return useQuery<Session[]>(key, async () => {
     const mine = await fetchMyRsvps(meId!);
     let rows: any[];
@@ -69,16 +70,24 @@ export function useBoardSessions(days = 8) {
     } else {
       const from = startOfLocalDay(new Date());
       const to = addDays(from, days);
-      const { data, error } = await supabase
+      let q = supabase
         .from('events')
         .select(SESSION_SELECT)
         .gte('starts_at', from.toISOString())
         .lt('starts_at', to.toISOString())
         .eq('country', country)
-        .eq('roster.status', 'going')
+        .eq('roster.status', 'going');
+      // Open communities show the member's own city; private communities and packs show from anywhere.
+      const keys = cityKeys(profile?.city);
+      if (keys.length) {
+        const quoted = keys.map((k) => `"${k.replace(/[\\"]/g, '')}"`).join(',');
+        q = q.or(`open_scope.is.false,city_key.is.null,city_key.in.(${quoted})`);
+      }
+      const { data, error } = await q
         .order('starts_at', { ascending: true })
         .order('created_at', { referencedTable: 'roster', ascending: true })
-        .limit(8, { referencedTable: 'roster' });
+        .limit(8, { referencedTable: 'roster' })
+        .limit(300);
       if (error) throw error;
       rows = data || [];
     }

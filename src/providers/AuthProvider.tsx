@@ -104,11 +104,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+      // Own row only, through my_profile(): other members can read just a name and a photo.
+      const { data, error } = await supabase.rpc('my_profile').maybeSingle();
       if (error) {
         console.warn('[AuthProvider] fetchProfile error:', error.message);
         setProfile(null);
@@ -228,7 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('profiles')
         .update({ onboarding_completed: true })
         .eq('id', session.user.id)
-        .select();
+        .select('id');
 
       // Throw on update error so the caller can surface it and NOT navigate
       // (Fix 3: don't falsely mark onboarding complete then loop).

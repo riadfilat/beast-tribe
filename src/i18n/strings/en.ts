@@ -94,6 +94,7 @@ export const en = {
     night: 'Night',
   },
   board: {
+    trainToday: 'Train on your own today',
     today: 'Today',
     tomorrow: 'Tomorrow',
     laterThisWeek: 'Later this week',
@@ -316,6 +317,7 @@ export const en = {
     postTo: 'Post to',
     errors: {
       INVALID: "That code doesn't match any community.",
+      TOO_MANY: 'Too many tries. Wait an hour, then try again.',
       ALREADY: "You're already in this community.",
       FULL: 'This community has no seats left. Ask its admin.',
       EXPIRED: "This community's membership has ended. Ask its admin.",
@@ -413,6 +415,7 @@ export const en = {
     joined: 'You joined {name}.',
     errors: {
       INVALID: 'That code does not match any pack.',
+      TOO_MANY: 'Too many tries. Wait an hour, then try again.',
       FULL: 'That pack is full.',
       LIMIT: 'You can be in up to 20 packs. Leave one to join another.',
       ALREADY: 'You are already in this pack.',

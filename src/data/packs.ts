@@ -7,12 +7,12 @@ import { Emblem, emblemColumns, emblemOf } from '../lib/emblem';
 import type { Person } from '../components/board/people';
 
 export const MAX_PACKS = 20;
-export type PackErrorCode = 'INVALID' | 'FULL' | 'LIMIT' | 'ALREADY' | 'PACK_WOMEN_ONLY' | 'PACK_MEN_ONLY' | 'PACK_GENDER_NEEDED' | 'COMMUNITY_ONLY' | 'generic';
+export type PackErrorCode = 'INVALID' | 'FULL' | 'LIMIT' | 'ALREADY' | 'TOO_MANY' | 'PACK_WOMEN_ONLY' | 'PACK_MEN_ONLY' | 'PACK_GENDER_NEEDED' | 'COMMUNITY_ONLY' | 'generic';
 export type PackAudience = 'everyone' | 'women' | 'men';
 
 /** The database's reason for refusing a join, when it's one we can explain. */
 export const packErrorOf = (e: any): PackError => {
-  const hit = String(e?.message || '').match(/PACK_WOMEN_ONLY|PACK_MEN_ONLY|PACK_GENDER_NEEDED|COMMUNITY_ONLY|INVALID|FULL|LIMIT|ALREADY/);
+  const hit = String(e?.message || '').match(/PACK_WOMEN_ONLY|PACK_MEN_ONLY|PACK_GENDER_NEEDED|COMMUNITY_ONLY|TOO_MANY|INVALID|FULL|LIMIT|ALREADY/);
   return new PackError((hit?.[0] as PackErrorCode) || 'generic');
 };
 export class PackError extends Error {
@@ -149,8 +149,9 @@ export async function joinPackByCode(meId: string, code: string): Promise<{ id: 
   // Packs are private to their members, so the code is checked on the server.
   const { data, error } = await supabase.rpc('join_pack_by_code', { p_code: code.trim() });
   if (error) throw packErrorOf(error);
-  invalidate('member:packs');
   const row = Array.isArray(data) ? data[0] : data;
+  if (!row?.id) throw new PackError('INVALID'); // a wrong code returns no row
+  invalidate('member:packs');
   return { id: row.id, name: row.name };
 }
 

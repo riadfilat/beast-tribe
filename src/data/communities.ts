@@ -23,7 +23,7 @@ export interface Community {
   isMember: boolean;
 }
 
-export type CommunityErrorCode = 'INVALID' | 'ALREADY' | 'FULL' | 'EXPIRED' | 'generic';
+export type CommunityErrorCode = 'INVALID' | 'ALREADY' | 'FULL' | 'EXPIRED' | 'TOO_MANY' | 'generic';
 export class CommunityError extends Error {
   code: CommunityErrorCode;
   constructor(code: CommunityErrorCode) {
@@ -32,7 +32,7 @@ export class CommunityError extends Error {
   }
 }
 const toCommunityError = (e: any) => {
-  const hit = String(e?.message || '').match(/INVALID|ALREADY|FULL|EXPIRED/);
+  const hit = String(e?.message || '').match(/INVALID|ALREADY|FULL|EXPIRED|TOO_MANY/);
   return new CommunityError((hit?.[0] as CommunityErrorCode) || 'generic');
 };
 
@@ -119,8 +119,9 @@ export async function joinCommunityByCode(code: string): Promise<{ id: string; n
   if (PREVIEW) return PREVIEW_COMPANY;
   const { data, error } = await supabase.rpc('join_community_by_code', { p_code: code.trim() });
   if (error) throw toCommunityError(error);
-  refresh();
   const row = Array.isArray(data) ? data[0] : data;
+  if (!row?.id) throw new CommunityError('INVALID'); // a wrong code returns no row
+  refresh();
   return { id: row.id, name: row.name };
 }
 

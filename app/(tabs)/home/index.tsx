@@ -15,7 +15,7 @@ import { Txt } from '../../../src/components/board/Txt';
 import { PackMark } from '../../../src/components/brand/Logo';
 import { Press } from '../../../src/components/board/Press';
 import { Icon } from '../../../src/components/board/Icon';
-import { IconButton, MarkerButton, TextButton } from '../../../src/components/board/controls';
+import { IconButton, MarkerButton, OutlineButton, TextButton } from '../../../src/components/board/controls';
 import { DayHeading, NowMarker, SessionRow, useNow } from '../../../src/components/board/session';
 import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
@@ -188,7 +188,7 @@ export default function BoardScreen() {
             <TextButton label={t('common.retry')} onPress={board.refetch} />
           </View>
         ) : sessions.length === 0 ? (
-          <EmptyBoard spots={spots.data ?? []} onHost={(spotId) => router.push(spotId ? { pathname: '/host', params: { spot: spotId } } : '/host')} />
+          <EmptyBoard spots={spots.data ?? []} onHost={(spotId) => router.push(spotId ? { pathname: '/host', params: { spot: spotId } } : '/host')} onTrain={() => router.push('/(tabs)/train')} />
         ) : (
           <View>
             {live.map((x, i) => row(x, i, [...live, ...todayAhead]))}
@@ -242,7 +242,7 @@ function countLabel(n: number, lang: string) {
 }
 
 // ─── Empty board: the cold start ────────────────────────────────────────────
-function EmptyBoard({ spots, onHost }: { spots: { id: string; name: string; city: string; imageUrl: string | null }[]; onHost: (spotId?: string) => void }) {
+function EmptyBoard({ spots, onHost, onTrain }: { spots: { id: string; name: string; city: string; imageUrl: string | null }[]; onHost: (spotId?: string) => void; onTrain: () => void }) {
   const s = useStyles();
   const { p } = useKit();
   const { t } = useI18n();
@@ -257,6 +257,8 @@ function EmptyBoard({ spots, onHost }: { spots: { id: string; name: string; city
           {t('board.emptyBody')}
         </Txt>
         <MarkerButton label={t('board.hostA11y')} icon="plus" onPress={() => onHost()} style={{ marginTop: 6 }} />
+        {/* No session today is never a dead end: there's always a workout to do. */}
+        <OutlineButton label={t('board.trainToday')} icon="train" onPress={onTrain} />
       </View>
       {spots.length ? (
         <View style={{ marginTop: 28 }}>

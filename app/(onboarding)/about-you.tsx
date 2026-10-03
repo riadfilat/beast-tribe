@@ -3,6 +3,7 @@ import { Modal, NativeScrollEvent, NativeSyntheticEvent, ScrollView, View } from
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { makeStyles, useKit } from '../../src/theme';
+import { CITIES } from '../../src/lib/cities';
 import { useI18n } from '../../src/i18n';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { supabase } from '../../src/lib/supabase';
@@ -14,16 +15,6 @@ import { Chip, Field, IconButton, MarkerButton, Segmented, TextButton } from '..
 import { toast } from '../../src/components/board/toast';
 
 const COUNTRIES = ['SA', 'AE', 'BH', 'KW', 'QA', 'OM', 'EG', 'JO'] as const;
-const CITIES: Record<string, [string, string][]> = {
-  SA: [['Riyadh', 'الرياض'], ['Jeddah', 'جدة'], ['Dammam', 'الدمام'], ['Khobar', 'الخبر'], ['Mecca', 'مكة'], ['Medina', 'المدينة']],
-  AE: [['Dubai', 'دبي'], ['Abu Dhabi', 'أبوظبي'], ['Sharjah', 'الشارقة'], ['Al Ain', 'العين']],
-  BH: [['Manama', 'المنامة'], ['Riffa', 'الرفاع'], ['Muharraq', 'المحرق']],
-  KW: [['Kuwait City', 'مدينة الكويت'], ['Hawalli', 'حولي'], ['Salmiya', 'السالمية']],
-  QA: [['Doha', 'الدوحة'], ['Al Wakrah', 'الوكرة'], ['Al Khor', 'الخور']],
-  OM: [['Muscat', 'مسقط'], ['Salalah', 'صلالة'], ['Sohar', 'صحار']],
-  EG: [['Cairo', 'القاهرة'], ['Alexandria', 'الإسكندرية'], ['Giza', 'الجيزة']],
-  JO: [['Amman', 'عمّان'], ['Aqaba', 'العقبة'], ['Irbid', 'إربد']],
-};
 const STAGES: Stage[] = ['dreamer', 'seeker', 'mover'];
 const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTHS_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];

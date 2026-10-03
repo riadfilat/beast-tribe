@@ -105,9 +105,9 @@ export function useNutritionGoals() {
   const me = useMe();
   const q = useQuery<NutritionGoals>(me ? `nutrition:goals:${me}` : null, async () => {
     if (PREVIEW) return previewGoals ?? DEFAULT_GOALS;
-    const { data, error } = await supabase.from('profiles').select('nutrition_goals').eq('id', me!).maybeSingle();
+    const { data, error } = await supabase.rpc('my_profile').maybeSingle();
     if (error) throw error;
-    return { ...DEFAULT_GOALS, ...(data?.nutrition_goals || {}) };
+    return { ...DEFAULT_GOALS, ...((data as any)?.nutrition_goals || {}) };
   });
   return { goals: q.data ?? DEFAULT_GOALS, custom: !!q.data && JSON.stringify(q.data) !== JSON.stringify(DEFAULT_GOALS), query: q };
 }
