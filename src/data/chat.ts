@@ -53,6 +53,7 @@ export function useLiveChat(type: 'event' | 'pack', targetId?: string | null) {
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const seen = useRef(new Set<string>());
+  const authors = useRef(new Map<string, any>());
 
   const append = useCallback((m: ChatMessage) => {
     if (seen.current.has(m.id)) return;
@@ -100,6 +101,7 @@ export function useLiveChat(type: 'event' | 'pack', targetId?: string | null) {
       if (msgErr) setError(msgErr.message);
       // The newest 100, shown oldest first.
       const msgs = (data || []).reverse().map(toMsg);
+      (data || []).forEach((r: any) => r.author && authors.current.set(r.user_id, r.author));
       msgs.forEach((m) => seen.current.add(m.id));
       setMessages(msgs);
       setLoading(false);
@@ -109,8 +111,14 @@ export function useLiveChat(type: 'event' | 'pack', targetId?: string | null) {
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `room_id=eq.${room.id}` }, async (payload: any) => {
           const row = payload.new;
           if (!row || seen.current.has(row.id)) return;
-          const { data: full } = await supabase.from('chat_messages').select(SELECT).eq('id', row.id).maybeSingle();
-          if (alive) append(toMsg(full ?? row));
+          // The message itself is in the payload; only a first-time author needs a lookup.
+          let author = authors.current.get(row.user_id);
+          if (!author) {
+            const { data: p } = await supabase.from('profiles').select('display_name, full_name, avatar_url').eq('id', row.user_id).maybeSingle();
+            author = p ?? undefined;
+            if (author) authors.current.set(row.user_id, author);
+          }
+          if (alive) append(toMsg({ ...row, author }));
         })
         .subscribe();
     })();

@@ -236,13 +236,19 @@ export async function cancelClass(eventId: string, formData: FormData) {
   let q = db.from('events').select('id, title').is('cancelled_at', null);
   q = scope === 'series' ? q.eq('class_series_id', e.class_series_id).gte('starts_at', e.starts_at) : q.eq('id', eventId);
   const { data: targets } = await q;
-  for (const t of (targets || []) as any[]) {
-    await db.from('events').update({ cancelled_at: new Date().toISOString(), cancel_reason: reason }).eq('id', t.id);
-    const { data: booked } = await db.from('event_rsvps').select('user_id').eq('event_id', t.id).in('status', ['going', 'waitlist']);
-    const ids = (booked || []).map((b: any) => b.user_id);
-    if (ids.length) {
-      await db.rpc('bt_notify', { p_user_ids: ids, p_type: 'event_cancelled', p_actor: partner.id, p_data: { event_id: t.id, event_title: t.title } });
-    }
+  const list = (targets || []) as { id: string; title: string }[];
+  if (list.length) {
+    // One update and one lookup for the whole series, then the notices together.
+    const ids = list.map((t) => t.id);
+    await db.from('events').update({ cancelled_at: new Date().toISOString(), cancel_reason: reason }).in('id', ids);
+    const { data: booked } = await db.from('event_rsvps').select('event_id, user_id').in('event_id', ids).in('status', ['going', 'waitlist']);
+    const byEvent = new Map<string, string[]>();
+    for (const b of (booked || []) as { event_id: string; user_id: string }[]) byEvent.set(b.event_id, [...(byEvent.get(b.event_id) ?? []), b.user_id]);
+    await Promise.all(
+      list
+        .filter((t) => byEvent.has(t.id))
+        .map((t) => db.rpc('bt_notify', { p_user_ids: byEvent.get(t.id), p_type: 'event_cancelled', p_actor: partner.id, p_data: { event_id: t.id, event_title: t.title } })),
+    );
   }
   revalidatePath('/partner/classes');
   revalidatePath('/partner/club');

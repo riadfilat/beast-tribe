@@ -29,9 +29,10 @@ function toPost(r: any, beasted: Set<string>): Post {
     content: r.content || '',
     imageUrl: r.image_url || null,
     createdAt: new Date(r.created_at),
-    beastCount: r.beast_count?.[0]?.count ?? 0,
+    // Counts are kept on the post by the database (migration 082).
+    beastCount: typeof r.beast_count === 'number' ? r.beast_count : r.beast_count?.[0]?.count ?? 0,
     beasted: beasted.has(r.id),
-    commentCount: r.comment_count ?? r.comments?.[0]?.count ?? 0,
+    commentCount: typeof r.comment_count === 'number' ? r.comment_count : 0,
     event: r.event?.id ? { id: r.event.id, title: r.event.title || '' } : null,
     workout: r.workout?.id ? { id: r.workout.id, title: r.workout.title || '', titleAr: r.workout.title_ar || null } : null,
     community: r.community?.id ? { id: r.community.id, name: r.community.name || '', private: r.community.visibility === 'private' } : null,
@@ -46,7 +47,7 @@ export function useFeed() {
     const [{ data, error }, blocked] = await Promise.all([
       supabase
         .from('feed_posts')
-        .select(`id, user_id, content, image_url, created_at, event:events(id, title), workout:workouts(id, title, title_ar), community:communities(id, name, visibility), author:profiles!user_id(${PERSON_COLUMNS}), beast_count:beasts(count)`)
+        .select(`id, user_id, content, image_url, created_at, event:events(id, title), workout:workouts(id, title, title_ar), community:communities(id, name, visibility), author:profiles!user_id(${PERSON_COLUMNS}), beast_count, comment_count`)
         .eq('is_visible', true)
         .eq('is_hidden', false)
         .neq('image_status', 'rejected')
