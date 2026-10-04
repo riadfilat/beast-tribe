@@ -37,6 +37,8 @@ export default function AboutYouScreen() {
   const [city, setCity] = useState(profile?.city || '');
   const [dob, setDob] = useState<string>(profile?.date_of_birth || '');
   const [gender, setGender] = useState<string>(profile?.gender || '');
+  // Gender is set once; after that only support changes it (the database enforces this too).
+  const genderLocked = !!profile?.gender;
   const [stage, setStage] = useState<Stage | null>(journeyStage(profile?.experience_level));
   const [dobOpen, setDobOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -54,6 +56,10 @@ export default function AboutYouScreen() {
     : t('onboarding.dobPlaceholder');
 
   async function save() {
+    if (!gender) {
+      toast.show(t('onboarding.needGender'), 'error');
+      return;
+    }
     if (!stage) {
       toast.show(t('onboarding.needLevel'), 'error');
       return;
@@ -63,7 +69,7 @@ export default function AboutYouScreen() {
       if (user) {
         const { error } = await supabase
           .from('profiles')
-          .update({ region: country, city: city.trim() || null, date_of_birth: dob || null, gender: gender || null, experience_level: STAGE_TO_LEVEL[stage] })
+          .update({ region: country, city: city.trim() || null, date_of_birth: dob || null, ...(genderLocked ? {} : { gender }), experience_level: STAGE_TO_LEVEL[stage] })
           .eq('id', user.id);
         if (error) throw error;
         await refreshProfile();
@@ -150,16 +156,25 @@ export default function AboutYouScreen() {
         <Txt v="title" size={18} style={s.label}>
           {t('onboarding.gender')}
         </Txt>
-        <Segmented
-          value={gender || 'none'}
-          onChange={(v) => setGender(v === 'none' ? '' : v)}
-          options={[
-            { value: 'female', label: t('onboarding.female') },
-            { value: 'male', label: t('onboarding.male') },
-          ]}
-        />
+        {genderLocked ? (
+          <View style={s.dob}>
+            <Icon name="lock" size={15} color={p.inkSoft} />
+            <Txt v="body" style={{ flex: 1 }}>
+              {gender === 'female' ? t('onboarding.female') : gender === 'male' ? t('onboarding.male') : gender}
+            </Txt>
+          </View>
+        ) : (
+          <Segmented
+            value={gender || 'none'}
+            onChange={(v) => setGender(v === 'none' ? '' : v)}
+            options={[
+              { value: 'female', label: t('onboarding.female') },
+              { value: 'male', label: t('onboarding.male') },
+            ]}
+          />
+        )}
         <Txt v="caption" style={{ marginTop: 6 }}>
-          {t('onboarding.genderNote')}
+          {genderLocked ? t('onboarding.genderLocked') : t('onboarding.genderNote')}
         </Txt>
 
         <Txt v="title" size={18} style={s.label}>

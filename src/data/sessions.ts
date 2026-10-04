@@ -11,7 +11,7 @@ import type { Person } from '../components/board/people';
 
 export type JoinResult = 'going' | 'waitlist';
 export type SessionErrorCode =
-  | 'WOMEN_ONLY' | 'PACK_ONLY' | 'COMMUNITY_ONLY' | 'GUESTS_FULL' | 'EVENT_OVER' | 'EVENT_CANCELLED' | 'EVENT_NOT_FOUND' | 'NOT_HOST' | 'generic';
+  | 'WOMEN_ONLY' | 'WOMEN_ONLY_HOST' | 'GENDER_NEEDED' | 'PACK_ONLY' | 'COMMUNITY_ONLY' | 'GUESTS_FULL' | 'EVENT_OVER' | 'EVENT_CANCELLED' | 'EVENT_NOT_FOUND' | 'NOT_HOST' | 'generic';
 
 export class SessionError extends Error {
   code: SessionErrorCode;
@@ -23,7 +23,7 @@ export class SessionError extends Error {
 
 function toSessionError(e: any): SessionError {
   const m = String(e?.message || e || '');
-  const hit = m.match(/WOMEN_ONLY|PACK_ONLY|COMMUNITY_ONLY|GUESTS_FULL|EVENT_OVER|EVENT_CANCELLED|EVENT_NOT_FOUND|NOT_HOST/);
+  const hit = m.match(/WOMEN_ONLY_HOST|GENDER_NEEDED|WOMEN_ONLY|PACK_ONLY|COMMUNITY_ONLY|GUESTS_FULL|EVENT_OVER|EVENT_CANCELLED|EVENT_NOT_FOUND|NOT_HOST/);
   return new SessionError((hit?.[0] as SessionErrorCode) || 'generic', m);
 }
 

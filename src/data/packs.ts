@@ -7,12 +7,12 @@ import { Emblem, emblemColumns, emblemOf } from '../lib/emblem';
 import type { Person } from '../components/board/people';
 
 export const MAX_PACKS = 20;
-export type PackErrorCode = 'INVALID' | 'FULL' | 'LIMIT' | 'ALREADY' | 'TOO_MANY' | 'PACK_WOMEN_ONLY' | 'PACK_MEN_ONLY' | 'PACK_GENDER_NEEDED' | 'COMMUNITY_ONLY' | 'generic';
+export type PackErrorCode = 'INVALID' | 'FULL' | 'LIMIT' | 'ALREADY' | 'TOO_MANY' | 'PACK_WOMEN_ONLY' | 'PACK_MEN_ONLY' | 'PACK_GENDER_NEEDED' | 'PACK_CREATE_WOMEN' | 'PACK_CREATE_MEN' | 'COMMUNITY_ONLY' | 'generic';
 export type PackAudience = 'everyone' | 'women' | 'men';
 
 /** The database's reason for refusing a join, when it's one we can explain. */
 export const packErrorOf = (e: any): PackError => {
-  const hit = String(e?.message || '').match(/PACK_WOMEN_ONLY|PACK_MEN_ONLY|PACK_GENDER_NEEDED|COMMUNITY_ONLY|TOO_MANY|INVALID|FULL|LIMIT|ALREADY/);
+  const hit = String(e?.message || '').match(/PACK_CREATE_WOMEN|PACK_CREATE_MEN|PACK_WOMEN_ONLY|PACK_MEN_ONLY|PACK_GENDER_NEEDED|COMMUNITY_ONLY|TOO_MANY|INVALID|FULL|LIMIT|ALREADY/);
   return new PackError((hit?.[0] as PackErrorCode) || 'generic');
 };
 export class PackError extends Error {
@@ -125,7 +125,7 @@ export async function createPack(meId: string, name: string, emblem: Emblem, aud
     .insert({ name: name.trim(), created_by: meId, invite_code: code, is_system: false, audience, ...emblemColumns(emblem) })
     .select('id')
     .single();
-  if (error) throw new PackError('generic');
+  if (error) throw packErrorOf(error);
   const { error: memberErr } = await supabase.from('pack_members').insert({ pack_id: pack.id, user_id: meId, role: 'leader' });
   if (memberErr) {
     // The creator doesn't fit the pack's audience: don't leave an empty pack behind.

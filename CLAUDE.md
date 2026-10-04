@@ -115,6 +115,12 @@ User wants to launch the app to limited public testers via TestFlight.
 
 ## Session Log (append-only — newest at top)
 
+### 2026-10-04 (night) — Gender captured at the start; women-only / men-only by gender
+- User: capture gender at the start so only women can create women-only groups and only men men-only groups.
+- DB 064 (tested as real non-admin members in a rolled-back transaction, then applied): only women create women-only groups (PACK_CREATE_WOMEN), only men men-only (PACK_CREATE_MEN), no gender → PACK_GENDER_NEEDED; only women host women-only sessions (WOMEN_ONLY_HOST); joining a women-only session with no gender → GENDER_NEEDED (was a free pass); gender is set once — later changes only by admins/dashboard (GENDER_LOCKED). Service role, admins and bt.trusted functions are exempt (bt_trusted_caller()).
+- App: onboarding requires gender; once set it shows locked with "email support to change"; group form offers Everyone + your own gender's option only (+ "Add your gender" link when missing); host already shows the women-only toggle to women only; one-time "One quick question" sheet on the Board for members without a gender (GenderAsk). EN + AR.
+- Note: gender is self-declared. Real proof needs ID/Nafath verification (discussed 2026-10-03, not built).
+
 ### 2026-10-04 (evening) — "Pack" renamed to "Group" for members
 - User: change the word pack to group or team so it's simpler. Chose **Group / مجموعة**: "Team / فريق" is already the company-team word in step challenges, and the Arabic had mixed فريق and مجموعة for packs. All member-facing text (EN + AR, feminine agreement), website (privacy, /for-companies, /s/ share page), admin labels and the store listing copy. Code, routes and tables still say pack/packs.
 

@@ -9,7 +9,7 @@ import { createPack, PackAudience, PackError } from '../../../src/data/packs';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { randomEmblem } from '../../../src/lib/emblem';
 import { Txt } from '../../../src/components/board/Txt';
-import { Field, IconButton, MarkerButton, SectionHeading, Segmented } from '../../../src/components/board/controls';
+import { Field, IconButton, MarkerButton, SectionHeading, Segmented, TextButton } from '../../../src/components/board/controls';
 import { PatchPreview } from '../../../src/components/board/Patch';
 import { PatchPicker } from '../../../src/components/board/PatchPicker';
 import { toast } from '../../../src/components/board/toast';
@@ -21,7 +21,10 @@ export default function PackCreateScreen() {
   const { t } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  // Women can start women-only groups, men can start men-only groups (the database checks it too).
+  const gender = PREVIEW ? 'female' : (profile?.gender || '').toLowerCase();
+  const audiences: PackAudience[] = ['everyone', ...(gender === 'female' ? (['women'] as PackAudience[]) : gender === 'male' ? (['men'] as PackAudience[]) : [])];
   const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
   const [name, setName] = useState('');
   const [emblem, setEmblem] = useState(randomEmblem);
@@ -70,13 +73,16 @@ export default function PackCreateScreen() {
 
           <SectionHeading title={t('pack.audience')} style={{ marginTop: 18 }} />
           <Segmented
-            options={(['everyone', 'women', 'men'] as PackAudience[]).map((k) => ({ value: k, label: t(`pack.audiences.${k}`) }))}
+            options={audiences.map((k) => ({ value: k, label: t(`pack.audiences.${k}`) }))}
             value={audience}
             onChange={setAudience}
           />
           <Txt v="caption" style={{ marginTop: 6 }}>
             {t(`pack.audienceHint.${audience}`)}
           </Txt>
+          {!gender ? (
+            <TextButton label={t('pack.addGender')} onPress={() => router.push({ pathname: '/(onboarding)/about-you', params: { edit: '1' } })} style={{ alignSelf: 'flex-start', marginTop: 4 }} />
+          ) : null}
 
           <SectionHeading title={t('pack.patch')} style={{ marginTop: 18 }} />
           <PatchPicker value={emblem} onChange={setEmblem} name={shown} />
