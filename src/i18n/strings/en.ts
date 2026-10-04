@@ -401,7 +401,6 @@ export const en = {
     menOnly: 'Men only',
     addGender: 'Add your gender to start a women-only or men-only group',
     inviteLeaderOnly: 'Only the group leader can invite people.',
-    inviteCommunityOnly: 'Only {community} admins can add people to this group.',
     code: 'Invite code',
     shareMessage: 'Join my group "{name}" on Beast Tribe. Code: {code}',
     chat: 'Group chat',

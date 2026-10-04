@@ -185,7 +185,7 @@ export default function TribeScreen() {
           loading={packs.loading}
           onOpen={(pk) => router.push({ pathname: '/(tabs)/feed/pack', params: { packId: pk.id } })}
           onCreate={() => router.push('/(tabs)/feed/pack-create')}
-          onJoin={() => router.push('/(tabs)/feed/pack')}
+          onJoin={() => router.push({ pathname: '/(tabs)/feed/pack', params: { join: '1' } })}
           onJoined={(id) => {
             packs.refetch();
             router.push({ pathname: '/(tabs)/feed/pack', params: { packId: id } });

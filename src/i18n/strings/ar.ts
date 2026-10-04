@@ -442,7 +442,6 @@ export const ar: Strings = {
     menOnly: 'للرجال فقط',
     addGender: 'أضف جنسك لإنشاء مجموعة للنساء فقط أو للرجال فقط',
     inviteLeaderOnly: 'قائد المجموعة فقط يمكنه دعوة الأشخاص.',
-    inviteCommunityOnly: 'مسؤولو {community} فقط يمكنهم إضافة أشخاص إلى هذه المجموعة.',
     title: 'المجموعات',
     code: 'رمز الدعوة',
     shareMessage: 'انضم إلى مجموعتي "{name}" على بيست ترايب. الرمز: {code}',

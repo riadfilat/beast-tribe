@@ -29,13 +29,17 @@ export default function PackScreen() {
   const { p } = useKit();
   const { t, tn } = useI18n();
   const router = useRouter();
-  const params = useLocalSearchParams<{ packId?: string }>();
+  const params = useLocalSearchParams<{ packId?: string; join?: string }>();
   const { user } = useAuth();
   const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
   const list = useMyPackList();
   const packs = list.data ?? [];
   const [selected, setSelected] = useState<string | null>(params.packId ?? null);
-  const [adding, setAdding] = useState(false);
+  // "Join with a code" on the Groups tab opens straight on the code field.
+  const [adding, setAdding] = useState(params.join === '1');
+  useEffect(() => {
+    if (params.join === '1') setAdding(true);
+  }, [params.join]);
   const [restyle, setRestyle] = useState<Emblem | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
 
@@ -173,7 +177,7 @@ export default function PackScreen() {
         ) : null}
 
         {showJoin ? (
-          <JoinPanel meId={meId} onJoined={(id) => { setAdding(false); setSelected(id); list.refetch(); }} onCreate={() => router.push('/(tabs)/feed/pack-create')} />
+          <JoinPanel meId={meId} hasGroups={packs.length > 0} onJoined={(id) => { setAdding(false); setSelected(id); list.refetch(); }} onCreate={() => router.push('/(tabs)/feed/pack-create')} />
         ) : d ? (
           <View style={{ paddingHorizontal: 16 }}>
             {d.photoUrl ? <Image source={{ uri: d.photoUrl }} style={s.photo} resizeMode="cover" accessibilityIgnoresInvertColors /> : null}
@@ -252,7 +256,7 @@ export default function PackScreen() {
             {!d.canInvite ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 }}>
                 <Icon name="lock" size={12} color={p.inkSoft} />
-                <Txt v="caption">{d.communityName ? t('pack.inviteCommunityOnly', { community: d.communityName }) : t('pack.inviteLeaderOnly')}</Txt>
+                <Txt v="caption">{t('pack.inviteLeaderOnly')}</Txt>
               </View>
             ) : null}
 
@@ -307,7 +311,7 @@ export default function PackScreen() {
   );
 }
 
-function JoinPanel({ meId, onJoined, onCreate }: { meId: string | null; onJoined: (id: string) => void; onCreate: () => void }) {
+function JoinPanel({ meId, hasGroups, onJoined, onCreate }: { meId: string | null; hasGroups: boolean; onJoined: (id: string) => void; onCreate: () => void }) {
   const s = useStyles();
   const { p } = useKit();
   const { t } = useI18n();
@@ -347,9 +351,11 @@ function JoinPanel({ meId, onJoined, onCreate }: { meId: string | null; onJoined
 
   return (
     <View style={{ padding: 16, gap: 14 }}>
-      <Txt v="body" color={p.inkSoft}>
-        {t('tribe.packsEmpty')}
-      </Txt>
+      {!hasGroups ? (
+        <Txt v="body" color={p.inkSoft}>
+          {t('tribe.packsEmpty')}
+        </Txt>
+      ) : null}
       <MarkerButton label={t('tribe.startPack')} icon="plus" onPress={onCreate} />
       <Rule style={{ marginVertical: 6 }} />
       <SectionHeading title={t('pack.joinTitle')} />
