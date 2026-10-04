@@ -323,7 +323,7 @@ export function SectionHeading({ title, action, onAction, style }: { title: stri
 
 // ─── Dropdowns ──────────────────────────────────────────────────────────────
 /** A field that opens a list (in a Sheet): shows the choice, with its photo or icon, or a placeholder. */
-export function Dropdown({ label, sub, image, icon, placeholder, onPress, accessibilityLabel }: { label: string; sub?: string | null; image?: string | null; icon?: IconName; placeholder?: boolean; onPress: () => void; accessibilityLabel?: string }) {
+export function Dropdown({ label, sub, image, icon, left, open, placeholder, onPress, accessibilityLabel }: { label: string; sub?: string | null; image?: string | null; icon?: IconName; left?: React.ReactNode; open?: boolean; placeholder?: boolean; onPress: () => void; accessibilityLabel?: string }) {
   const { p } = useKit();
   return (
     <Press
@@ -333,7 +333,7 @@ export function Dropdown({ label, sub, image, icon, placeholder, onPress, access
       accessibilityLabel={accessibilityLabel ? `${accessibilityLabel}: ${label}` : label}
       style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 54, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1.5, borderColor: p.ruleStrong, backgroundColor: p.wash }}
     >
-      {image ? <Image source={{ uri: image }} style={{ width: 44, height: 44, borderRadius: 8 }} /> : icon ? <Icon name={icon} size={18} color={p.inkSoft} /> : null}
+      {left ?? (image ? <Image source={{ uri: image }} style={{ width: 44, height: 44, borderRadius: 8 }} /> : icon ? <Icon name={icon} size={18} color={p.inkSoft} /> : null)}
       <View style={{ flex: 1 }}>
         <Txt v={placeholder ? 'body' : 'label'} size={15} color={placeholder ? p.inkFaint : p.ink} numberOfLines={1}>
           {label}
@@ -344,7 +344,7 @@ export function Dropdown({ label, sub, image, icon, placeholder, onPress, access
           </Txt>
         ) : null}
       </View>
-      <Icon name="chevron" size={12} color={p.inkSoft} weight="bold" style={{ transform: [{ rotate: '90deg' }] }} />
+      <Icon name="chevron" size={12} color={p.inkSoft} weight="bold" style={{ transform: [{ rotate: open ? '-90deg' : '90deg' }] }} />
     </Press>
   );
 }
@@ -354,6 +354,8 @@ export interface Choice<T extends string> {
   label: string;
   sub?: string | null;
   icon?: IconName;
+  /** Drawn in place of the icon, e.g. a small preview of the choice */
+  left?: React.ReactNode;
   disabled?: boolean;
 }
 
@@ -374,7 +376,7 @@ export function ChoiceList<T extends string>({ options, value, onChange }: { opt
             accessibilityState={{ selected: on, disabled: !!o.disabled }}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderTopWidth: i ? 1 : 0, borderTopColor: p.rule, opacity: o.disabled ? 0.45 : 1 }}
           >
-            {o.icon ? <Icon name={o.icon} size={20} color={on ? p.ink : p.inkSoft} /> : null}
+            {o.left ?? (o.icon ? <Icon name={o.icon} size={20} color={on ? p.ink : p.inkSoft} /> : null)}
             <View style={{ flex: 1, gap: 2 }}>
               <Txt v="label" size={16}>
                 {o.label}

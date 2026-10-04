@@ -539,7 +539,7 @@ export const ar: Strings = {
       tactics: 'خطة اللعب',
     },
     colour: 'اللون',
-    colours: { slate: 'داكن', dreamer: 'داكن بالفيروزي', seeker: 'داكن بالبرتقالي', aqua: 'فيروزي', orange: 'برتقالي', chalk: 'طباشيري' },
+    colours: { slate: 'داكن', dreamer: 'داكن بالفيروزي', seeker: 'داكن بالبرتقالي', aqua: 'فيروزي', orange: 'برتقالي', chalk: 'طباشيري', blush: 'داكن بالوردي', rose: 'وردي' },
     anyEmoji: 'أي إيموجي',
     anyEmojiHint: 'اضغط على الحقل، وانتقل إلى لوحة الإيموجي واختر واحدًا.',
     useLetters: 'استخدم الحروف',

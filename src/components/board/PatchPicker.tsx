@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
-import { ScrollView, useWindowDimensions, View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 import { useKit } from '../../theme';
 import { useI18n } from '../../i18n';
 import { GLYPH_FAMILIES, GlyphFamily } from '../brand/glyphs';
-import { Emblem, familyOf, firstEmoji, glyphId, PATCH_COLORS, PATCH_EMOJI, PATCH_PAINT } from '../../lib/emblem';
+import { Emblem, familyOf, firstEmoji, glyphId, PATCH_COLORS, PATCH_EMOJI, PatchColor } from '../../lib/emblem';
 import { Patch } from './Patch';
 import { Press } from './Press';
 import { Txt } from './Txt';
-import { Field, SectionHeading, Segmented } from './controls';
+import { ChoiceList, Dropdown, Field, SectionHeading, Segmented } from './controls';
 
 type Tab = GlyphFamily | 'emoji' | 'letters';
 const TABS: Tab[] = ['sport', 'beasts', 'myths', 'marks', 'emoji', 'letters'];
-const EDGE: Record<string, string> = { '#023C3C': 'rgba(244,241,234,0.32)', '#F4F1EA': 'rgba(2,60,60,0.30)' };
 
 /** Choose a pack's patch: a symbol (beasts, myths, marks, emoji, letters) and a colourway. */
 export function PatchPicker({ value, onChange, name }: { value: Emblem; onChange: (e: Emblem) => void; name: string }) {
@@ -20,6 +19,7 @@ export function PatchPicker({ value, onChange, name }: { value: Emblem; onChange
   const { width } = useWindowDimensions();
   const [tab, setTab] = useState<Tab>(() => (value.kind === 'glyph' ? familyOf(glyphId(value.value)) : value.kind));
   const [typed, setTyped] = useState('');
+  const [colourOpen, setColourOpen] = useState(false);
 
   const cols = tab === 'emoji' ? 5 : 4;
   const gap = 6;
@@ -76,30 +76,27 @@ export function PatchPicker({ value, onChange, name }: { value: Emblem; onChange
         </View>
       )}
 
+      {/* Colour: one dropdown that names the colourway and shows the badge in it */}
       <SectionHeading title={t('pack.colour')} />
-      {/* One row of colourways; scroll for more */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} accessibilityRole="radiogroup" contentContainerStyle={{ gap: 8 }} style={{ marginTop: -6 }}>
-        {PATCH_COLORS.map((c) => {
-          const { ground, ink } = PATCH_PAINT[c];
-          const on = value.color === c;
-          return (
-            <Press
-              key={c}
-              onPress={() => pick({ color: c })}
-              feedback="selection"
-              depress={0.94}
-              accessibilityRole="radio"
-              accessibilityLabel={t(`pack.colours.${c}`)}
-              accessibilityState={{ selected: on }}
-              style={{ padding: 3, borderRadius: 99, borderWidth: 2, borderColor: on ? p.ink : 'transparent' }}
-            >
-              <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: ground, alignItems: 'center', justifyContent: 'center', borderWidth: EDGE[ground] ? 1.5 : 0, borderColor: EDGE[ground] }}>
-                <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: ink }} />
-              </View>
-            </Press>
-          );
-        })}
-      </ScrollView>
+      <View style={{ marginTop: -6, gap: 4 }}>
+        <Dropdown
+          label={t(`pack.colours.${value.color}`)}
+          left={<Patch emblem={value} name={name} size={36} />}
+          open={colourOpen}
+          onPress={() => setColourOpen((o) => !o)}
+          accessibilityLabel={t('pack.colour')}
+        />
+        {colourOpen ? (
+          <ChoiceList<PatchColor>
+            options={PATCH_COLORS.map((c) => ({ value: c, label: t(`pack.colours.${c}`), left: <Patch emblem={{ ...value, color: c }} name={name} size={36} /> }))}
+            value={value.color}
+            onChange={(c) => {
+              pick({ color: c });
+              setColourOpen(false);
+            }}
+          />
+        ) : null}
+      </View>
     </View>
   );
 }

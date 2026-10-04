@@ -497,7 +497,7 @@ export const en = {
       tactics: 'Game plan',
     },
     colour: 'Colour',
-    colours: { slate: 'Teal', dreamer: 'Teal and aqua', seeker: 'Teal and orange', aqua: 'Aqua', orange: 'Orange', chalk: 'Chalk' },
+    colours: { slate: 'Teal', dreamer: 'Teal and aqua', seeker: 'Teal and orange', aqua: 'Aqua', orange: 'Orange', chalk: 'Chalk', blush: 'Teal and pink', rose: 'Pink' },
     anyEmoji: 'Any emoji',
     anyEmojiHint: 'Tap the field, switch to the emoji keyboard and pick one.',
     useLetters: 'Use letters',
