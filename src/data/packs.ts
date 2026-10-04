@@ -114,14 +114,15 @@ export function usePackSessions(packId?: string | null, memberIds: string[] = []
   });
 }
 
-export async function createPack(meId: string, name: string, emblem: Emblem, audience: PackAudience = 'everyone') {
+/** A group lives in one of the member's communities (the general one when none is given). */
+export async function createPack(meId: string, name: string, emblem: Emblem, audience: PackAudience = 'everyone', communityId: string | null = null) {
   if (PREVIEW) return { id: 'pk-andoraa' };
   const { count } = await supabase.from('pack_members').select('*', { count: 'exact', head: true }).eq('user_id', meId);
   if ((count ?? 0) >= MAX_PACKS) throw new PackError('LIMIT');
   const code = Math.random().toString(36).substring(2, 8).toUpperCase();
   const { data: pack, error } = await supabase
     .from('packs')
-    .insert({ name: name.trim(), created_by: meId, invite_code: code, is_system: false, audience, ...emblemColumns(emblem) })
+    .insert({ name: name.trim(), created_by: meId, invite_code: code, is_system: false, audience, ...(communityId ? { community_id: communityId } : {}), ...emblemColumns(emblem) })
     .select('id')
     .single();
   if (error) throw packErrorOf(error);

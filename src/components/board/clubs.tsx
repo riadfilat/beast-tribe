@@ -111,21 +111,21 @@ function ClubEditSheet({ c, visible, onClose }: { c: Community; visible: boolean
   );
 }
 
-/** In Tribe › Communities: for a member who could run a club. */
-export function StartClubCard() {
+/** In Tribe › Communities: communities are set up with Beast Tribe; this asks for one. */
+export function RequestCommunityCard() {
   const { p } = useKit();
   const { t } = useI18n();
   const router = useRouter();
   return (
-    <Press onPress={() => router.push('/club-new')} feedback="light" accessibilityRole="button" style={{ padding: 16, borderRadius: 12, borderWidth: 1.5, borderColor: p.ruleStrong, borderStyle: 'dashed', gap: 6 }}>
+    <Press onPress={() => router.push('/community-request')} feedback="light" accessibilityRole="button" style={{ padding: 16, borderRadius: 12, borderWidth: 1.5, borderColor: p.ruleStrong, borderStyle: 'dashed', gap: 6 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <Icon name="flag" size={16} color={p.marker} />
         <Txt v="row" size={15} style={{ flex: 1 }}>
-          {t('club.startTitle')}
+          {t('request.cardTitle')}
         </Txt>
         <Icon name="chevron" size={14} color={p.inkFaint} />
       </View>
-      <Txt v="caption">{t('club.startSub')}</Txt>
+      <Txt v="caption">{t('request.cardSub')}</Txt>
     </Press>
   );
 }

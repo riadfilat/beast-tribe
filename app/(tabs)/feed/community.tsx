@@ -21,6 +21,8 @@ import { haptic } from '../../../src/lib/haptics';
 import { CommunityHighlights, CommunityWellness } from '../../../src/components/board/wellness';
 import { CommunityCaptains } from '../../../src/components/board/captain';
 import { ClubByline, ClubLeaderPanel } from '../../../src/components/board/clubs';
+import { useMyPackList } from '../../../src/data/member';
+import { Patch } from '../../../src/components/board/Patch';
 
 export default function CommunityScreen() {
   const s = useStyles();
@@ -121,6 +123,8 @@ export default function CommunityScreen() {
               <OutlineButton label={t('board.hostA11y')} icon="plus" onPress={() => router.push({ pathname: '/host', params: { community: c.id } })} />
             </View>
 
+            {c.isMember ? <CommunityGroups communityId={c.id} /> : null}
+
             <Rule style={{ marginVertical: 20 }} />
             <SectionHeading title={t('community.sessions')} />
           </View>
@@ -144,6 +148,33 @@ export default function CommunityScreen() {
         {c?.isMember && !c.isDefault ? <TextButton label={t('community.leave')} onPress={confirmLeave} color={p.danger} style={{ alignSelf: 'center', marginTop: 24 }} /> : null}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/** The member's groups in this community, and one tap to start another here. */
+function CommunityGroups({ communityId }: { communityId: string }) {
+  const { p } = useKit();
+  const { t, tn } = useI18n();
+  const router = useRouter();
+  const mine = (useMyPackList().data ?? []).filter((x) => x.communityId === communityId);
+  return (
+    <View style={{ marginTop: 18, gap: 10 }}>
+      <SectionHeading title={t('community.groups')} />
+      {mine.map((g) => (
+        <Press key={g.id} onPress={() => router.push({ pathname: '/(tabs)/feed/pack', params: { packId: g.id } })} feedback="selection" style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Patch emblem={g.emblem} name={g.name} size={40} />
+          <View style={{ flex: 1 }}>
+            <Txt v="row" size={15}>
+              {g.name}
+            </Txt>
+            <Txt v="meta">{tn('tribe.members', g.members)}</Txt>
+          </View>
+          <Icon name="chevron" size={14} color={p.inkFaint} weight="bold" />
+        </Press>
+      ))}
+      {!mine.length ? <Txt v="meta">{t('community.groupsEmpty')}</Txt> : null}
+      <OutlineButton label={t('community.startGroup')} icon="plus" onPress={() => router.push({ pathname: '/(tabs)/feed/pack-create', params: { community: communityId } })} />
+    </View>
   );
 }
 

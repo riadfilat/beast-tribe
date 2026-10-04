@@ -187,11 +187,11 @@ export function previewPosts() {
   ];
 }
 
-export const previewPacks: { id: string; name: string; emblem: Emblem; members: number; community: string | null }[] = [
-  { id: CREW.id, name: CREW.name, emblem: { kind: 'glyph', value: 'wolf', color: 'dreamer' }, members: 14, community: null },
-  { id: 'pk-dawn', name: L('Dawn Patrol', 'دورية الفجر'), emblem: { kind: 'glyph', value: 'falcon', color: 'slate' }, members: 6, community: null },
-  { id: 'pk-burn', name: L('Burn Unit', 'فرقة الحرق'), emblem: { kind: 'emoji', value: '🔥', color: 'orange' }, members: 9, community: null },
-  { id: 'pk-desert', name: L('Desert Runners', 'عدّاؤو الصحراء'), emblem: { kind: 'letters', value: null, color: 'chalk' }, members: 11, community: null },
+export const previewPacks: { id: string; name: string; emblem: Emblem; members: number; community: string | null; communityId: string | null }[] = [
+  { id: CREW.id, name: CREW.name, emblem: { kind: 'glyph', value: 'wolf', color: 'dreamer' }, members: 14, community: null, communityId: null },
+  { id: 'pk-dawn', name: L('Dawn Patrol', 'دورية الفجر'), emblem: { kind: 'glyph', value: 'falcon', color: 'slate' }, members: 6, community: null, communityId: null },
+  { id: 'pk-burn', name: L('Burn Unit', 'فرقة الحرق'), emblem: { kind: 'emoji', value: '🔥', color: 'orange' }, members: 9, community: null, communityId: null },
+  { id: 'pk-desert', name: L('Desert Runners', 'عدّاؤو الصحراء'), emblem: { kind: 'letters', value: null, color: 'chalk' }, members: 11, community: null, communityId: null },
 ];
 
 /** A pack's members: the member leads, then the crew (with their photos). */

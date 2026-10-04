@@ -32,6 +32,7 @@ const TYPE_ICON: Record<string, IconName> = {
   club_verified: 'check',
   photo_review: 'photo',
   photo_overdue: 'warning',
+  community_request: 'people',
 };
 
 export default function InboxScreen() {
@@ -62,6 +63,8 @@ export default function InboxScreen() {
   function openItem(n: InboxItem) {
     // Admins: photos to review open the dashboard's Moderation page in the browser.
     if (n.type === 'photo_review' || n.type === 'photo_overdue') Linking.openURL(`${LEGAL_BASE_URL}/moderation`).catch(() => {});
+    // Admins: a member asked for their own community; it waits in Leads.
+    else if (n.type === 'community_request') Linking.openURL(`${LEGAL_BASE_URL}/leads`).catch(() => {});
     else if (n.type === 'captain_nudge' || n.type === 'captain_assigned') router.push(n.communityId ? { pathname: '/host', params: { community: n.communityId } } : '/host');
     else if (n.type === 'club_verified' && n.communityId) router.push({ pathname: '/(tabs)/feed/community', params: { id: n.communityId } });
     else if (n.type === 'coach_request') router.push('/(tabs)/profile');

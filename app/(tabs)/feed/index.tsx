@@ -11,7 +11,7 @@ import { useFeed, toggleBeast, createPost, deletePost, reportPost, blockMember, 
 import { useMyPackList, PackSummary } from '../../../src/data/member';
 import { Community, useMyCommunities, useOpenCommunities } from '../../../src/data/communities';
 import { CommunityRow, JoinCommunityForm } from '../../../src/components/board/communities';
-import { StartClubCard } from '../../../src/components/board/clubs';
+import { RequestCommunityCard } from '../../../src/components/board/clubs';
 import { useMySessions } from '../../../src/data/sessions';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { Txt } from '../../../src/components/board/Txt';
@@ -281,11 +281,9 @@ function CommunitiesPane({ mine, open, refreshing, onRefresh, onOpen }: { mine: 
       <View style={{ marginTop: 24 }}>
         <JoinCommunityForm onJoined={onRefresh} />
       </View>
-      {!mine.some((c) => c.leaderId && c.leaderId === meId) ? (
-        <View style={{ marginTop: 20 }}>
-          <StartClubCard />
-        </View>
-      ) : null}
+      <View style={{ marginTop: 20 }}>
+        <RequestCommunityCard />
+      </View>
       {open.length ? (
         <View style={{ marginTop: 24 }}>
           <SectionHeading title={t('community.discover')} />
@@ -313,17 +311,29 @@ function PacksPane({ packs, loading, onOpen, onCreate, onJoin }: { packs: PackSu
           {t('tribe.packsEmpty')}
         </Txt>
       ) : null}
-      {packs.map((pk) => (
-        <Press key={pk.id} onPress={() => onOpen(pk)} feedback="selection" depress={0.99} style={s.packRow}>
-          <Patch emblem={pk.emblem} name={pk.name} size={56} />
-          <View style={{ flex: 1 }}>
-            <Txt v="row" size={16}>
-              {pk.name}
+      {/* Groups sit under the community they belong to. */}
+      {Array.from(new Set(packs.map((pk) => pk.community ?? ''))).map((community) => (
+        <View key={community || 'none'} style={{ gap: 12 }}>
+          {community ? (
+            <Txt v="label" size={13} color={p.inkSoft} style={{ marginTop: 6 }}>
+              {community}
             </Txt>
-            <Txt v="meta">{[tn('tribe.members', pk.members), pk.community].filter(Boolean).join(' · ')}</Txt>
-          </View>
-          <Icon name="chevron" size={14} color={p.inkFaint} weight="bold" />
-        </Press>
+          ) : null}
+          {packs
+            .filter((pk) => (pk.community ?? '') === community)
+            .map((pk) => (
+              <Press key={pk.id} onPress={() => onOpen(pk)} feedback="selection" depress={0.99} style={s.packRow}>
+                <Patch emblem={pk.emblem} name={pk.name} size={56} />
+                <View style={{ flex: 1 }}>
+                  <Txt v="row" size={16}>
+                    {pk.name}
+                  </Txt>
+                  <Txt v="meta">{tn('tribe.members', pk.members)}</Txt>
+                </View>
+                <Icon name="chevron" size={14} color={p.inkFaint} weight="bold" />
+              </Press>
+            ))}
+        </View>
       ))}
       <View style={{ gap: 10, marginTop: 8 }}>
         <MarkerButton label={t('tribe.startPack')} icon="plus" onPress={onCreate} />

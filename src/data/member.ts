@@ -60,6 +60,7 @@ export interface PackSummary {
   emblem: Emblem;
   members: number;
   community: string | null;
+  communityId: string | null;
 }
 export function useMyPackList() {
   const me = useMeId();
@@ -67,7 +68,7 @@ export function useMyPackList() {
     if (PREVIEW) return previewPacks;
     const { data, error } = await supabase
       .from('pack_members')
-      .select('pack:packs(id, name, animal, emblem_kind, emblem_value, emblem_color, community:communities(name), members:pack_members(count))')
+      .select('pack:packs(id, name, animal, emblem_kind, emblem_value, emblem_color, community:communities(id, name), members:pack_members(count))')
       .eq('user_id', me!);
     if (error) throw error;
     return (data || [])
@@ -79,6 +80,7 @@ export function useMyPackList() {
         emblem: emblemOf(pk),
         members: pk.members?.[0]?.count ?? 1,
         community: pk.community?.name ?? null,
+        communityId: pk.community?.id ?? null,
       }));
   });
 }

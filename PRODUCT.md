@@ -60,6 +60,11 @@ A sports community app owned by a real activewear brand (Operation Beast) and bu
 - Pack glyphs: `assets/brand/pack-glyphs/*.svg` (+ CREDITS.md); sources and generator in `scripts/brand/pack-glyphs/` (writes `src/components/brand/glyphs.ts` and the admin copy). CC BY 3.0 requires the credit line to stay in the app.
 - No member testimonials, member counts, partner logos, or press exist. Never fabricate them.
 
+## Communities and groups (decided 2026-10-04)
+
+- Communities are set up by Beast Tribe for companies, gyms and clubs, compounds, schools, coaches, sports creators and other partners; members don't create them. In the app, "Want a community of your own?" sends a request (who they are, name, size, contact) to Leads in the dashboard and alerts the admins. Every community is private: only people its owner or admins invite can join (the general Beast Tribe community is the open one).
+- Groups (friends, crews) always live inside a community: the general one, or a private one the member belongs to. Members create and join groups freely inside their communities; a private community's groups are for its members only. Tribe lists groups under their community, and a community page shows the member's groups there with "Start a group here".
+
 ## Business Model (decided 2026-10-01)
 
 - Community-driven and B2B first: companies, compounds and clubs buy a PRIVATE community (seats + contract) that their people join with an invite code. Open communities anyone can join; everyone starts in the open "Beast Tribe".

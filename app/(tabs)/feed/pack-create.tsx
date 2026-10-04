@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Image, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { makeStyles, useKit } from '../../../src/theme';
 import { useI18n } from '../../../src/i18n';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { createPack, PackAudience, setPackPhoto } from '../../../src/data/packs';
+import { useMyCommunities } from '../../../src/data/communities';
+import { Chip } from '../../../src/components/board/controls';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { randomEmblem } from '../../../src/lib/emblem';
 import { Txt } from '../../../src/components/board/Txt';
@@ -28,6 +30,11 @@ export default function PackCreateScreen() {
   const gender = PREVIEW ? 'female' : (profile?.gender || '').toLowerCase();
   const audiences: PackAudience[] = ['everyone', ...(gender === 'female' ? (['women'] as PackAudience[]) : gender === 'male' ? (['men'] as PackAudience[]) : [])];
   const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
+  // Every group lives in a community: the general one, or a private one the member belongs to.
+  const params = useLocalSearchParams<{ community?: string }>();
+  const communities = useMyCommunities().data ?? [];
+  const [communityId, setCommunityId] = useState<string | null>(params.community ?? null);
+  const home = communities.find((c) => c.id === communityId) ?? communities.find((c) => c.isDefault) ?? communities[0] ?? null;
   const [name, setName] = useState('');
   const [emblem, setEmblem] = useState(randomEmblem);
   const [audience, setAudience] = useState<PackAudience>('everyone');
@@ -43,7 +50,7 @@ export default function PackCreateScreen() {
     if (!meId || !name.trim()) return;
     setBusy(true);
     try {
-      const pack = await createPack(meId, name, emblem, audience);
+      const pack = await createPack(meId, name, emblem, audience, home?.id ?? null);
       // The photo is extra: the group exists even if its upload fails.
       if (photo) await setPackPhoto(meId, pack.id, photo).catch(() => toast.show(t('pack.photoFailed'), 'error'));
       haptic('success');
@@ -79,6 +86,22 @@ export default function PackCreateScreen() {
 
           <SectionHeading title={t('pack.name')} />
           <Field value={name} onChangeText={setName} placeholder={t('pack.namePlaceholder')} maxLength={32} returnKeyType="done" />
+
+          {communities.length > 1 ? (
+            <>
+              <SectionHeading title={t('pack.where')} style={{ marginTop: 18 }} />
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {communities.map((c) => (
+                  <Chip key={c.id} label={c.name} icon={c.open ? 'people' : 'shield'} selected={home?.id === c.id} onPress={() => setCommunityId(c.id)} />
+                ))}
+              </View>
+            </>
+          ) : null}
+          {home ? (
+            <Txt v="caption" style={{ marginTop: 6 }}>
+              {home.isDefault || home.open ? t('pack.whereOpen') : t('pack.wherePrivate', { name: home.name })}
+            </Txt>
+          ) : null}
 
           <SectionHeading title={t('pack.audience')} style={{ marginTop: 18 }} />
           <Segmented

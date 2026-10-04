@@ -12,20 +12,27 @@ export type ClubErrorCode = (typeof CLUB_CODES)[number] | 'generic';
 export class ClubError extends CodedError<ClubErrorCode> {}
 const toError = (e: any) => new ClubError(codeFrom(e, CLUB_CODES));
 
-export async function createClub(input: { name: string; sport: string | null; city: string; description: string; listing: ClubListing }): Promise<{ id: string; joinCode: string }> {
-  if (PREVIEW) return { id: 'c-preview', joinCode: 'RUN24X' };
-  const { data, error } = await supabase.rpc('create_club', {
+// Your own community: members ask, Beast Tribe sets it up with them (2026-10-04). The request lands
+// in the dashboard's Leads and pings the admins.
+export type CommunityKind = 'company' | 'gym' | 'coach' | 'influencer' | 'compound' | 'school' | 'leader' | 'other';
+export const COMMUNITY_KINDS: CommunityKind[] = ['company', 'gym', 'compound', 'coach', 'influencer', 'school', 'leader', 'other'];
+const REQUEST_CODES = ['TOO_MANY', 'CONTACT', 'ORG', 'NAME'] as const;
+export type RequestErrorCode = (typeof REQUEST_CODES)[number] | 'generic';
+export class RequestError extends CodedError<RequestErrorCode> {}
+
+export async function requestCommunity(input: { kind: CommunityKind; org: string; name: string; role: string; contact: string; city: string; size: string | null; message: string }) {
+  if (PREVIEW) return;
+  const { error } = await supabase.rpc('request_community', {
+    p_kind: input.kind,
+    p_org: input.org.trim(),
     p_name: input.name.trim(),
-    p_sport: input.sport,
+    p_role: input.role.trim(),
+    p_contact: input.contact.trim(),
     p_city: input.city.trim(),
-    p_description: input.description.trim(),
-    p_listing: input.listing,
+    p_size: input.size,
+    p_message: input.message.trim(),
   });
-  if (error) throw toError(error);
-  const row = Array.isArray(data) ? data[0] : data;
-  invalidate('communities:');
-  invalidate('sessions:');
-  return { id: row.id, joinCode: row.join_code };
+  if (error) throw new RequestError(codeFrom(error, REQUEST_CODES));
 }
 
 export async function updateMyClub(id: string, input: { name?: string; description?: string; notice?: string; listing?: ClubListing }) {

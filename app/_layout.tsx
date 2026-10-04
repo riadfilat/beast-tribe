@@ -62,7 +62,7 @@ function AuthGate() {
       <Stack.Screen name="courts" />
       <Stack.Screen name="court/[id]" />
       <Stack.Screen name="assistant" />
-      <Stack.Screen name="club-new" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="community-request" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }
