@@ -88,7 +88,8 @@ export default function HostScreen() {
   const [coachId, setCoachId] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
   const [cover, setCover] = useState<string | null>(null);
-  const [workoutId, setWorkoutId] = useState<string | null>(params.workout ?? null);
+  // No workout picker: a session only carries a workout when it was started from one in Train.
+  const [workoutId] = useState<string | null>(params.workout ?? null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<{ id: string; title: string } | null>(null);
@@ -313,24 +314,6 @@ export default function HostScreen() {
                 <GroupRow label={t('host.guests')} toggle={guests} onToggle={setGuests} />
               </Group>
             ) : null}
-          </>
-        ) : null}
-
-        {workouts.length ? (
-          <>
-            <SectionHeading title={t('host.workout')} style={s.gap} />
-            <Txt v="meta" style={{ marginTop: -6, marginBottom: 8 }}>
-              {t('host.workoutSub')}
-            </Txt>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.row}>
-              <Chip label={t('host.workoutNone')} selected={!workoutId} onPress={() => setWorkoutId(null)} />
-              {workouts
-                .filter((w) => !sport || w.sport === sport || w.id === workoutId)
-                .slice(0, 12)
-                .map((w) => (
-                  <Chip key={w.id} label={w.title} icon="train" selected={workoutId === w.id} onPress={() => setWorkoutId(workoutId === w.id ? null : w.id)} />
-                ))}
-            </ScrollView>
           </>
         ) : null}
 
