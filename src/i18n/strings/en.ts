@@ -869,6 +869,13 @@ export const en = {
     nudgeTitle: 'How did they play? {title}',
     nudgeSub: p({ one: 'Rate 1 person, privately', other: 'Rate {n} people, privately' }),
   },
+  location: {
+    askTitle: "See what's on near you",
+    askBody: 'Beast Tribe uses your approximate location to show sessions, courts and players in your city. Only your city is saved, and nobody sees where you are.',
+    allow: 'Allow location',
+    notNow: 'Not now',
+    km: '{km} km',
+  },
   request: {
     cardTitle: 'Want a community of your own?',
     cardSub: 'For companies, gyms, compounds, coaches and creators. Tell us about yours and we set it up with you.',

@@ -15,7 +15,7 @@ import { useCoaches, useMyPackList, useMySports } from '../src/data/member';
 import { useMyCommunities } from '../src/data/communities';
 import { useMyCaptaincies } from '../src/data/captains';
 import { CITIES, cityKey, cityLabel } from '../src/lib/cities';
-import { nearestCity, usePosition } from '../src/lib/location';
+import { nearestCity, refreshPosition, useMyPosition } from '../src/lib/location';
 import { Sheet } from '../src/components/board/sheet';
 import { PREVIEW, PREVIEW_ME } from '../src/data/preview';
 import { SPORT_LIST, SportId } from '../src/lib/sports';
@@ -115,7 +115,10 @@ export default function HostScreen() {
   const days = useMemo(() => Array.from({ length: 14 }, (_, i) => addDays(startOfLocalDay(now), i)), []);
   const coach = coaches.find((c) => c.id === coachId) ?? null;
   // The phone's position (asked once, kept on the phone) picks the city and sorts places by distance.
-  const pos = usePosition(true);
+  const pos = useMyPosition();
+  useEffect(() => {
+    refreshPosition(true);
+  }, []);
   const places = useHostPlaces(sport, lang, pos);
   const [placeOpen, setPlaceOpen] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);

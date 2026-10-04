@@ -7,6 +7,8 @@ import { useI18n } from '../../src/i18n';
 import { useInboxLive } from '../../src/data/inbox';
 import { useStepsSync } from '../../src/components/board/wellness';
 import { TRAIN_ENABLED } from '../../src/lib/constants';
+import { useLocationRefresh } from '../../src/lib/location';
+import { useCitySync } from '../../src/components/board/location';
 import { schedulePlanReminder } from '../../src/lib/notifications';
 
 function TabIcon({ name, color }: { name: IconName; color: string }) {
@@ -21,6 +23,9 @@ export default function TabLayout() {
   const bottom = insets.bottom > 0 ? insets.bottom - 2 : 8;
   useInboxLive();
   useStepsSync();
+  // Where the member is, refreshed when the app opens (never asking here); their city follows.
+  useLocationRefresh();
+  useCitySync();
   // With Train off, a plan reminder set by an earlier version is taken back.
   useEffect(() => {
     if (!TRAIN_ENABLED) schedulePlanReminder(null, false);

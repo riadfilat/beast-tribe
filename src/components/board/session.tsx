@@ -14,6 +14,7 @@ import { MagnetRow } from './people';
 import { Node, Sun, Tag, Tally, ZigZag } from './marks';
 import { MarkerButton, OutlineButton } from './controls';
 import { sessionPicture } from '../../lib/sportPhotos';
+import { distanceKm, useMyPosition } from '../../lib/location';
 
 /** Re-render on a clock tick so NOW, LIVE, and countdowns stay true. */
 export function useNow(intervalMs = 30000) {
@@ -29,9 +30,10 @@ export function sportLabel(t: (k: string) => string, sport: string) {
   return t(`sports.${sport}`);
 }
 
-/** Place line: "Padel · Olaya Courts · Riyadh" */
-function placeLine(s: Session, t: (k: string) => string, lang: string) {
-  return [sportLabel(t, s.sport), s.place, cityLabel(s.city, lang)].filter(Boolean).join(' · ');
+/** Place line: "Padel · Olaya Courts · 2.3 km" (the distance when the member's position is known, else the city). */
+function placeLine(s: Session, t: (k: string, v?: any) => string, lang: string, km?: number | null) {
+  const where = km != null ? t('location.km', { km: km < 10 ? km.toFixed(1) : Math.round(km) }) : cityLabel(s.city, lang);
+  return [sportLabel(t, s.sport), s.place, where].filter(Boolean).join(' · ');
 }
 
 // ─── Tags for a session's state ─────────────────────────────────────────────
@@ -111,6 +113,8 @@ export function SessionRow({ s, size = 'normal', now, meId, showDay, rail = true
   const { t, tn } = useI18n();
   const hero = size === 'hero';
   const compact = size === 'compact';
+  const pos = useMyPosition();
+  const km = pos && s.lat != null && s.lng != null ? distanceKm(pos, { lat: s.lat, lng: s.lng }) : null;
   const { time, suffix } = clockParts(s.startsAt, lang);
   const mine = s.myStatus === 'going' || s.isHost;
   const dim = s.state === 'cancelled' || s.state === 'finished';
@@ -182,7 +186,7 @@ export function SessionRow({ s, size = 'normal', now, meId, showDay, rail = true
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <Icon sport={s.sport} size={14} color={p.inkSoft} />
         <Txt v="meta" numberOfLines={1} style={{ flex: 1 }}>
-          {placeLine(s, t, lang)}
+          {placeLine(s, t, lang, km)}
         </Txt>
       </View>
       {statusLine ? (
@@ -224,7 +228,7 @@ export function SessionRow({ s, size = 'normal', now, meId, showDay, rail = true
         onPress={onPress}
         feedback="selection"
         depress={0.985}
-        accessibilityLabel={`${s.title}, ${fmtClock(s.startsAt, lang)}, ${placeLine(s, t, lang)}`}
+        accessibilityLabel={`${s.title}, ${fmtClock(s.startsAt, lang)}, ${placeLine(s, t, lang, km)}`}
         style={{ flexDirection: 'row', alignItems: 'stretch' }}
       >
         {rail ? (

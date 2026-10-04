@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
+import { create } from 'zustand';
 import { requireOptionalNativeModule } from 'expo';
 import { CITIES } from './cities';
 
-// Where the member is, only to suggest their city and sort places by distance. The position stays on
-// the phone: it is never sent to Beast Tribe. Builds without the location module (or a refused
-// permission) simply get null, and the app falls back to the member's profile city.
+// Where the member is, the way big apps do it: read when the app opens (if allowed) to show what's
+// near them. The exact position stays on the phone; only the city it falls in is saved to the
+// profile (so the Board, nearby call-outs and city filters work). Builds without the location
+// module, or a refused permission, get null and the app falls back to the profile city.
 
 export interface Position {
   lat: number;
@@ -51,6 +53,48 @@ export async function currentPosition(ask: boolean): Promise<Position | null> {
   } catch {
     return null;
   }
+}
+
+export type LocationStatus = 'granted' | 'undetermined' | 'denied' | 'unavailable';
+
+/** Whether the app may read the position, without asking. */
+export async function locationStatus(): Promise<LocationStatus> {
+  try {
+    if (Platform.OS === 'web') return 'unavailable';
+    const L = native();
+    if (!L) return 'unavailable';
+    const p = await L.getForegroundPermissionsAsync();
+    return p.granted ? 'granted' : p.canAskAgain ? 'undetermined' : 'denied';
+  } catch {
+    return 'unavailable';
+  }
+}
+
+// One position for the whole app, refreshed when the app opens or comes back to the front.
+const useStore = create<{ pos: Position | null; at: number }>(() => ({ pos: null, at: 0 }));
+
+/** Read the position now (asking only when `ask` is set) and share it with every screen. */
+export async function refreshPosition(ask = false): Promise<Position | null> {
+  const p = await currentPosition(ask);
+  if (p) useStore.setState({ pos: p, at: Date.now() });
+  return p;
+}
+
+/** The member's position, shared across the app (null until known or when not allowed). */
+export function useMyPosition() {
+  return useStore((s) => s.pos);
+}
+
+/** Keep the position fresh: on app open and whenever the app returns, at most every 10 minutes, never asking. */
+export function useLocationRefresh() {
+  useEffect(() => {
+    const run = () => {
+      if (Date.now() - useStore.getState().at > 10 * 60000) refreshPosition(false);
+    };
+    run();
+    const sub = AppState.addEventListener('change', (st) => st === 'active' && run());
+    return () => sub.remove();
+  }, []);
 }
 
 /** The member's position for this screen (null until known, or when unavailable). */

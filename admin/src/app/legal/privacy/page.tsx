@@ -119,10 +119,11 @@ export default function PrivacyPolicyPage() {
           <section className="space-y-3">
             <h2 className="text-xl font-semibold text-gray-900">Your Location</h2>
             <p>
-              Only if you allow it, the app reads your approximate location while you set up a session, to
-              suggest your city and list the places closest to you. Your location is used on your phone only:
-              it is not sent to us, not stored and not shared. You can turn it off at any time in your
-              phone&rsquo;s settings; you can still pick your city yourself.
+              Only if you allow it, the app reads your approximate location when you open it, to show the
+              sessions, courts and players near you and how far they are. Your exact position stays on your
+              phone: it is not sent to us and nobody else sees it. We only save the city you are in to your
+              profile, so the app can show what is happening there. You can turn location off at any time in
+              your phone&rsquo;s settings and choose your city yourself.
             </p>
           </section>
 

@@ -114,7 +114,8 @@ Free to join. Made by Operation Beast.
 - Health & Fitness → Health (body measurements you record or share with a coach), Fitness (workouts, nutrition and water logs)
 - User Content → Photos or Videos; Emails or Text Messages (session and group chat); Other User Content (posts, comments)
 - Identifiers → User ID
-- Not collected: location from the device, contacts, browsing, purchases, diagnostics, advertising data.
+- Location → Coarse Location (the city the member is in, from the phone's approximate location, saved to the profile; the exact position never leaves the phone)
+- Not collected: precise location, contacts, browsing, purchases, diagnostics, advertising data.
 
 **Age rating questionnaire:** user-generated content **Yes** (moderated: report + block); messaging/chat **Yes**; advertising **No**; health/wellness topics **Yes** (fitness, nutrition), medical treatment info **No**; gambling, violence, mature themes **No**.
 
@@ -141,11 +142,11 @@ Demo account: `appreview@operationbeast.com` (password in CLAUDE.md › reviewer
 - **App access:** "All or some functionality is restricted" → demo account above.
 - **Ads:** No ads.
 - **Target audience:** 18 and over (recommended for launch: adult communities, open chat).
-- **Content rating (IARC):** users can interact/communicate **Yes**; shares location **No**; digital purchases **No**; no violence, sexual content, gambling, drugs.
+- **Content rating (IARC):** users can interact/communicate **Yes**; shares location **No** (only the city is saved; other members never see a member's location); digital purchases **No**; no violence, sexual content, gambling, drugs.
 - **Account deletion URL:** https://beast-tribe.vercel.app/support (section "How do I delete my account?").
 
 **Data safety**
-- Collected: Personal info (name, email address, user IDs, other info: gender, date of birth, city); Health and fitness (health info: body measurements and nutrition logs; fitness info: workouts, sessions, and on iPhone only daily steps); Photos and videos (photos); Messages (other in-app messages); App activity (other user-generated content, app interactions, in-app search history: Ask Beast questions).
+- Collected: Personal info (name, email address, user IDs, other info: gender, date of birth, city); Location (approximate location: used on the phone to find the member's city, which is saved); Health and fitness (health info: body measurements and nutrition logs; fitness info: workouts, sessions, and on iPhone only daily steps); Photos and videos (photos); Messages (other in-app messages); App activity (other user-generated content, app interactions, in-app search history: Ask Beast questions).
 - Shared with third parties: **No.** Supabase hosts the data and Anthropic answers Ask Beast questions, both as service providers processing for us, which Google does not count as sharing. Private level ratings from teammates are used only for matching and never shown.
 - Purposes: app functionality, account management, personalisation (training-partner and session suggestions). No advertising, no analytics sold or shared.
 - Android does not read steps yet (Health Connect comes in a later build), so no Health Connect declaration is needed for this release.

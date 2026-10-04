@@ -11,6 +11,7 @@ import { useUnreadCount } from '../../../src/data/inbox';
 import { usePopularSpots } from '../../../src/data/member';
 import { cityLabel } from '../../../src/lib/cities';
 import { GenderAsk } from '../../../src/components/board/gender';
+import { LocationAsk } from '../../../src/components/board/location';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import type { Session } from '../../../src/data/model';
 import { Txt } from '../../../src/components/board/Txt';
@@ -235,6 +236,7 @@ export default function BoardScreen() {
         )}
       </ScrollView>
       <GenderAsk />
+      <LocationAsk />
     </SafeAreaView>
   );
 }
