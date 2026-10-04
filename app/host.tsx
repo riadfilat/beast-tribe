@@ -14,7 +14,9 @@ import { BookError, useFacilitySlots } from '../src/data/facilities';
 import { useCoaches, useMyPackList, useMySports } from '../src/data/member';
 import { useMyCommunities } from '../src/data/communities';
 import { useMyCaptaincies } from '../src/data/captains';
-import { cityLabel } from '../src/lib/cities';
+import { CITIES, cityKey, cityLabel } from '../src/lib/cities';
+import { nearestCity, usePosition } from '../src/lib/location';
+import { Sheet } from '../src/components/board/sheet';
 import { PREVIEW, PREVIEW_ME } from '../src/data/preview';
 import { SPORT_LIST, SportId } from '../src/lib/sports';
 import { PAYMENTS_ENABLED, SESSION_LINK_BASE } from '../src/lib/constants';
@@ -112,7 +114,13 @@ export default function HostScreen() {
   const now = new Date();
   const days = useMemo(() => Array.from({ length: 14 }, (_, i) => addDays(startOfLocalDay(now), i)), []);
   const coach = coaches.find((c) => c.id === coachId) ?? null;
-  const places = useHostPlaces(sport, lang);
+  // The phone's position (asked once, kept on the phone) picks the city and sorts places by distance.
+  const pos = usePosition(true);
+  const places = useHostPlaces(sport, lang, pos);
+  const [placeOpen, setPlaceOpen] = useState(false);
+  const [cityOpen, setCityOpen] = useState(false);
+  const [cityTouched, setCityTouched] = useState(false);
+  const [custom, setCustom] = useState('');
   // A bookable court: its free slots, length and rules decide the time; booking it creates the session.
   const court = picked?.facility?.bookable ? picked.facility : null;
   const courtSlots = useFacilitySlots(court?.id, dayKey ?? localDateKey(now)).data ?? [];
@@ -135,6 +143,13 @@ export default function HostScreen() {
     const spot = [...places.community, ...places.more].find((x) => x.key === `s:${params.spot}`);
     if (spot) pickPlace(spot);
   }, [params.spot, places.more.length]);
+
+  // Where the member is: the nearest known city, until they pick one themselves.
+  useEffect(() => {
+    if (!pos || cityTouched || picked) return;
+    const c = nearestCity(pos);
+    if (c) setCity(c);
+  }, [pos?.lat, pos?.lng]);
 
   // A place that doesn't fit a newly picked sport is let go.
   useEffect(() => {
@@ -169,11 +184,8 @@ export default function HostScreen() {
   const example = autoTitle || t('autoTitle', { period: t('periods.evening'), sport: t('sportNoun.padel') });
 
   function pickPlace(x: Place) {
-    if (picked?.key === x.key) {
-      setPicked(null);
-      setSlotAt(null);
-      return;
-    }
+    setPlaceOpen(false);
+    if (picked?.key === x.key) return;
     setPicked(x);
     setPlace(x.name);
     setCity(x.city ?? '');
@@ -399,34 +411,86 @@ export default function HostScreen() {
           </>
         ) : null}
 
-        {/* Place: the member's community courts first, then courts and spots for the sport. */}
+        {/* Where: one dropdown (the member's community courts first, then places for the sport, nearest
+            first when the position is known, or somewhere else), then the city. */}
         <SectionHeading title={t('host.place')} style={s.gap} />
-        {places.community.length ? (
-          <>
-            <Txt v="label" size={13} color={p.inkSoft} style={s.rowLabel}>
-              {places.community[0].facility?.communityName ? t('host.placeCommunity', { name: places.community[0].facility.communityName }) : t('courts.yourCommunity')}
-            </Txt>
-            <PlaceRow items={places.community} picked={picked} onPick={pickPlace} />
-          </>
-        ) : null}
-        {places.more.length ? (
-          <>
-            <Txt v="label" size={13} color={p.inkSoft} style={s.rowLabel}>
-              {places.community.length ? t('host.placeMore') : sport ? t('host.placeFor', { sport: t(`sports.${sport}`) }) : t('host.placeForYou')}
-            </Txt>
-            <PlaceRow items={places.more} picked={picked} onPick={pickPlace} />
-          </>
-        ) : null}
+        <Dropdown
+          label={picked ? picked.name : place || t('host.choosePlace')}
+          sub={picked ? [picked.facility?.communityName, cityLabel(picked.city, lang)].filter(Boolean).join(' · ') : null}
+          image={picked?.imageUrl ?? null}
+          placeholder={!picked && !place}
+          onPress={() => setPlaceOpen(true)}
+        />
         {court ? (
-          <Txt v="caption" style={{ marginTop: 2 }}>
+          <Txt v="caption" style={{ marginTop: 6 }}>
             {[t('host.courtNote', { min: court.slotMinutes, n: court.maxPlayers }), court.dailyLimit ? t('courts.dailyRule', { n: court.dailyLimit, sport: t(`sports.${court.sport}`) }) : null].filter(Boolean).join(' ')}
           </Txt>
-        ) : (
-          <View style={{ gap: 10, marginTop: places.community.length + places.more.length ? 4 : 0 }}>
-            <Field value={place} onChangeText={(v) => { setPlace(v); setPicked(null); }} placeholder={t('host.placePlaceholder')} />
-            <Field value={city} onChangeText={setCity} placeholder={t('host.cityPlaceholder')} />
+        ) : null}
+        <SectionHeading title={t('host.city')} style={{ marginTop: 14 }} />
+        <Dropdown label={cityLabel(city, lang) || t('host.chooseCity')} placeholder={!city} onPress={() => setCityOpen(true)} />
+
+        <Sheet visible={placeOpen} title={t('host.placeSheet')} onClose={() => setPlaceOpen(false)}>
+          {places.community.length ? (
+            <PlaceList
+              title={places.community[0].facility?.communityName ? t('host.placeCommunity', { name: places.community[0].facility.communityName }) : t('courts.yourCommunity')}
+              items={places.community}
+              picked={picked}
+              onPick={pickPlace}
+            />
+          ) : null}
+          {places.more.length ? (
+            <PlaceList
+              title={places.community.length ? t('host.placeMore') : sport ? t('host.placeFor', { sport: t(`sports.${sport}`) }) : t('host.placeForYou')}
+              items={places.more}
+              picked={picked}
+              onPick={pickPlace}
+            />
+          ) : null}
+          <View style={{ gap: 8 }}>
+            <Txt v="label" size={13} color={p.inkSoft}>
+              {t('host.somewhereElse')}
+            </Txt>
+            <Field value={custom} onChangeText={setCustom} placeholder={t('host.placePlaceholder')} maxLength={80} />
+            <OutlineButton
+              label={t('host.usePlace')}
+              disabled={!custom.trim()}
+              onPress={() => {
+                setPicked(null);
+                setSlotAt(null);
+                setPlace(custom.trim());
+                setPlaceOpen(false);
+              }}
+            />
           </View>
-        )}
+        </Sheet>
+
+        <Sheet visible={cityOpen} title={t('host.city')} onClose={() => setCityOpen(false)}>
+          {(Object.keys(CITIES) as string[])
+            .sort((a, b) => Number(b === country) - Number(a === country))
+            .map((cc) => (
+              <View key={cc} style={{ gap: 6 }}>
+                {cc !== country ? (
+                  <Txt v="label" size={12} color={p.inkFaint} style={{ marginTop: 6 }}>
+                    {t(`onboarding.countries.${cc}`)}
+                  </Txt>
+                ) : null}
+                <View style={s.wrap}>
+                  {CITIES[cc].map(([en, ar]) => (
+                    <Chip
+                      key={en}
+                      label={lang === 'ar' ? ar : en}
+                      selected={cityKey(city) === cityKey(en) || cityKey(city) === cityKey(ar)}
+                      onPress={() => {
+                        setCity(en);
+                        setCityTouched(true);
+                        setCityOpen(false);
+                      }}
+                    />
+                  ))}
+                </View>
+              </View>
+            ))}
+        </Sheet>
 
         <SectionHeading title={t('host.day')} style={s.gap} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.row}>
@@ -657,41 +721,71 @@ export default function HostScreen() {
   );
 }
 
-function PlaceRow({ items, picked, onPick }: { items: Place[]; picked: Place | null; onPick: (x: Place) => void }) {
+/** A field that opens a list: shows the choice (with its photo) or a placeholder. */
+function Dropdown({ label, sub, image, placeholder, onPress }: { label: string; sub?: string | null; image?: string | null; placeholder?: boolean; onPress: () => void }) {
   const s = useStyles();
+  const { p } = useKit();
+  return (
+    <Press onPress={onPress} feedback="selection" accessibilityRole="button" style={s.dropdown}>
+      {image ? <Image source={{ uri: image }} style={{ width: 44, height: 44, borderRadius: 8 }} /> : null}
+      <View style={{ flex: 1 }}>
+        <Txt v={placeholder ? 'body' : 'label'} size={15} color={placeholder ? p.inkFaint : p.ink} numberOfLines={1}>
+          {label}
+        </Txt>
+        {sub ? (
+          <Txt v="caption" numberOfLines={1}>
+            {sub}
+          </Txt>
+        ) : null}
+      </View>
+      <Icon name="chevron" size={12} color={p.inkSoft} weight="bold" style={{ transform: [{ rotate: '90deg' }] }} />
+    </Press>
+  );
+}
+
+/** One group of places in the Where sheet: photo, name, and why it's here (free / played here / distance). */
+function PlaceList({ title, items, picked, onPick }: { title: string; items: Place[]; picked: Place | null; onPick: (x: Place) => void }) {
   const { p, lang } = useKit();
   const { t } = useI18n();
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[s.row, { paddingBottom: 12 }]}>
+    <View style={{ gap: 4 }}>
+      <Txt v="label" size={13} color={p.inkSoft}>
+        {title}
+      </Txt>
       {items.map((x) => {
         const f = x.facility;
-        const line =
-          x.reason === 'community'
-            ? f && !f.price ? t('host.tagFree') : f ? t('host.tagPrice', { n: f.price }) : ''
-            : x.reason === 'used'
-              ? t('host.tagPlayed')
-              : cityLabel(x.city, lang) || '';
+        const line = [
+          x.reason === 'community' ? (f && !f.price ? t('host.tagFree') : f ? t('host.tagPrice', { n: f.price }) : null) : x.reason === 'used' ? t('host.tagPlayed') : null,
+          f && !f.bookable ? t('courts.classesOnly') : null,
+          x.km != null ? t('host.kmAway', { km: x.km < 10 ? x.km.toFixed(1) : Math.round(x.km) }) : cityLabel(x.city, lang) || null,
+        ]
+          .filter(Boolean)
+          .join(' · ');
         const on = picked?.key === x.key;
         return (
-          <Press key={x.key} onPress={() => onPick(x)} feedback="selection" accessibilityRole="button" accessibilityState={{ selected: on }} style={[s.spot, on ? { borderColor: p.ink } : null]}>
-            {x.imageUrl ? <Image source={{ uri: x.imageUrl }} style={s.spotImg} /> : <View style={[s.spotImg, { backgroundColor: p.wash }]} />}
-            <View style={{ padding: 8 }}>
-              <Txt v="label" size={13} numberOfLines={1}>
+          <Press key={x.key} onPress={() => onPick(x)} feedback="selection" accessibilityRole="button" accessibilityState={{ selected: on }} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 }}>
+            {x.imageUrl ? (
+              <Image source={{ uri: x.imageUrl }} style={{ width: 56, height: 42, borderRadius: 8 }} />
+            ) : (
+              <View style={{ width: 56, height: 42, borderRadius: 8, backgroundColor: p.wash, alignItems: 'center', justifyContent: 'center' }}>
+                <Icon sport={x.sports[0] ?? 'other'} size={18} color={p.inkSoft} />
+              </View>
+            )}
+            <View style={{ flex: 1 }}>
+              <Txt v="label" size={15} numberOfLines={1}>
                 {x.name}
               </Txt>
-              <Txt v="caption" size={11} numberOfLines={1}>
-                {[line, f && !f.bookable ? t('courts.classesOnly') : null].filter(Boolean).join(' · ')}
-              </Txt>
+              {line ? (
+                <Txt v="caption" numberOfLines={1}>
+                  {line}
+                </Txt>
+              ) : null}
             </View>
-            {on ? (
-              <View style={s.spotCheck}>
-                <Icon name="check" size={12} color={p.board} weight="bold" />
-              </View>
-            ) : null}
+            {on ? <Icon name="check" size={16} color={p.aqua} weight="bold" /> : null}
           </Press>
         );
       })}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -725,9 +819,7 @@ const useStyles = makeStyles(({ p }) => ({
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   row: { gap: 8 },
   rowLabel: { marginTop: 4, marginBottom: 6 },
-  spot: { width: 150, borderRadius: 10, borderWidth: 1.5, borderColor: p.rule, overflow: 'hidden' },
-  spotImg: { width: '100%', height: 84 },
-  spotCheck: { position: 'absolute', top: 6, end: 6, width: 22, height: 22, borderRadius: 11, backgroundColor: p.ink, alignItems: 'center', justifyContent: 'center' },
+  dropdown: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 54, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1.5, borderColor: p.ruleStrong, backgroundColor: p.wash },
   stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: p.ruleStrong, borderRadius: 10, padding: 4 },
   stepBtn: { width: 48, height: 44, borderRadius: 8, backgroundColor: p.wash, alignItems: 'center', justifyContent: 'center' },
   moreToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 48, marginTop: 14 },

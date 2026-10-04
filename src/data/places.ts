@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useAuth } from '../providers/AuthProvider';
 import { cityKey, cityKeys } from '../lib/cities';
 import { Facility, useFacilities } from './facilities';
+import { distanceKm, type Position } from '../lib/location';
 import { useMySports, usePopularSpots } from './member';
 
 // Where to host: courts and places ranked for this member and the sport they picked.
@@ -22,9 +23,11 @@ export interface Place {
   facility: Facility | null;
   /** Why it is shown, for the small line under the name. */
   reason: 'community' | 'used' | 'sport' | 'near' | null;
+  /** Kilometres from the member, when their position is known. */
+  km: number | null;
 }
 
-export function useHostPlaces(sport: string | null, lang: string) {
+export function useHostPlaces(sport: string | null, lang: string, pos: Position | null = null) {
   const { profile } = useAuth();
   const mySports = useMySports().data ?? [];
   const facilities = useFacilities(lang).data ?? [];
@@ -35,6 +38,9 @@ export function useHostPlaces(sport: string | null, lang: string) {
     const home = new Set(cityKeys(profile?.city));
     const fits = (sports: string[]) => (sport ? sports.includes(sport) : !mySports.length || sports.some((x) => mySports.includes(x as any)));
     const near = (city: string | null) => !!city && home.has(cityKey(city));
+    const kmOf = (lat: number | null, lng: number | null) => (pos && lat != null && lng != null ? distanceKm(pos, { lat, lng }) : null);
+    // With a position: closer is better (up to 200 points within a few km, nothing past 50 km).
+    const closeness = (km: number | null) => (km == null ? 0 : Math.max(0, 200 - km * 4));
 
     const courts: (Place & { score: number })[] = facilities
       .filter((f) => fits(f.sports))
@@ -47,9 +53,10 @@ export function useHostPlaces(sport: string | null, lang: string) {
         lat: f.lat,
         lng: f.lng,
         facility: f,
+        km: kmOf(f.lat, f.lng),
         reason: f.reason === 'community' ? 'community' : f.reason === 'used' ? 'used' : near(f.city) ? 'near' : 'sport',
         // useFacilities already orders by community, use, sport and city; keep that order inside each band.
-        score: (f.reason === 'community' ? 1000 : 0) + (f.reason === 'used' ? 400 : 0) + (near(f.city) ? 150 : 0) + (f.bookable ? 20 : 0) - i,
+        score: (f.reason === 'community' ? 1000 : 0) + (f.reason === 'used' ? 400 : 0) + (near(f.city) ? 150 : 0) + (f.bookable ? 20 : 0) + closeness(kmOf(f.lat, f.lng)) - i,
       }));
     const publicSpots: (Place & { score: number })[] = spots
       .filter((x) => fits(x.sports))
@@ -62,12 +69,13 @@ export function useHostPlaces(sport: string | null, lang: string) {
         lat: x.lat,
         lng: x.lng,
         facility: null,
+        km: kmOf(x.lat, x.lng),
         reason: near(x.city) ? 'near' : 'sport',
-        score: (near(x.city) ? 150 : 0) - i,
+        score: (near(x.city) ? 150 : 0) + closeness(kmOf(x.lat, x.lng)) - i,
       }));
 
     const community = courts.filter((x) => x.reason === 'community').sort((a, b) => b.score - a.score);
     const more = [...courts.filter((x) => x.reason !== 'community'), ...publicSpots].sort((a, b) => b.score - a.score).slice(0, 12);
     return { community, more };
-  }, [facilities, spots, sport, sportsKey, profile?.city]);
+  }, [facilities, spots, sport, sportsKey, profile?.city, pos?.lat, pos?.lng]);
 }

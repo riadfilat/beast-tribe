@@ -196,6 +196,12 @@ export const en = {
     clear: 'Clear',
   },
   host: {
+    choosePlace: 'Choose a place',
+    chooseCity: 'Choose a city',
+    placeSheet: 'Where are you meeting?',
+    somewhereElse: 'Somewhere else',
+    usePlace: 'Use this place',
+    kmAway: '{km} km away',
     levelSub: 'We call players at this level first, then one level below, until the seats fill.',
     waitlist: 'Waiting list',
     waitlistSub: 'Extra seats in case someone drops.',

@@ -217,6 +217,12 @@ export const ar: Strings = {
     clear: 'مسح',
   },
   host: {
+    choosePlace: 'اختر مكانًا',
+    chooseCity: 'اختر مدينة',
+    placeSheet: 'أين ستلتقون؟',
+    somewhereElse: 'مكان آخر',
+    usePlace: 'استخدم هذا المكان',
+    kmAway: 'على بعد {km} كم',
     levelSub: 'ننبّه لاعبي هذا المستوى أولًا، ثم المستوى الأقل منه بدرجة، حتى تكتمل المقاعد.',
     waitlist: 'قائمة الانتظار',
     waitlistSub: 'مقاعد إضافية إن اعتذر أحد.',
