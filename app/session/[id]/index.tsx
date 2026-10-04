@@ -10,7 +10,7 @@ import { clockParts, dayOffset, fmtClock, fmtDateLong, fmtDay, fmtDuration, fmtI
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { useSession, useSessionActions } from '../../../src/data/sessions';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
-import { SESSION_LINK_BASE } from '../../../src/lib/constants';
+import { SESSION_LINK_BASE, TRAIN_ENABLED } from '../../../src/lib/constants';
 import { Txt } from '../../../src/components/board/Txt';
 import { PayBlock } from '../../../src/components/board/pay';
 import { money } from '../../../src/data/dues';
@@ -301,7 +301,7 @@ export default function SessionScreen() {
           ) : null}
 
           {/* The plan, when the host attached a workout */}
-          {x.workout ? (
+          {TRAIN_ENABLED && x.workout ? (
             <>
               <Rule style={s.rule} />
               <Press

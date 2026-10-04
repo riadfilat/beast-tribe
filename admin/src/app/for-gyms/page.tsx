@@ -1,3 +1,4 @@
+import { TRAIN_ENABLED } from '@/lib/features';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Montserrat, Poppins } from 'next/font/google';
@@ -122,11 +123,11 @@ export default function ForGymsPage() {
             },
             {
               who: 'Your coaches',
-              points: ['Coach tools included in your plan', 'Clients share training and food with them, by consent', 'Publish workouts and get paid when members use them'],
+              points: ['Coach tools included in your plan', 'Clients share training and food with them, by consent', ...(TRAIN_ENABLED ? ['Publish workouts and get paid when members use them'] : [])],
             },
             {
               who: 'Your members',
-              points: ['Free, always', 'Book, train together and find their crew', 'A full training library and plans for the days between classes'],
+              points: ['Free, always', 'Book, train together and find their crew', TRAIN_ENABLED ? 'A full training library and plans for the days between classes' : 'Courts and sessions in one place, in Arabic and English'],
             },
           ].map((c, i) => (
             <div key={c.who} className={`rounded-2xl p-7 ${i === 1 ? 'bg-[#023C3C] text-white' : 'bg-white'}`}>
@@ -469,7 +470,7 @@ function ProofMock() {
           ))}
         </div>
       </div>
-      <p className="mt-3 text-xs text-gray-500">Plus every workout members log on their own, shown as a club total.</p>
+      {TRAIN_ENABLED ? <p className="mt-3 text-xs text-gray-500">Plus every workout members log on their own, shown as a club total.</p> : null}
     </div>
   );
 }

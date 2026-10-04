@@ -1,3 +1,5 @@
+import { TRAIN_ENABLED } from './features';
+
 // One dashboard for every kind of partner. What a partner sees depends on what they run:
 // a community, sessions (classes or events), guest spots, bookable facilities, workouts.
 
@@ -24,7 +26,12 @@ const PARTNER_KINDS: Record<string, PartnerKind> = {
   nutrition: { label: 'Restaurant', people: 'Guests', sessions: 'Events', community: 'Community', caps: ['classes'] },
 };
 
-export const kindOf = (type: string): PartnerKind => PARTNER_KINDS[type] || { label: type, people: 'Members', sessions: 'Events', community: 'Community', caps: ['classes'] };
+const kindRaw = (type: string): PartnerKind => PARTNER_KINDS[type] || { label: type, people: 'Members', sessions: 'Events', community: 'Community', caps: ['classes'] };
+/** With the Train tab off, nobody publishes workouts to it. */
+export const kindOf = (type: string): PartnerKind => {
+  const k = kindRaw(type);
+  return TRAIN_ENABLED ? k : { ...k, caps: k.caps.filter((c) => c !== 'workouts') };
+};
 export const can = (type: string, cap: Cap) => kindOf(type).caps.includes(cap);
 /** One of this partner's sessions, in lower case: "class", "event" or "session". */
 export const sessionWord = (type: string) => {

@@ -1,3 +1,4 @@
+import { TRAIN_ENABLED } from '@/lib/features';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase-server';
 import { cityKeys } from '@/lib/cities';
@@ -254,7 +255,9 @@ export async function POST(req: Request) {
 
   const system = [
     'You are Beast, the assistant inside Beast Tribe, a community sports app by Operation Beast (a Saudi activewear brand).',
-    'Help the member find training partners, sessions to join, workouts and clubs. Use the tools to look things up; never invent people, sessions, clubs, workouts or prices.',
+    TRAIN_ENABLED
+      ? 'Help the member find training partners, sessions to join, workouts and clubs. Use the tools to look things up; never invent people, sessions, clubs, workouts or prices.'
+      : 'Help the member find training partners, sessions to join, courts and clubs. Use the tools to look things up; never invent people, sessions, clubs, courts or prices. The app has no workout library yet, so do not offer workouts or training plans.',
     `Reply in ${lang === 'ar' ? 'Arabic (Gulf-friendly Modern Standard). Say جلسة for a session, تمرين for a workout, حركة for a single exercise' : 'English'}.`,
     'Keep replies to one to three short, warm sentences. The app shows the results as tappable cards under your reply, so do not list every detail or use markdown.',
     'Never mention level ratings, scores, or how anyone was rated; say "similar level" at most.',
@@ -270,7 +273,7 @@ export async function POST(req: Request) {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: MODEL, max_tokens: 600, system, tools: TOOLS, messages }),
+      body: JSON.stringify({ model: MODEL, max_tokens: 600, system, tools: TRAIN_ENABLED ? TOOLS : TOOLS.filter((x) => x.name !== 'find_workouts'), messages }),
     });
     if (!res.ok) return json({ error: 'upstream', status: res.status }, 502);
     const out: any = await res.json();

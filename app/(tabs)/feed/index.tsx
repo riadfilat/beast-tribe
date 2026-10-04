@@ -24,6 +24,7 @@ import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
 import { compressImage } from '../../../src/lib/imageUtils';
 import { Patch } from '../../../src/components/board/Patch';
+import { TRAIN_ENABLED } from '../../../src/lib/constants';
 
 
 type Tab = 'feed' | 'communities' | 'packs';
@@ -164,7 +165,7 @@ export default function TribeScreen() {
               onBeast={() => onBeast(post)}
               onMore={() => onMore(post)}
               onOpenEvent={() => post.event && router.push({ pathname: '/session/[id]', params: { id: post.event.id } })}
-              onOpenWorkout={() => post.workout && router.push({ pathname: '/workout/[id]', params: { id: post.workout.id } })}
+              onOpenWorkout={() => TRAIN_ENABLED && post.workout && router.push({ pathname: '/workout/[id]', params: { id: post.workout.id } })}
             />
           ))}
         </ScrollView>

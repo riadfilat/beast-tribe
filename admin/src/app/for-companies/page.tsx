@@ -1,3 +1,4 @@
+import { TRAIN_ENABLED } from '@/lib/features';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Montserrat, Poppins } from 'next/font/google';
@@ -77,12 +78,12 @@ export default function ForCompaniesPage() {
           <h2 className={`${H} mt-3 text-3xl sm:text-5xl font-extrabold max-w-3xl leading-[1.05]`}>One community. A whole wellness programme.</h2>
           <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
-              { n: '01', t: 'Challenges for everyone', d: 'Active days, workouts, minutes trained, sessions joined or steps. People choose to join, and only those who joined appear on the ranking.' },
+              { n: '01', t: 'Challenges for everyone', d: 'Active days, minutes trained, sessions joined or steps. People choose to join, and only those who joined appear on the ranking.' },
               { n: '02', t: 'Department against department', d: 'Add your teams and run a team challenge. Teams are ranked by the average per person, so a small team can beat a big one.' },
               { n: '03', t: 'Train together', d: 'Anyone can put a session on the board: a lunch walk, padel after work, a Friday run. Colleagues tap I’M IN and show up.' },
-              { n: '04', t: 'A plan of the month', d: 'Recommend one training plan to everyone, from a 20-minute plan for busy weeks to a first 5K, with a full exercise library behind it.' },
-              { n: '05', t: 'Experts in the package', d: 'Add a nutritionist, gyms and coaches. Employees connect themselves and decide what to share.' },
-              { n: '06', t: 'Prizes and notices', d: 'Put a prize on a challenge and a notice at the top of your community: wellness day, a new challenge, the winners.' },
+              ...(TRAIN_ENABLED ? [{ n: '04', t: 'A plan of the month', d: 'Recommend one training plan to everyone, from a 20-minute plan for busy weeks to a first 5K, with a full exercise library behind it.' }] : []),
+              { n: TRAIN_ENABLED ? '05' : '04', t: 'Experts in the package', d: 'Add a nutritionist, gyms and coaches. Employees connect themselves and decide what to share.' },
+              { n: TRAIN_ENABLED ? '06' : '05', t: 'Prizes and notices', d: 'Put a prize on a challenge and a notice at the top of your community: wellness day, a new challenge, the winners.' },
             ].map((x) => (
               <div key={x.n} className="rounded-2xl bg-[#F4F1EA] p-7">
                 <span className={`${H} text-4xl font-black text-[#E88F24]`}>{x.n}</span>

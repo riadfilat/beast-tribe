@@ -19,3 +19,10 @@ export const SHOP_URL = '';
  * payments); turn this on once a payment provider (Moyasar / Tap) is connected.
  */
 export const PAYMENTS_ENABLED = false;
+
+/**
+ * The Train tab (workouts, plans, the exercise library, training stats). Off for launch, on 2026-10-04
+ * at the user's call: it comes back once it is complete. Everything stays in the code and database;
+ * with this off the tab and every way into it are hidden, and old links land on the Board.
+ */
+export const TRAIN_ENABLED = false;

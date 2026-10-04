@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { makeStyles, useKit } from '../src/theme';
 import { useI18n } from '../src/i18n';
@@ -10,10 +10,11 @@ import { Icon } from '../src/components/board/Icon';
 import { Press } from '../src/components/board/Press';
 import { Chip, Field, IconButton } from '../src/components/board/controls';
 import { ExerciseSheet } from '../src/components/board/exercise';
+import { TRAIN_ENABLED } from '../src/lib/constants';
 
 // The exercise library: every move members meet in a workout, searchable by name,
 // filterable by what it is (strength, core…) and what it trains (chest, glutes…).
-export default function MovesScreen() {
+function MovesScreenInner() {
   const s = useStyles();
   const { p, lang } = useKit();
   const { t } = useI18n();
@@ -104,3 +105,9 @@ const useStyles = makeStyles(({ p }) => ({
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 6, paddingBottom: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: p.rule },
 }));
+
+// Train is off for launch (TRAIN_ENABLED): old links and notifications land on the Board.
+export default function MovesScreen() {
+  if (!TRAIN_ENABLED) return <Redirect href="/(tabs)/home" />;
+  return <MovesScreenInner />;
+}

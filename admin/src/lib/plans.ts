@@ -1,3 +1,4 @@
+import { TRAIN_ENABLED } from './features';
 // Partner plans: a flat monthly subscription for coaches and gyms. No commission on anything
 // they sell or book through Beast Tribe, so there is never a reason to take members off the app.
 // Prices are in SAR, before VAT. Yearly = 10 months (two months free).
@@ -29,7 +30,7 @@ export const PLANS: Plan[] = [
     features: [
       'Your coach profile, sessions and bookable hours',
       'Clients share their training and food with you, by consent',
-      'Publish workouts to the library and get paid when members use them',
+      ...(TRAIN_ENABLED ? ['Publish workouts to the library and get paid when members use them'] : []),
       'Keep 100% of what you charge',
     ],
   },

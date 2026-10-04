@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Image, Platform, ScrollView, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, Redirect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { makeStyles, useKit } from '../../../src/theme';
 import { useI18n } from '../../../src/i18n';
@@ -21,6 +21,7 @@ import { useExercises } from '../../../src/data/exercises';
 import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
 import { useKeepAwake } from 'expo-keep-awake';
+import { TRAIN_ENABLED } from '../../../src/lib/constants';
 
 const clock = (secs: number) => {
   const s = Math.max(0, Math.round(secs));
@@ -30,7 +31,7 @@ const clock = (secs: number) => {
 
 // One exercise at a time. The screen shows what to do now, a big Next button, and nothing else to
 // decide. Timed moves count down and move on by themselves; everything else waits for Next.
-export default function PlayScreen() {
+function PlayScreenInner() {
   // The screen stays on while a workout runs.
   useKeepAwake();
   const { id, event, ps } = useLocalSearchParams<{ id: string; event?: string; ps?: string }>();
@@ -558,3 +559,9 @@ const useStyles = makeStyles(({ p }) => ({
   bar: { paddingHorizontal: 20, paddingTop: 12, backgroundColor: p.boardDeep, borderTopWidth: 1, borderTopColor: p.rule },
   round: { width: 54, height: 54, borderRadius: 12, borderWidth: 1.5, borderColor: p.ruleStrong, alignItems: 'center', justifyContent: 'center' },
 }));
+
+// Train is off for launch (TRAIN_ENABLED): old links and notifications land on the Board.
+export default function PlayScreen() {
+  if (!TRAIN_ENABLED) return <Redirect href="/(tabs)/home" />;
+  return <PlayScreenInner />;
+}

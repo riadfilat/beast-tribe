@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Image, ScrollView, Share, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, Redirect } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { makeStyles, useKit } from '../../../src/theme';
@@ -18,8 +18,9 @@ import { BlockView, equipmentLine, workoutLine } from '../../../src/components/b
 import { ExerciseSheet } from '../../../src/components/board/exercise';
 import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
+import { TRAIN_ENABLED } from '../../../src/lib/constants';
 
-export default function WorkoutScreen() {
+function WorkoutScreenInner() {
   const { id, event, ps } = useLocalSearchParams<{ id: string; event?: string; ps?: string }>();
   const s = useStyles();
   const { p, lang } = useKit();
@@ -178,3 +179,9 @@ const useStyles = makeStyles(({ p }) => ({
     borderTopColor: p.rule,
   },
 }));
+
+// Train is off for launch (TRAIN_ENABLED): old links and notifications land on the Board.
+export default function WorkoutScreen() {
+  if (!TRAIN_ENABLED) return <Redirect href="/(tabs)/home" />;
+  return <WorkoutScreenInner />;
+}

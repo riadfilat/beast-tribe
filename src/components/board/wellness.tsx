@@ -14,6 +14,7 @@ import { Magnet } from './people';
 import { Sheet } from './sheet';
 import { toast } from './toast';
 import { haptic } from '../../lib/haptics';
+import { TRAIN_ENABLED } from '../../lib/constants';
 
 // Wellness inside a community: step challenges members opt into, the experts and venues the
 // company or gym includes, and the member's own steps from Apple Health.
@@ -297,7 +298,7 @@ export function CommunityHighlights({ communityId, name, onOpenPlan }: { communi
   const { p, lang } = useKit();
   const { t } = useI18n();
   const x = useCommunityExtras(communityId, lang).data;
-  if (!x || (!x.notice && !x.plan)) return null;
+  if (!x || (!x.notice && !(TRAIN_ENABLED && x.plan))) return null;
   return (
     <View style={{ gap: 10, marginTop: 16 }}>
       {x.notice ? (
@@ -308,7 +309,7 @@ export function CommunityHighlights({ communityId, name, onOpenPlan }: { communi
           <Txt v="body">{x.notice}</Txt>
         </View>
       ) : null}
-      {x.plan ? (
+      {TRAIN_ENABLED && x.plan ? (
         <Press onPress={() => onOpenPlan(x.plan!.slug)} feedback="light" style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: p.ruleStrong }}>
           <Icon name="train" size={20} color={p.marker} />
           <View style={{ flex: 1, gap: 2 }}>

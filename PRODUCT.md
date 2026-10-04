@@ -76,6 +76,8 @@ A sports community app owned by a real activewear brand (Operation Beast) and bu
 
 ## Train (decided 2026-10-02)
 
+- **Not at launch (decided 2026-10-04):** the user doesn't see Train as a go-live feature until it is complete. `TRAIN_ENABLED = false` (app `src/lib/constants.ts`, dashboard `admin/src/lib/features.ts`) hides the tab, the plan card, training stats, workout links, Ask Beast workouts, partner workout publishing, the workouts challenge metric and the library promises on the public pages. Code and data stay; flip both flags to bring it back.
+
 - A Train tab: today's workout, the Operation Beast library (English + Arabic) and coaches' workouts. Workouts are social, not a content race: attach one to a session ("train it with your crew"), finish and share it to a chosen community feed or pack chat (or keep it private), see how many trained it this week (counts only, never who).
 - Coaches write workouts in the partner portal; Operation Beast reviews every one before it goes live, and can scope a workout to one community (a company's coach).
 - Coaches are paid by use: one counted use when a member finishes a live coach workout, trains at least 40% of its length (5 min minimum), once per member per workout per day, never the coach's own. The admin sets a rate per use or a monthly pool; payouts happen outside the app until payments are on. Funded from B2B revenue at first.

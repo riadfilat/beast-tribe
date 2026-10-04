@@ -1,3 +1,4 @@
+import { TRAIN_ENABLED } from '@/lib/features';
 import { redirect } from 'next/navigation';
 import { requireCap } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
@@ -154,7 +155,7 @@ export default async function ReportPage() {
         <section className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {stat(month.posts + month.comments, 'Posts and comments', 'In your community feed')}
           {stat(month.reactivated, 'Came back', 'Active again after a month away')}
-          {stat(month.soloMembers ? month.soloSessions : '—', 'Workouts on their own', month.soloMembers ? `Logged by ${month.soloMembers} ${people}` : 'Shown once 5 people log workouts')}
+          {TRAIN_ENABLED ? stat(month.soloMembers ? month.soloSessions : '—', 'Workouts on their own', month.soloMembers ? `Logged by ${month.soloMembers} ${people}` : 'Shown once 5 people log workouts') : null}
           {stat(steps.avgDaily != null ? steps.avgDaily.toLocaleString() : '—', 'Average steps a day', steps.avgDaily != null ? `${steps.connected} with Apple Health connected` : 'Shown once 5 people connect')}
         </section>
 

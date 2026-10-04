@@ -12,7 +12,7 @@ import { useMyCommunities } from '../../../src/data/communities';
 import { useMySessions } from '../../../src/data/sessions';
 import { acceptCoach, endCoaching, MyCoach, saveSharing, sharesLine, Sharing, useCoachProfile, useMyCoaches } from '../../../src/data/coaching';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
-import { SHOP_URL } from '../../../src/lib/constants';
+import { SHOP_URL, TRAIN_ENABLED } from '../../../src/lib/constants';
 import { Txt } from '../../../src/components/board/Txt';
 import { Icon } from '../../../src/components/board/Icon';
 import { Press } from '../../../src/components/board/Press';
@@ -140,7 +140,7 @@ export default function YouScreen() {
         ) : null}
 
         {/* Training, measured */}
-        <TrainingMetricsSection />
+        {TRAIN_ENABLED ? <TrainingMetricsSection /> : null}
         <StepsCard />
 
         {/* Next up */}

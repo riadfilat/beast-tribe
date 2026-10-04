@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, IconName } from '../../src/components/board/Icon';
@@ -6,6 +6,8 @@ import { useKit } from '../../src/theme';
 import { useI18n } from '../../src/i18n';
 import { useInboxLive } from '../../src/data/inbox';
 import { useStepsSync } from '../../src/components/board/wellness';
+import { TRAIN_ENABLED } from '../../src/lib/constants';
+import { schedulePlanReminder } from '../../src/lib/notifications';
 
 function TabIcon({ name, color }: { name: IconName; color: string }) {
   return <Icon name={name} size={22} color={color} weight="semibold" />;
@@ -19,6 +21,10 @@ export default function TabLayout() {
   const bottom = insets.bottom > 0 ? insets.bottom - 2 : 8;
   useInboxLive();
   useStepsSync();
+  // With Train off, a plan reminder set by an earlier version is taken back.
+  useEffect(() => {
+    if (!TRAIN_ENABLED) schedulePlanReminder(null, false);
+  }, []);
   return (
     <Tabs
       screenOptions={{
@@ -43,7 +49,7 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="train"
-        options={{ title: t('tabs.train'), tabBarIcon: ({ color }) => <TabIcon name="train" color={color} /> }}
+        options={{ title: t('tabs.train'), href: TRAIN_ENABLED ? undefined : null, tabBarIcon: ({ color }) => <TabIcon name="train" color={color} /> }}
       />
       <Tabs.Screen
         name="events"

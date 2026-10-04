@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { makeStyles, useKit } from '../../../src/theme';
 import { useI18n } from '../../../src/i18n';
@@ -21,12 +21,13 @@ import { FindPlanCard, FocusSheet, NextUpCard, RecommendedCard, WeekCard, WeekFo
 import { LEVELS, LEVEL_KEY, LevelBars, Lvl } from '../../../src/components/board/level';
 import { toast } from '../../../src/components/board/toast';
 import { schedulePlanReminder } from '../../../src/lib/notifications';
+import { TRAIN_ENABLED } from '../../../src/lib/constants';
 
 // A sport's plan, when there is one; otherwise the sport filters the workouts.
 
 type Filter = 'all' | 'saved' | 'nokit' | 'short' | string;
 
-export default function TrainScreen() {
+function TrainScreenInner() {
   const s = useStyles();
   const { p, lang } = useKit();
   const { t, tn } = useI18n();
@@ -347,3 +348,9 @@ const useStyles = makeStyles(({ p }) => ({
   libraryIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: p.ink, alignItems: 'center', justifyContent: 'center' },
   sportCard: { width: 132, gap: 6, padding: 12, borderRadius: 12, borderWidth: 1.5, borderColor: p.rule },
 }));
+
+// Train is off for launch (TRAIN_ENABLED): old links and notifications land on the Board.
+export default function TrainScreen() {
+  if (!TRAIN_ENABLED) return <Redirect href="/(tabs)/home" />;
+  return <TrainScreenInner />;
+}

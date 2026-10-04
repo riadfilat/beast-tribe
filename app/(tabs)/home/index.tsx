@@ -26,6 +26,7 @@ import { haptic } from '../../../src/lib/haptics';
 import { syncEventReminders } from '../../../src/lib/notifications';
 import { useMyPlan } from '../../../src/data/programs';
 import { errorKey } from '../../../src/data/errors';
+import { TRAIN_ENABLED } from '../../../src/lib/constants';
 
 
 export default function BoardScreen() {
@@ -149,7 +150,7 @@ export default function BoardScreen() {
         </View>
 
         {/* Your plan, one line: what's next and one tap to it */}
-        {myPlan?.next ? (
+        {TRAIN_ENABLED && myPlan?.next ? (
           <Press
             onPress={() => router.push({ pathname: '/workout/[id]', params: { id: myPlan.next!.workoutId, ps: myPlan.next!.id } })}
             feedback="selection"
@@ -194,7 +195,7 @@ export default function BoardScreen() {
             <TextButton label={t('common.retry')} onPress={board.refetch} />
           </View>
         ) : sessions.length === 0 ? (
-          <EmptyBoard spots={spots.data ?? []} onHost={(spotId) => router.push(spotId ? { pathname: '/host', params: { spot: spotId } } : '/host')} onTrain={() => router.push('/(tabs)/train')} />
+          <EmptyBoard spots={spots.data ?? []} onHost={(spotId) => router.push(spotId ? { pathname: '/host', params: { spot: spotId } } : '/host')} onTrain={TRAIN_ENABLED ? () => router.push('/(tabs)/train') : undefined} />
         ) : (
           <View>
             {live.map((x, i) => row(x, i, [...live, ...todayAhead]))}
@@ -249,7 +250,7 @@ function countLabel(n: number, lang: string) {
 }
 
 // ─── Empty board: the cold start ────────────────────────────────────────────
-function EmptyBoard({ spots, onHost, onTrain }: { spots: { id: string; name: string; city: string; imageUrl: string | null }[]; onHost: (spotId?: string) => void; onTrain: () => void }) {
+function EmptyBoard({ spots, onHost, onTrain }: { spots: { id: string; name: string; city: string; imageUrl: string | null }[]; onHost: (spotId?: string) => void; onTrain?: () => void }) {
   const s = useStyles();
   const { p, lang } = useKit();
   const { t } = useI18n();
@@ -265,7 +266,7 @@ function EmptyBoard({ spots, onHost, onTrain }: { spots: { id: string; name: str
         </Txt>
         <MarkerButton label={t('board.hostA11y')} icon="plus" onPress={() => onHost()} style={{ marginTop: 6 }} />
         {/* No session today is never a dead end: there's always a workout to do. */}
-        <OutlineButton label={t('board.trainToday')} icon="train" onPress={onTrain} />
+        {onTrain ? <OutlineButton label={t('board.trainToday')} icon="train" onPress={onTrain} /> : null}
       </View>
       {spots.length ? (
         <View style={{ marginTop: 28 }}>

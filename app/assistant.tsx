@@ -13,8 +13,9 @@ import { Magnet } from '../src/components/board/people';
 import { Chip, Field, IconButton } from '../src/components/board/controls';
 import { haptic } from '../src/lib/haptics';
 import { errorKey } from '../src/data/errors';
+import { TRAIN_ENABLED } from '../src/lib/constants';
 
-const SUGGESTIONS = ['partner', 'tonight', 'workout', 'clubs'] as const;
+const SUGGESTIONS = (['partner', 'tonight', 'workout', 'clubs'] as const).filter((x) => TRAIN_ENABLED || x !== 'workout');
 
 // Ask Beast: ask in plain words, get people, sessions, workouts and clubs back as cards.
 export default function AssistantScreen() {

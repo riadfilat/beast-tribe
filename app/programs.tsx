@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScrollView, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { makeStyles, useKit } from '../src/theme';
 import { useI18n } from '../src/i18n';
@@ -10,9 +10,10 @@ import { Icon } from '../src/components/board/Icon';
 import { Press } from '../src/components/board/Press';
 import { IconButton } from '../src/components/board/controls';
 import { LEVELS, LEVEL_KEY, LevelBars, LevelTag } from '../src/components/board/level';
+import { TRAIN_ENABLED } from '../src/lib/constants';
 
 // Every plan, grouped by level (beginner, intermediate, advanced): what it's for, how long, how often.
-export default function ProgramsScreen() {
+function ProgramsScreenInner() {
   const s = useStyles();
   const { p, lang } = useKit();
   const { t } = useI18n();
@@ -87,3 +88,9 @@ const useStyles = makeStyles(({ p }) => ({
   groupHead: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 6 },
   icon: { width: 40, height: 40, borderRadius: 20, backgroundColor: p.ink, alignItems: 'center', justifyContent: 'center' },
 }));
+
+// Train is off for launch (TRAIN_ENABLED): old links and notifications land on the Board.
+export default function ProgramsScreen() {
+  if (!TRAIN_ENABLED) return <Redirect href="/(tabs)/home" />;
+  return <ProgramsScreenInner />;
+}

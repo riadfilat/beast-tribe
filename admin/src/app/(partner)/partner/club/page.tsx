@@ -1,3 +1,4 @@
+import { TRAIN_ENABLED } from '@/lib/features';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ownsCommunity, requirePartner } from '@/lib/auth';
@@ -317,7 +318,7 @@ export default async function ClubPage() {
               <label className={label} htmlFor="cp-until">Show the notice until (optional)</label>
               <input id="cp-until" name="notice_until" type="date" defaultValue={page.notice_until || ''} className={input} />
             </div>
-            <div>
+            <div className={TRAIN_ENABLED ? '' : 'hidden'}>
               <label className={label} htmlFor="cp-plan">Plan of the month</label>
               <select id="cp-plan" name="featured_program_id" defaultValue={page.featured_program_id || ''} className={input}>
                 <option value="">None</option>

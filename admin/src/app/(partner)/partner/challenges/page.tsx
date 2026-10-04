@@ -1,3 +1,4 @@
+import { TRAIN_ENABLED } from '@/lib/features';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { requireCap } from '@/lib/auth';
@@ -16,7 +17,8 @@ const STATE_STYLE = {
   ended: 'bg-gray-100 text-gray-500',
   cancelled: 'bg-[#FCEBEA] text-[#9E3A33]',
 } as const;
-const METRICS: Metric[] = ['active_days', 'workouts', 'minutes', 'sessions', 'steps'];
+// Workouts are logged in the app's Train tab, which is off for launch.
+const METRICS: Metric[] = (['active_days', 'workouts', 'minutes', 'sessions', 'steps'] as Metric[]).filter((m) => TRAIN_ENABLED || m !== 'workouts');
 
 export default async function ChallengesPage({ searchParams }: { searchParams: { c?: string } }) {
   const partner = await requireCap('challenges');

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, Platform, ScrollView, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, Redirect } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { makeStyles, useKit } from '../../src/theme';
 import { useI18n } from '../../src/i18n';
@@ -12,9 +12,10 @@ import { IconButton, MarkerButton, SectionHeading, TextButton } from '../../src/
 import { SessionRows } from '../../src/components/board/plan';
 import { LevelTag } from '../../src/components/board/level';
 import { toast } from '../../src/components/board/toast';
+import { TRAIN_ENABLED } from '../../src/lib/constants';
 
 // A plan in full: what it's for, how it works, every week's sessions, and one button to start.
-export default function ProgramScreen() {
+function ProgramScreenInner() {
   const s = useStyles();
   const { p, lang } = useKit();
   const { t } = useI18n();
@@ -148,3 +149,9 @@ const useStyles = makeStyles(({ p }) => ({
   howBox: { marginHorizontal: 16, marginTop: 18, padding: 14, gap: 10, borderRadius: 12, backgroundColor: p.wash },
   bar: { position: 'absolute', start: 0, end: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 12, backgroundColor: p.boardDeep, borderTopWidth: 1, borderTopColor: p.rule },
 }));
+
+// Train is off for launch (TRAIN_ENABLED): old links and notifications land on the Board.
+export default function ProgramScreen() {
+  if (!TRAIN_ENABLED) return <Redirect href="/(tabs)/home" />;
+  return <ProgramScreenInner />;
+}
