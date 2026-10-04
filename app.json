@@ -56,7 +56,6 @@
           "color": "#E88F24"
         }
       ],
-      "expo-video",
       [
         "@kingstinct/react-native-healthkit",
         {
