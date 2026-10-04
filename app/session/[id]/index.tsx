@@ -80,6 +80,7 @@ export default function SessionScreen() {
   }
 
   const going = x.myStatus === 'going' || x.isHost;
+  const seats = seatsLine(x, t, tn);
   // Outside the class's own community: joining takes a guest spot at the guest price.
   const isGuest = x.guestOpen && !!x.communityId && !!myCommunities.data && !myCommunities.data.some((c) => c.id === x.communityId);
   const waiting = x.myStatus === 'waitlist';
@@ -285,7 +286,7 @@ export default function SessionScreen() {
             </Txt>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <View style={{ flex: 1 }}>
-                <Txt v="headline">{x.place || t(`sports.${x.sport}`)}</Txt>
+                {x.place ? <Txt v="headline">{x.place}</Txt> : <Txt v="headline" color={p.inkSoft}>{t('session.placeTbc')}</Txt>}
                 {x.city ? <Txt v="meta">{cityLabel(x.city, lang)}</Txt> : null}
               </View>
               {x.place ? <OutlineButton label={t('session.directions')} icon="directions" onPress={directions} style={{ height: 40 }} /> : null}
@@ -341,17 +342,16 @@ export default function SessionScreen() {
           {/* Who's in */}
           <Rule style={s.rule} />
           <View style={s.section}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Txt v="title" size={18}>
+            {/* Title and tally on one line; the seats line gets its own so it never runs off the screen */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <Txt v="title" size={18} style={{ flexShrink: 1 }}>
                 {t('session.whosIn')}
               </Txt>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Tally count={x.goingCount} capacity={x.capacity} size={15} />
-                <Txt v="label" size={13} color={seatsLine(x, t, tn).looking ? p.markerText : p.inkSoft}>
-                  {seatsLine(x, t, tn).looking ? seatsLine(x, t, tn).text : capacityLine(x, t, tn)}
-                </Txt>
-              </View>
+              <Tally count={x.goingCount} capacity={x.capacity} size={15} />
             </View>
+            <Txt v="label" size={13} color={seats.looking ? p.markerText : p.inkSoft} style={{ marginTop: 4 }}>
+              {seats.looking ? seats.text : capacityLine(x, t, tn)}
+            </Txt>
             {x.roster.length ? (
               <View style={s.magnets}>
                 {x.roster.map((person) => (

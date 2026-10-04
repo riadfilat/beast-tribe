@@ -119,6 +119,7 @@ export const ar: Strings = {
     loadError: 'تعذّر تحميل اللوحة.',
   },
   session: {
+    placeTbc: 'المكان يُحدَّد لاحقًا',
     workout: 'التمرين',
     imIn: 'حاضر',
     onTheBoard: 'اسمك على اللوحة',

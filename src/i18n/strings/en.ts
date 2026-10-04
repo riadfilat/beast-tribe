@@ -119,6 +119,7 @@ export const en = {
     loadError: "Couldn't load the board.",
   },
   session: {
+    placeTbc: 'Place to be confirmed',
     workout: 'The workout',
     imIn: "I'm in",
     onTheBoard: "Your name's on the board",
