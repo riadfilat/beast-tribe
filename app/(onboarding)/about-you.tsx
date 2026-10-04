@@ -173,9 +173,7 @@ export default function AboutYouScreen() {
             ]}
           />
         )}
-        <Txt v="caption" style={{ marginTop: 6 }}>
-          {genderLocked ? t('onboarding.genderLocked') : t('onboarding.genderNote')}
-        </Txt>
+
 
         <Txt v="title" size={18} style={s.label}>
           {t('onboarding.dob')}

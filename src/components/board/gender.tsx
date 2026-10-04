@@ -45,9 +45,6 @@ export function GenderAsk() {
 
   return (
     <Sheet visible={open} title={t('onboarding.genderAskTitle')} onClose={close}>
-      <Txt v="body" color={p.inkSoft}>
-        {t('onboarding.genderAskSub')}
-      </Txt>
       <Segmented
         value={gender || 'none'}
         onChange={(v) => setGender(v === 'none' ? '' : (v as 'female' | 'male'))}
