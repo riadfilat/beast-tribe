@@ -14,6 +14,8 @@ export const MAX_PACKS = 20;
 const PACK_CODES = ['PACK_CREATE_WOMEN', 'PACK_CREATE_MEN', 'PACK_WOMEN_ONLY', 'PACK_MEN_ONLY', 'PACK_GENDER_NEEDED', 'COMMUNITY_ONLY', 'TOO_MANY', 'INVALID', 'FULL', 'LIMIT', 'ALREADY'] as const;
 export type PackErrorCode = (typeof PACK_CODES)[number] | 'generic';
 export type PackAudience = 'everyone' | 'women' | 'men';
+/** Open: anyone in the group's community finds it and joins. Invite only: the leader's own circle. */
+export type PackVisibility = 'open' | 'invite';
 
 /** The database's reason for refusing a join, when it's one we can explain. */
 const packErrorOf = (e: any): PackError => new PackError(codeFrom(e, PACK_CODES));
@@ -32,6 +34,7 @@ export interface PackDetail {
   /** Set when the pack belongs to a community: then only its admins add people. */
   communityName: string | null;
   audience: PackAudience;
+  visibility: PackVisibility;
   isLeader: boolean;
   /** Only the pack's creator can restyle it (packs_update_own). */
   canEdit: boolean;
@@ -49,10 +52,10 @@ export function usePack(packId?: string | null) {
   return useQuery<PackDetail | null>(packId && me ? `packs:one:${packId}` : null, async () => {
     if (PREVIEW) {
       const pk = previewPacks.find((x) => x.id === packId) ?? previewPacks[0];
-      return { id: pk.id, name: pk.name, emblem: pk.emblem, inviteCode: PREVIEW_PACK_CODE(pk.id), canInvite: true, communityName: null, audience: 'everyone', photoUrl: null, isLeader: true, canEdit: true, members: previewMembers(pk.id) };
+      return { id: pk.id, name: pk.name, emblem: pk.emblem, inviteCode: PREVIEW_PACK_CODE(pk.id), canInvite: true, communityName: null, audience: 'everyone', visibility: 'invite', photoUrl: null, isLeader: true, canEdit: true, members: previewMembers(pk.id) };
     }
     const [{ data: pack, error }, { data: rows }, { data: code }] = await Promise.all([
-      supabase.from('packs').select(`id, name, created_by, audience, photo_url, community:communities(name), ${PACK_EMBLEM_COLUMNS}`).eq('id', packId!).maybeSingle(),
+      supabase.from('packs').select(`id, name, created_by, audience, visibility, photo_url, community:communities(name), ${PACK_EMBLEM_COLUMNS}`).eq('id', packId!).maybeSingle(),
       supabase.from('pack_members').select(`role, joined_at, profile:profiles(${PERSON_COLUMNS})`).eq('pack_id', packId!).order('joined_at', { ascending: true }),
       supabase.rpc('pack_invite_code', { p_pack: packId! }),
     ]);
@@ -72,6 +75,7 @@ export function usePack(packId?: string | null) {
       canInvite: !!code,
       communityName: (pack as any).community?.name ?? null,
       audience: ((pack as any).audience as PackAudience) || 'everyone',
+      visibility: (pack as any).visibility === 'open' ? 'open' : 'invite',
       photoUrl: (pack as any).photo_url ?? null,
       isLeader: members.some((m) => m.id === me && m.role === 'leader'),
       canEdit: !!me && pack.created_by === me,
@@ -118,14 +122,14 @@ export function usePackSessions(packId?: string | null, memberIds: string[] = []
 }
 
 /** A group lives in one of the member's communities (the general one when none is given). */
-export async function createPack(meId: string, name: string, emblem: Emblem, audience: PackAudience = 'everyone', communityId: string | null = null) {
+export async function createPack(meId: string, name: string, emblem: Emblem, audience: PackAudience = 'everyone', communityId: string | null = null, visibility: PackVisibility = 'invite') {
   if (PREVIEW) return { id: 'pk-andoraa' };
   const { count } = await supabase.from('pack_members').select('*', { count: 'exact', head: true }).eq('user_id', meId);
   if ((count ?? 0) >= MAX_PACKS) throw new PackError('LIMIT');
   const code = Math.random().toString(36).substring(2, 8).toUpperCase();
   const { data: pack, error } = await supabase
     .from('packs')
-    .insert({ name: name.trim(), created_by: meId, invite_code: code, is_system: false, audience, ...(communityId ? { community_id: communityId } : {}), ...emblemColumns(emblem) })
+    .insert({ name: name.trim(), created_by: meId, invite_code: code, is_system: false, audience, visibility, ...(communityId ? { community_id: communityId } : {}), ...emblemColumns(emblem) })
     .select('id')
     .single();
   if (error) throw packErrorOf(error);
@@ -137,6 +141,54 @@ export async function createPack(meId: string, name: string, emblem: Emblem, aud
   }
   invalidate('member:packs');
   return pack;
+}
+
+/** The leader opens the group to its community, or makes it invite only again. */
+export async function updatePackVisibility(packId: string, visibility: PackVisibility) {
+  if (PREVIEW) return;
+  const { data, error } = await supabase.from('packs').update({ visibility }).eq('id', packId).select('id');
+  if (error || !data?.length) throw new PackError('generic');
+  invalidate(`packs:one:${packId}`);
+  invalidate('packs:open');
+}
+
+export interface OpenPack {
+  id: string;
+  name: string;
+  emblem: Emblem;
+  audience: PackAudience;
+  communityName: string;
+  members: number;
+  full: boolean;
+}
+
+/** Open groups in my communities that I'm not in yet. */
+export function useOpenPacks() {
+  const me = useMeId();
+  return useQuery<OpenPack[]>(me ? 'packs:open' : null, async () => {
+    if (PREVIEW) return [];
+    const { data, error } = await supabase.rpc('open_packs');
+    if (error) throw error;
+    return (data || []).map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      emblem: emblemOf(r),
+      audience: (r.audience as PackAudience) || 'everyone',
+      communityName: r.community_name,
+      members: r.members ?? 0,
+      full: (r.members ?? 0) >= (r.max_members ?? 20),
+    }));
+  });
+}
+
+export async function joinOpenPack(packId: string): Promise<{ id: string; name: string }> {
+  const { data, error } = await supabase.rpc('join_open_pack', { p_pack: packId });
+  if (error) throw packErrorOf(error);
+  const row = (data as any[])?.[0];
+  if (!row) throw new PackError('INVALID');
+  invalidate('member:packs');
+  invalidate('packs:open');
+  return row;
 }
 
 export async function updatePackEmblem(packId: string, emblem: Emblem) {

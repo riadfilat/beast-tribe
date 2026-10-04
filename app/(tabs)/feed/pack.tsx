@@ -7,7 +7,7 @@ import { makeStyles, useKit } from '../../../src/theme';
 import { useI18n } from '../../../src/i18n';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { useMyPackList } from '../../../src/data/member';
-import { joinPackByCode, leavePack, MAX_PACKS, PackInvite, respondToInvite, setPackPhoto, updatePackEmblem, usePack, usePackInvites, usePackSessions } from '../../../src/data/packs';
+import { joinPackByCode, leavePack, MAX_PACKS, PackInvite, PackVisibility, respondToInvite, setPackPhoto, updatePackEmblem, updatePackVisibility, usePack, usePackInvites, usePackSessions } from '../../../src/data/packs';
 import type { Emblem } from '../../../src/lib/emblem';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { Txt } from '../../../src/components/board/Txt';
@@ -15,7 +15,7 @@ import { Icon } from '../../../src/components/board/Icon';
 import { Press } from '../../../src/components/board/Press';
 import { Magnet } from '../../../src/components/board/people';
 import { Rule } from '../../../src/components/board/marks';
-import { Field, IconButton, MarkerButton, OutlineButton, SectionHeading, TextButton } from '../../../src/components/board/controls';
+import { ChoiceList, Dropdown, Field, IconButton, MarkerButton, OutlineButton, SectionHeading, TextButton } from '../../../src/components/board/controls';
 import { SessionRow, useNow } from '../../../src/components/board/session';
 import { Patch, PatchPreview } from '../../../src/components/board/Patch';
 import { PatchPicker } from '../../../src/components/board/PatchPicker';
@@ -56,6 +56,22 @@ export default function PackScreen() {
     }
   }
   const [saving, setSaving] = useState(false);
+  const [findOpen, setFindOpen] = useState(false);
+
+  async function saveVisibility(v: PackVisibility) {
+    const d = pack.data;
+    setFindOpen(false);
+    if (!d || v === d.visibility) return;
+    try {
+      await updatePackVisibility(d.id, v);
+      haptic('success');
+      toast.show(t('pack.visibilitySaved'), 'info');
+      pack.refetch();
+    } catch {
+      haptic('error');
+      toast.show(t('pack.errors.generic'), 'error');
+    }
+  }
   const pack = usePack(selected);
   const sessions = usePackSessions(selected, (pack.data?.members ?? []).map((m) => m.id));
   const now = useNow();
@@ -169,7 +185,7 @@ export default function PackScreen() {
                 <Txt v="row" size={24} numberOfLines={2}>
                   {d.name}
                 </Txt>
-                <Txt v="meta">{[tn('tribe.members', d.members.length), d.audience === 'women' ? t('pack.womenOnly') : d.audience === 'men' ? t('pack.menOnly') : null, d.communityName].filter(Boolean).join(' · ')}</Txt>
+                <Txt v="meta">{[tn('tribe.members', d.members.length), t(`pack.visibilityShort.${d.visibility}`), d.audience === 'women' ? t('pack.womenOnly') : d.audience === 'men' ? t('pack.menOnly') : null, d.communityName].filter(Boolean).join(' · ')}</Txt>
                 {d.isLeader ? (
                   <Txt v="label" size={13} color={p.markerText}>
                     {t('pack.leader')}
@@ -197,6 +213,34 @@ export default function PackScreen() {
                 </View>
                 <Icon name="share" size={20} />
               </Press>
+            ) : null}
+
+            {/* The leader decides who can find the group */}
+            {d.canEdit ? (
+              <View style={{ marginTop: 14, gap: 6 }}>
+                <Txt v="label" size={13} color={p.inkSoft}>
+                  {t('pack.findTitle')}
+                </Txt>
+                <Dropdown
+                  label={t(`pack.visibility.${d.visibility}`, { community: d.communityName ?? '' })}
+                  sub={t(`pack.visibilityHint.${d.visibility}`, { community: d.communityName ?? '' })}
+                  icon={d.visibility === 'open' ? 'globe' : 'lock'}
+                  onPress={() => setFindOpen(true)}
+                  accessibilityLabel={t('pack.findTitle')}
+                />
+                <Sheet visible={findOpen} title={t('pack.findTitle')} onClose={() => setFindOpen(false)}>
+                  <ChoiceList<PackVisibility>
+                    options={(['invite', 'open'] as PackVisibility[]).map((v) => ({
+                      value: v,
+                      label: t(`pack.visibility.${v}`, { community: d.communityName ?? '' }),
+                      sub: t(`pack.visibilityHint.${v}`, { community: d.communityName ?? '' }),
+                      icon: v === 'open' ? 'globe' : 'lock',
+                    }))}
+                    value={d.visibility}
+                    onChange={saveVisibility}
+                  />
+                </Sheet>
+              </View>
             ) : null}
 
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>

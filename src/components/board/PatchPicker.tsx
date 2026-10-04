@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useWindowDimensions, View } from 'react-native';
+import { ScrollView, useWindowDimensions, View } from 'react-native';
 import { useKit } from '../../theme';
 import { useI18n } from '../../i18n';
 import { GLYPH_FAMILIES, GlyphFamily } from '../brand/glyphs';
@@ -77,7 +77,8 @@ export function PatchPicker({ value, onChange, name }: { value: Emblem; onChange
       )}
 
       <SectionHeading title={t('pack.colour')} />
-      <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: -6 }}>
+      {/* One row of colourways; scroll for more */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} accessibilityRole="radiogroup" contentContainerStyle={{ gap: 8 }} style={{ marginTop: -6 }}>
         {PATCH_COLORS.map((c) => {
           const { ground, ink } = PATCH_PAINT[c];
           const on = value.color === c;
@@ -98,7 +99,7 @@ export function PatchPicker({ value, onChange, name }: { value: Emblem; onChange
             </Press>
           );
         })}
-      </View>
+      </ScrollView>
     </View>
   );
 }

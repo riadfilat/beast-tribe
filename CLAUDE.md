@@ -98,7 +98,7 @@ User wants to launch the app to limited public testers via TestFlight.
 
 ### 📋 Backlog (not critical for launch)
 - ~20 medium-priority dashboard polish items from the audit: toast notifications, sortable tables, pagination on comments/moderation pages, RTL support for Arabic, etc.
-- Production submit profile missing `ascAppId` in `eas.json` (need App Store Connect App ID once listing is created)
+- App Store Connect App ID = 6762473448 (TestFlight: https://appstoreconnect.apple.com/apps/6762473448/testflight/ios). Not yet in eas.json `ascAppId`; add it with the next native build.
 
 ---
 
@@ -114,6 +114,8 @@ User wants to launch the app to limited public testers via TestFlight.
 ---
 
 ## Session Log (append-only — newest at top)
+
+- **2026-10-04 — Equal court split, personal Today line, free = no price (migration 078, OTA d80ba05d / 72b66448).** The court price is split equally between everyone who is in (no-shows/empty spots no longer fall on the organiser): events.court_sar (granted SELECT) + bt_court_resplit() from bt_rsvp_dues on every join/leave/promotion → share_sar = court ÷ players in, unpaid share dues follow, paid ones stay; court_sar guarded from members (trg_events_court_guard). Free courts create no dues. App: model share/court are null when 0, so free sessions show no tag, split or price on the join button; split block shows "Court SAR X ÷ n players", per-player rows, "With all N in, it's SAR Y each"; join button shows the share after you join. Board hero: "You're in N sessions today · M more to join" / "You have N sessions to join today" / "Nothing today · N this week" (today only, no city). Dashboard bookings copy updated. Location-on-open (useLocationRefresh, LocationAsk, useCitySync) shipped earlier as f9211011 / eb7e5284; iOS build 13 submitted to TestFlight.
 
 - **2026-10-04 — Place photos, levels guide calls only, Where/City dropdowns, location (builds 13 / v5).** 076: no LEVEL gate on joining (levels only steer call-outs; keeps ratings private). 077: real place photos (admin/public/places/spots + CREDITS.md; Settings photoCredit): Jeddah Corniche (Unsplash), Kite Beach (CC0), Wadi Hanifah (CC BY 2.0 Peter Dowley), gym (Unsplash) for Leejam, "King Fahd Park" → Salam Park (CC BY 4.0 Hamza A. Durrani; no Riyadh King Fahd Park photo exists), Riyadh Boulevard no photo (all free ones are billboards). Play: Where = dropdown sheet with photos (community courts → places for the sport, by distance → somewhere else); City = dropdown (country first), set from the phone's position via src/lib/location.ts (native ExpoLocation module directly, guarded; web geolocation; nearest known city within 80 km; never sent to the server), else profile city. Shipped as OTA f0cdc64c / d6488c87 BEFORE adding the package. Then expo-location (coarse, foreground; FINE/BACKGROUND blocked on Android) + privacy policy section → new runtimes iOS d5f4632d… / Android c389710c…; builds iOS 13 (639cbaf7), Android v5 AAB (fca1c532) + APK (a74d5b11). OTAs now target these; build 12 / v4 frozen.
 

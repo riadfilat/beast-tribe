@@ -26,7 +26,7 @@ import { Txt } from '../src/components/board/Txt';
 import { Icon } from '../src/components/board/Icon';
 import { Press } from '../src/components/board/Press';
 import { Sun } from '../src/components/board/marks';
-import { Chip, Field, MarkerButton, OutlineButton, Segmented, SectionHeading, TextButton } from '../src/components/board/controls';
+import { Chip, Dropdown, Field, MarkerButton, OutlineButton, Segmented, SectionHeading, TextButton } from '../src/components/board/controls';
 import { Group, GroupRow } from '../src/components/board/list';
 import { haptic } from '../src/lib/haptics';
 import { errorKey } from '../src/data/errors';
@@ -724,28 +724,6 @@ export default function HostScreen() {
   );
 }
 
-/** A field that opens a list: shows the choice (with its photo) or a placeholder. */
-function Dropdown({ label, sub, image, placeholder, onPress }: { label: string; sub?: string | null; image?: string | null; placeholder?: boolean; onPress: () => void }) {
-  const s = useStyles();
-  const { p } = useKit();
-  return (
-    <Press onPress={onPress} feedback="selection" accessibilityRole="button" style={s.dropdown}>
-      {image ? <Image source={{ uri: image }} style={{ width: 44, height: 44, borderRadius: 8 }} /> : null}
-      <View style={{ flex: 1 }}>
-        <Txt v={placeholder ? 'body' : 'label'} size={15} color={placeholder ? p.inkFaint : p.ink} numberOfLines={1}>
-          {label}
-        </Txt>
-        {sub ? (
-          <Txt v="caption" numberOfLines={1}>
-            {sub}
-          </Txt>
-        ) : null}
-      </View>
-      <Icon name="chevron" size={12} color={p.inkSoft} weight="bold" style={{ transform: [{ rotate: '90deg' }] }} />
-    </Press>
-  );
-}
-
 /** One group of places in the Where sheet: photo, name, and why it's here (free / played here / distance). */
 function PlaceList({ title, items, picked, onPick }: { title: string; items: Place[]; picked: Place | null; onPick: (x: Place) => void }) {
   const { p, lang } = useKit();
@@ -822,7 +800,6 @@ const useStyles = makeStyles(({ p }) => ({
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   row: { gap: 8 },
   rowLabel: { marginTop: 4, marginBottom: 6 },
-  dropdown: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 54, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1.5, borderColor: p.ruleStrong, backgroundColor: p.wash },
   stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: p.ruleStrong, borderRadius: 10, padding: 4 },
   stepBtn: { width: 48, height: 44, borderRadius: 8, backgroundColor: p.wash, alignItems: 'center', justifyContent: 'center' },
   moreToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 48, marginTop: 14 },

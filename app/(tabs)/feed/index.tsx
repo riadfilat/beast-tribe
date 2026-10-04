@@ -9,6 +9,8 @@ import { fmtAgo } from '../../../src/i18n/format';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { useFeed, toggleBeast, createPost, deletePost, reportPost, blockMember, Post } from '../../../src/data/feed';
 import { useMyPackList, PackSummary } from '../../../src/data/member';
+import { joinOpenPack, useOpenPacks } from '../../../src/data/packs';
+import { errorKey } from '../../../src/data/errors';
 import { Community, useMyCommunities, useOpenCommunities } from '../../../src/data/communities';
 import { CommunityRow, JoinCommunityForm } from '../../../src/components/board/communities';
 import { RequestCommunityCard } from '../../../src/components/board/clubs';
@@ -184,6 +186,10 @@ export default function TribeScreen() {
           onOpen={(pk) => router.push({ pathname: '/(tabs)/feed/pack', params: { packId: pk.id } })}
           onCreate={() => router.push('/(tabs)/feed/pack-create')}
           onJoin={() => router.push('/(tabs)/feed/pack')}
+          onJoined={(id) => {
+            packs.refetch();
+            router.push({ pathname: '/(tabs)/feed/pack', params: { packId: id } });
+          }}
         />
       )}
 
@@ -298,10 +304,28 @@ function CommunitiesPane({ mine, open, refreshing, onRefresh, onOpen }: { mine: 
 }
 
 // ─── Packs ──────────────────────────────────────────────────────────────────
-function PacksPane({ packs, loading, onOpen, onCreate, onJoin }: { packs: PackSummary[]; loading: boolean; onOpen: (p: PackSummary) => void; onCreate: () => void; onJoin: () => void }) {
+function PacksPane({ packs, loading, onOpen, onCreate, onJoin, onJoined }: { packs: PackSummary[]; loading: boolean; onOpen: (p: PackSummary) => void; onCreate: () => void; onJoin: () => void; onJoined: (id: string) => void }) {
   const s = useStyles();
   const { p } = useKit();
   const { t, tn } = useI18n();
+  const openPacks = useOpenPacks();
+  const [joining, setJoining] = useState<string | null>(null);
+  async function join(id: string) {
+    if (joining) return;
+    setJoining(id);
+    try {
+      const pk = await joinOpenPack(id);
+      haptic('success');
+      toast.show(t('pack.joined', { name: pk.name }), 'info');
+      onJoined(pk.id);
+    } catch (e: any) {
+      haptic('error');
+      toast.show(t(errorKey('pack', e)), 'error');
+      openPacks.refetch();
+    } finally {
+      setJoining(null);
+    }
+  }
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 12 }}>
       {!loading && !packs.length ? (
@@ -337,6 +361,29 @@ function PacksPane({ packs, loading, onOpen, onCreate, onJoin }: { packs: PackSu
         <MarkerButton label={t('tribe.startPack')} icon="plus" onPress={onCreate} />
         <OutlineButton label={t('tribe.joinWithCode')} icon="key" onPress={onJoin} />
       </View>
+      {/* Groups their leaders opened to the community: join with one tap */}
+      {openPacks.data?.length ? (
+        <View style={{ marginTop: 18, gap: 12 }}>
+          <View>
+            <SectionHeading title={t('pack.openGroups')} />
+            <Txt v="meta">{t('pack.openGroupsSub')}</Txt>
+          </View>
+          {openPacks.data.map((pk) => (
+            <View key={pk.id} style={s.packRow}>
+              <Patch emblem={pk.emblem} name={pk.name} size={56} />
+              <View style={{ flex: 1 }}>
+                <Txt v="row" size={16} numberOfLines={1}>
+                  {pk.name}
+                </Txt>
+                <Txt v="meta" numberOfLines={1}>
+                  {[tn('tribe.members', pk.members), pk.audience === 'women' ? t('pack.womenOnly') : pk.audience === 'men' ? t('pack.menOnly') : null, pk.communityName].filter(Boolean).join(' · ')}
+                </Txt>
+              </View>
+              <OutlineButton label={t('pack.join')} onPress={() => join(pk.id)} loading={joining === pk.id} disabled={pk.full} style={{ height: 40, paddingHorizontal: 14 }} />
+            </View>
+          ))}
+        </View>
+      ) : null}
     </ScrollView>
   );
 }
