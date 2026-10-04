@@ -8,7 +8,7 @@ export default async function PartnerEventsPage() {
 
   const { data: events } = await db.from('events')
     .select('*, sport:sports(name, emoji), rsvp_count:event_rsvps(count)')
-    .or(`partner_id.eq.${partner.partner_id},coach_name.eq.${partner.business_name},gym_name.eq.${partner.business_name}`)
+    .eq('partner_id', partner.partner_id)
     .order('starts_at', { ascending: false });
 
   return (

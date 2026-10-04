@@ -37,6 +37,9 @@ export async function updateSession(request: NextRequest) {
   const isPublicPage =
     request.nextUrl.pathname.startsWith('/legal') ||
     request.nextUrl.pathname.startsWith('/support') ||
+    // Password reset has to work while signed out
+    request.nextUrl.pathname.startsWith('/forgot-password') ||
+    request.nextUrl.pathname.startsWith('/reset-password') ||
     // The public pitch to gyms and coaches
     request.nextUrl.pathname.startsWith('/for-gyms') ||
     request.nextUrl.pathname.startsWith('/for-companies') ||

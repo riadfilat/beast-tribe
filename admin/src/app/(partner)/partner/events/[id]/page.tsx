@@ -12,8 +12,10 @@ export default async function PartnerEventDetailPage({ params }: { params: { id:
   const { data: event } = await db.from('events')
     .select('*')
     .eq('id', params.id)
-    .single();
+    .eq('partner_id', partner.partner_id)
+    .maybeSingle();
 
+  // Only the partner's own events: the guest list is private.
   if (!event) notFound();
 
   // Get RSVPs with user details
