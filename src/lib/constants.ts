@@ -154,6 +154,7 @@ export const SPORTS = [
   { id: 'climbing', name: 'Climbing', icon: 'trending-up-outline', emoji: '🧗', category: 'outdoor' },
   { id: 'skateboarding', name: 'Skate', icon: 'boat-outline', emoji: '🛹', category: 'outdoor' },
   { id: 'meditation', name: 'Meditation', icon: 'leaf-outline', emoji: '🧘‍♂️', category: 'mindfulness' },
+  { id: 'horse_riding', name: 'Horse riding', icon: 'paw-outline', emoji: '🏇', category: 'outdoor' },
 ] as const;
 
 // Goal templates per sport (fallback for demo mode)

@@ -11,6 +11,7 @@ export type AssistantCard =
   | { type: 'session'; id: string; title: string; sport: string; startsAt: string; place: string | null }
   | { type: 'workout'; id: string; title: string; minutes: number | null; sport: string | null }
   | { type: 'club'; id: string; name: string; line: string }
+  | { type: 'court'; id: string; name: string; line: string; sport: string }
   | { type: 'action'; action: 'partners' | 'host' | 'clubs' };
 
 export interface AssistantTurn {

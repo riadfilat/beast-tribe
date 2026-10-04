@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { lib, FORMATS, LEVELS } = require('./kit');
 
-const SPORTS = ['running', 'padel', 'football', 'gym', 'basketball', 'crossfit', 'hyrox', 'cycling', 'swimming', 'walking', 'yoga', 'pilates', 'tennis', 'pickleball', 'badminton', 'volleyball', 'boxing', 'mma', 'hiking', 'climbing', 'skateboarding', 'meditation'];
+const SPORTS = ['running', 'padel', 'football', 'gym', 'basketball', 'crossfit', 'hyrox', 'cycling', 'swimming', 'walking', 'yoga', 'pilates', 'tennis', 'pickleball', 'badminton', 'volleyball', 'boxing', 'mma', 'hiking', 'climbing', 'skateboarding', 'meditation', 'horse_riding'];
 const AR = /[؀-ۿ]/;
 const DIR = path.join(__dirname, 'sports');
 
@@ -25,7 +25,7 @@ function check(sport) {
   const keys = new Set(); const titles = new Set();
   list.forEach((w, i) => {
     const at = `${sport}[${i}] ${w.key || ''}`;
-    if (!/^[a-z0-9-]+$/.test(w.key || '') || !w.key.startsWith(sport + '-')) errs.push(`${at}: key must look like "${sport}-…"`);
+    if (!/^[a-z0-9_-]+$/.test(w.key || '') || !w.key.startsWith(sport + '-')) errs.push(`${at}: key must look like "${sport}-…"`);
     if (keys.has(w.key)) errs.push(`${at}: duplicate key`); keys.add(w.key);
     for (const f of ['title', 'desc']) {
       if (!Array.isArray(w[f]) || w[f].length !== 2 || !w[f][0] || !AR.test(w[f][1] || '')) errs.push(`${at}: ${f} must be [en, ar] with Arabic`);

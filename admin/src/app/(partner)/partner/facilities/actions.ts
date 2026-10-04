@@ -62,6 +62,11 @@ function read(formData: FormData, partner: PartnerUser) {
     notice_hours: Math.min(72, Math.max(0, parseInt(str('notice_hours')) || 0)),
     cancel_hours: Math.min(168, Math.max(0, parseInt(str('cancel_hours')) || 0)),
     is_school: partner.partner_type === 'school',
+    // Multi-use: every sport it takes (the main one first); half courts belong to a full court.
+    sports: Array.from(new Set([str('sport') || 'padel', ...str('more_sports').toLowerCase().split(/[,،]/).map((x) => x.trim().replace(/\s+/g, '_')).filter(Boolean)])).slice(0, 8),
+    parent_id: /^[0-9a-f-]{36}$/.test(str('parent_id')) ? str('parent_id') : null,
+    bookable: formData.get('classes_only') !== 'on',
+    daily_limit: str('daily_limit') ? Math.min(10, Math.max(1, parseInt(str('daily_limit')) || 1)) : null,
   };
 }
 

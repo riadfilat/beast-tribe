@@ -6,7 +6,7 @@ import { makeStyles, useKit } from '../../src/theme';
 import { useI18n } from '../../src/i18n';
 import { bookFacility, dayKey, useFacility, useFacilitySlots } from '../../src/data/facilities';
 import { useMyCommunities } from '../../src/data/communities';
-import { useMyPackList } from '../../src/data/member';
+import { useMyPackList, useCoaches } from '../../src/data/member';
 import { money } from '../../src/data/dues';
 import { addDays, fmtClock, fmtDay } from '../../src/i18n/format';
 import { cityLabel } from '../../src/lib/cities';
@@ -47,6 +47,8 @@ export default function CourtScreen() {
   const [title, setTitle] = useState('');
   const [aud, setAud] = useState<Audience | null>(null);
   const [busy, setBusy] = useState(false);
+  const [playSport, setPlaySport] = useState<string | null>(null);
+  const coaches = useCoaches().data ?? [];
   const communities = useMyCommunities().data ?? [];
   const packs = useMyPackList().data ?? [];
   const back = () => (router.canGoBack() ? router.back() : router.replace('/courts'));
@@ -59,7 +61,52 @@ export default function CourtScreen() {
     );
   }
 
+  // A pool used for classes: no slots to book; the coaches who teach here, and one tap to set up a class.
+  if (!f.bookable) {
+    const teachers = coaches.filter((c) => c.sports.includes(f.sport as any));
+    return (
+      <SafeAreaView style={s.screen} edges={['top']}>
+        <View style={s.top}>
+          <IconButton name="back" label={t('common.back')} onPress={back} />
+        </View>
+        <ScrollView contentContainerStyle={{ paddingBottom: 30 }}>
+          {f.imageUrl ? <Image source={{ uri: f.imageUrl }} style={s.img} accessibilityIgnoresInvertColors /> : null}
+          <View style={s.body}>
+            <Txt v="title" size={26} accessibilityRole="header">
+              {f.name}
+            </Txt>
+            <Txt v="meta" style={{ marginTop: 4 }}>
+              {[t(`sports.${f.sport}`), f.communityName || f.venue].filter(Boolean).join(' · ')}
+            </Txt>
+            {f.description ? (
+              <Txt v="body" size={15} color={p.inkSoft} style={{ marginTop: 10 }}>
+                {f.description}
+              </Txt>
+            ) : null}
+            <SectionHeading title={t('courts.coaches')} style={{ marginTop: 18 }} />
+            {teachers.length ? (
+              teachers.map((c) => (
+                <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: p.rule }}>
+                  <Icon name="coach" size={18} color={p.aqua} />
+                  <Txt v="row" size={15} style={{ flex: 1 }}>
+                    {c.name}
+                  </Txt>
+                </View>
+              ))
+            ) : (
+              <Txt v="meta">{t('courts.noCoaches')}</Txt>
+            )}
+          </View>
+        </ScrollView>
+        <View style={[s.bar, { paddingBottom: 12 + insets.bottom }]}>
+          <MarkerButton label={t('courts.setUpClass')} onPress={() => router.push({ pathname: '/host', params: { sport: f.sport, ...(f.communityId ? { community: f.communityId } : {}) } })} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   const n = players ?? f.maxPlayers;
+  const chosenSport = playSport && f.sports.includes(playSport) ? playSport : f.sports[0] ?? f.sport;
   const share = f.price / n;
   // Times that already started are not offered.
   const all = slotsQ.data ?? [];
@@ -84,6 +131,7 @@ export default function CourtScreen() {
         title,
         communityId: who?.kind === 'community' ? who.id : null,
         packId: who?.kind === 'pack' ? who.id : null,
+        sport: chosenSport,
       });
       haptic('success');
       toast.show(t('courts.booked'), 'yours');
@@ -118,6 +166,27 @@ export default function CourtScreen() {
           {f.description ? (
             <Txt v="body" size={15} color={p.inkSoft} style={{ marginTop: 10 }}>
               {f.description}
+            </Txt>
+          ) : null}
+
+          {f.sports.length > 1 ? (
+            <>
+              <SectionHeading title={t('courts.playing')} style={{ marginTop: 14 }} />
+              <View style={s.wrap}>
+                {f.sports.map((x) => (
+                  <Chip key={x} sport={x} label={t(`sports.${x}`)} selected={chosenSport === x} onPress={() => setPlaySport(x)} />
+                ))}
+              </View>
+            </>
+          ) : null}
+          {f.parentId ? (
+            <Txt v="caption" style={{ marginTop: 8 }}>
+              {t('courts.halfCourt')}
+            </Txt>
+          ) : null}
+          {f.dailyLimit ? (
+            <Txt v="caption" style={{ marginTop: 8 }}>
+              {t('courts.dailyRule', { n: f.dailyLimit, sport: t(`sports.${f.sport}`) })}
             </Txt>
           ) : null}
 
@@ -170,6 +239,11 @@ export default function CourtScreen() {
           </View>
 
           {/* The split, before anything is booked */}
+          {f.price === 0 ? (
+            <Txt v="body" size={15} color={p.inkSoft} style={{ marginTop: 14 }}>
+              {t('courts.freeForMembers')}
+            </Txt>
+          ) : (
           <View style={s.split}>
             <View>
               <Txt v="caption">{t('pay.each')}</Txt>
@@ -184,6 +258,7 @@ export default function CourtScreen() {
               <Txt v="caption">{t('courts.payNote', { h: f.cancelHours })}</Txt>
             </View>
           </View>
+          )}
 
           {audiences.length > 1 ? (
             <>
@@ -205,7 +280,7 @@ export default function CourtScreen() {
       </ScrollView>
       <View style={[s.bar, { paddingBottom: 12 + insets.bottom }]}>
         <MarkerButton
-          label={chosen ? t('courts.book', { time: fmtClock(chosen.startsAt, lang), amount: money(share) }) : t('courts.pickTime')}
+          label={chosen ? (f.price === 0 ? t('courts.bookFree', { time: fmtClock(chosen.startsAt, lang) }) : t('courts.book', { time: fmtClock(chosen.startsAt, lang), amount: money(share) })) : t('courts.pickTime')}
           onPress={book}
           disabled={!chosen}
           loading={busy}

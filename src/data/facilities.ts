@@ -4,6 +4,7 @@ import { useQuery, invalidate } from './query';
 import { PREVIEW } from './preview';
 import { cityKey, cityKeys } from '../lib/cities';
 import { sportIdOf } from '../lib/sports';
+import { useMySports } from './member';
 
 // Courts, pitches, halls and school facilities that venues list for booking (migration 060).
 // Booking a free slot creates a session and holds the court; the price is split per player.
@@ -29,6 +30,17 @@ export interface Facility {
   lng: number | null;
   /** Weekdays (0 = Sunday) it opens at all. */
   openDays: number[];
+  /** Every sport it takes (a multi-use court lists several; the booker picks one). */
+  sports: string[];
+  /** A half court's full court. */
+  parentId: string | null;
+  /** False for a pool used for classes: shown, not booked. */
+  bookable: boolean;
+  /** House rule: bookings a day per member on this venue's courts of this sport. */
+  dailyLimit: number | null;
+  communityName: string | null;
+  /** Why it's recommended (set by useFacilities). */
+  reason?: 'community' | 'used' | 'sport' | 'near' | null;
 }
 
 export interface Slot {
@@ -37,7 +49,7 @@ export interface Slot {
   free: boolean;
 }
 
-export type BookErrorCode = 'TAKEN' | 'TOO_MANY' | 'WOMEN_ONLY' | 'COMMUNITY_ONLY' | 'PACK_ONLY' | 'NOT_FOUND' | 'generic';
+export type BookErrorCode = 'TAKEN' | 'TOO_MANY' | 'DAILY_LIMIT' | 'WOMEN_ONLY' | 'COMMUNITY_ONLY' | 'PACK_ONLY' | 'NOT_FOUND' | 'generic';
 export class BookError extends Error {
   code: BookErrorCode;
   constructor(code: BookErrorCode) {
@@ -47,7 +59,7 @@ export class BookError extends Error {
 }
 
 const SELECT =
-  'id, name, name_ar, kind, sport, city, address, image_url, description, description_ar, price_sar, slot_minutes, max_players, audience, community_id, cancel_hours, is_school, latitude, longitude, hours, partner:partners(business_name, name)';
+  'id, name, name_ar, kind, sport, city, address, image_url, description, description_ar, price_sar, slot_minutes, max_players, audience, community_id, cancel_hours, is_school, latitude, longitude, hours, sports, parent_id, bookable, daily_limit, sort, partner:partners(business_name, name), community:communities(name)';
 
 function toFacility(r: any, lang: string): Facility {
   return {
@@ -72,19 +84,47 @@ function toFacility(r: any, lang: string): Facility {
     openDays: Object.keys(r.hours || {})
       .filter((d) => Array.isArray(r.hours[d]) && r.hours[d].length)
       .map(Number),
+    sports: (r.sports?.length ? r.sports : [r.sport]).map((x: string) => sportIdOf(x)),
+    parentId: r.parent_id ?? null,
+    bookable: r.bookable !== false,
+    dailyLimit: r.daily_limit ?? null,
+    communityName: r.community?.name ?? null,
   };
 }
 
-/** Facilities the member can book, their own city first. */
+/**
+ * Facilities the member can book, best first: their own community's courts (private ones only
+ * members see), then the courts they use most, then courts for their sports, then their city.
+ */
 export function useFacilities(lang: string) {
   const { user, profile } = useAuth();
-  return useQuery<Facility[]>(!PREVIEW && user ? `facilities:list:${lang}` : null, async () => {
-    const { data, error } = await supabase.from('facilities').select(SELECT).eq('is_active', true).order('name').limit(200);
+  const sports = useMySports().data ?? [];
+  return useQuery<Facility[]>(!PREVIEW && user ? `facilities:list:${lang}:${sports.join(',')}` : null, async () => {
+    const [{ data, error }, { data: played }] = await Promise.all([
+      supabase.from('facilities').select(SELECT).eq('is_active', true).order('sort').order('name').limit(300),
+      supabase
+        .from('event_rsvps')
+        .select('event:events!inner(facility_id, starts_at)')
+        .eq('user_id', user!.id)
+        .eq('status', 'going')
+        .not('event.facility_id', 'is', null)
+        .gte('event.starts_at', new Date(Date.now() - 120 * 86400000).toISOString())
+        .limit(300),
+    ]);
     if (error) throw error;
+    const used = new Map<string, number>();
+    (played || []).forEach((r: any) => r.event?.facility_id && used.set(r.event.facility_id, (used.get(r.event.facility_id) ?? 0) + 1));
     const mine = new Set(cityKeys(profile?.city));
-    return (data || [])
-      .map((r) => toFacility(r, lang))
-      .sort((a, b) => Number(mine.has(cityKey(b.city))) - Number(mine.has(cityKey(a.city))) || a.name.localeCompare(b.name));
+    const scored = (data || []).map((r) => {
+      const f = toFacility(r, lang);
+      const uses = used.get(f.id) ?? 0;
+      const forMe = f.sports.some((x) => sports.includes(x as any));
+      const near = mine.has(cityKey(f.city));
+      f.reason = f.audience === 'community' ? 'community' : uses ? 'used' : forMe ? 'sport' : near ? 'near' : null;
+      const score = (f.audience === 'community' ? 100 : 0) + Math.min(uses, 4) * 10 + (forMe ? 30 : 0) + (near ? 15 : 0);
+      return { f, score, sort: (r as any).sort ?? 0 };
+    });
+    return scored.sort((a, b) => b.score - a.score || a.sort - b.sort || a.f.name.localeCompare(b.f.name)).map((x) => x.f);
   });
 }
 
@@ -110,7 +150,7 @@ export function useFacilitySlots(id: string | undefined, day: string) {
 }
 
 /** Book a slot: holds the court and puts the session on the board. Returns the session id. */
-export async function bookFacility(input: { facilityId: string; startsAt: Date; players: number; title: string; communityId: string | null; packId: string | null }): Promise<string> {
+export async function bookFacility(input: { facilityId: string; startsAt: Date; players: number; title: string; communityId: string | null; packId: string | null; sport?: string | null }): Promise<string> {
   const { data, error } = await supabase.rpc('book_facility', {
     p_facility: input.facilityId,
     p_starts_at: input.startsAt.toISOString(),
@@ -118,9 +158,10 @@ export async function bookFacility(input: { facilityId: string; startsAt: Date; 
     p_title: input.title,
     p_community: input.communityId,
     p_pack: input.packId,
+    p_sport: input.sport ?? null,
   });
   if (error) {
-    const hit = String(error.message || '').match(/TAKEN|TOO_MANY|WOMEN_ONLY|COMMUNITY_ONLY|PACK_ONLY|NOT_FOUND/);
+    const hit = String(error.message || '').match(/DAILY_LIMIT|TAKEN|TOO_MANY|WOMEN_ONLY|COMMUNITY_ONLY|PACK_ONLY|NOT_FOUND/);
     throw new BookError((hit?.[0] as BookErrorCode) || 'generic');
   }
   invalidate('facilities:slots:');

@@ -51,6 +51,7 @@ export default function AssistantScreen() {
     if (c.type === 'session') router.push({ pathname: '/session/[id]', params: { id: c.id } });
     else if (c.type === 'workout') router.push({ pathname: '/workout/[id]', params: { id: c.id } });
     else if (c.type === 'club') router.push({ pathname: '/(tabs)/feed/community', params: { id: c.id } });
+    else if (c.type === 'court') router.push({ pathname: '/court/[id]', params: { id: c.id } });
     else if (c.type === 'partner') router.push('/partners');
     else if (c.type === 'action') router.push(c.action === 'partners' ? '/partners' : c.action === 'host' ? '/host' : { pathname: '/(tabs)/feed', params: { tab: 'communities' } });
   }
@@ -152,6 +153,10 @@ function Card({ c, onPress }: { c: AssistantCard; onPress: () => void }) {
     title = c.name;
     line = c.line;
     lead = <Icon name="people" size={22} color={p.aqua} />;
+  } else if (c.type === 'court') {
+    title = c.name;
+    line = c.line;
+    lead = <Icon sport={c.sport} size={22} color={p.aqua} />;
   } else {
     title = t(`assistant.actions.${c.action}`);
     lead = <Icon name={c.action === 'host' ? 'plus' : c.action === 'partners' ? 'people' : 'flag'} size={20} color={p.marker} />;

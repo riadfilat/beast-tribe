@@ -29,6 +29,10 @@ export interface Facility {
   cancel_hours: number;
   is_school: boolean;
   is_active: boolean;
+  sports: string[];
+  parent_id: string | null;
+  bookable: boolean;
+  daily_limit: number | null;
 }
 
 export interface BookingPlayer {

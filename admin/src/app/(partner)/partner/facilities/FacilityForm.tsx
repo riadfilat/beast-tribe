@@ -10,6 +10,7 @@ export default function FacilityForm({
   city,
   hasCommunity,
   isSchool,
+  parents = [],
 }: {
   action: (formData: FormData) => Promise<void>;
   facility?: Facility;
@@ -17,6 +18,8 @@ export default function FacilityForm({
   city: string | null;
   hasCommunity: boolean;
   isSchool: boolean;
+  /** Full courts this one can be half of. */
+  parents?: { id: string; name: string }[];
 }) {
   const f = facility;
   const hours = f?.hours || {};
@@ -63,6 +66,31 @@ export default function FacilityForm({
           <input name="address" defaultValue={f?.address || ''} className={input} placeholder="Al Malqa" />
         </div>
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className={label}>Other sports it takes (comma separated)</label>
+          <input name="more_sports" defaultValue={(f?.sports || []).filter((x) => x !== f?.sport).join(', ')} className={input} placeholder="football, volleyball, handball" />
+        </div>
+        <div>
+          <label className={label}>Half of another court</label>
+          <select name="parent_id" defaultValue={f?.parent_id || ''} className={input}>
+            <option value="">No, it is a whole court</option>
+            {parents.filter((x) => x.id !== f?.id).map((x) => (
+              <option key={x.id} value={x.id}>
+                Half of {x.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className={label}>Bookings a day per member (empty = no limit)</label>
+          <input name="daily_limit" type="number" min={1} max={10} defaultValue={f?.daily_limit ?? ''} className={input} placeholder="1" />
+        </div>
+      </div>
+      <label className="flex items-center gap-2 text-sm text-gray-700">
+        <input type="checkbox" name="classes_only" defaultChecked={f ? !f.bookable : false} /> Classes only (shown in the app with your coaches, not booked by members)
+      </label>
 
       <div>
         <p className="text-sm font-semibold text-gray-900">Price and players</p>

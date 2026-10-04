@@ -17,7 +17,7 @@ export default async function FacilityPage({ params }: { params: { id?: string }
   const [{ data: sports }, { data: p }, facilities] = await Promise.all([
     db.from('sports').select('name').eq('is_active', true).order('name'),
     db.from('partners').select('city').eq('id', partner.partner_id).single(),
-    params.id ? loadFacilities(partner.partner_id) : Promise.resolve([]),
+    loadFacilities(partner.partner_id),
   ]);
   const facility = params.id ? facilities.find((f) => f.id === params.id) : undefined;
   if (params.id && !facility) notFound();
@@ -36,6 +36,7 @@ export default async function FacilityPage({ params }: { params: { id?: string }
         city={(p as any)?.city || null}
         hasCommunity={!!partner.community_id}
         isSchool={partner.partner_type === 'school'}
+        parents={facilities.filter((x) => !x.parent_id).map((x) => ({ id: x.id, name: x.name }))}
       />
     </div>
   );

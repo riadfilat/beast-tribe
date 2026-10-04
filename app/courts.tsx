@@ -10,7 +10,7 @@ import { cityLabel } from '../src/lib/cities';
 import { Txt } from '../src/components/board/Txt';
 import { Icon } from '../src/components/board/Icon';
 import { Press } from '../src/components/board/Press';
-import { Chip, IconButton } from '../src/components/board/controls';
+import { Chip, IconButton, SectionHeading } from '../src/components/board/controls';
 
 // Book a court: courts, pitches, halls and school facilities listed by venues.
 export default function CourtsScreen() {
@@ -21,8 +21,15 @@ export default function CourtsScreen() {
   const q = useFacilities(lang);
   const [sport, setSport] = useState<string | null>(null);
   const all = q.data ?? [];
-  const sports = useMemo(() => Array.from(new Set(all.map((f) => f.sport))), [all]);
-  const list = sport ? all.filter((f) => f.sport === sport) : all;
+  const sports = useMemo(() => Array.from(new Set(all.flatMap((f) => f.sports))), [all]);
+  const list = sport ? all.filter((f) => f.sports.includes(sport)) : all;
+  // Your community's own courts first (private ones only members see), then everything else, best first.
+  const ownGroups = useMemo(() => {
+    const m = new Map<string, Facility[]>();
+    list.filter((f) => f.reason === 'community').forEach((f) => m.set(f.communityName || '', [...(m.get(f.communityName || '') || []), f]));
+    return Array.from(m.entries());
+  }, [list]);
+  const others = list.filter((f) => f.reason !== 'community');
   const back = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/events'));
 
   return (
@@ -47,7 +54,16 @@ export default function CourtsScreen() {
         )}
         {q.loading ? null : list.length ? (
           <View style={{ paddingHorizontal: 16, gap: 14 }}>
-            {list.map((f) => (
+            {ownGroups.map(([name, fs]) => (
+              <View key={name} style={{ gap: 14 }}>
+                <SectionHeading title={name || t('courts.yourCommunity')} />
+                {fs.map((f) => (
+                  <FacilityCard key={f.id} f={f} onPress={() => router.push({ pathname: '/court/[id]', params: { id: f.id } })} />
+                ))}
+              </View>
+            ))}
+            {others.length ? <SectionHeading title={ownGroups.length ? t('courts.forYou') : t('courts.title')} style={{ marginTop: ownGroups.length ? 8 : 0 }} /> : null}
+            {others.map((f) => (
               <FacilityCard key={f.id} f={f} onPress={() => router.push({ pathname: '/court/[id]', params: { id: f.id } })} />
             ))}
           </View>
@@ -83,19 +99,31 @@ function FacilityCard({ f, onPress }: { f: Facility; onPress: () => void }) {
         <Txt v="caption" numberOfLines={1}>
           {[f.venue, cityLabel(f.city, lang)].filter(Boolean).join(' · ')}
         </Txt>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10, marginTop: 4 }}>
-          <Txt v="time" size={22} color={p.markerText}>
-            {money(f.price / f.maxPlayers)}
+        {!f.bookable ? (
+          <Txt v="body" size={14} color={p.inkSoft} style={{ marginTop: 4 }}>
+            {t('courts.classesOnly')}
           </Txt>
-          <Txt v="caption" style={{ flex: 1, paddingBottom: 2 }}>
-            {t('courts.eachLine', { total: money(f.price), n: f.maxPlayers, min: f.slotMinutes })}
+        ) : f.price === 0 ? (
+          <Txt v="body" size={14} color={p.inkSoft} style={{ marginTop: 4 }}>
+            {t('courts.freeLine', { n: f.maxPlayers, min: f.slotMinutes })}
           </Txt>
-        </View>
-        {f.audience === 'women' || f.isSchool || f.audience === 'community' ? (
+        ) : (
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10, marginTop: 4 }}>
+            <Txt v="time" size={22} color={p.markerText}>
+              {money(f.price / f.maxPlayers)}
+            </Txt>
+            <Txt v="caption" style={{ flex: 1, paddingBottom: 2 }}>
+              {t('courts.eachLine', { total: money(f.price), n: f.maxPlayers, min: f.slotMinutes })}
+            </Txt>
+          </View>
+        )}
+        {f.sports.length > 1 ? <Txt v="caption">{f.sports.map((x) => t(`sports.${x}`)).join(' · ')}</Txt> : null}
+        {f.audience === 'women' || f.isSchool || f.audience === 'community' || f.dailyLimit ? (
           <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
             {f.audience === 'women' ? <Badge label={t('session.womenOnly')} /> : null}
             {f.isSchool ? <Badge label={t('courts.school')} /> : null}
             {f.audience === 'community' ? <Badge label={t('courts.membersOnly')} /> : null}
+            {f.dailyLimit ? <Badge label={t('courts.dailyLimit', { n: f.dailyLimit })} /> : null}
           </View>
         ) : null}
       </View>

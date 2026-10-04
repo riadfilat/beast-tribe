@@ -62,6 +62,11 @@ const TOOLS = [
     description: 'Clubs and communities: ones the member is in and open ones they can join.',
     input_schema: { type: 'object', properties: { sport: { type: 'string' } } },
   },
+  {
+    name: 'find_courts',
+    description: "Courts and facilities the member can book, best first: their own community's courts (private ones only members see), then courts they use most, then courts for their sports, then their city. Includes house rules like one padel booking a day.",
+    input_schema: { type: 'object', properties: { sport: { type: 'string', description: 'Sport id, e.g. padel, tennis, badminton, basketball, football, swimming' } } },
+  },
 ];
 
 function riyadhDayStart(offsetDays: number) {
@@ -148,6 +153,49 @@ async function runTool(name: string, input: any, ctx: { db: SupabaseClient; city
     rows = rows.slice(0, 5);
     rows.slice(0, 3).forEach((r) => cards.push({ type: 'workout', id: r.id, title: (ctx.lang === 'ar' && r.title_ar) || r.title, minutes: r.duration_minutes, sport: r.sport }));
     return rows.map((r) => ({ title: (ctx.lang === 'ar' && r.title_ar) || r.title, sport: r.sport, minutes: r.duration_minutes, level: r.difficulty, equipment: r.equipment, format: r.format }));
+  }
+
+  if (name === 'find_courts') {
+    const sport = typeof input?.sport === 'string' ? input.sport.toLowerCase().trim() : null;
+    const [{ data: fs, error }, { data: mine }, { data: played }, { data: mySports }] = await Promise.all([
+      db.from('facilities').select('id, name, name_ar, sport, sports, city, price_sar, max_players, slot_minutes, audience, community_id, bookable, daily_limit, community:communities(name), partner:partners(business_name)').eq('is_active', true).limit(300),
+      db.from('community_members').select('community_id').eq('user_id', ctx.userId),
+      db.from('event_rsvps').select('event:events!inner(facility_id)').eq('user_id', ctx.userId).eq('status', 'going').not('event.facility_id', 'is', null).limit(300),
+      db.from('user_sports').select('sport:sports(name)').eq('user_id', ctx.userId),
+    ]);
+    if (error) return { error: 'unavailable' };
+    const myCommunities = new Set((mine || []).map((m: any) => m.community_id));
+    const used = new Map<string, number>();
+    (played || []).forEach((r: any) => r.event?.facility_id && used.set(r.event.facility_id, (used.get(r.event.facility_id) ?? 0) + 1));
+    const likes = new Set((mySports || []).map((r: any) => String(r.sport?.name || '').toLowerCase()));
+    const city = (ctx.city || '').toLowerCase();
+    const rows = ((fs || []) as any[])
+      .filter((f) => !sport || (f.sports || [f.sport]).includes(sport))
+      .map((f) => {
+        const sports: string[] = f.sports?.length ? f.sports : [f.sport];
+        const own = f.audience === 'community' && myCommunities.has(f.community_id);
+        const score = (own ? 100 : 0) + Math.min(used.get(f.id) ?? 0, 4) * 10 + (sports.some((x) => likes.has(x)) ? 30 : 0) + ((f.city || '').toLowerCase() === city ? 15 : 0);
+        return { f, sports, own, score };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 6);
+    rows.slice(0, 3).forEach(({ f, sports }) =>
+      cards.push({ type: 'court', id: f.id, name: (ctx.lang === 'ar' && f.name_ar) || f.name, sport: sport || sports[0], line: [f.community?.name || f.partner?.business_name, f.city].filter(Boolean).join(' · ') }),
+    );
+    return rows.map(({ f, sports, own }) => ({
+      name: (ctx.lang === 'ar' && f.name_ar) || f.name,
+      sports,
+      where: f.community?.name || f.partner?.business_name || null,
+      city: f.city,
+      your_community: own,
+      members_only: f.audience === 'community',
+      price_sar: Number(f.price_sar) || 0,
+      players: f.max_players,
+      minutes: f.slot_minutes,
+      classes_only: f.bookable === false,
+      bookings_a_day_limit: f.daily_limit,
+      times_you_played_here: used.get(f.id) ?? 0,
+    }));
   }
 
   if (name === 'find_clubs') {

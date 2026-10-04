@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Image, KeyboardAvoidingView, Platform, ScrollView, Share, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { sportIdOf } from '../src/lib/sports';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { makeStyles, useKit } from '../src/theme';
@@ -53,7 +54,7 @@ export default function HostScreen() {
   const { t } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ spot?: string; community?: string; pack?: string; workout?: string }>();
+  const params = useLocalSearchParams<{ spot?: string; community?: string; pack?: string; workout?: string; sport?: string }>();
   const { user, profile } = useAuth();
   const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
   const country = profile?.region || 'SA';
@@ -64,7 +65,7 @@ export default function HostScreen() {
   const coaches = useCoaches().data ?? [];
   const workouts = useWorkouts(lang).data ?? [];
 
-  const [sport, setSport] = useState<SportId | null>(null);
+  const [sport, setSport] = useState<SportId | null>(params.sport ? sportIdOf(params.sport) : null);
   const [dayKey, setDayKey] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [spotId, setSpotId] = useState<string | null>(null);
