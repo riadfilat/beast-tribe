@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import SubmitButton from '@/components/SubmitButton';
 import { addLead, updateLead } from './actions';
@@ -28,7 +28,7 @@ function age(d: string) {
 }
 
 export default async function LeadsPage({ searchParams }: { searchParams: { status?: string } }) {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
   const current = STATUS.some((s) => s.id === searchParams.status) ? searchParams.status! : 'new';
   // One count per stage: a row fetch would stop at the API's 1,000-row cap.

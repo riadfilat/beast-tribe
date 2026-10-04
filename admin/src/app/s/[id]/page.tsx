@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { timingSafeEqual } from 'crypto';
 import { headers } from 'next/headers';
 import { Montserrat, Noto_Kufi_Arabic } from 'next/font/google';
 import { createAdminClient } from '@/lib/supabase-server';
@@ -82,6 +83,7 @@ interface Row {
   is_women_only: boolean | null;
   cancelled_at: string | null;
   host: { display_name: string | null; full_name: string | null } | null;
+  community: { visibility: string | null } | null;
 }
 
 async function getSession(id: string): Promise<Row | null> {
@@ -90,7 +92,7 @@ async function getSession(id: string): Promise<Row | null> {
   const { data } = await db
     .from('events')
     .select(
-      'id, title, event_type, starts_at, ends_at, location_name, location_city, gym_name, country, location_lat, location_lng, image_url, max_capacity, going_count, visibility, is_women_only, cancelled_at, guest_invite, guest_token, host:profiles!events_created_by_fkey(display_name, full_name)',
+      'id, title, event_type, starts_at, ends_at, location_name, location_city, gym_name, country, location_lat, location_lng, image_url, max_capacity, going_count, visibility, is_women_only, cancelled_at, guest_invite, guest_token, host:profiles!events_created_by_fkey(display_name, full_name), community:communities(visibility)',
     )
     .eq('id', id)
     .maybeSingle();
@@ -111,15 +113,31 @@ function when(row: Row, lang: Lang) {
   return { day, time };
 }
 
+/** A session in a group or a private community shows nothing to the public, except with its guest key. */
+function hidden(row: Row, g?: string | null) {
+  if (row.visibility === 'pack') return true;
+  if (row.community?.visibility !== 'private') return false;
+  return !validGuest(row, g);
+}
+function validGuest(row: Row, g?: string | null) {
+  if (!row.guest_invite || !row.guest_token || !g) return false;
+  const a = Buffer.from(g);
+  const b = Buffer.from(row.guest_token);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+/** Only our own images (storage or this site) go into the page and its link preview. */
+const safeImage = (url: string | null) =>
+  url && (url.startsWith('https://doqpqzxqgszsybghgtfq.supabase.co/storage/v1/object/public/') || url.startsWith(`${SITE}/`)) ? url : null;
+
 const sportName = (row: Row, lang: Lang) => SPORT_NAMES[(row.event_type || '').toLowerCase()]?.[lang] || COPY[lang].session;
 const firstName = (row: Row) => (row.host?.display_name || row.host?.full_name || '').trim().split(/\s+/)[0] || '';
 const placeOf = (row: Row) => [row.location_name || row.gym_name, row.location_city].filter(Boolean).join(' · ');
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: { params: { id: string }; searchParams: { g?: string } }): Promise<Metadata> {
   const row = await getSession(params.id);
   const lang = langOf();
   const base: Metadata = { metadataBase: new URL(SITE), robots: { index: false, follow: false } };
-  if (!row || row.visibility === 'pack') {
+  if (!row || hidden(row, searchParams?.g)) {
     return { ...base, title: COPY[lang].brand, description: COPY[lang].tagline, openGraph: { title: COPY[lang].brand, description: COPY[lang].tagline, images: ['/og-default.png'] } };
   }
   const { day, time } = when(row, lang);
@@ -129,8 +147,8 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     ...base,
     title,
     description,
-    openGraph: { title, description, images: [row.image_url || '/og-default.png'], type: 'website' },
-    twitter: { card: row.image_url ? 'summary_large_image' : 'summary', title, description },
+    openGraph: { title, description, images: [safeImage(row.image_url) || '/og-default.png'], type: 'website' },
+    twitter: { card: safeImage(row.image_url) ? 'summary_large_image' : 'summary', title, description },
   };
 }
 
@@ -139,7 +157,7 @@ export default async function SessionLinkPage({ params, searchParams }: { params
   const c = COPY[lang];
   const row = await getSession(params.id);
   // A guest link: pass its key into the app so someone outside the community can join.
-  const g = row?.guest_invite && searchParams.g && searchParams.g === row.guest_token ? searchParams.g : null;
+  const g = row && validGuest(row, searchParams.g) ? searchParams.g! : null;
   const ar = lang === 'ar';
 
   const shell = (body: React.ReactNode) => (
@@ -159,7 +177,7 @@ export default async function SessionLinkPage({ params, searchParams }: { params
     </main>
   );
 
-  if (!row || row.visibility === 'pack') {
+  if (!row || hidden(row, g)) {
     return shell(
       <div className="flex flex-1 flex-col justify-center gap-6">
         <p className="text-2xl font-extrabold leading-snug">{row ? c.private : c.missing}</p>

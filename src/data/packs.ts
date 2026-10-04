@@ -8,6 +8,8 @@ import type { Person } from '../components/board/people';
 import { CodedError, codeFrom } from './errors';
 import { useMeId } from './me';
 
+const isUuid = (v: unknown): v is string => typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+
 export const MAX_PACKS = 20;
 const PACK_CODES = ['PACK_CREATE_WOMEN', 'PACK_CREATE_MEN', 'PACK_WOMEN_ONLY', 'PACK_MEN_ONLY', 'PACK_GENDER_NEEDED', 'COMMUNITY_ONLY', 'TOO_MANY', 'INVALID', 'FULL', 'LIMIT', 'ALREADY'] as const;
 export type PackErrorCode = (typeof PACK_CODES)[number] | 'generic';
@@ -102,6 +104,7 @@ export function usePackSessions(packId?: string | null, memberIds: string[] = []
       ids = Array.from(new Set((data || []).map((r: any) => r.event_id)));
     }
     let q = supabase.from('events').select(SESSION_SELECT).gte('starts_at', nowIso).is('cancelled_at', null).eq('roster.status', 'going');
+    if (!isUuid(packId)) return [];
     q = ids.length ? q.or(`id.in.(${ids.join(',')}),pack_id.eq.${packId}`) : q.eq('pack_id', packId!);
     const { data, error } = await q.order('starts_at', { ascending: true }).limit(12);
     if (error) throw error;
@@ -215,7 +218,9 @@ export async function searchMembers(query: string, excludeId?: string | null): P
   if (PREVIEW) {
     return [{ id: 'p-reem', name: 'Reem A' }, { id: 'p-turki', name: 'Turki B' }].filter((x) => x.name.toLowerCase().includes(q.toLowerCase()));
   }
-  const safe = q.replace(/[%_\\]/g, '\\$&');
+  // Strip what PostgREST reads as filter syntax, then escape LIKE wildcards.
+  const safe = q.replace(/[,()"'.:*]/g, ' ').trim().replace(/[%_\\]/g, '\\$&');
+  if (safe.length < 2) return [];
   const { data } = await supabase.from('profiles').select(`${PERSON_COLUMNS}`).or(`display_name.ilike.%${safe}%,full_name.ilike.%${safe}%`).limit(12);
   return (data || []).map(personOf).filter((x: Person | null): x is Person => !!x && x.id !== excludeId);
 }

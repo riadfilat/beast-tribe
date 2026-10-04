@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase-server';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { fetchAll } from '@/lib/fetch-all';
 import { pendingModerationCount } from '@/lib/moderation';
 import { Icon } from '@/components/ui/Icon';
@@ -105,7 +105,7 @@ function MetricCard({ label, value, sub, href, accent = 'bg-brand-teal', alert, 
 }
 
 export default async function DashboardPage() {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const data = await getMetrics();
 
   return (

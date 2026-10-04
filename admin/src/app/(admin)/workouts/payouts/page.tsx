@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import { fetchAll } from '@/lib/fetch-all';
 import { Icon } from '@/components/ui/Icon';
@@ -12,7 +12,7 @@ export const revalidate = 0;
 
 
 export default async function CoachPayPage({ searchParams }: { searchParams: { month?: string } }) {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
   const m = monthRange(searchParams.month);
 

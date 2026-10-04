@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase-server';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { Icon } from '@/components/ui/Icon';
 
 export const revalidate = 0;
@@ -18,7 +18,7 @@ interface CommunityRow {
 }
 
 export default async function CommunitiesPage() {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
 
   const { data: communities } = await db

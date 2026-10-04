@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase-server';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { searchTerm } from '@/lib/search';
 import SearchInput from '@/components/ui/SearchInput';
 import { Icon } from '@/components/ui/Icon';
@@ -12,7 +12,7 @@ export default async function LocationsPage({
 }: {
   searchParams: { q?: string; country?: string; status?: string; community?: string };
 }) {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
 
   let query = db

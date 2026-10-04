@@ -1,11 +1,11 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase-server';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 
 export async function suspendUser(userId: string, reason: string) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
 
   const { error } = await db.auth.admin.updateUserById(userId, {
@@ -25,7 +25,7 @@ export async function suspendUser(userId: string, reason: string) {
 }
 
 export async function unsuspendUser(userId: string) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
 
   const { error } = await db.auth.admin.updateUserById(userId, {
@@ -44,7 +44,7 @@ export async function unsuspendUser(userId: string) {
 }
 
 export async function resetUserPassword(userId: string) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
 
   const { data: userRes, error: fetchErr } = await db.auth.admin.getUserById(userId);

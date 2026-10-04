@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import { TARGETS, TARGET_DATE, YEAR_END_2027 } from '@/lib/targets';
 import { loadCaptains, loadStatement } from '@/lib/captains';
@@ -13,7 +13,7 @@ const card = 'bg-white rounded-xl border border-gray-100 shadow-sm';
 
 async function saveAppLinks(formData: FormData) {
   'use server';
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
   const clean = (k: string) => {
     const v = ((formData.get(k) as string) || '').trim();
@@ -43,7 +43,7 @@ function Progress({ label, value, target, fmt = (n: number) => n.toLocaleString(
 }
 
 export default async function BusinessPage() {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
   const [{ data: o }, { data: links }] = await Promise.all([db.rpc('business_overview'), db.from('app_settings').select('value').eq('key', 'app_links').maybeSingle()]);
   const b: any = o || {};

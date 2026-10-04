@@ -14,6 +14,11 @@ export default function SecurityPage() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  // Sent here by the dashboard: admin accounts need two-step sign-in before anything else.
+  const [required, setRequired] = useState(false);
+  useEffect(() => {
+    setRequired(new URLSearchParams(window.location.search).has('required'));
+  }, []);
 
   async function load() {
     const { data } = await createClient().auth.mfa.listFactors();
@@ -71,6 +76,9 @@ export default function SecurityPage() {
         <a href="/" className="text-sm text-[#147070] hover:underline">← Back to the dashboard</a>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Two-step sign-in</h1>
+          {required ? (
+            <p className="mt-2 rounded-lg bg-[#FFF8EC] border border-[#F3DDBD] px-3 py-2 text-sm text-[#7A4A0B]">Admin accounts need two-step sign-in. Set it up once to open the dashboard.</p>
+          ) : null}
           <p className="text-sm text-gray-500 mt-1">After your password, sign-in also asks for a 6-digit code from an app on your phone. Someone with your password alone can't get in.</p>
         </div>
 

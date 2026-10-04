@@ -1,14 +1,14 @@
 import Link from 'next/link';
 import { PackPatch } from '@/components/brand/PackPatch';
 import { createAdminClient } from '@/lib/supabase-server';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { notFound } from 'next/navigation';
 import UserActions from './UserActions';
 import CommunityAssign from './CommunityAssign';
 import { Icon } from '@/components/ui/Icon';
 
 export default async function UserDetailPage({ params }: { params: { id: string } }) {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
 
   // Check ban status via admin auth API

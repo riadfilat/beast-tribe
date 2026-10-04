@@ -1,11 +1,11 @@
 import { createAdminClient } from '@/lib/supabase-server';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { createEvent } from '../actions';
 import Link from 'next/link';
 import SubmitButton from '@/components/SubmitButton';
 
 export default async function NewEventPage() {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
 
   const { data: sports } = await db.from('sports').select('id, name, emoji').order('name');

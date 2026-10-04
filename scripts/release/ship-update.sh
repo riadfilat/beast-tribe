@@ -7,6 +7,8 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 MSG="${1:?Say what changed, e.g. ship-update.sh \"Court booking fixes\"}"
 : "${EXPO_TOKEN:?Set EXPO_TOKEN}"
+# Never ship the demo mode (fake data, any password signs in).
+if [ -n "${EXPO_PUBLIC_PREVIEW:-}" ]; then echo "EXPO_PUBLIC_PREVIEW is set: refusing to publish the demo mode." >&2; exit 1; fi
 EAS="${EAS_BIN:-npx -y eas-cli}"
 
 echo "▸ Type check"

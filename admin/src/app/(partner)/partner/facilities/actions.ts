@@ -70,9 +70,18 @@ function read(formData: FormData, partner: PartnerUser) {
   };
 }
 
+/** A half court can only belong to one of the partner's own courts (never itself, never someone else's). */
+async function checkParent(row: { parent_id: string | null }, partnerId: string, selfId?: string) {
+  if (!row.parent_id) return;
+  if (row.parent_id === selfId) throw new Error('A court cannot be half of itself');
+  const { data } = await createAdminClient().from('facilities').select('id').eq('id', row.parent_id).eq('partner_id', partnerId).maybeSingle();
+  if (!data) throw new Error('That full court is not yours');
+}
+
 export async function createFacility(formData: FormData) {
   const partner = await requireVenue();
   const row = read(formData, partner);
+  await checkParent(row, partner.partner_id);
   const image_url = await uploadImage(formData);
   const db = createAdminClient();
   const { error } = await db.from('facilities').insert({ ...row, image_url, partner_id: partner.partner_id });
@@ -85,6 +94,7 @@ export async function createFacility(formData: FormData) {
 export async function updateFacility(id: string, formData: FormData) {
   const partner = await requireVenue();
   const row: any = read(formData, partner);
+  await checkParent(row, partner.partner_id, id);
   const image_url = await uploadImage(formData);
   if (image_url) row.image_url = image_url;
   const db = createAdminClient();

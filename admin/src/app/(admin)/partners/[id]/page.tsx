@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import { notFound } from 'next/navigation';
 import { addCoachSlot, removeCoachSlot, updatePartner } from '../actions';
@@ -12,7 +12,7 @@ export const revalidate = 0;
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export default async function EditPartnerPage({ params }: { params: { id: string } }) {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
 
   const [{ data: partner }, { data: communities }, { data: slots }] = await Promise.all([

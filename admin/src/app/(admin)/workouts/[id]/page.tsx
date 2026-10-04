@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import { Icon } from '@/components/ui/Icon';
 import SubmitButton from '@/components/SubmitButton';
@@ -11,7 +11,7 @@ import { reviewWorkout, updateWorkout } from '../actions';
 export const revalidate = 0;
 
 export default async function EditWorkoutPage({ params }: { params: { id: string } }) {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
   const [{ data: w }, { data: communities }] = await Promise.all([
     db.from('workouts').select('*, author:partners!workouts_author_partner_id_fkey(business_name, name, contact_email)').eq('id', params.id).maybeSingle(),

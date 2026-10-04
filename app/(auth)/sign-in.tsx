@@ -16,6 +16,7 @@ import { PackMark } from '../../src/components/brand/Logo';
 type Step = 'email' | 'name' | 'signup-password' | 'signin-password' | 'forgot' | 'reset-sent';
 
 import { MIN_LENGTH, passwordProblem } from '../../src/lib/password';
+import { holdSignIn } from '../../src/lib/pendingSignIn';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REQS = [
@@ -86,7 +87,8 @@ export default function SignInScreen() {
       const msg: string = e?.message || '';
       if (msg === 'CHECK_EMAIL_CONFIRMATION' || msg.includes('confirm') || msg.includes('Check your email')) {
         // Carry the credentials so the verify screen can sign in once the link is tapped.
-        router.replace({ pathname: '/(auth)/verify-email', params: { email: email.trim(), password } });
+        holdSignIn(email.trim(), password);
+        router.replace({ pathname: '/(auth)/verify-email', params: { email: email.trim() } });
         return;
       }
       if (msg.includes('already registered') || msg.includes('already been registered')) setServerError(t('auth.errors.exists'));
@@ -107,7 +109,8 @@ export default function SignInScreen() {
       const msg: string = e?.message || '';
       if (msg.includes('Invalid login credentials') || msg.includes('invalid_credentials')) setFieldError(t('auth.errors.wrongPassword'));
       else if (msg.includes('Email not confirmed') || msg.includes('email_not_confirmed')) {
-        router.replace({ pathname: '/(auth)/verify-email', params: { email: email.trim(), password } });
+        holdSignIn(email.trim(), password);
+        router.replace({ pathname: '/(auth)/verify-email', params: { email: email.trim() } });
         return;
       } else if (msg.includes('rate limit') || msg.includes('too many')) setServerError(t('auth.errors.rateLimit'));
       else setServerError(msg || t('common.somethingWrong'));

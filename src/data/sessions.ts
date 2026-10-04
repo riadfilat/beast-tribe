@@ -370,6 +370,15 @@ export async function hostAtCourt(
 }
 
 // ─── Guests invited by link ─────────────────────────────────────────────────
+/** The guest key for a session I host (only its host may read it). */
+export function useGuestToken(eventId: string | null, enabled: boolean) {
+  return useQuery<string | null>(eventId && enabled && !PREVIEW ? `sessions:guestkey:${eventId}` : null, async () => {
+    const { data, error } = await supabase.rpc('session_guest_token', { p_event: eventId });
+    if (error) throw error;
+    return (data as string | null) ?? null;
+  });
+}
+
 export interface GuestPreview {
   id: string;
   title: string;

@@ -1,12 +1,12 @@
 import Link from 'next/link';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import { Icon } from '@/components/ui/Icon';
 import WorkoutEditor from '@/components/workouts/WorkoutEditor';
 import { createWorkout } from '../actions';
 
 export default async function NewWorkoutPage() {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
   const { data: communities } = await db.from('communities').select('id, name').eq('is_active', true).order('name');
 

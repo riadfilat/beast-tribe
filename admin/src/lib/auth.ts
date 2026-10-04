@@ -95,6 +95,8 @@ export const requireAdmin = cache(async (): Promise<AdminUser> => {
   ]);
 
   if (!roleResult.data) redirect('/login?error=unauthorized');
+  // Admin accounts must use two-step sign-in: a stolen password alone never opens the dashboard.
+  if (!(await getTwoStep()).enrolled) redirect('/security?required=1');
 
   return {
     id: user.id,
@@ -103,6 +105,15 @@ export const requireAdmin = cache(async (): Promise<AdminUser> => {
     role: roleResult.data.role as AdminRole,
   };
 });
+
+const RANK: Record<AdminRole, number> = { moderator: 1, admin: 2, super_admin: 3 };
+/** Moderators look after Feed and Moderation; everything else needs an admin (or a super admin). */
+export const isAtLeast = (role: AdminRole, min: AdminRole) => RANK[role] >= RANK[min];
+export async function requireRole(min: AdminRole): Promise<AdminUser> {
+  const admin = await requireAdmin();
+  if (!isAtLeast(admin.role, min)) redirect('/moderation');
+  return admin;
+}
 
 /**
  * Require partner access — cached per-request, redirects if not a partner.

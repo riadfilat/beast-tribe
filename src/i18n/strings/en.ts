@@ -977,7 +977,6 @@ export const en = {
     saved: 'Club updated.',
     errors: {
       NAME: 'Give the club a name of at least 3 letters.',
-      ALREADY_LEADER: 'You already lead a club. Each leader runs one club.',
       NOT_LEADER: 'Only the club leader can change this.',
       generic: "Couldn't save. Try again.",
     },

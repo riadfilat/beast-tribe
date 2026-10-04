@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase-server';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import LocationForm from '../LocationForm';
 import { updateLocation, deleteLocation } from '../actions';
 import { ConfirmButton } from '@/components/ConfirmSubmit';
@@ -9,7 +9,7 @@ import { ConfirmButton } from '@/components/ConfirmSubmit';
 export const revalidate = 0;
 
 export default async function EditLocationPage({ params }: { params: { id: string } }) {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
 
   const [{ data: location }, { data: communities }] = await Promise.all([

@@ -7,7 +7,7 @@ import { CodedError, codeFrom } from './errors';
 // with a join code; a club that wants to be listed for everyone is listed once Beast Tribe verifies it.
 
 export type ClubListing = 'invite' | 'public';
-const CLUB_CODES = ['ALREADY_LEADER', 'NOT_LEADER', 'NAME'] as const;
+const CLUB_CODES = ['NOT_LEADER', 'NAME'] as const;
 export type ClubErrorCode = (typeof CLUB_CODES)[number] | 'generic';
 export class ClubError extends CodedError<ClubErrorCode> {}
 const toError = (e: any) => new ClubError(codeFrom(e, CLUB_CODES));

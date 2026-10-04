@@ -1,7 +1,7 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase-server';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
@@ -50,7 +50,7 @@ async function uploadLocationImage(
 }
 
 export async function createLocation(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
 
   const name = (formData.get('name') as string)?.trim();
@@ -100,7 +100,7 @@ export async function createLocation(formData: FormData) {
 }
 
 export async function updateLocation(locationId: string, formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
 
   const updates: Record<string, any> = {};
@@ -144,7 +144,7 @@ export async function updateLocation(locationId: string, formData: FormData) {
 }
 
 export async function deleteLocation(locationId: string) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
 
   const { error } = await db.from('popular_locations').delete().eq('id', locationId);

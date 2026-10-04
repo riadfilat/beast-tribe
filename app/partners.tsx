@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,7 +14,7 @@ import { Txt } from '../src/components/board/Txt';
 import { Icon } from '../src/components/board/Icon';
 import { Press } from '../src/components/board/Press';
 import { Magnet } from '../src/components/board/people';
-import { Chip, Field, IconButton, MarkerButton, OutlineButton, SectionHeading, TextButton } from '../src/components/board/controls';
+import { Chip, Field, IconButton, MarkerButton, OutlineButton, SectionHeading } from '../src/components/board/controls';
 import { Group, GroupRow } from '../src/components/board/list';
 import { Sheet } from '../src/components/board/sheet';
 import { toast } from '../src/components/board/toast';
@@ -26,7 +26,6 @@ const PACES = [270, 300, 330, 360, 390, 420];
 // Training partners: opt in, then see people of a similar level who train when you do.
 export default function PartnersScreen() {
   const s = useStyles();
-  const { p } = useKit();
   const { t } = useI18n();
   const router = useRouter();
   const mine = usePartnerProfile();

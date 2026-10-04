@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { PackPatch } from '@/components/brand/PackPatch';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase-server';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import CommunityForm from '../CommunityForm';
 import AddDefaultPackForm from '../AddDefaultPackForm';
 import {
@@ -21,7 +21,7 @@ import { Icon } from '@/components/ui/Icon';
 export const revalidate = 0;
 
 export default async function EditCommunityPage({ params }: { params: { id: string } }) {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
 
   const [{ data: community }, { data: pkg }, { data: candidates }, membersRes, defaultPacksRes, locationsRes, availablePacksRes] = await Promise.all([

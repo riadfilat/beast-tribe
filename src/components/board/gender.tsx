@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
-import { useKit } from '../../theme';
 import { useI18n } from '../../i18n';
 import { useAuth } from '../../providers/AuthProvider';
 import { supabase } from '../../lib/supabase';
 import { PREVIEW } from '../../data/preview';
 import { Sheet } from './sheet';
-import { Txt } from './Txt';
 import { MarkerButton, Segmented, TextButton } from './controls';
 import { toast } from './toast';
 
@@ -15,7 +13,6 @@ import { toast } from './toast';
 let dismissed = false;
 
 export function GenderAsk() {
-  const { p } = useKit();
   const { t } = useI18n();
   const { user, profile, refreshProfile } = useAuth();
   const [open, setOpen] = useState(true);

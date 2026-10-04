@@ -4,17 +4,27 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import SubmitButton from '@/components/SubmitButton';
 import { Icon } from '@/components/ui/Icon';
+import { email, httpsUrl, phone, text } from '@/lib/validate';
 
 async function updateProfile(formData: FormData) {
   'use server';
   const partner = await requirePartner();
   const db = createAdminClient();
 
+  // Only fields the form sent; each checked and capped (the app opens website_url, so https only).
   const updates: Record<string, any> = {};
-  ['business_name', 'description', 'contact_email', 'contact_phone', 'website_url', 'city', 'country'].forEach((field) => {
-    const v = formData.get(field);
-    if (v !== null) updates[field] = v || null;
-  });
+  const has = (k: string) => formData.get(k) !== null;
+  if (has('business_name')) {
+    const name = text(formData.get('business_name'), 120);
+    if (!name || name.length < 2) throw new Error('Add your business name');
+    updates.business_name = name;
+  }
+  if (has('description')) updates.description = text(formData.get('description'), 1000);
+  if (has('contact_email')) updates.contact_email = email(formData.get('contact_email'));
+  if (has('contact_phone')) updates.contact_phone = phone(formData.get('contact_phone'));
+  if (has('website_url')) updates.website_url = httpsUrl(formData.get('website_url'));
+  if (has('city')) updates.city = text(formData.get('city'), 80);
+  if (has('country')) updates.country = text(formData.get('country'), 2)?.toUpperCase() ?? null;
   updates.updated_at = new Date().toISOString();
 
   const { error } = await db.from('partners').update(updates).eq('id', partner.partner_id);

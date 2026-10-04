@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import { fetchAll } from '@/lib/fetch-all';
 import { Icon } from '@/components/ui/Icon';
@@ -18,7 +18,7 @@ const TABS: { key: string; label: string }[] = [
 const sportName = (v: string) => SPORTS.find(([k]) => k === v)?.[1] ?? v;
 
 export default async function WorkoutsPage({ searchParams }: { searchParams: { status?: string } }) {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
   const since = new Date(Date.now() - 30 * 86400000).toISOString();
 

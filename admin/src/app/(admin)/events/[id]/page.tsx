@@ -1,13 +1,13 @@
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase-server';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { updateEvent, deleteEvent } from '../actions';
 import { notFound } from 'next/navigation';
 import { ConfirmButton } from '@/components/ConfirmSubmit';
 import SubmitButton from '@/components/SubmitButton';
 
 export default async function EditEventPage({ params }: { params: { id: string } }) {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
 
   const [eventRes, sportsRes, rsvpsRes] = await Promise.all([

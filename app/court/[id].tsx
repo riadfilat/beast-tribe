@@ -12,7 +12,6 @@ import { addDays, fmtClock, fmtDay } from '../../src/i18n/format';
 import { cityLabel } from '../../src/lib/cities';
 import { Txt } from '../../src/components/board/Txt';
 import { Icon } from '../../src/components/board/Icon';
-import { Press } from '../../src/components/board/Press';
 import { Chip, Field, IconButton, MarkerButton, SectionHeading } from '../../src/components/board/controls';
 import { toast } from '../../src/components/board/toast';
 import { haptic } from '../../src/lib/haptics';

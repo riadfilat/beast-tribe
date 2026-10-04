@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import { createAdminClient } from '@/lib/supabase-server';
 import { ownsCommunity, requireCap, requirePartner, type PartnerUser } from '@/lib/auth';
 import { can } from '@/lib/capabilities';
+import { int, isUuid } from '@/lib/validate';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
@@ -119,19 +120,20 @@ export async function createClass(formData: FormData) {
   const communityId = await sessionHome(partner);
   const inClub = communityId === partner.community_id;
   const db = createAdminClient();
-  const str = (k: string) => ((formData.get(k) as string) || '').trim();
+  const str = (k: string) => ((formData.get(k) as string) || '').trim().slice(0, k === 'description' ? 1000 : 120);
 
   const title = str('title');
   if (!title) throw new Error('Title, date and time are needed');
   const { first, duration } = whenOf(str);
-  const capacity = parseInt(str('capacity')) || null;
+  const capacity = int(formData.get('capacity'), 1, 500);
   const weeks = Math.min(12, Math.max(1, parseInt(str('repeat')) || 1));
   // Guests: people outside the community can join for a guest price and pay at the desk.
   const guestOpen = can(partner.partner_type, 'guests') && formData.get('guest_open') === 'on';
   const guestPrice = guestOpen ? Math.round(parseFloat(str('guest_price_sar') || '0') * 100) / 100 : null;
   if (guestOpen && !(guestPrice! >= 0 && guestPrice! <= 5000)) throw new Error('The guest price is not valid');
-  const guestSpots = guestOpen && str('guest_spots') ? Math.max(0, parseInt(str('guest_spots')) || 0) : null;
-  const eventType = await eventTypeFor(str('sport_id') || null);
+  const guestSpots = guestOpen && str('guest_spots') ? int(formData.get('guest_spots'), 0, 500) : null;
+  const sportId = isUuid(str('sport_id')) ? str('sport_id') : null;
+  const eventType = await eventTypeFor(sportId);
 
   const { data: p } = await db.from('partners').select('city, country, address').eq('id', partner.partner_id).single();
   const series = weeks > 1 ? randomUUID() : null;
@@ -142,7 +144,7 @@ export async function createClass(formData: FormData) {
       title,
       description: str('description') || null,
       event_type: eventType,
-      sport_id: str('sport_id') || null,
+      sport_id: sportId,
       starts_at: starts.toISOString(),
       ends_at: ends.toISOString(),
       max_capacity: capacity,
@@ -178,11 +180,11 @@ export async function updateClass(eventId: string, formData: FormData) {
   const e = await ownedEvent(partner, eventId);
   if (e.cancelled_at) throw new Error('This one is cancelled');
   const db = createAdminClient();
-  const str = (k: string) => ((formData.get(k) as string) || '').trim();
+  const str = (k: string) => ((formData.get(k) as string) || '').trim().slice(0, k === 'description' ? 1000 : 120);
   const title = str('title');
   if (!title) throw new Error('A title is needed');
 
-  const sportId = str('sport_id') || null;
+  const sportId = isUuid(str('sport_id')) ? str('sport_id') : null;
   const updates: Record<string, any> = {
     title,
     description: str('description') || null,
@@ -190,7 +192,7 @@ export async function updateClass(eventId: string, formData: FormData) {
     event_type: await eventTypeFor(sportId),
     coach_name: str('coach_name') || null,
     location_name: str('location_name') || null,
-    max_capacity: parseInt(str('capacity')) || null,
+    max_capacity: int(formData.get('capacity'), 1, 500),
     difficulty: str('difficulty') || null,
     is_women_only: formData.get('is_women_only') === 'on',
   };
@@ -281,13 +283,13 @@ export async function markAllAttended(eventId: string) {
 export async function createChallenge(formData: FormData) {
   const partner = await requireGymWith('challenges');
   if (!partner.community_id) throw new Error('Create your community first');
-  const str = (k: string) => ((formData.get(k) as string) || '').trim();
+  const str = (k: string) => ((formData.get(k) as string) || '').trim().slice(0, k === 'description' ? 1000 : 120);
   const title = str('title');
   const starts = str('starts_on');
   const ends = str('ends_on');
   if (title.length < 2 || !/^\d{4}-\d{2}-\d{2}$/.test(starts) || !/^\d{4}-\d{2}-\d{2}$/.test(ends)) throw new Error('A name and dates are needed');
   if (ends < starts) throw new Error('The end date is before the start');
-  const goal = parseInt(str('daily_goal')) || null;
+  const goal = int(formData.get('daily_goal'), 1, 1000000);
   const metric = ['steps', 'active_days', 'workouts', 'minutes', 'sessions'].includes(str('metric')) ? str('metric') : 'steps';
   const db = createAdminClient();
   const { data, error } = await db
@@ -352,15 +354,17 @@ export async function saveCommunityPage(formData: FormData) {
   if (!partner.community_id) throw new Error('Create your community first');
   const str = (k: string, max: number) => ((formData.get(k) as string) || '').trim().slice(0, max) || null;
   const until = str('notice_until', 10);
-  const plan = str('featured_program_id', 40);
+  const planId = str('featured_program_id', 40);
   const db = createAdminClient();
+  // Only a plan that exists can be featured.
+  const plan = planId && isUuid(planId) ? ((await db.from('programs').select('id').eq('id', planId).maybeSingle()).data as any)?.id ?? null : null;
   const { error } = await db
     .from('communities')
     .update({
       notice: str('notice', 280),
       notice_ar: str('notice_ar', 280),
       notice_until: until && /^\d{4}-\d{2}-\d{2}$/.test(until) ? until : null,
-      featured_program_id: plan && /^[0-9a-f-]{36}$/.test(plan) ? plan : null,
+      featured_program_id: plan,
       allow_guests: formData.get('allow_guests') === 'on',
     })
     .eq('id', partner.community_id);

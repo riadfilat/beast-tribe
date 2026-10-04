@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase-server';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { searchTerm } from '@/lib/search';
 import SearchInput from '@/components/ui/SearchInput';
 
@@ -11,7 +11,7 @@ export default async function EventsPage({
 }: {
   searchParams: { q?: string; page?: string; upcoming?: string };
 }) {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
 
   const page = parseInt(searchParams.page || '1');

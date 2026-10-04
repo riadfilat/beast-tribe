@@ -2,12 +2,12 @@
 
 import { revalidatePath } from 'next/cache';
 import { createAdminClient } from '@/lib/supabase-server';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 
 const STATUSES = ['new', 'contacted', 'demo', 'trial', 'won', 'lost'];
 
 export async function updateLead(leadId: string, formData: FormData) {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
   const status = (formData.get('status') as string) || '';
   const notes = ((formData.get('notes') as string) || '').trim().slice(0, 4000);
@@ -21,7 +21,7 @@ export async function updateLead(leadId: string, formData: FormData) {
 
 /** Add a lead by hand: someone met at an event, a referral, a WhatsApp message. */
 export async function addLead(formData: FormData) {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
   const str = (k: string) => ((formData.get(k) as string) || '').trim();
   const kind = ['gym', 'company', 'coach', 'venue'].includes(str('kind')) ? str('kind') : 'gym';

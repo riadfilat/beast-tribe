@@ -1,7 +1,7 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase-server';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
@@ -51,7 +51,7 @@ function readFields(formData: FormData) {
 }
 
 export async function createPartner(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
   const fields = readFields(formData);
 
@@ -102,7 +102,7 @@ export async function createPartner(formData: FormData) {
 }
 
 export async function togglePartnerVerification(partnerId: string, verify: boolean) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
   await db.from('partners').update({ is_verified: verify, updated_at: new Date().toISOString() }).eq('id', partnerId);
   await db.from('admin_audit_log').insert({ admin_user_id: admin.id, action: verify ? 'verify_partner' : 'unverify_partner', target_table: 'partners', target_id: partnerId });
@@ -110,7 +110,7 @@ export async function togglePartnerVerification(partnerId: string, verify: boole
 }
 
 export async function togglePartnerActive(partnerId: string, active: boolean) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
   // The app shows partners whose status is active, so keep both in step.
   await db.from('partners').update({ is_active: active, status: active ? 'active' : 'inactive', updated_at: new Date().toISOString() }).eq('id', partnerId);
@@ -119,7 +119,7 @@ export async function togglePartnerActive(partnerId: string, active: boolean) {
 }
 
 export async function updatePartner(partnerId: string, formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
   const fields = readFields(formData);
   const is_verified = formData.get('is_verified') === 'on';
@@ -136,7 +136,7 @@ export async function updatePartner(partnerId: string, formData: FormData) {
 
 // ─── Coach availability (weekly slots members can book when hosting) ───────
 export async function addCoachSlot(partnerId: string, formData: FormData) {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
   const days = formData.getAll('day_of_week').map((d) => Number(d)).filter((d) => d >= 0 && d <= 6);
   const start = (formData.get('start_time') as string) || '';
@@ -161,7 +161,7 @@ export async function addCoachSlot(partnerId: string, formData: FormData) {
 }
 
 export async function removeCoachSlot(partnerId: string, slotId: string) {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
   await db.from('coach_slots').delete().eq('id', slotId).eq('partner_id', partnerId);
   revalidatePath(`/partners/${partnerId}`);

@@ -1,7 +1,7 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase-server';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { GLYPH_IDS, PATCH_PAINT } from '@/components/brand/PackPatch';
@@ -41,7 +41,7 @@ function readCommunityFields(formData: FormData) {
 }
 
 export async function createCommunity(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
 
   const fields = readCommunityFields(formData);
@@ -66,7 +66,7 @@ export async function createCommunity(formData: FormData) {
 }
 
 export async function updateCommunity(communityId: string, formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
 
   const fields = readCommunityFields(formData);
@@ -90,7 +90,7 @@ export async function updateCommunity(communityId: string, formData: FormData) {
 }
 
 export async function deleteCommunity(communityId: string) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
 
   const { error } = await db.from('communities').delete().eq('id', communityId);
@@ -108,7 +108,7 @@ export async function deleteCommunity(communityId: string) {
 }
 
 export async function assignUserToCommunity(userId: string, communityId: string | null) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
 
   const { error } = await db
@@ -135,7 +135,7 @@ export async function assignUserToCommunity(userId: string, communityId: string 
  *   - new pack: pass formData with name, emblem_value (glyph), emblem_color, description (creates a new pack scoped to community + sets is_community_default)
  */
 export async function addCommunityDefaultPack(communityId: string, formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
 
   const existingPackId = ((formData.get('pack_id') as string) || '').trim();
@@ -191,7 +191,7 @@ export async function addCommunityDefaultPack(communityId: string, formData: For
 }
 
 export async function removeCommunityDefaultPack(communityId: string, packId: string) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
 
   const { error } = await db
@@ -212,7 +212,7 @@ export async function removeCommunityDefaultPack(communityId: string, packId: st
 }
 
 export async function removeUserFromCommunity(userId: string, communityId: string) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
 
   // Members can be in several communities; remove just this one.
@@ -234,7 +234,7 @@ export async function removeUserFromCommunity(userId: string, communityId: strin
 
 /** Issue a new invite code for a private community (the old one stops working). */
 export async function regenerateJoinCode(communityId: string) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
   // The communities trigger fills in a fresh code when it is cleared.
   const { error } = await db.from('communities').update({ join_code: null }).eq('id', communityId);
@@ -245,7 +245,7 @@ export async function regenerateJoinCode(communityId: string) {
 
 // ─── Member-run clubs: verify to list them for everyone ────────────────────
 export async function verifyClub(communityId: string, verified: boolean) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
   const { data: c, error: readErr } = await db.from('communities').select('id, name, leader_id, listing').eq('id', communityId).single();
   if (readErr || !c) throw new Error(readErr?.message || 'Club not found');
@@ -267,7 +267,7 @@ export async function verifyClub(communityId: string, verified: boolean) {
 const PACKAGE_ROLES = ['nutritionist', 'coach', 'gym', 'kitchen'] as const;
 
 export async function addCommunityPartner(communityId: string, formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
   const partnerId = (formData.get('partner_id') as string) || '';
   const role = (formData.get('role') as string) || '';
@@ -281,7 +281,7 @@ export async function addCommunityPartner(communityId: string, formData: FormDat
 }
 
 export async function removeCommunityPartner(communityId: string, partnerId: string) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
   const { error } = await db.from('community_partners').delete().eq('community_id', communityId).eq('partner_id', partnerId);
   if (error) throw new Error(error.message);

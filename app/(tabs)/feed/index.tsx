@@ -268,8 +268,6 @@ function PostItem({ post, meId, onBeast, onMore, onOpenEvent, onOpenWorkout }: {
 function CommunitiesPane({ mine, open, refreshing, onRefresh, onOpen }: { mine: Community[]; open: Community[]; refreshing: boolean; onRefresh: () => void; onOpen: (c: Community) => void }) {
   const { p } = useKit();
   const { t } = useI18n();
-  const { user } = useAuth();
-  const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={p.ink} />}>
       <SectionHeading title={t('community.mine')} />

@@ -1,13 +1,13 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase-server';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { readEventForm } from '@/lib/events';
 
 export async function createEvent(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
 
   const values = readEventForm(formData);
@@ -33,7 +33,7 @@ export async function createEvent(formData: FormData) {
 }
 
 export async function updateEvent(eventId: string, formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
 
   const updates = readEventForm(formData);
@@ -54,7 +54,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
 }
 
 export async function deleteEvent(eventId: string) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
 
   const { error } = await db.from('events').delete().eq('id', eventId);

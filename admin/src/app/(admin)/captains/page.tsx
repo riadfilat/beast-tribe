@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import { defaultCut, loadCaptains, loadStatement } from '@/lib/captains';
 import { monthRange, sar, todayRiyadh } from '@/lib/format';
@@ -14,7 +14,7 @@ export const revalidate = 0;
 const day = (d: string | null) => (d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Asia/Riyadh' }) : '—');
 
 export default async function CaptainsPage({ searchParams }: { searchParams: { m?: string; community?: string } }) {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
   const month = monthRange(searchParams.m);
   const [all, statement, cut, { data: communities }] = await Promise.all([

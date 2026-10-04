@@ -42,7 +42,13 @@ interface SidebarProps {
 export default function Sidebar({ type, partnerType, userName, roleBadge, pendingModeration }: SidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const nav: NavItem[] = type === 'admin' ? ADMIN_NAV : (navFor(partnerType || '') as NavItem[]);
+  // Moderators only look after the feed and photos (the pages check the role too).
+  const nav: NavItem[] =
+    type === 'admin'
+      ? roleBadge === 'moderator'
+        ? ADMIN_NAV.filter((i) => ['/feed', '/moderation', '/security'].includes(i.href))
+        : ADMIN_NAV
+      : (navFor(partnerType || '') as NavItem[]);
 
   // Inject moderation badge
   const navWithBadges = nav.map((item) => {

@@ -1,11 +1,11 @@
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import LocationForm from '../LocationForm';
 import { createLocation } from '../actions';
 import Link from 'next/link';
 
 export default async function NewLocationPage() {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
 
   const { data: communities } = await db

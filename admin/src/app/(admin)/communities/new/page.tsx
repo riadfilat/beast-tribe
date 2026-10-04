@@ -1,10 +1,10 @@
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import CommunityForm from '../CommunityForm';
 import { createCommunity } from '../actions';
 import Link from 'next/link';
 
 export default async function NewCommunityPage() {
-  await requireAdmin();
+  await requireRole('admin');
 
   return (
     <div className="max-w-3xl">

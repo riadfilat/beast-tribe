@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createAdminClient } from '@/lib/supabase-server';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 
 const str = (f: FormData, k: string) => ((f.get(k) as string) || '').trim();
 const num = (f: FormData, k: string) => {
@@ -30,7 +30,7 @@ function done() {
 
 /** Make a member the Beast Captain of a community. They are added to the community and told in the app. */
 export async function assignCaptain(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireRole('admin');
   const db = createAdminClient();
   const communityId = str(formData, 'community_id');
   const email = str(formData, 'email').toLowerCase();
@@ -57,7 +57,7 @@ export async function assignCaptain(formData: FormData) {
 }
 
 export async function updateCaptain(communityId: string, userId: string, formData: FormData) {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
   const ends = str(formData, 'ends_on');
   const { error } = await db
@@ -71,7 +71,7 @@ export async function updateCaptain(communityId: string, userId: string, formDat
 
 /** Stop a captaincy from today. The row stays so past months still appear on statements. */
 export async function endCaptain(communityId: string, userId: string) {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
   const today = new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
   const { error } = await db.from('community_captains').update({ ends_on: today }).eq('community_id', communityId).eq('user_id', userId);
@@ -81,7 +81,7 @@ export async function endCaptain(communityId: string, userId: string) {
 
 /** Beast Tribe's share of a captain's hourly rate, used wherever a captain has no share of their own. */
 export async function saveDefaultCut(formData: FormData) {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
   const cut = num(formData, 'cut_pct');
   if (cut === null || cut < 0 || cut > 100) throw new Error('Our share must be between 0 and 100');

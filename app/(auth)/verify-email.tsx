@@ -10,6 +10,7 @@ import { Txt } from '../../src/components/board/Txt';
 import { Icon } from '../../src/components/board/Icon';
 import { Sun } from '../../src/components/board/marks';
 import { MarkerButton, TextButton } from '../../src/components/board/controls';
+import { takeSignIn } from '../../src/lib/pendingSignIn';
 
 type Status = 'idle' | 'checking' | 'resending' | 'resent' | 'error';
 
@@ -18,12 +19,13 @@ export default function VerifyEmailScreen() {
   const { p } = useKit();
   const { t } = useI18n();
   const { user, signOut, refreshSession } = useAuth();
-  // Email + password carried from sign-up / sign-in so we can sign in once confirmed.
-  const params = useLocalSearchParams<{ email?: string; password?: string }>();
+  // The email comes as a param; the password only from memory (held by sign-up / sign-in).
+  const params = useLocalSearchParams<{ email?: string }>();
+  const [held] = useState(() => takeSignIn());
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState('');
   const email = user?.email ?? params.email ?? '';
-  const password = params.password ?? '';
+  const password = held && held.email === email ? held.password : '';
 
   async function check() {
     setStatus('checking');

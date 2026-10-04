@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase-server';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { togglePartnerVerification, togglePartnerActive } from './actions';
 import { Icon } from '@/components/ui/Icon';
 
@@ -19,7 +19,7 @@ const TYPE_LABELS: Record<string, { label: string; icon: 'coach' | 'gym' | 'even
 };
 
 export default async function PartnersPage() {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
 
   const { data: partners } = await db.from('partners')

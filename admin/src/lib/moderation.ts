@@ -38,14 +38,39 @@ review — a person should look:
 allow — everything ordinary: people training or playing sport in normal sportswear (including women's sportswear and men in sports shorts), groups, courts, gyms, food, places, scenery, screenshots of workouts, logos and patches.
 When in doubt between allow and review, choose review. When in doubt between review and block for nudity or sexual content, choose block.`;
 
+// Only photos in our own Supabase storage, in the buckets the app uploads to, are ever fetched or
+// removed. Anything else is refused: no fetching other hosts (SSRF), no deleting files by a crafted URL.
+const BUCKETS = ['user-uploads', 'event-images', 'location-images'];
+const MAX_BYTES = 4.5 * 1024 * 1024;
+
+/** Bucket and path of one of our public storage URLs, or null for anything else. */
+export function storedFile(imageUrl: string): { bucket: string; path: string } | null {
+  let u: URL;
+  try {
+    u = new URL(imageUrl);
+  } catch {
+    return null;
+  }
+  const own = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).origin;
+  if (u.origin !== own || u.search || u.hash) return null;
+  const m = u.pathname.match(/^\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/);
+  if (!m || !BUCKETS.includes(m[1])) return null;
+  const path = decodeURIComponent(m[2]);
+  if (path.split('/').some((seg) => seg === '..' || seg === '')) return null;
+  return { bucket: m[1], path };
+}
+
 export async function checkPhoto(imageUrl: string): Promise<CheckResult | null> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return null;
-  const img = await fetch(imageUrl);
+  if (!storedFile(imageUrl)) return { verdict: 'review', categories: ['unclear'], reason: 'Not a photo from Beast Tribe storage.', model: MODEL };
+  const img = await fetch(imageUrl, { redirect: 'error' });
   if (!img.ok) throw new Error(`image ${img.status}`);
   const type = (img.headers.get('content-type') || 'image/jpeg').split(';')[0];
+  const tooLarge = { verdict: 'review' as Verdict, categories: ['unclear'], reason: 'Image too large to check automatically.', model: MODEL };
+  if (Number(img.headers.get('content-length') || 0) > MAX_BYTES) return tooLarge;
   const buf = Buffer.from(await img.arrayBuffer());
-  if (buf.length > 4.5 * 1024 * 1024) return { verdict: 'review', categories: ['unclear'], reason: 'Image too large to check automatically.', model: MODEL };
+  if (buf.length > MAX_BYTES) return tooLarge;
   const media = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(type) ? type : 'image/jpeg';
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -76,12 +101,11 @@ export async function checkPhoto(imageUrl: string): Promise<CheckResult | null> 
   return { verdict, categories: Array.isArray(out.categories) ? out.categories.slice(0, 6).map(String) : [], reason: String(out.reason || '').slice(0, 300), model: MODEL };
 }
 
-/** Remove the file from storage (public URL → bucket + path). */
+/** Remove the file from our storage. Anything that isn't one of our public storage URLs is left alone. */
 export async function removeStoredFile(imageUrl: string) {
-  const m = imageUrl.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/);
-  if (!m) return;
-  const db = createAdminClient();
-  await db.storage.from(m[1]).remove([decodeURIComponent(m[2])]);
+  const f = storedFile(imageUrl);
+  if (!f) return;
+  await createAdminClient().storage.from(f.bucket).remove([f.path]);
 }
 
 let cachedSecret: string | null = null;

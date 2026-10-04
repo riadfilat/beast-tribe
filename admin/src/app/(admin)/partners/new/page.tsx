@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import { createPartner } from '../actions';
 import SubmitButton from '@/components/SubmitButton';
@@ -10,7 +10,7 @@ const LEAD_TYPE: Record<string, string> = { gym: 'gym', company: 'company', coac
 const LEAD_PLAN: Record<string, string> = { gym: 'studio', company: 'company', coach: 'coach', venue: 'venue' };
 
 export default async function NewPartnerPage({ searchParams }: { searchParams: { lead?: string } }) {
-  await requireAdmin();
+  await requireRole('admin');
   const db = createAdminClient();
   const [{ data: communities }, { data: lead }] = await Promise.all([
     db.from('communities').select('id, name').eq('is_active', true).order('name'),

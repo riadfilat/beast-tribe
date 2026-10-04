@@ -8,7 +8,7 @@ import { useI18n } from '../../../src/i18n';
 import { cityLabel } from '../../../src/lib/cities';
 import { clockParts, dayOffset, fmtClock, fmtDateLong, fmtDay, fmtDuration, fmtIn } from '../../../src/i18n/format';
 import { useAuth } from '../../../src/providers/AuthProvider';
-import { useSession, useSessionActions } from '../../../src/data/sessions';
+import { useGuestToken, useSession, useSessionActions } from '../../../src/data/sessions';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { SESSION_LINK_BASE, TRAIN_ENABLED } from '../../../src/lib/constants';
 import { Txt } from '../../../src/components/board/Txt';
@@ -47,6 +47,7 @@ export default function SessionScreen() {
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/home'));
   const x = q.data;
+  const guestKey = useGuestToken(x?.id ?? null, !!x?.isHost && !!x?.guestInvite).data ?? null;
 
   if (q.loading && !x) {
     return (
@@ -96,7 +97,7 @@ export default function SessionScreen() {
 
   const whereLine = [x.place, x.city].filter(Boolean).join(' · ');
   // With guests allowed, the link carries the guest key so people outside the community can join.
-  const link = `${SESSION_LINK_BASE}${x.id}${x.guestInvite && x.guestToken ? `?g=${x.guestToken}` : ''}`;
+  const link = `${SESSION_LINK_BASE}${x.id}${x.guestInvite && guestKey ? `?g=${guestKey}` : ''}`;
 
   async function onJoin() {
     if (busy || !x) return;
