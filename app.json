@@ -31,7 +31,9 @@
       "permissions": [],
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO",
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION"
       ]
     },
     "web": {
@@ -62,6 +64,15 @@
           "NSHealthShareUsageDescription": "Beast Tribe reads your daily step count so you can see your steps and take part in step challenges with your company or gym. Your steps are only shared with a challenge you choose to join.",
           "NSHealthUpdateUsageDescription": "Beast Tribe does not write to Apple Health. It only reads your daily step count so you can see your steps and join step challenges you choose.",
           "background": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Beast Tribe uses your location to suggest your city and show the places near you when you set up a game. It stays on your phone.",
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false,
+          "isAndroidForegroundServiceEnabled": false
         }
       ]
     ],

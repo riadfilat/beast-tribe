@@ -117,6 +117,16 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-gray-900">Your Location</h2>
+            <p>
+              Only if you allow it, the app reads your approximate location while you set up a session, to
+              suggest your city and list the places closest to you. Your location is used on your phone only:
+              it is not sent to us, not stored and not shared. You can turn it off at any time in your
+              phone&rsquo;s settings; you can still pick your city yourself.
+            </p>
+          </section>
+
+          <section className="space-y-3">
             <h2 className="text-xl font-semibold text-gray-900">Training Partners and Level Ratings</h2>
             <p>
               Training partners is off until you switch it on. When it is on, other members who switched it on can
