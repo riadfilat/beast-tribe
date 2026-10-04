@@ -56,7 +56,7 @@ A sports community app owned by a real activewear brand (Operation Beast) and bu
 - Brand books: `/Users/riadabulfilat/Desktop/OB/Operation Beast_Collateral 2.pdf` (adopted teal/orange collateral), `/Users/riadabulfilat/Desktop/OB/Huda the Designer x Operation Beast_v2.pdf` (logo exploration, vermillion option).
 - Beast Tribe logo sources: `assets/brand/*.svg` (mark, wordmark, lockups) generated from the parent master file `drive-download-20260302T171831Z-3-001/Logo Variations/LogoVariations.ai`; geometry in `src/components/brand/paths.ts` (app) and `admin/src/components/brand/paths.ts` (web).
 - Welcome photo (stand-in until an Operation Beast shoot): Mina Rad, "A group of people running down a street" (Tehran), Unsplash License. The brand guideline's photos are other brands' moodboard references and must not ship.
-- Mascot art (t-shirt designs, unused in the app): `assets/images/animals/{Wolf,Eagle,Tiger,Rhino}/{1,2}.png`; source sets in `/Users/riadabulfilat/Desktop/OB/Designs/`.
+- Mascot art (t-shirt designs, never in the app): source sets in `/Users/riadabulfilat/Desktop/OB/Designs/`.
 - Pack glyphs: `assets/brand/pack-glyphs/*.svg` (+ CREDITS.md); sources and generator in `scripts/brand/pack-glyphs/` (writes `src/components/brand/glyphs.ts` and the admin copy). CC BY 3.0 requires the credit line to stay in the app.
 - No member testimonials, member counts, partner logos, or press exist. Never fabricate them.
 

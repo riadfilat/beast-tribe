@@ -1,10 +1,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Platform, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { PALETTES, BoardAppearance, Palette, legacyColors } from './palette';
+import { PALETTES, BoardAppearance, Palette } from './palette';
 import { typeKit, TypeKit } from './type';
 import { useI18n, Lang } from '../i18n';
-import { setThemeColors } from '../lib/constants';
 
 const STORAGE_KEY = 'beast_tribe_theme'; // legacy values 'dark' | 'light' still honored
 
@@ -33,11 +32,6 @@ export interface Kit {
 
 interface ThemeContextValue extends Kit {
   setAppearance: (a: BoardAppearance) => void;
-  /** @deprecated legacy API */
-  isDark: boolean;
-  /** @deprecated legacy API */
-  toggleTheme: () => void;
-  colors: ReturnType<typeof legacyColors>;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -55,11 +49,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       })
       .catch(() => {});
   }, []);
-
-  // Keep the legacy COLORS object in step for any screen not yet on the kit.
-  useEffect(() => {
-    setThemeColors(appearance === 'slate');
-  }, [appearance]);
 
   const setAppearance = useCallback((a: BoardAppearance) => {
     setAppearanceState(a);
@@ -80,9 +69,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       isRTL,
       appearance,
       setAppearance,
-      isDark: p.isDark,
-      toggleTheme: () => setAppearance(appearance === 'slate' ? 'whiteboard' : 'slate'),
-      colors: legacyColors(p),
     };
   }, [appearance, lang, isRTL, setAppearance]);
 

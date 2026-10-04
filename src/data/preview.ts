@@ -230,8 +230,6 @@ export const previewProfile = {
   city: RIYADH,
   experience_level: 'intermediate',
   onboarding_completed: true,
-  is_premium: false,
-  pack_id: null,
   community_id: 'c-company',
   created_at: '2026-01-01T00:00:00Z',
   date_of_birth: null,

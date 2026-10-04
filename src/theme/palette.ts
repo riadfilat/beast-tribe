@@ -97,37 +97,3 @@ export const PALETTES: Record<BoardAppearance, Palette> = {
   slate: SLATE,
   whiteboard: WHITEBOARD,
 };
-
-/**
- * Legacy COLORS keys (screens not yet on the board system) mapped onto the
- * board palettes so they sit in the same world.
- */
-export function legacyColors(p: Palette) {
-  const dark = p.isDark;
-  return {
-    teal: '#023C3C',
-    tealLight: '#034E4E',
-    orange: dark ? p.marker : p.markerText,
-    aqua: p.aqua,
-    dark: dark ? '#011E1E' : '#0B2E2E',
-    background: p.board,
-    gray: dark ? '#F2F0EE' : '#E8E5E1',
-    coral: p.coral,
-    green: dark ? '#62B797' : '#2D7558',
-    blueGray: dark ? '#759CA9' : '#4A6A78',
-    white: '#FFFFFF',
-    cardBg: dark ? 'rgba(244,241,234,0.05)' : '#FFFFFF',
-    cardBorder: p.rule,
-    inputBg: p.wash,
-    inputBorder: p.ruleStrong,
-    statCardBg: p.wash,
-    statCardBorder: p.rule,
-    textPrimary: p.ink,
-    textSecondary: p.inkSoft,
-    textTertiary: p.inkFaint,
-    textMuted: p.inkFaint,
-    tabBarBg: p.boardDeep,
-    tabBarBorder: p.rule,
-    tabInactive: p.inkFaint,
-  };
-}
