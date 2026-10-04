@@ -1,30 +1,34 @@
 import Link from 'next/link';
 import { requireAdmin } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
+import { fetchAll } from '@/lib/fetch-all';
 import { Icon } from '@/components/ui/Icon';
 import SubmitButton from '@/components/SubmitButton';
-import { CoachPay, monthRange, payoutFor } from '@/lib/workouts';
+import { CoachPay, payoutFor } from '@/lib/workouts';
+import { monthRange, sar } from '@/lib/format';
 import { saveCoachPay } from '../actions';
 
 export const revalidate = 0;
 
-const sar = (n: number) => `SAR ${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default async function CoachPayPage({ searchParams }: { searchParams: { month?: string } }) {
   await requireAdmin();
   const db = createAdminClient();
   const m = monthRange(searchParams.month);
 
-  const [{ data: setting }, { data: logs }, { data: partners }] = await Promise.all([
+  const [{ data: setting }, logs, { data: partners }] = await Promise.all([
     db.from('app_settings').select('value, updated_at').eq('key', 'coach_pay').maybeSingle(),
-    db.from('workout_logs').select('coach_partner_id, user_id, workout_id').eq('counted', true).gte('completed_at', m.start.toISOString()).lt('completed_at', m.end.toISOString()).limit(50000),
+    // Every counted use of a coach's workout this month (the coach's own page counts the same set).
+    fetchAll((a, b) =>
+      db.from('workout_logs').select('coach_partner_id, user_id, workout_id').eq('counted', true).not('coach_partner_id', 'is', null)
+        .gte('completed_at', m.start.toISOString()).lt('completed_at', m.end.toISOString()).order('id').range(a, b),
+    ),
     db.from('partners').select('id, business_name, name, contact_email').eq('partner_type', 'coach'),
   ]);
   const pay: CoachPay = { mode: 'rate', rate_sar: 0, pool_sar: 0, ...((setting?.value as any) ?? {}) };
 
   const per = new Map<string, { uses: number; members: Set<string>; workouts: Set<string> }>();
-  (logs || []).forEach((l: any) => {
-    if (!l.coach_partner_id) return;
+  logs.forEach((l: any) => {
     const r = per.get(l.coach_partner_id) ?? { uses: 0, members: new Set(), workouts: new Set() };
     r.uses += 1;
     r.members.add(l.user_id);
@@ -100,7 +104,7 @@ export default async function CoachPayPage({ searchParams }: { searchParams: { m
                 <td className="px-5 py-3 text-right text-gray-800">{r.uses}</td>
                 <td className="px-5 py-3 text-right text-gray-600">{r.members.size}</td>
                 <td className="px-5 py-3 text-right text-gray-600">{r.workouts.size}</td>
-                <td className="px-5 py-3 text-right font-medium text-brand-teal">{sar(r.amount)}</td>
+                <td className="px-5 py-3 text-right font-medium text-brand-teal">{sar(r.amount, true)}</td>
               </tr>
             ))}
           </tbody>
@@ -110,7 +114,7 @@ export default async function CoachPayPage({ searchParams }: { searchParams: { m
                 <td className="px-5 py-3 font-medium text-gray-700">Total</td>
                 <td className="px-5 py-3 text-right font-medium text-gray-700">{total}</td>
                 <td colSpan={2} />
-                <td className="px-5 py-3 text-right font-semibold text-brand-teal">{sar(totalAmount)}</td>
+                <td className="px-5 py-3 text-right font-semibold text-brand-teal">{sar(totalAmount, true)}</td>
               </tr>
             </tfoot>
           ) : null}

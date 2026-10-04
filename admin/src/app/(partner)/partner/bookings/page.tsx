@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { requirePartner } from '@/lib/auth';
 import { can } from '@/lib/capabilities';
 import { fmtDay, fmtTime } from '@/lib/club';
-import { monthRange } from '@/lib/captains';
+import { monthRange } from '@/lib/format';
 import { loadBookings, loadIncome, money, type Booking } from '@/lib/venue';
 import SubmitButton from '@/components/SubmitButton';
 import { ConfirmButton } from '@/components/ConfirmSubmit';

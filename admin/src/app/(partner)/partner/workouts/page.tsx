@@ -1,31 +1,36 @@
 import Link from 'next/link';
-import { requirePartner } from '@/lib/auth';
+import { requireCap } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
+import { fetchAll } from '@/lib/fetch-all';
 import { Icon } from '@/components/ui/Icon';
-import { CoachPay, monthRange, payoutFor, SPORTS, STATUS_LABELS } from '@/lib/workouts';
+import { CoachPay, payoutFor, SPORTS, STATUS_LABELS } from '@/lib/workouts';
+import { monthRange, sar } from '@/lib/format';
 import { withdrawWorkout } from './actions';
 
 export const revalidate = 0;
 
 const sportName = (v: string) => SPORTS.find(([k]) => k === v)?.[1] ?? v;
-const sar = (n: number) => `SAR ${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default async function MyWorkoutsPage({ searchParams }: { searchParams: { sent?: string } }) {
-  const partner = await requirePartner();
+  const partner = await requireCap('workouts');
   const db = createAdminClient();
   const m = monthRange();
 
-  const [{ data: workouts }, { data: month }, { count: allMonthUses }, { data: setting }] = await Promise.all([
+  const [{ data: workouts }, month, { count: allMonthUses }, { data: setting }] = await Promise.all([
     db.from('workouts').select('id, title, sport, duration_minutes, status, review_note, community:communities(name), updated_at').eq('author_partner_id', partner.partner_id).order('updated_at', { ascending: false }),
-    db.from('workout_logs').select('workout_id, user_id').eq('counted', true).eq('coach_partner_id', partner.partner_id).gte('completed_at', m.start.toISOString()).lt('completed_at', m.end.toISOString()).limit(50000),
-    db.from('workout_logs').select('id', { count: 'exact', head: true }).eq('counted', true).gte('completed_at', m.start.toISOString()).lt('completed_at', m.end.toISOString()),
+    fetchAll((a, b) =>
+      db.from('workout_logs').select('workout_id, user_id').eq('counted', true).eq('coach_partner_id', partner.partner_id)
+        .gte('completed_at', m.start.toISOString()).lt('completed_at', m.end.toISOString()).order('id').range(a, b),
+    ),
+    // All coaches' counted uses this month: the same total the admin's Coach pay page shares the pool by.
+    db.from('workout_logs').select('id', { count: 'exact', head: true }).eq('counted', true).not('coach_partner_id', 'is', null).gte('completed_at', m.start.toISOString()).lt('completed_at', m.end.toISOString()),
     db.from('app_settings').select('value').eq('key', 'coach_pay').maybeSingle(),
   ]);
   const pay: CoachPay = { mode: 'rate', rate_sar: 0, pool_sar: 0, ...((setting?.value as any) ?? {}) };
-  const uses = (month || []).length;
-  const members = new Set((month || []).map((l: any) => l.user_id)).size;
+  const uses = month.length;
+  const members = new Set(month.map((l: any) => l.user_id)).size;
   const perWorkout = new Map<string, number>();
-  (month || []).forEach((l: any) => perWorkout.set(l.workout_id, (perWorkout.get(l.workout_id) ?? 0) + 1));
+  month.forEach((l: any) => perWorkout.set(l.workout_id, (perWorkout.get(l.workout_id) ?? 0) + 1));
   // Pool mode shares the pool by everyone's uses this month.
   const totalUses = pay.mode === 'pool' ? allMonthUses ?? uses : uses;
   const earned = payoutFor(uses, Math.max(totalUses, uses), pay);
@@ -60,8 +65,8 @@ export default async function MyWorkoutsPage({ searchParams }: { searchParams: {
         </div>
         <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
           <p className="text-xs text-gray-500 mb-1">Estimated earnings</p>
-          <p className="text-3xl font-bold text-brand-orange">{sar(earned)}</p>
-          <p className="text-xs text-gray-400 mt-1">{pay.mode === 'pool' ? 'Your share of this month’s coach pool' : `${sar(pay.rate_sar)} per use`}</p>
+          <p className="text-3xl font-bold text-brand-orange">{sar(earned, true)}</p>
+          <p className="text-xs text-gray-400 mt-1">{pay.mode === 'pool' ? 'Your share of this month’s coach pool' : `${sar(pay.rate_sar, true)} per use`}</p>
         </div>
       </div>
 

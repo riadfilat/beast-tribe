@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import { requirePartner } from '@/lib/auth';
+import { requireCap } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 
 export default async function PartnerEventsPage() {
-  const partner = await requirePartner();
+  const partner = await requireCap('events');
   const db = createAdminClient();
 
   const { data: events } = await db.from('events')

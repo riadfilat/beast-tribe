@@ -19,6 +19,7 @@ import { Group, GroupRow } from '../src/components/board/list';
 import { Sheet } from '../src/components/board/sheet';
 import { toast } from '../src/components/board/toast';
 import { haptic } from '../src/lib/haptics';
+import { errorKey } from '../src/data/errors';
 
 const PACES = [270, 300, 330, 360, 390, 420];
 
@@ -242,7 +243,7 @@ function InviteSheet({ partner, onClose }: { partner: Partner | null; onClose: (
       toast.show(t('partners.invited', { name: partner.name.split(' ')[0] }), 'yours');
       onClose();
     } catch (e: any) {
-      toast.show(t(`partners.errors.${e?.code || 'generic'}`), 'error');
+      toast.show(t(errorKey('partners', e)), 'error');
     } finally {
       setBusy(null);
     }

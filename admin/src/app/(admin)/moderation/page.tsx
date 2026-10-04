@@ -9,24 +9,23 @@ export default async function ModerationPage() {
   await requireAdmin();
   const db = createAdminClient();
 
-  // Get pending items first, then recently reviewed
-  const { data: pendingItems } = await db.from('image_moderation_queue')
-    .select('*, uploader:profiles!uploaded_by(full_name, display_name)')
-    .eq('status', 'pending')
-    .order('created_at', { ascending: true });
-
-  const { data: recentItems } = await db.from('image_moderation_queue')
-    .select('*, uploader:profiles!uploaded_by(full_name, display_name), reviewer:profiles!reviewed_by(full_name)')
-    .in('status', ['approved', 'rejected', 'auto_approved', 'auto_rejected'])
-    .order('reviewed_at', { ascending: false })
-    .limit(20);
-
-  // Content reports
-  const { data: reports, count: reportCount } = await db.from('content_reports')
-    .select('*, reporter:profiles!reporter_id(full_name, display_name)', { count: 'exact' })
-    .eq('status', 'pending')
-    .order('created_at', { ascending: false })
-    .limit(10);
+  // Pending items, recently reviewed ones and content reports, in parallel
+  const [{ data: pendingItems }, { data: recentItems }, { data: reports, count: reportCount }] = await Promise.all([
+    db.from('image_moderation_queue')
+      .select('*, uploader:profiles!uploaded_by(full_name, display_name)')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true }),
+    db.from('image_moderation_queue')
+      .select('*, uploader:profiles!uploaded_by(full_name, display_name), reviewer:profiles!reviewed_by(full_name)')
+      .in('status', ['approved', 'rejected', 'auto_approved', 'auto_rejected'])
+      .order('reviewed_at', { ascending: false })
+      .limit(20),
+    db.from('content_reports')
+      .select('*, reporter:profiles!reporter_id(full_name, display_name)', { count: 'exact' })
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(10),
+  ]);
 
   const pending = pendingItems || [];
   const now = Date.now();

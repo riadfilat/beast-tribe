@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { createAdminClient } from './supabase-server';
 
 // Photo checks. The database queues every photo our members upload and calls /api/moderate.
@@ -91,3 +92,12 @@ export async function moderationSecret(): Promise<string | null> {
   cachedSecret = (data?.value as any)?.secret || null;
   return cachedSecret;
 }
+
+/** Photos waiting for an admin. Cached so the layout and the dashboard share one count per request. */
+export const pendingModerationCount = cache(async (): Promise<number> => {
+  const { count } = await createAdminClient()
+    .from('image_moderation_queue')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'pending');
+  return count || 0;
+});

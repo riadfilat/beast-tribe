@@ -1,19 +1,12 @@
 import { getTwoStep, requireAdmin } from '@/lib/auth';
 import Link from 'next/link';
-import { createAdminClient } from '@/lib/supabase-server';
+import { pendingModerationCount } from '@/lib/moderation';
 import Sidebar from '@/components/layout/Sidebar';
 import NavigationProgress from '@/components/NavigationProgress';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const admin = await requireAdmin();
-  const twoStep = await getTwoStep();
-
-  // Get pending moderation count
-  const db = createAdminClient();
-  const { count } = await db
-    .from('image_moderation_queue')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'pending');
+  const [twoStep, pending] = await Promise.all([getTwoStep(), pendingModerationCount()]);
 
   return (
     <div className="flex min-h-screen">
@@ -22,7 +15,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         type="admin"
         userName={admin.full_name}
         roleBadge={admin.role.replace('_', ' ')}
-        pendingModeration={count || 0}
+        pendingModeration={pending}
       />
       <main className="flex-1 bg-gray-50 overflow-auto">
         {!twoStep.enrolled ? (

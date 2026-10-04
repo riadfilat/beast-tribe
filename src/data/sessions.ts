@@ -2,29 +2,25 @@ import { cityKey, cityKeys } from '../lib/cities';
 import { supabase } from '../lib/supabase';
 import { cancelEventReminder } from '../lib/notifications';
 import { useAuth } from '../providers/AuthProvider';
+import { useMemo } from 'react';
 import { useQuery, invalidate } from './query';
 import { MyStatus, Session, SESSION_SELECT, toSession, personOf } from './model';
 import { PREVIEW, PREVIEW_ME, previewMyRsvps, previewSessionRows } from './preview';
 import { addDays, startOfLocalDay } from '../i18n/format';
 import { uploadImage } from '../lib/upload';
 import type { Person } from '../components/board/people';
+import { CodedError, codeFrom } from './errors';
 
 export type JoinResult = 'going' | 'waitlist';
-export type SessionErrorCode =
-  | 'WOMEN_ONLY' | 'WOMEN_ONLY_HOST' | 'GENDER_NEEDED' | 'LINK_INVALID' | 'GUESTS_OFF' | 'PACK_ONLY' | 'COMMUNITY_ONLY' | 'GUESTS_FULL' | 'EVENT_OVER' | 'EVENT_CANCELLED' | 'EVENT_NOT_FOUND' | 'NOT_HOST' | 'generic';
-
-export class SessionError extends Error {
-  code: SessionErrorCode;
-  constructor(code: SessionErrorCode, message?: string) {
-    super(message || code);
-    this.code = code;
-  }
-}
+const SESSION_CODES = [
+  'WOMEN_ONLY_HOST', 'GENDER_NEEDED', 'LINK_INVALID', 'GUESTS_OFF', 'WOMEN_ONLY', 'PACK_ONLY', 'COMMUNITY_ONLY',
+  'GUESTS_FULL', 'EVENT_OVER', 'EVENT_CANCELLED', 'EVENT_NOT_FOUND', 'NOT_HOST',
+] as const;
+export type SessionErrorCode = (typeof SESSION_CODES)[number] | 'generic';
+export class SessionError extends CodedError<SessionErrorCode> {}
 
 function toSessionError(e: any): SessionError {
-  const m = String(e?.message || e || '');
-  const hit = m.match(/WOMEN_ONLY_HOST|GENDER_NEEDED|LINK_INVALID|GUESTS_OFF|WOMEN_ONLY|PACK_ONLY|COMMUNITY_ONLY|GUESTS_FULL|EVENT_OVER|EVENT_CANCELLED|EVENT_NOT_FOUND|NOT_HOST/);
-  return new SessionError((hit?.[0] as SessionErrorCode) || 'generic', m);
+  return new SessionError(codeFrom(e, SESSION_CODES), String(e?.message || e || ''));
 }
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -34,7 +30,13 @@ function useMe() {
   return { meId: PREVIEW ? PREVIEW_ME : user?.id ?? null, profile };
 }
 
-async function fetchMyRsvps(meId: string): Promise<Map<string, MyStatus>> {
+/** How far back "my sessions" reaches (the past tab, posts about a recent session). */
+const HISTORY_DAYS = 180;
+/** The board always loads this many days; shorter boards (Home) slice it, so all share one request. */
+const BOARD_DAYS = 14;
+
+/** My going/waitlist RSVPs for sessions starting from `since` (bounded, so the list never grows forever). */
+async function fetchMyRsvps(meId: string, since: Date): Promise<Map<string, MyStatus>> {
   const map = new Map<string, MyStatus>();
   if (PREVIEW) {
     previewMyRsvps().forEach((r) => map.set(r.event_id, r.status as MyStatus));
@@ -42,9 +44,10 @@ async function fetchMyRsvps(meId: string): Promise<Map<string, MyStatus>> {
   }
   const { data, error } = await supabase
     .from('event_rsvps')
-    .select('event_id, status')
+    .select('event_id, status, event:events!inner(starts_at)')
     .eq('user_id', meId)
-    .in('status', ['going', 'waitlist']);
+    .in('status', ['going', 'waitlist'])
+    .gte('event.starts_at', since.toISOString());
   if (error) throw error;
   (data || []).forEach((r: any) => map.set(r.event_id, r.status));
   return map;
@@ -58,18 +61,19 @@ function visible(s: Session, gender?: string | null) {
 }
 
 // ─── Board: today through the next week, in the member's country ───────────
-export function useBoardSessions(days = 8) {
+export function useBoardSessions(days = BOARD_DAYS) {
   const { meId, profile } = useMe();
   const country = profile?.region || 'SA';
-  const key = meId ? `sessions:board:${meId}:${country}:${cityKey(profile?.city)}:${days}` : null;
-  return useQuery<Session[]>(key, async () => {
-    const mine = await fetchMyRsvps(meId!);
+  const key = meId ? `sessions:board:${meId}:${country}:${cityKey(profile?.city)}` : null;
+  const q = useQuery<Session[]>(key, async () => {
+    const from = startOfLocalDay(new Date());
+    const minePromise = fetchMyRsvps(meId!, from);
+    minePromise.catch(() => {}); // handled where it is awaited below
     let rows: any[];
     if (PREVIEW) {
       rows = previewSessionRows();
     } else {
-      const from = startOfLocalDay(new Date());
-      const to = addDays(from, days);
+      const to = addDays(from, BOARD_DAYS);
       let q = supabase
         .from('events')
         .select(SESSION_SELECT)
@@ -91,11 +95,18 @@ export function useBoardSessions(days = 8) {
       if (error) throw error;
       rows = data || [];
     }
+    const mine = await minePromise;
     const now = Date.now();
     return rows
       .map((r) => toSession(r, meId, mine.get(r.id) ?? null, now))
       .filter((s) => visible(s, profile?.gender));
   });
+  const data = useMemo(() => {
+    if (!q.data || days >= BOARD_DAYS || PREVIEW) return q.data;
+    const end = addDays(startOfLocalDay(new Date()), days).getTime();
+    return q.data.filter((s) => s.startsAt.getTime() < end);
+  }, [q.data, days]);
+  return { ...q, data };
 }
 
 // ─── One session, with the full roster and waitlist ─────────────────────────
@@ -109,16 +120,22 @@ export function useSession(id?: string | null) {
   const key = id && meId ? `sessions:one:${id}:${meId}` : null;
   return useQuery<SessionDetail | null>(key, async () => {
     let row: any;
+    let myStatus: MyStatus | null = null;
     if (PREVIEW) {
       row = previewSessionRows().find((r) => r.id === id) ?? null;
+      myStatus = (previewMyRsvps().find((r) => r.event_id === id)?.status as MyStatus) ?? null;
     } else {
-      const { data, error } = await supabase.from('events').select(SESSION_SELECT).eq('id', id!).maybeSingle();
-      if (error) throw error;
-      row = data;
+      const [ev, rsvp] = await Promise.all([
+        supabase.from('events').select(SESSION_SELECT).eq('id', id!).maybeSingle(),
+        supabase.from('event_rsvps').select('status').eq('event_id', id!).eq('user_id', meId!).in('status', ['going', 'waitlist']).maybeSingle(),
+      ]);
+      if (ev.error) throw ev.error;
+      if (rsvp.error) throw rsvp.error;
+      row = ev.data;
+      myStatus = (rsvp.data?.status as MyStatus) ?? null;
     }
     if (!row) return null;
-    const mine = await fetchMyRsvps(meId!);
-    const s = toSession(row, meId, mine.get(row.id) ?? null);
+    const s = toSession(row, meId, myStatus);
     const waitRows = (row.roster || [])
       .filter((r: any) => r.status === 'waitlist')
       .sort((a: any, b: any) => (a.created_at || '').localeCompare(b.created_at || ''));
@@ -133,18 +150,20 @@ export function useMySessions() {
   const { meId } = useMe();
   const key = meId ? `sessions:mine:${meId}` : null;
   return useQuery<Session[]>(key, async () => {
-    const mine = await fetchMyRsvps(meId!);
+    const since = addDays(startOfLocalDay(new Date()), -HISTORY_DAYS);
+    const mine = await fetchMyRsvps(meId!, since);
     let rows: any[];
     if (PREVIEW) {
       rows = previewSessionRows().filter((r) => mine.has(r.id) || r.created_by === meId);
     } else {
       const ids = Array.from(mine.keys());
-      let q = supabase.from('events').select(SESSION_SELECT).eq('roster.status', 'going');
+      let q = supabase.from('events').select(SESSION_SELECT).eq('roster.status', 'going').gte('starts_at', since.toISOString());
       q = ids.length ? q.or(`id.in.(${ids.join(',')}),created_by.eq.${meId}`) : q.eq('created_by', meId!);
       const { data, error } = await q
         .order('starts_at', { ascending: true })
         .order('created_at', { referencedTable: 'roster', ascending: true })
-        .limit(8, { referencedTable: 'roster' });
+        .limit(8, { referencedTable: 'roster' })
+        .limit(300);
       if (error) throw error;
       rows = data || [];
     }

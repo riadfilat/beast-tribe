@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { createAdminClient } from './supabase-server';
 import { redirect } from 'next/navigation';
+import { can, type Cap } from './capabilities';
 
 export type AdminRole = 'super_admin' | 'admin' | 'moderator';
 export type PartnerType = 'coach' | 'gym' | 'event_company' | 'company' | 'nutritionist' | 'venue' | 'school' | 'leader' | 'nutrition';
@@ -140,6 +141,16 @@ export const requirePartner = cache(async (): Promise<PartnerUser> => {
     trial_ends_at: partnerResult.data.trial_ends_at ?? null,
     plan_renews_at: partnerResult.data.plan_renews_at ?? null,
   };
+});
+
+/**
+ * Require a partner whose kind runs this part of the dashboard: the same rule the sidebar uses
+ * (navFor), so a page opens by URL exactly when its menu item shows. Others go to the overview.
+ */
+export const requireCap = cache(async (cap: Cap): Promise<PartnerUser> => {
+  const partner = await requirePartner();
+  if (!can(partner.partner_type, cap)) redirect('/partner/dashboard');
+  return partner;
 });
 
 /**

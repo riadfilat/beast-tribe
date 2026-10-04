@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
+import { searchTerm } from '@/lib/search';
 import SearchInput from '@/components/ui/SearchInput';
 
 export const revalidate = 0;
@@ -23,10 +24,9 @@ export default async function EventsPage({
     .order('starts_at', { ascending: false })
     .range(offset, offset + perPage - 1);
 
-  if (searchParams.q) {
-    query = query.or(
-      `title.ilike.%${searchParams.q}%,coach_name.ilike.%${searchParams.q}%,gym_name.ilike.%${searchParams.q}%`
-    );
+  const q = searchTerm(searchParams.q);
+  if (q) {
+    query = query.or(`title.ilike.%${q}%,coach_name.ilike.%${q}%,gym_name.ilike.%${q}%`);
   }
   if (searchParams.upcoming === '1') {
     query = query.gte('starts_at', new Date().toISOString());

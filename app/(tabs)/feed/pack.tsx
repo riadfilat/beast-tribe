@@ -7,7 +7,7 @@ import { makeStyles, useKit } from '../../../src/theme';
 import { useI18n } from '../../../src/i18n';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { useMyPackList } from '../../../src/data/member';
-import { joinPackByCode, leavePack, MAX_PACKS, PackError, PackInvite, respondToInvite, setPackPhoto, updatePackEmblem, usePack, usePackInvites, usePackSessions } from '../../../src/data/packs';
+import { joinPackByCode, leavePack, MAX_PACKS, PackInvite, respondToInvite, setPackPhoto, updatePackEmblem, usePack, usePackInvites, usePackSessions } from '../../../src/data/packs';
 import type { Emblem } from '../../../src/lib/emblem';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { Txt } from '../../../src/components/board/Txt';
@@ -22,6 +22,7 @@ import { PatchPicker } from '../../../src/components/board/PatchPicker';
 import { Sheet } from '../../../src/components/board/sheet';
 import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
+import { errorKey } from '../../../src/data/errors';
 
 export default function PackScreen() {
   const s = useStyles();
@@ -283,7 +284,7 @@ function JoinPanel({ meId, onJoined, onCreate }: { meId: string | null; onJoined
       onJoined(pk.id);
     } catch (e: any) {
       haptic('error');
-      setError(t(`pack.errors.${e instanceof PackError ? e.code : 'generic'}`));
+      setError(t(errorKey('pack', e)));
     } finally {
       setBusy(false);
     }
@@ -296,7 +297,7 @@ function JoinPanel({ meId, onJoined, onCreate }: { meId: string | null; onJoined
       invites.refetch();
       if (accept) onJoined(inv.packId);
     } catch (e: any) {
-      toast.show(t(`pack.errors.${e instanceof PackError ? e.code : 'generic'}`), 'error');
+      toast.show(t(errorKey('pack', e)), 'error');
     }
   }
 

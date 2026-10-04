@@ -31,7 +31,7 @@ import { journeyStage } from '../../../src/lib/journey';
 export default function YouScreen() {
   const s = useStyles();
   const { p, lang } = useKit();
-  const { t } = useI18n();
+  const { t, tn } = useI18n();
   const router = useRouter();
   const { user, profile, refreshProfile } = useAuth();
   const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
@@ -72,9 +72,9 @@ export default function YouScreen() {
 
   const facts = stats.data
     ? [
-        lang === 'ar' ? `${stats.data.attended} ${arCount(stats.data.attended, 'جلسة', 'جلستان', 'جلسات', 'جلسة')}` : `${stats.data.attended} session${stats.data.attended === 1 ? '' : 's'}`,
-        lang === 'ar' ? `نظّمت ${stats.data.hosted}` : `${stats.data.hosted} hosted`,
-        lang === 'ar' ? `قابلت ${stats.data.met} ${arCount(stats.data.met, 'شخصًا', 'شخصين', 'أشخاص', 'شخصًا')}` : `met ${stats.data.met} ${stats.data.met === 1 ? 'person' : 'people'}`,
+        tn('you.attended', stats.data.attended),
+        tn('you.hosted', stats.data.hosted),
+        tn('you.met', stats.data.met),
       ].join(' · ')
     : null;
 
@@ -322,14 +322,6 @@ function CoachRow({ c, meId, onChanged }: { c: MyCoach; meId: string | null; onC
       </Sheet>
     </>
   );
-}
-
-function arCount(n: number, one: string, two: string, few: string, many: string) {
-  if (n === 1) return one;
-  if (n === 2) return two;
-  const m = n % 100;
-  if (m >= 3 && m <= 10) return few;
-  return many;
 }
 
 const useStyles = makeStyles(({ p }) => ({

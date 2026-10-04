@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../providers/AuthProvider';
-import { useQuery } from './query';
+import { useQuery, CATALOGUE } from './query';
 import { PREVIEW } from './preview';
 
 // The Operation Beast exercise library: one reference for every move in every workout.
@@ -128,5 +128,5 @@ export function useExercises(lang: string) {
       rows = data || [];
     }
     return new Map(rows.map((r) => [r.slug, toExercise(r, lang)]));
-  });
+  }, CATALOGUE);
 }

@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
+import { fetchAll } from '@/lib/fetch-all';
+import { pendingModerationCount } from '@/lib/moderation';
 import { Icon } from '@/components/ui/Icon';
 
 export const revalidate = 0;
@@ -19,9 +21,7 @@ async function getMetrics() {
     totalUsers,
     newUsersThisMonth,
     newUsersLastMonth,
-    activeUsers7d,
-    activeUsers30d,
-    premiumUsers,
+    recentLogs,
     eventsThisMonth,
     rsvpsThisMonth,
     pendingModeration,
@@ -32,12 +32,13 @@ async function getMetrics() {
     db.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', startOfMonth),
     db.from('profiles').select('*', { count: 'exact', head: true })
       .gte('created_at', lastMonthStart).lt('created_at', lastMonthEnd),
-    db.from('workout_logs').select('user_id', { count: 'exact', head: true }).gte('completed_at', sevenDaysAgo),
-    db.from('workout_logs').select('user_id', { count: 'exact', head: true }).gte('completed_at', thirtyDaysAgo),
-    db.from('profiles').select('*', { count: 'exact', head: true }).eq('is_premium', true),
+    // Active = distinct people who logged a workout, not the number of logs.
+    fetchAll<{ user_id: string; completed_at: string }>((a, b) =>
+      db.from('workout_logs').select('user_id, completed_at').gte('completed_at', thirtyDaysAgo).order('id').range(a, b),
+    ),
     db.from('events').select('*', { count: 'exact', head: true }).gte('starts_at', startOfMonth),
     db.from('event_rsvps').select('*', { count: 'exact', head: true }).gte('created_at', startOfMonth),
-    db.from('image_moderation_queue').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+    pendingModerationCount(),
     db.from('workout_logs').select('*', { count: 'exact', head: true }),
     db.from('profiles')
       .select('id, full_name, display_name, created_at')
@@ -49,12 +50,11 @@ async function getMetrics() {
     totalUsers: totalUsers.count || 0,
     newUsersThisMonth: newUsersThisMonth.count || 0,
     newUsersLastMonth: newUsersLastMonth.count || 0,
-    activeUsers7d: activeUsers7d.count || 0,
-    activeUsers30d: activeUsers30d.count || 0,
-    premiumUsers: premiumUsers.count || 0,
+    activeUsers7d: new Set(recentLogs.filter((l) => new Date(l.completed_at) >= new Date(sevenDaysAgo)).map((l) => l.user_id)).size,
+    activeUsers30d: new Set(recentLogs.map((l) => l.user_id)).size,
     eventsThisMonth: eventsThisMonth.count || 0,
     rsvpsThisMonth: rsvpsThisMonth.count || 0,
-    pendingModeration: pendingModeration.count || 0,
+    pendingModeration,
     totalWorkouts: totalWorkouts.count || 0,
     recentSignups: recentSignups.data || [],
   };
@@ -132,21 +132,14 @@ export default async function DashboardPage() {
         <MetricCard
           label="Active (7d)"
           value={data.activeUsers7d}
-          sub="workout sessions"
+          sub="people who trained"
           accent="bg-brand-aqua"
         />
         <MetricCard
           label="Active (30d)"
           value={data.activeUsers30d}
-          sub="workout sessions"
+          sub="people who trained"
           accent="bg-blue-500"
-        />
-        <MetricCard
-          label="Premium"
-          value={data.premiumUsers}
-          sub={`${data.totalUsers > 0 ? Math.round((data.premiumUsers / data.totalUsers) * 100) : 0}% of users`}
-          accent="bg-brand-orange"
-          href="/users?premium=true"
         />
         <MetricCard
           label="Events (month)"

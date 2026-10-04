@@ -14,7 +14,7 @@ import { Rule } from '../../../src/components/board/marks';
 import { Chip, MarkerButton, SectionHeading, TextButton } from '../../../src/components/board/controls';
 import { mainBlock, workoutLine, WorkoutRow } from '../../../src/components/board/workout';
 import { useExercises } from '../../../src/data/exercises';
-import { activeWeekFocus, Goal, GOAL_SPORT, ProgramSession, recommendedSlug, startPlan, TrainLevel, useFocusSessions, useMyPlan, usePrograms } from '../../../src/data/programs';
+import { activeWeekFocus, Goal, GOAL_SPORT, ProgramSession, recommendedSlug, SPORT_PLAN, startPlan, TrainLevel, useFocusSessions, useMyPlan, usePrograms } from '../../../src/data/programs';
 import { useMySports } from '../../../src/data/member';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { FindPlanCard, FocusSheet, NextUpCard, RecommendedCard, WeekCard, WeekFocusSheet } from '../../../src/components/board/plan';
@@ -23,7 +23,6 @@ import { toast } from '../../../src/components/board/toast';
 import { schedulePlanReminder } from '../../../src/lib/notifications';
 
 // A sport's plan, when there is one; otherwise the sport filters the workouts.
-const SPORT_PLAN: Record<string, string> = { padel: 'padel-fit', running: 'first-5k', walking: 'first-5k', hyrox: 'hyrox-ready', gym: 'strength-base', crossfit: 'busy-week' };
 
 type Filter = 'all' | 'saved' | 'nokit' | 'short' | string;
 

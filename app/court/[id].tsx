@@ -16,6 +16,7 @@ import { Press } from '../../src/components/board/Press';
 import { Chip, Field, IconButton, MarkerButton, SectionHeading } from '../../src/components/board/controls';
 import { toast } from '../../src/components/board/toast';
 import { haptic } from '../../src/lib/haptics';
+import { errorKey } from '../../src/data/errors';
 
 type Audience = { kind: 'community' | 'pack'; id: string; name: string };
 
@@ -138,7 +139,7 @@ export default function CourtScreen() {
       router.replace({ pathname: '/session/[id]', params: { id: eventId } });
     } catch (e: any) {
       haptic('error');
-      toast.show(t(`courts.errors.${e?.code || 'generic'}`), 'error');
+      toast.show(t(errorKey('courts', e)), 'error');
       slotsQ.refetch();
       setPick(null);
     } finally {

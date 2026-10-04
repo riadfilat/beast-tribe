@@ -465,9 +465,9 @@ export const en = {
   },
   you: {
     title: 'You',
-    attended: 'Sessions',
-    hosted: 'Hosted',
-    met: 'People met',
+    attended: p({ one: '{n} session', other: '{n} sessions' }),
+    hosted: p({ one: '{n} hosted', other: '{n} hosted' }),
+    met: p({ one: 'met {n} person', other: 'met {n} people' }),
     mySessions: 'My sessions',
     mySports: 'My sports',
     editSports: 'Edit',

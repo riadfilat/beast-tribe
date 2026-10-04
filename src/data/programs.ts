@@ -1,7 +1,8 @@
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../providers/AuthProvider';
-import { useQuery, invalidate } from './query';
+import { useQuery, invalidate, CATALOGUE } from './query';
 import { PREVIEW } from './preview';
+import { localDateKey } from '../i18n/format';
 
 // Programs: multi-week plans built from library workouts. A member follows one plan at a time;
 // "next up" is the first session of the plan without a finished log since they started it.
@@ -12,6 +13,16 @@ export type TrainLevel = 'beginner' | 'intermediate' | 'advanced';
 export const GOALS: Goal[] = ['strength', 'calisthenics', 'running', 'padel', 'hyrox', 'home', 'busy'];
 export const GOAL_SPORT: Record<Goal, string> = {
   strength: 'gym', calisthenics: 'gym', home: 'gym', running: 'running', padel: 'padel', hyrox: 'hyrox', busy: 'crossfit',
+};
+
+/** The plan to open from a sport the member plays (Train → "For your sports"). */
+export const SPORT_PLAN: Record<string, string> = {
+  padel: recommendedSlug('padel', null),
+  running: recommendedSlug('running', null),
+  walking: recommendedSlug('running', null),
+  hyrox: recommendedSlug('hyrox', null),
+  gym: recommendedSlug('strength', 'intermediate'),
+  crossfit: recommendedSlug('busy', null),
 };
 
 /** The plan that fits a goal (and level, where there's more than one). */
@@ -110,7 +121,7 @@ export function usePrograms(lang: string) {
     const { data, error } = await supabase.from('programs').select('*').eq('status', 'published').order('sort');
     if (error) throw error;
     return (data || []).map((r) => toProgram(r, lang));
-  });
+  }, CATALOGUE);
 }
 
 export function useProgram(slug: string | null | undefined, lang: string) {
@@ -120,7 +131,7 @@ export function useProgram(slug: string | null | undefined, lang: string) {
     if (error) throw error;
     if (!data) return null;
     return { program: toProgram(data, lang), sessions: await sessionsOf(data.id, lang, new Set()) };
-  });
+  }, CATALOGUE);
 }
 
 /** The member's active plan, with what's done and what's next. */
@@ -176,7 +187,7 @@ export async function leavePlan(meId: string) {
 export function endOfWeek(now = new Date()): string {
   const d = new Date(now);
   d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7));
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return localDateKey(d);
 }
 
 /** The week's focus, if one is set and hasn't run out. */
@@ -184,7 +195,7 @@ export function activeWeekFocus(profile: any, now = new Date()): Goal | null {
   const f = profile?.week_focus as Goal | null;
   const until = profile?.week_focus_until as string | null;
   if (!f || !until) return null;
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const today = localDateKey(now);
   return today <= until ? f : null;
 }
 

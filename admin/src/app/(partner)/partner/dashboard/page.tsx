@@ -3,7 +3,7 @@ import { requirePartner } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import { can, kindOf, navFor } from '@/lib/capabilities';
 import { loadClub, fmtDay, fmtTime } from '@/lib/club';
-import { monthRange } from '@/lib/captains';
+import { monthRange } from '@/lib/format';
 import { loadBookings, loadFacilities, loadIncome, money } from '@/lib/venue';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { SectionTitle, Stat, btnPrimary, card } from '@/components/club/ui';

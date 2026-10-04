@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Montserrat, Poppins } from 'next/font/google';
 import { Lockup } from '@/components/brand/Logo';
-import { PLANS, PROMISES, TRIAL_DAYS, sar } from '@/lib/plans';
+import { PLANS, PROMISES, TRIAL_DAYS } from '@/lib/plans';
+import { sar } from '@/lib/format';
 import LeadForm from '@/components/LeadForm';
 
 const display = Montserrat({ subsets: ['latin'], weight: ['700', '800', '900'], variable: '--font-display' });

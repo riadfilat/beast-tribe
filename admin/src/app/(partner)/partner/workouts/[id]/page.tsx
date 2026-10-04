@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { requirePartner } from '@/lib/auth';
+import { requireCap } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import { Icon } from '@/components/ui/Icon';
 import WorkoutEditor from '@/components/workouts/WorkoutEditor';
@@ -10,7 +10,7 @@ import { resubmitWorkout } from '../actions';
 export const revalidate = 0;
 
 export default async function EditCoachWorkoutPage({ params }: { params: { id: string } }) {
-  const partner = await requirePartner();
+  const partner = await requireCap('workouts');
   const db = createAdminClient();
   const [{ data: w }, { data: me }] = await Promise.all([
     db.from('workouts').select('*').eq('id', params.id).eq('author_partner_id', partner.partner_id).maybeSingle(),

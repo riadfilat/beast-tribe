@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { ownsCommunity, requirePartner } from '@/lib/auth';
-import { METRIC_HINT, METRIC_LABEL, fmtDate, fmtScore, loadBoard, loadChallenges, loadTeamBoard, loadTeams, stateOf, todayRiyadh, type Metric } from '@/lib/wellness';
+import { requireCap } from '@/lib/auth';
+import { METRIC_HINT, METRIC_LABEL, fmtDate, fmtScore, loadBoard, loadChallenges, loadTeamBoard, loadTeams, stateOf, type Metric } from '@/lib/wellness';
+import { todayRiyadh } from '@/lib/format';
 import SubmitButton from '@/components/SubmitButton';
 import { ConfirmButton } from '@/components/ConfirmSubmit';
 import { Avatar, btnGhost, btnPrimary, card, input, label } from '@/components/club/ui';
@@ -18,8 +19,7 @@ const STATE_STYLE = {
 const METRICS: Metric[] = ['active_days', 'workouts', 'minutes', 'sessions', 'steps'];
 
 export default async function ChallengesPage({ searchParams }: { searchParams: { c?: string } }) {
-  const partner = await requirePartner();
-  if (!ownsCommunity(partner.partner_type)) redirect('/partner/dashboard');
+  const partner = await requireCap('challenges');
   if (!partner.community_id) redirect('/partner/club');
 
   const [list, teams] = await Promise.all([loadChallenges(partner.community_id), loadTeams(partner.community_id)]);

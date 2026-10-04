@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { LEGAL_BASE_URL } from '../lib/constants';
+import { CodedError } from './errors';
 import { PREVIEW } from './preview';
 
 // Ask Beast: a Claude-powered assistant that finds partners, sessions, workouts and clubs.
@@ -21,13 +22,7 @@ export interface AssistantTurn {
 }
 
 export type AssistantErrorCode = 'not_configured' | 'limit' | 'signed_out' | 'generic';
-export class AssistantError extends Error {
-  code: AssistantErrorCode;
-  constructor(code: AssistantErrorCode) {
-    super(code);
-    this.code = code;
-  }
-}
+export class AssistantError extends CodedError<AssistantErrorCode> {}
 
 export async function askBeast(history: AssistantTurn[], lang: string): Promise<{ reply: string; cards: AssistantCard[] }> {
   if (PREVIEW) return { reply: lang === 'ar' ? 'هذه معاينة. اسأل في التطبيق الحقيقي.' : 'This is the preview. Ask in the real app.', cards: [] };

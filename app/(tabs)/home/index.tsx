@@ -6,7 +6,7 @@ import { makeStyles, useKit } from '../../../src/theme';
 import { useI18n } from '../../../src/i18n';
 import { dayOffset, fmtBoardDate } from '../../../src/i18n/format';
 import { useAuth } from '../../../src/providers/AuthProvider';
-import { useBoardSessions, useMySessions, useSessionActions, SessionError } from '../../../src/data/sessions';
+import { useBoardSessions, useMySessions, useSessionActions } from '../../../src/data/sessions';
 import { useUnreadCount } from '../../../src/data/inbox';
 import { usePopularSpots } from '../../../src/data/member';
 import { cityLabel } from '../../../src/lib/cities';
@@ -25,6 +25,7 @@ import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
 import { syncEventReminders } from '../../../src/lib/notifications';
 import { useMyPlan } from '../../../src/data/programs';
+import { errorKey } from '../../../src/data/errors';
 
 
 export default function BoardScreen() {
@@ -96,8 +97,7 @@ export default function BoardScreen() {
         toast.show(result === 'going' ? t('session.joinedToast') : t('session.waitlistToast'), result === 'going' ? 'yours' : 'info');
       } catch (e: any) {
         haptic('error');
-        const code = e instanceof SessionError ? e.code : 'generic';
-        toast.show(t(`session.errors.${code}`), 'error');
+        toast.show(t(errorKey('session', e)), 'error');
       } finally {
         setJoiningId(null);
       }

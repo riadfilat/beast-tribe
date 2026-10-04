@@ -63,6 +63,9 @@ export interface Session {
 /** Sessions without an explicit end are assumed to run this long (matches the DB rules). */
 export const DEFAULT_DURATION_MIN = 120;
 
+/** The profile columns personOf() needs. */
+export const PERSON_COLUMNS = 'id, display_name, full_name, avatar_url';
+
 export const SESSION_SELECT = `
   id, title, description, event_type, starts_at, ends_at, location_name, location_city, gym_name,
   country, location_lat, location_lng, image_url, max_capacity, going_count, created_by,
@@ -71,8 +74,8 @@ export const SESSION_SELECT = `
   pack:packs(id, name),
   workout:workouts(id, title, title_ar, duration_minutes),
   community:communities(id, name, visibility, is_default),
-  host:profiles!events_created_by_fkey(id, display_name, full_name, avatar_url),
-  roster:event_rsvps(user_id, status, created_at, profile:profiles(id, display_name, full_name, avatar_url))
+  host:profiles!events_created_by_fkey(${PERSON_COLUMNS}),
+  roster:event_rsvps(user_id, status, created_at, profile:profiles(${PERSON_COLUMNS}))
 `;
 
 export function personOf(profile: any): Person | null {

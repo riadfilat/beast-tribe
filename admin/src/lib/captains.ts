@@ -1,4 +1,5 @@
 import { createAdminClient } from './supabase-server';
+import { todayRiyadh } from './format';
 
 // Beast Captains: a coach assigned to a community to put open sessions on its board every week.
 // A paid service outside the subscription: the community pays by the hour, the captain is paid
@@ -36,25 +37,6 @@ export interface StatementRow {
   billed: number;
   ourShare: number;
   payout: number;
-}
-
-export const todayRiyadh = () => new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
-export const sar = (n: number) => `SAR ${Math.round(n).toLocaleString('en-US')}`;
-
-/** First and last day of a month given as YYYY-MM (defaults to this month, Riyadh time). */
-export function monthRange(m?: string) {
-  const ym = m && /^\d{4}-(0[1-9]|1[0-2])$/.test(m) ? m : todayRiyadh().slice(0, 7);
-  const [y, mo] = ym.split('-').map(Number);
-  const last = new Date(Date.UTC(y, mo, 0)).getUTCDate();
-  const shift = (d: number) => new Date(Date.UTC(y, mo - 1 + d, 1)).toISOString().slice(0, 7);
-  return {
-    ym,
-    from: `${ym}-01`,
-    to: `${ym}-${String(last).padStart(2, '0')}`,
-    label: new Date(Date.UTC(y, mo - 1, 1)).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }),
-    prev: shift(-1),
-    next: shift(1),
-  };
 }
 
 export async function loadCaptains(communityId?: string): Promise<CaptainRow[]> {

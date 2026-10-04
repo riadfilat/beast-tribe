@@ -1,13 +1,15 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ownsCommunity, requirePartner } from '@/lib/auth';
+import { can } from '@/lib/capabilities';
 import { loadClub, fmtDay, fmtTime, ago } from '@/lib/club';
 import { PLAN_STATUS_LABEL, planOf } from '@/lib/plans';
 import { Icon } from '@/components/ui/Icon';
 import SubmitButton from '@/components/SubmitButton';
 import { Avatar, FillBar, HeatMap, SectionTitle, Stat, StatusChip, WeekBars, btnGhost, btnPrimary, card } from '@/components/club/ui';
 import { createClub, newClubCode, requestCaptain, saveCommunityPage } from './actions';
-import { loadCaptains, loadStatement, monthRange, sar } from '@/lib/captains';
+import { loadCaptains, loadStatement } from '@/lib/captains';
+import { monthRange, sar } from '@/lib/format';
 import { loadBoard, loadChallenges, loadStepsSummary, stateOf, fmtDate, fmtScore } from '@/lib/wellness';
 import { createAdminClient } from '@/lib/supabase-server';
 import { input, label } from '@/components/club/ui';
@@ -45,6 +47,7 @@ export default async function ClubPage() {
 
   const { counts, month } = club;
   const isCompany = partner.partner_type === 'company';
+  const hasChallenges = can(partner.partner_type, 'challenges');
   const pct = (n: number) => (counts.members ? Math.round((n / counts.members) * 100) : 0);
   const nudge = club.members
     .filter((m) => m.status === 'at_risk' || m.status === 'quiet')
@@ -102,7 +105,7 @@ export default async function ClubPage() {
           { done: counts.members >= 10, t: `Bring in your first 10 ${isCompany ? 'people' : 'members'}`, d: `${counts.members} joined so far. Print the poster or share your code.`, href: '/partner/poster', cta: 'Open the join poster' },
           { done: club.upcoming.some((c) => c.isClass) || club.past.some((c) => c.isClass), t: isCompany ? 'Put your first session on the board' : 'Schedule your first week of classes', d: 'People can only book what you post. Repeat it weekly in one step.', href: '/partner/classes/new', cta: isCompany ? 'New session' : 'New class' },
           { done: challenges.length > 0, t: 'Start a step challenge', d: 'A week or a month. It gets people opening the app every day.', href: '/partner/challenges', cta: 'Start a challenge' },
-        ];
+        ].filter((x) => hasChallenges || x.href !== '/partner/challenges');
         const left = steps.filter((x) => !x.done).length;
         if (!left) return null;
         return (
@@ -248,9 +251,11 @@ export default async function ClubPage() {
         <SectionTitle
           title="Wellness"
           action={
-            <Link href="/partner/challenges" className="text-sm text-[#147070] hover:underline">
-              {live ? 'Challenges' : 'Start a challenge'}
-            </Link>
+            hasChallenges ? (
+              <Link href="/partner/challenges" className="text-sm text-[#147070] hover:underline">
+                {live ? 'Challenges' : 'Start a challenge'}
+              </Link>
+            ) : undefined
           }
         />
         <div className="grid md:grid-cols-3 gap-6">
@@ -279,9 +284,9 @@ export default async function ClubPage() {
                   {!top.length ? <li className="text-sm text-gray-400">No one has joined yet.</li> : null}
                 </ol>
               </>
-            ) : (
+            ) : hasChallenges ? (
               <p className="text-sm text-gray-500">Run a challenge for a week or a month: active days, workouts, minutes, sessions or steps, by person or by team. People join from the app; only those who join appear on the ranking.</p>
-            )}
+            ) : null}
           </div>
         </div>
       </section>

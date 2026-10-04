@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { requireAdmin } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
+import { fetchAll } from '@/lib/fetch-all';
 import { Icon } from '@/components/ui/Icon';
 import { SPORTS, STATUS_LABELS } from '@/lib/workouts';
 import { reviewWorkout, setFeatured } from './actions';
@@ -21,17 +22,16 @@ export default async function WorkoutsPage({ searchParams }: { searchParams: { s
   const db = createAdminClient();
   const since = new Date(Date.now() - 30 * 86400000).toISOString();
 
-  const [{ data: all }, { data: logs }] = await Promise.all([
+  const [{ data: all }, logs] = await Promise.all([
     db
       .from('workouts')
       .select('id, title, title_ar, sport, format, duration_minutes, status, source, featured, community:communities(name), author:partners!workouts_author_partner_id_fkey(business_name, name), updated_at')
       .order('updated_at', { ascending: false }),
-    db.from('workout_logs').select('workout_id, counted').gte('completed_at', since).limit(20000),
+    fetchAll((a, b) => db.from('workout_logs').select('workout_id, counted').not('workout_id', 'is', null).gte('completed_at', since).order('id').range(a, b)),
   ]);
 
   const counts = new Map<string, { done: number; paid: number }>();
-  (logs || []).forEach((l: any) => {
-    if (!l.workout_id) return;
+  logs.forEach((l: any) => {
     const c = counts.get(l.workout_id) ?? { done: 0, paid: 0 };
     c.done += 1;
     if (l.counted) c.paid += 1;

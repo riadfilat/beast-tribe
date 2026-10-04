@@ -4,6 +4,7 @@ import { useQuery } from './query';
 import { PREVIEW } from './preview';
 import { e1rm } from './sets';
 import { sportIdOf } from '../lib/sports';
+import { localDateKey } from '../i18n/format';
 
 // Training metrics for the You page: plain measurements of what the member actually did.
 // Weekly time and sessions, active days, hard sets per muscle group against the evidence-based
@@ -30,7 +31,7 @@ export interface TrainingMetrics {
   sports: { sport: string; count: number }[];
 }
 
-const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const dayKey = localDateKey;
 function weekStart(d: Date) {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);

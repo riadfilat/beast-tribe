@@ -1,11 +1,11 @@
 import Link from 'next/link';
-import { requirePartner } from '@/lib/auth';
+import { requireCap } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import { createPartnerEvent } from '../actions';
 import SubmitButton from '@/components/SubmitButton';
 
 export default async function NewPartnerEventPage() {
-  const partner = await requirePartner();
+  const partner = await requireCap('events');
   const db = createAdminClient();
 
   const { data: sports } = await db.from('sports').select('id, name, emoji').order('name');

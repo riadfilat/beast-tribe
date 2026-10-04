@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
+import { searchTerm } from '@/lib/search';
 import SearchInput from '@/components/ui/SearchInput';
 import { Icon } from '@/components/ui/Icon';
 
@@ -21,10 +22,9 @@ export default async function LocationsPage({
     .order('sort_order', { ascending: true })
     .order('name', { ascending: true });
 
-  if (searchParams.q) {
-    query = query.or(
-      `name.ilike.%${searchParams.q}%,city.ilike.%${searchParams.q}%,description.ilike.%${searchParams.q}%`
-    );
+  const q = searchTerm(searchParams.q);
+  if (q) {
+    query = query.or(`name.ilike.%${q}%,city.ilike.%${q}%,description.ilike.%${q}%`);
   }
   if (searchParams.country) {
     query = query.eq('country', searchParams.country);

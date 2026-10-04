@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { Montserrat, Noto_Kufi_Arabic } from 'next/font/google';
 import { createAdminClient } from '@/lib/supabase-server';
 import { Lockup } from '@/components/brand/Logo';
+import { SPORT_NAMES } from '@/lib/workouts';
 
 // Public landing for a shared session link (https://beast-tribe.vercel.app/s/<id>).
 // The app's Share sheet sends this URL, mostly over WhatsApp, so it must preview well
@@ -21,21 +22,6 @@ type Lang = 'en' | 'ar';
 const TZ: Record<string, string> = {
   SA: 'Asia/Riyadh', AE: 'Asia/Dubai', BH: 'Asia/Bahrain', KW: 'Asia/Kuwait',
   QA: 'Asia/Qatar', OM: 'Asia/Muscat', EG: 'Africa/Cairo', JO: 'Asia/Amman',
-};
-
-const SPORTS: Record<Lang, Record<string, string>> = {
-  en: {
-    running: 'Running', walking: 'Walking', gym: 'Gym', crossfit: 'CrossFit', hyrox: 'Hyrox', cycling: 'Cycling',
-    swimming: 'Swimming', yoga: 'Yoga', pilates: 'Pilates', football: 'Football', basketball: 'Basketball', tennis: 'Tennis',
-    padel: 'Padel', pickleball: 'Pickleball', badminton: 'Badminton', volleyball: 'Volleyball', boxing: 'Boxing', mma: 'MMA',
-    hiking: 'Hiking', climbing: 'Climbing', skateboarding: 'Skate', meditation: 'Meditation', horse_riding: 'Horse riding', squash: 'Squash', table_tennis: 'Table tennis',
-  },
-  ar: {
-    running: 'جري', walking: 'مشي', gym: 'جيم', crossfit: 'كروس فت', hyrox: 'هايروكس', cycling: 'دراجات',
-    swimming: 'سباحة', yoga: 'يوغا', pilates: 'بيلاتس', football: 'كرة قدم', basketball: 'كرة سلة', tennis: 'تنس',
-    padel: 'بادل', pickleball: 'بيكلبول', badminton: 'ريشة طائرة', volleyball: 'كرة طائرة', boxing: 'ملاكمة', mma: 'فنون قتالية',
-    hiking: 'هايكنج', climbing: 'تسلق', skateboarding: 'تزلج', meditation: 'تأمل', horse_riding: 'ركوب الخيل', squash: 'إسكواش', table_tennis: 'تنس الطاولة',
-  },
 };
 
 const COPY = {
@@ -125,7 +111,7 @@ function when(row: Row, lang: Lang) {
   return { day, time };
 }
 
-const sportName = (row: Row, lang: Lang) => SPORTS[lang][(row.event_type || '').toLowerCase()] || COPY[lang].session;
+const sportName = (row: Row, lang: Lang) => SPORT_NAMES[(row.event_type || '').toLowerCase()]?.[lang] || COPY[lang].session;
 const firstName = (row: Row) => (row.host?.display_name || row.host?.full_name || '').trim().split(/\s+/)[0] || '';
 const placeOf = (row: Row) => [row.location_name || row.gym_name, row.location_city].filter(Boolean).join(' · ');
 

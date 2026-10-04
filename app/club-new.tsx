@@ -15,6 +15,7 @@ import { Press } from '../src/components/board/Press';
 import { Chip, Field, IconButton, MarkerButton, OutlineButton, SectionHeading, Segmented } from '../src/components/board/controls';
 import { toast } from '../src/components/board/toast';
 import { haptic } from '../src/lib/haptics';
+import { errorKey } from '../src/data/errors';
 
 // Start a club: any member can run one club for free (a run club, a padel group, a hiking crew).
 export default function ClubNewScreen() {
@@ -43,7 +44,7 @@ export default function ClubNewScreen() {
       haptic('success');
       setDone(r);
     } catch (e: any) {
-      toast.show(t(`club.errors.${e?.code || 'generic'}`), 'error');
+      toast.show(t(errorKey('club', e)), 'error');
     } finally {
       setBusy(false);
     }

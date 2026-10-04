@@ -1,10 +1,11 @@
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../providers/AuthProvider';
 import { useQuery, invalidate } from './query';
-import { PREVIEW, PREVIEW_ME, previewWorkoutRows } from './preview';
+import { PREVIEW, previewWorkoutRows } from './preview';
 import { postToPackChat } from './chat';
 import { sportIdOf, SportId } from '../lib/sports';
 import type { Person } from '../components/board/people';
+import { useMeId } from './me';
+import { PERSON_COLUMNS } from './model';
 
 // Train: the Operation Beast library plus coaches' workouts, written as blocks on the board.
 // Members read what's published to everyone or to their communities (the database decides);
@@ -105,7 +106,7 @@ export const WORKOUT_SELECT = `
 async function withAuthorProfiles(rows: any[]) {
   const ids = Array.from(new Set(rows.map((r) => r.author?.user_id).filter(Boolean)));
   if (!ids.length) return rows;
-  const { data } = await supabase.from('profiles').select('id, display_name, full_name, avatar_url').in('id', ids);
+  const { data } = await supabase.from('profiles').select(`${PERSON_COLUMNS}`).in('id', ids);
   const byId = new Map((data || []).map((p: any) => [p.id, p]));
   return rows.map((r) => (r.author?.user_id ? { ...r, author: { ...r.author, profile: byId.get(r.author.user_id) ?? null } } : r));
 }
@@ -143,11 +144,6 @@ export function toWorkout(r: any, lang: string, counts?: Map<string, { week: num
   };
 }
 
-function useMe() {
-  const { user } = useAuth();
-  return PREVIEW ? PREVIEW_ME : user?.id ?? null;
-}
-
 async function countsFor(ids: string[]) {
   const map = new Map<string, { week: number; total: number }>();
   if (!ids.length) return map;
@@ -174,7 +170,7 @@ const previewSaved = new Set<string>(['w-desk']);
 
 /** Everything the member can train: featured first, then newest. */
 export function useWorkouts(lang: string) {
-  const me = useMe();
+  const me = useMeId();
   return useQuery<Workout[]>(me ? `workouts:list:${lang}:${me}` : null, async () => {
     if (PREVIEW) return previewWorkoutRows().map((r) => toWorkout(r, lang, PREVIEW_COUNTS, previewSaved));
     const { data, error } = await supabase
@@ -194,7 +190,7 @@ export function useWorkouts(lang: string) {
 }
 
 export function useWorkout(id: string | null | undefined, lang: string) {
-  const me = useMe();
+  const me = useMeId();
   return useQuery<Workout | null>(id && me ? `workouts:one:${id}:${lang}` : null, async () => {
     if (PREVIEW) {
       const r = previewWorkoutRows().find((x) => x.id === id);
@@ -309,7 +305,7 @@ const previewLogs: WorkoutLog[] = [];
 
 /** The member's own training log, newest first. */
 export function useMyWorkoutLogs(limit = 10, lang: string = 'en') {
-  const me = useMe();
+  const me = useMeId();
   return useQuery<WorkoutLog[]>(me ? `workouts:logs:${me}:${lang}` : null, async () => {
     if (PREVIEW) return previewLogs.slice(0, limit);
     const { data, error } = await supabase

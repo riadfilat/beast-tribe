@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { requireAdmin } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
-import { defaultCut, loadCaptains, loadStatement, monthRange, sar, todayRiyadh } from '@/lib/captains';
+import { defaultCut, loadCaptains, loadStatement } from '@/lib/captains';
+import { monthRange, sar, todayRiyadh } from '@/lib/format';
 import SubmitButton from '@/components/SubmitButton';
 import { ConfirmButton } from '@/components/ConfirmSubmit';
 import PrintButton from '@/components/club/PrintButton';

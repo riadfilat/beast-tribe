@@ -1,12 +1,40 @@
 // Workouts as the admin and the partner portal write them: the same shape the app reads
 // (workouts.blocks), checked here before anything reaches the database.
 
+/** Every sport the app knows (the ids in the app's src/lib/sports.ts), with English and Arabic names. */
+export const SPORT_NAMES: Record<string, { en: string; ar: string }> = {
+  running: { en: 'Running', ar: 'جري' },
+  walking: { en: 'Walking', ar: 'مشي' },
+  gym: { en: 'Gym', ar: 'جيم' },
+  crossfit: { en: 'CrossFit', ar: 'كروس فت' },
+  hyrox: { en: 'Hyrox', ar: 'هايروكس' },
+  cycling: { en: 'Cycling', ar: 'دراجات' },
+  swimming: { en: 'Swimming', ar: 'سباحة' },
+  yoga: { en: 'Yoga', ar: 'يوغا' },
+  pilates: { en: 'Pilates', ar: 'بيلاتس' },
+  football: { en: 'Football', ar: 'كرة قدم' },
+  basketball: { en: 'Basketball', ar: 'كرة سلة' },
+  tennis: { en: 'Tennis', ar: 'تنس' },
+  padel: { en: 'Padel', ar: 'بادل' },
+  pickleball: { en: 'Pickleball', ar: 'بيكلبول' },
+  badminton: { en: 'Badminton', ar: 'ريشة طائرة' },
+  volleyball: { en: 'Volleyball', ar: 'كرة طائرة' },
+  boxing: { en: 'Boxing', ar: 'ملاكمة' },
+  mma: { en: 'MMA', ar: 'فنون قتالية' },
+  hiking: { en: 'Hiking', ar: 'هايكنج' },
+  climbing: { en: 'Climbing', ar: 'تسلق' },
+  skateboarding: { en: 'Skate', ar: 'تزلج' },
+  meditation: { en: 'Meditation', ar: 'تأمل' },
+  horse_riding: { en: 'Horse riding', ar: 'ركوب الخيل' },
+  squash: { en: 'Squash', ar: 'إسكواش' },
+  table_tennis: { en: 'Table tennis', ar: 'تنس الطاولة' },
+};
+
+/** The sports a workout can be written for (the editor's picker, in its order). */
 export const SPORTS: [string, string][] = [
-  ['hyrox', 'Hyrox'], ['crossfit', 'CrossFit'], ['gym', 'Gym'], ['running', 'Running'], ['walking', 'Walking'],
-  ['cycling', 'Cycling'], ['swimming', 'Swimming'], ['yoga', 'Yoga'], ['pilates', 'Pilates'], ['padel', 'Padel'],
-  ['tennis', 'Tennis'], ['football', 'Football'], ['basketball', 'Basketball'], ['boxing', 'Boxing'], ['mma', 'MMA'],
-  ['hiking', 'Hiking'], ['climbing', 'Climbing'], ['meditation', 'Meditation'], ['horse_riding', 'Horse riding'], ['squash', 'Squash'], ['table_tennis', 'Table tennis'],
-];
+  'hyrox', 'crossfit', 'gym', 'running', 'walking', 'cycling', 'swimming', 'yoga', 'pilates', 'padel',
+  'tennis', 'football', 'basketball', 'boxing', 'mma', 'hiking', 'climbing', 'meditation', 'horse_riding', 'squash', 'table_tennis',
+].map((id) => [id, SPORT_NAMES[id].en]);
 
 export const FORMATS: [string, string][] = [
   ['amrap', 'AMRAP — as many rounds as possible in N min'],
@@ -79,7 +107,7 @@ const numIn = (v: unknown, min: number, max: number) => {
 };
 const has = (list: [string, string][], v: string) => list.some(([k]) => k === v);
 
-export class WorkoutFormError extends Error {}
+class WorkoutFormError extends Error {}
 
 /** Read and check the editor's form. Throws a WorkoutFormError with a readable message. */
 export function readWorkoutForm(fd: FormData) {
@@ -145,22 +173,6 @@ export function readWorkoutForm(fd: FormData) {
     community_id: /^[0-9a-f-]{36}$/.test(community) ? community : null,
     blocks: JSON.parse(JSON.stringify(blocks)), // drop undefined keys
   };
-}
-
-/** The month a payout covers, as [start, end) in Riyadh time (UTC+3). */
-export function monthRange(month?: string | null) {
-  const now = new Date(Date.now() + 3 * 3600000);
-  const m = /^(\d{4})-(\d{2})$/.exec(month || '');
-  const y = m ? Number(m[1]) : now.getUTCFullYear();
-  const mo = m ? Number(m[2]) - 1 : now.getUTCMonth();
-  const start = new Date(Date.UTC(y, mo, 1) - 3 * 3600000);
-  const end = new Date(Date.UTC(y, mo + 1, 1) - 3 * 3600000);
-  const key = `${y}-${String(mo + 1).padStart(2, '0')}`;
-  const label = new Date(Date.UTC(y, mo, 15)).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
-  const prev = new Date(Date.UTC(y, mo - 1, 15));
-  const next = new Date(Date.UTC(y, mo + 1, 15));
-  const k = (d: Date) => `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
-  return { start, end, key, label, prev: k(prev), next: k(next) };
 }
 
 export interface CoachPay {

@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { ownsCommunity, requirePartner } from '@/lib/auth';
+import { requireCap } from '@/lib/auth';
 import { loadTeams } from '@/lib/wellness';
 import SubmitButton from '@/components/SubmitButton';
 import { ConfirmButton } from '@/components/ConfirmSubmit';
@@ -9,8 +9,7 @@ import { addTeam, removeTeam } from '../club/actions';
 export const revalidate = 0;
 
 export default async function TeamsPage() {
-  const partner = await requirePartner();
-  if (!ownsCommunity(partner.partner_type)) redirect('/partner/dashboard');
+  const partner = await requireCap('teams');
   if (!partner.community_id) redirect('/partner/club');
   const teams = await loadTeams(partner.community_id);
   const total = teams.reduce((s, t) => s + t.members, 0);

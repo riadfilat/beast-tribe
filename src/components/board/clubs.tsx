@@ -12,6 +12,7 @@ import { Field, MarkerButton, OutlineButton, Segmented } from './controls';
 import { Sheet } from './sheet';
 import { toast } from './toast';
 import { haptic } from '../../lib/haptics';
+import { errorKey } from '../../data/errors';
 
 /** "Club leader: Sara · Verified" on a member-run club. */
 export function ClubByline({ c, meId }: { c: Community; meId: string | null }) {
@@ -80,7 +81,7 @@ function ClubEditSheet({ c, visible, onClose }: { c: Community; visible: boolean
       toast.show(t('club.saved'), 'yours');
       onClose();
     } catch (e: any) {
-      toast.show(t(`club.errors.${e?.code || 'generic'}`), 'error');
+      toast.show(t(errorKey('club', e)), 'error');
     } finally {
       setBusy(false);
     }

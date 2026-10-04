@@ -3,6 +3,7 @@ import { useAuth } from '../providers/AuthProvider';
 import { useQuery, invalidate } from './query';
 import { PREVIEW, PREVIEW_ME } from './preview';
 import { cityKeys } from '../lib/cities';
+import { CodedError, codeFrom } from './errors';
 
 // Training partners (migration 059). Members opt in; only open members can look, and only open
 // members are suggested. The database scores sport, level (with private teammate ratings), usual
@@ -37,18 +38,10 @@ export interface Partner {
   together: number;
 }
 
-export type PartnerErrorCode = 'NOT_OPEN' | 'NOT_AVAILABLE' | 'EVENT_OVER' | 'NOT_THERE' | 'ALREADY' | 'ALREADY_INVITED' | 'WOMEN_ONLY' | 'CANT_SEE' | 'TOO_MANY' | 'generic';
-export class PartnerError extends Error {
-  code: PartnerErrorCode;
-  constructor(code: PartnerErrorCode) {
-    super(code);
-    this.code = code;
-  }
-}
-const toError = (e: any) => {
-  const hit = String(e?.message || '').match(/NOT_OPEN|NOT_AVAILABLE|EVENT_OVER|NOT_THERE|ALREADY_INVITED|ALREADY|WOMEN_ONLY|CANT_SEE|TOO_MANY/);
-  return new PartnerError((hit?.[0] as PartnerErrorCode) || 'generic');
-};
+const PARTNER_CODES = ['NOT_OPEN', 'NOT_AVAILABLE', 'EVENT_OVER', 'NOT_THERE', 'ALREADY_INVITED', 'ALREADY', 'WOMEN_ONLY', 'CANT_SEE', 'TOO_MANY'] as const;
+export type PartnerErrorCode = (typeof PARTNER_CODES)[number] | 'generic';
+export class PartnerError extends CodedError<PartnerErrorCode> {}
+const toError = (e: any) => new PartnerError(codeFrom(e, PARTNER_CODES));
 
 /** "5:30" for 330 seconds per km. */
 export const fmtPace = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;

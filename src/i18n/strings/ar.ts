@@ -507,9 +507,9 @@ export const ar: Strings = {
   },
   you: {
     title: 'حسابي',
-    attended: 'جلسات',
-    hosted: 'نظّمتها',
-    met: 'أشخاص قابلتهم',
+    attended: p({ zero: '{n} جلسة', one: '{n} جلسة', two: '{n} جلستان', few: '{n} جلسات', many: '{n} جلسة', other: '{n} جلسة' }),
+    hosted: p({ other: 'نظّمت {n}' }),
+    met: p({ zero: 'قابلت {n} شخصًا', one: 'قابلت {n} شخصًا', two: 'قابلت {n} شخصين', few: 'قابلت {n} أشخاص', many: 'قابلت {n} شخصًا', other: 'قابلت {n} شخصًا' }),
     mySessions: 'جلساتي',
     mySports: 'رياضاتي',
     editSports: 'تعديل',

@@ -7,6 +7,7 @@ import { groupOf, MUSCLE_GROUPS, MuscleGroup, useExercises } from '../../data/ex
 import { Txt, alignEnd } from './Txt';
 import { Icon } from './Icon';
 import { SectionHeading } from './controls';
+import { localDateKey } from '../../i18n/format';
 
 // Evidence-based weekly volume for growth: roughly 10–20 hard sets per muscle group.
 const SETS_LOW = 10;
@@ -56,7 +57,7 @@ export function TrainingMetricsSection() {
     Array.from({ length: 7 }, (_, d) => {
       const day = new Date(w.start);
       day.setDate(w.start.getDate() + d);
-      const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+      const key = localDateKey(day);
       return { on: m.activeDays.has(key), future: day > today };
     }),
   );

@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { useQuery } from './query';
+import { useQuery, CATALOGUE } from './query';
 import { PREVIEW, previewFood } from './preview';
 
 // Healthy-food partners (partners.partner_type = 'nutrition'), added in the admin with a member
@@ -39,5 +39,5 @@ export function useFoodPartners(lang: string) {
         };
       })
       .filter((p) => p.name && p.offer);
-  });
+  }, CATALOGUE);
 }

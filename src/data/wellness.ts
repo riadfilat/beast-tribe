@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../providers/AuthProvider';
 import { useQuery, invalidate } from './query';
 import { PREVIEW } from './preview';
+import { localDateKey } from '../i18n/format';
 
 // Wellness inside a community: challenges members opt into (steps, active days, workouts, minutes,
 // sessions; by person or by team), teams, the experts and venues included in the community's
@@ -217,7 +218,7 @@ export function useMySteps() {
   const { user } = useAuth();
   return useQuery<{ today: number; week: number; days: { day: string; steps: number }[] }>(!PREVIEW && user ? `wellness:steps:${user.id}` : null, async () => {
     const since = new Date(Date.now() - 6 * 86400000);
-    const key = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const key = localDateKey;
     const { data, error } = await supabase.from('daily_activity').select('day, steps').eq('user_id', user!.id).gte('day', key(since)).order('day');
     if (error) throw error;
     const days = (data || []).map((r: any) => ({ day: r.day, steps: r.steps }));

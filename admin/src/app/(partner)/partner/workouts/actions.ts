@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { requirePartner } from '@/lib/auth';
+import { requireCap } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import { readWorkoutForm } from '@/lib/workouts';
 
@@ -15,7 +15,7 @@ async function allowedCommunity(partnerId: string, wanted: string | null) {
 }
 
 export async function submitWorkout(fd: FormData) {
-  const partner = await requirePartner();
+  const partner = await requireCap('workouts');
   const db = createAdminClient();
   const values = readWorkoutForm(fd);
   values.community_id = await allowedCommunity(partner.partner_id, values.community_id);
@@ -34,7 +34,7 @@ export async function submitWorkout(fd: FormData) {
 
 /** Any change goes back to review before members see it again. */
 export async function resubmitWorkout(id: string, fd: FormData) {
-  const partner = await requirePartner();
+  const partner = await requireCap('workouts');
   const db = createAdminClient();
   const { data: w } = await db.from('workouts').select('author_partner_id').eq('id', id).maybeSingle();
   if (!w || w.author_partner_id !== partner.partner_id) throw new Error('Not your workout.');
@@ -47,7 +47,7 @@ export async function resubmitWorkout(id: string, fd: FormData) {
 }
 
 export async function withdrawWorkout(id: string) {
-  const partner = await requirePartner();
+  const partner = await requireCap('workouts');
   const db = createAdminClient();
   const { error } = await db.from('workouts').update({ status: 'archived' }).eq('id', id).eq('author_partner_id', partner.partner_id);
   if (error) throw new Error(error.message);

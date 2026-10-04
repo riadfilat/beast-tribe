@@ -26,12 +26,14 @@ export default async function ClassPage({ params }: { params: { id: string } }) 
   const ev: any = e;
   const mine = ev.partner_id === partner.partner_id;
 
-  const { data: rs } = await db.from('event_rsvps').select('user_id, status, created_at, attended_at').eq('event_id', ev.id).in('status', ['going', 'waitlist']).order('created_at');
+  const [{ data: rs }, { data: dues }] = await Promise.all([
+    db.from('event_rsvps').select('user_id, status, created_at, attended_at').eq('event_id', ev.id).in('status', ['going', 'waitlist']).order('created_at'),
+    // What guests owe for this class (members book free).
+    db.from('session_dues').select('user_id, amount_sar, paid_at').eq('event_id', ev.id).eq('kind', 'guest'),
+  ]);
   const ids = (rs || []).map((r: any) => r.user_id);
   const { data: profiles } = ids.length ? await db.from('profiles').select('id, full_name, display_name, avatar_url').in('id', ids) : { data: [] as any[] };
   const pById = new Map((profiles || []).map((p: any) => [p.id, p]));
-  // What guests owe for this class (members book free).
-  const { data: dues } = await db.from('session_dues').select('user_id, amount_sar, paid_at').eq('event_id', ev.id).eq('kind', 'guest');
   const dueOf = new Map(((dues || []) as any[]).map((d) => [d.user_id, d]));
   const guestDue = ((dues || []) as any[]).reduce((t, d) => t + Number(d.amount_sar), 0);
   const guestPaid = ((dues || []) as any[]).filter((d) => d.paid_at).reduce((t, d) => t + Number(d.amount_sar), 0);

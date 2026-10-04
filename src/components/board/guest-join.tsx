@@ -3,10 +3,11 @@ import { Image, View } from 'react-native';
 import { useKit } from '../../theme';
 import { useI18n } from '../../i18n';
 import { fmtClock, fmtDay } from '../../i18n/format';
-import { GuestPreview, guestPreview, joinAsGuest, SessionError } from '../../data/sessions';
+import { GuestPreview, guestPreview, joinAsGuest } from '../../data/sessions';
 import { Txt } from './Txt';
 import { Icon } from './Icon';
 import { MarkerButton } from './controls';
+import { errorKey } from '../../data/errors';
 
 // Someone outside the community opened a session's guest link: the basics, and one button to join.
 export function GuestJoin({ eventId, token, onJoined }: { eventId: string; token: string; onJoined: () => void }) {
@@ -36,7 +37,7 @@ export function GuestJoin({ eventId, token, onJoined }: { eventId: string; token
       await joinAsGuest(eventId, token);
       onJoined();
     } catch (e: any) {
-      setError(t(`session.errors.${e instanceof SessionError ? e.code : 'generic'}`));
+      setError(t(errorKey('session', e)));
     } finally {
       setBusy(false);
     }

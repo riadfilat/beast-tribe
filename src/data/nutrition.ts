@@ -1,8 +1,8 @@
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../providers/AuthProvider';
 import { useQuery, invalidate } from './query';
 import { addDays, localDateKey, startOfLocalDay } from '../i18n/format';
-import { PREVIEW, PREVIEW_ME, previewMeals, previewWater } from './preview';
+import { PREVIEW, previewMeals, previewWater } from './preview';
+import { useMeId } from './me';
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 export const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
@@ -38,11 +38,6 @@ export interface NutritionWeek {
   glasses: Record<string, number>;
 }
 
-function useMe() {
-  const { user } = useAuth();
-  return PREVIEW ? PREVIEW_ME : user?.id ?? null;
-}
-
 /** A sensible default for the meal being logged right now. */
 export function mealTypeForNow(d = new Date()): MealType {
   const h = d.getHours();
@@ -72,7 +67,7 @@ function toMeal(r: any): Meal {
 // which filed anything logged between midnight and 3 AM in Riyadh under the day before,
 // so every write sends logged_date explicitly.
 export function useNutritionWeek() {
-  const me = useMe();
+  const me = useMeId();
   const today = localDateKey(new Date());
   return useQuery<NutritionWeek>(me ? `nutrition:week:${me}:${today}` : null, async () => {
     const end = startOfLocalDay(new Date());
@@ -102,7 +97,7 @@ export function useNutritionWeek() {
 let previewGoals: NutritionGoals | null = null;
 
 export function useNutritionGoals() {
-  const me = useMe();
+  const me = useMeId();
   const q = useQuery<NutritionGoals>(me ? `nutrition:goals:${me}` : null, async () => {
     if (PREVIEW) return previewGoals ?? DEFAULT_GOALS;
     const { data, error } = await supabase.rpc('my_profile').maybeSingle();

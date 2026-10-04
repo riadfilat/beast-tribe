@@ -3,13 +3,13 @@ import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import { TARGETS, TARGET_DATE, YEAR_END_2027 } from '@/lib/targets';
-import { loadCaptains, loadStatement, monthRange } from '@/lib/captains';
+import { loadCaptains, loadStatement } from '@/lib/captains';
+import { monthRange, sar } from '@/lib/format';
 import SubmitButton from '@/components/SubmitButton';
 
 export const revalidate = 0;
 
 const card = 'bg-white rounded-xl border border-gray-100 shadow-sm';
-const sar = (n: number) => `SAR ${Math.round(n).toLocaleString('en-US')}`;
 
 async function saveAppLinks(formData: FormData) {
   'use server';

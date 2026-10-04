@@ -1,5 +1,5 @@
 // Same city table as the app (src/lib/cities.ts), for matching on the server.
-export const CITIES: Record<string, [string, string][]> = {
+const CITIES: Record<string, [string, string][]> = {
   SA: [['Riyadh', 'الرياض'], ['Jeddah', 'جدة'], ['Dammam', 'الدمام'], ['Khobar', 'الخبر'], ['Mecca', 'مكة'], ['Medina', 'المدينة']],
   AE: [['Dubai', 'دبي'], ['Abu Dhabi', 'أبوظبي'], ['Sharjah', 'الشارقة'], ['Al Ain', 'العين']],
   BH: [['Manama', 'المنامة'], ['Riffa', 'الرفاع'], ['Muharraq', 'المحرق']],
@@ -10,7 +10,7 @@ export const CITIES: Record<string, [string, string][]> = {
   JO: [['Amman', 'عمّان'], ['Aqaba', 'العقبة'], ['Irbid', 'إربد']],
 };
 
-export const cityKey = (city?: string | null) => (city || '').trim().replace(/\s+/g, ' ').toLowerCase();
+const cityKey = (city?: string | null) => (city || '').trim().replace(/\s+/g, ' ').toLowerCase();
 
 export function cityKeys(city?: string | null): string[] {
   const k = cityKey(city);

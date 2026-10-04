@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { ownsCommunity, requirePartner } from '@/lib/auth';
+import { requireCap } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import { loadClub, fmtDay } from '@/lib/club';
 import { fetchAll } from '@/lib/fetch-all';
@@ -13,8 +13,7 @@ export const revalidate = 0;
 // A one-page summary of the last 30 days, for the owner or HR to print or save as a PDF.
 // Community activity only: nothing a member does on their own is in it.
 export default async function ReportPage() {
-  const partner = await requirePartner();
-  if (!ownsCommunity(partner.partner_type)) redirect('/partner/dashboard');
+  const partner = await requireCap('report');
   if (!partner.community_id) redirect('/partner/club');
   const club = await loadClub(partner, partner.community_id);
   if (!club) redirect('/partner/club');

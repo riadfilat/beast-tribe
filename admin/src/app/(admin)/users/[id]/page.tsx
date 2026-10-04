@@ -11,33 +11,26 @@ export default async function UserDetailPage({ params }: { params: { id: string 
   await requireAdmin();
   const db = createAdminClient();
 
-  const { data: user } = await db.from('profiles')
-    .select('*, community:communities(id, name)')
-    .eq('id', params.id)
-    .single();
-
-  if (!user) notFound();
-
-  const { data: communities } = await db
-    .from('communities')
-    .select('id, name')
-    .eq('is_active', true)
-    .order('name', { ascending: true });
-
   // Check ban status via admin auth API
-  let isBanned = false;
-  try {
-    const { data: authUserRes } = await db.auth.admin.getUserById(params.id);
-    const bannedUntil = (authUserRes?.user as any)?.banned_until;
-    if (bannedUntil) {
-      isBanned = new Date(bannedUntil).getTime() > Date.now();
-    }
-  } catch {
-    // ignore
-  }
+  const bannedCheck = db.auth.admin
+    .getUserById(params.id)
+    .then(({ data }) => {
+      const bannedUntil = (data?.user as any)?.banned_until;
+      return bannedUntil ? new Date(bannedUntil).getTime() > Date.now() : false;
+    })
+    .catch(() => false);
 
   // Parallel data fetching
-  const [workoutLogs, eventRsvps, packMembership] = await Promise.all([
+  const [{ data: user }, { data: communities }, isBanned, workoutLogs, eventRsvps, packMemberships] = await Promise.all([
+    db.from('profiles')
+      .select('*, community:communities(id, name)')
+      .eq('id', params.id)
+      .single(),
+    db.from('communities')
+      .select('id, name')
+      .eq('is_active', true)
+      .order('name', { ascending: true }),
+    bannedCheck,
     db.from('workout_logs')
       .select('*, sport:sports(name, emoji)')
       .eq('user_id', params.id)
@@ -48,11 +41,14 @@ export default async function UserDetailPage({ params }: { params: { id: string 
       .eq('user_id', params.id)
       .order('created_at', { ascending: false })
       .limit(10),
+    // A member can be in several groups.
     db.from('pack_members')
       .select('*, pack:packs(id, name, animal, emblem_kind, emblem_value, emblem_color)')
-      .eq('user_id', params.id)
-      .maybeSingle(),
+      .eq('user_id', params.id),
   ]);
+
+  if (!user) notFound();
+  const groups = (packMemberships.data || []).filter((m: any) => m.pack);
 
   return (
     <div>
@@ -76,9 +72,6 @@ export default async function UserDetailPage({ params }: { params: { id: string 
             <h1 className="text-xl font-bold text-gray-900">{user.full_name}</h1>
             <p className="text-sm text-gray-500">@{user.display_name || user.full_name}</p>
           </div>
-          <div className="flex gap-2">
-            {user.is_premium && <span className="text-xs font-medium px-3 py-1 rounded-full bg-orange-100 text-orange-700">Premium</span>}
-          </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-5">
@@ -86,14 +79,14 @@ export default async function UserDetailPage({ params }: { params: { id: string 
           <Stat label="Joined" value={new Date(user.created_at).toLocaleDateString()} />
         </div>
 
-        {packMembership.data?.pack && (
-          <div className="mt-4 px-4 py-2 bg-brand-teal/5 rounded-lg flex items-center gap-2">
+        {groups.map((m: any) => (
+          <div key={m.pack.id} className="mt-4 px-4 py-2 bg-brand-teal/5 rounded-lg flex items-center gap-2">
             <span className="text-xs text-gray-500">Group:</span>
-            <PackPatch pack={packMembership.data.pack} size={22} />
-            <span className="text-sm font-medium text-brand-teal">{packMembership.data.pack.name}</span>
-            <span className="text-xs text-gray-400 ml-2">({packMembership.data.role})</span>
+            <PackPatch pack={m.pack} size={22} />
+            <span className="text-sm font-medium text-brand-teal">{m.pack.name}</span>
+            <span className="text-xs text-gray-400 ml-2">({m.role})</span>
           </div>
-        )}
+        ))}
 
         <div className="mt-3 px-4 py-2 bg-brand-orange/5 rounded-lg flex items-center gap-1.5 flex-wrap">
           <Icon name="communities" size="sm" className="text-brand-orange" />

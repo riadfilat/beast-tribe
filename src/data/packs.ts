@@ -1,28 +1,21 @@
 import { supabase } from '../lib/supabase';
 import { uploadImage } from '../lib/upload';
-import { useAuth } from '../providers/AuthProvider';
 import { useQuery, invalidate } from './query';
-import { personOf, Session, SESSION_SELECT, toSession } from './model';
-import { PREVIEW, PREVIEW_ME, previewPacks, previewSessionRows, previewPackMembers, PREVIEW_PACK_CODE } from './preview';
+import { personOf, Session, SESSION_SELECT, toSession, PERSON_COLUMNS } from './model';
+import { PREVIEW, previewPacks, previewSessionRows, previewPackMembers, PREVIEW_PACK_CODE } from './preview';
 import { Emblem, emblemColumns, emblemOf } from '../lib/emblem';
 import type { Person } from '../components/board/people';
+import { CodedError, codeFrom } from './errors';
+import { useMeId } from './me';
 
 export const MAX_PACKS = 20;
-export type PackErrorCode = 'INVALID' | 'FULL' | 'LIMIT' | 'ALREADY' | 'TOO_MANY' | 'PACK_WOMEN_ONLY' | 'PACK_MEN_ONLY' | 'PACK_GENDER_NEEDED' | 'PACK_CREATE_WOMEN' | 'PACK_CREATE_MEN' | 'COMMUNITY_ONLY' | 'generic';
+const PACK_CODES = ['PACK_CREATE_WOMEN', 'PACK_CREATE_MEN', 'PACK_WOMEN_ONLY', 'PACK_MEN_ONLY', 'PACK_GENDER_NEEDED', 'COMMUNITY_ONLY', 'TOO_MANY', 'INVALID', 'FULL', 'LIMIT', 'ALREADY'] as const;
+export type PackErrorCode = (typeof PACK_CODES)[number] | 'generic';
 export type PackAudience = 'everyone' | 'women' | 'men';
 
 /** The database's reason for refusing a join, when it's one we can explain. */
-export const packErrorOf = (e: any): PackError => {
-  const hit = String(e?.message || '').match(/PACK_CREATE_WOMEN|PACK_CREATE_MEN|PACK_WOMEN_ONLY|PACK_MEN_ONLY|PACK_GENDER_NEEDED|COMMUNITY_ONLY|TOO_MANY|INVALID|FULL|LIMIT|ALREADY/);
-  return new PackError((hit?.[0] as PackErrorCode) || 'generic');
-};
-export class PackError extends Error {
-  code: PackErrorCode;
-  constructor(code: PackErrorCode) {
-    super(code);
-    this.code = code;
-  }
-}
+const packErrorOf = (e: any): PackError => new PackError(codeFrom(e, PACK_CODES));
+export class PackError extends CodedError<PackErrorCode> {}
 
 export interface PackMember extends Person {
   role: 'leader' | 'member';
@@ -47,15 +40,10 @@ export interface PackDetail {
 
 export const PACK_EMBLEM_COLUMNS = 'animal, emblem_kind, emblem_value, emblem_color';
 
-function useMe() {
-  const { user } = useAuth();
-  return PREVIEW ? PREVIEW_ME : user?.id ?? null;
-}
-
 const previewMembers = (packId: string): PackMember[] => previewPackMembers(packId);
 
 export function usePack(packId?: string | null) {
-  const me = useMe();
+  const me = useMeId();
   return useQuery<PackDetail | null>(packId && me ? `packs:one:${packId}` : null, async () => {
     if (PREVIEW) {
       const pk = previewPacks.find((x) => x.id === packId) ?? previewPacks[0];
@@ -63,7 +51,7 @@ export function usePack(packId?: string | null) {
     }
     const [{ data: pack, error }, { data: rows }, { data: code }] = await Promise.all([
       supabase.from('packs').select(`id, name, created_by, audience, photo_url, community:communities(name), ${PACK_EMBLEM_COLUMNS}`).eq('id', packId!).maybeSingle(),
-      supabase.from('pack_members').select('role, joined_at, profile:profiles(id, display_name, full_name, avatar_url)').eq('pack_id', packId!).order('joined_at', { ascending: true }),
+      supabase.from('pack_members').select(`role, joined_at, profile:profiles(${PERSON_COLUMNS})`).eq('pack_id', packId!).order('joined_at', { ascending: true }),
       supabase.rpc('pack_invite_code', { p_pack: packId! }),
     ]);
     if (error) throw error;
@@ -92,8 +80,8 @@ export function usePack(packId?: string | null) {
 
 /** Where the pack is going: upcoming sessions pack-mates joined, plus pack-only ones. */
 export function usePackSessions(packId?: string | null, memberIds: string[] = []) {
-  const me = useMe();
-  const key = packId && me ? `sessions:pack:${packId}:${memberIds.length}` : null;
+  const me = useMeId();
+  const key = packId && me ? `sessions:pack:${packId}:${[...memberIds].sort().join(',')}` : null;
   return useQuery<Session[]>(key, async () => {
     if (PREVIEW) {
       return previewSessionRows()
@@ -103,7 +91,14 @@ export function usePackSessions(packId?: string | null, memberIds: string[] = []
     const nowIso = new Date(Date.now() - 2 * 3600 * 1000).toISOString();
     let ids: string[] = [];
     if (memberIds.length) {
-      const { data } = await supabase.from('event_rsvps').select('event_id').in('user_id', memberIds).eq('status', 'going');
+      // Only upcoming sessions, so the id list stays short however long the group has existed.
+      const { data } = await supabase
+        .from('event_rsvps')
+        .select('event_id, event:events!inner(starts_at)')
+        .in('user_id', memberIds)
+        .eq('status', 'going')
+        .gte('event.starts_at', nowIso)
+        .limit(200);
       ids = Array.from(new Set((data || []).map((r: any) => r.event_id)));
     }
     let q = supabase.from('events').select(SESSION_SELECT).gte('starts_at', nowIso).is('cancelled_at', null).eq('roster.status', 'going');
@@ -177,7 +172,7 @@ export interface PackInvite {
   from: string;
 }
 export function usePackInvites() {
-  const me = useMe();
+  const me = useMeId();
   return useQuery<PackInvite[]>(me ? `packs:invites:${me}` : null, async () => {
     if (PREVIEW) return [];
     const { data, error } = await supabase
@@ -220,7 +215,7 @@ export async function searchMembers(query: string, excludeId?: string | null): P
     return [{ id: 'p-reem', name: 'Reem A' }, { id: 'p-turki', name: 'Turki B' }].filter((x) => x.name.toLowerCase().includes(q.toLowerCase()));
   }
   const safe = q.replace(/[%_\\]/g, '\\$&');
-  const { data } = await supabase.from('profiles').select('id, display_name, full_name, avatar_url').or(`display_name.ilike.%${safe}%,full_name.ilike.%${safe}%`).limit(12);
+  const { data } = await supabase.from('profiles').select(`${PERSON_COLUMNS}`).or(`display_name.ilike.%${safe}%,full_name.ilike.%${safe}%`).limit(12);
   return (data || []).map(personOf).filter((x: Person | null): x is Person => !!x && x.id !== excludeId);
 }
 

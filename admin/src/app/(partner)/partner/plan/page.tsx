@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { requirePartner } from '@/lib/auth';
-import { PLANS, PLAN_STATUS_LABEL, PROMISES, SALES_EMAIL, planOf, sar } from '@/lib/plans';
+import { PLANS, PLAN_STATUS_LABEL, PROMISES, SALES_EMAIL, planOf } from '@/lib/plans';
+import { sar } from '@/lib/format';
 import { Icon } from '@/components/ui/Icon';
 import { card } from '@/components/club/ui';
 

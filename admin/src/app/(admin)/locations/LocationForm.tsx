@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useRef } from 'react';
 import SubmitButton from '@/components/SubmitButton';
 import { Icon } from '@/components/ui/Icon';
+import { SPORT_NAMES } from '@/lib/workouts';
 
 interface Location {
   name_ar?: string | null;
@@ -30,11 +31,6 @@ interface LocationFormProps {
   location?: Location;
   communities?: CommunityOption[];
 }
-
-const COMMON_SPORTS = [
-  'running', 'gym', 'crossfit', 'yoga', 'cycling', 'swimming', 'football',
-  'walking', 'padel', 'tennis', 'hiit', 'boxing', 'volleyball', 'basketball', 'hyrox',
-];
 
 export default function LocationForm({ action, location, communities = [] }: LocationFormProps) {
   const isEdit = !!location?.id;
@@ -287,7 +283,7 @@ export default function LocationForm({ action, location, communities = [] }: Loc
           className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-aqua focus:border-brand-aqua outline-none"
         />
         <p className="text-[11px] text-gray-400 mt-1">
-          Comma-separated. Common: {COMMON_SPORTS.join(', ')}
+          Comma-separated. Sports: {Object.keys(SPORT_NAMES).join(', ')}
         </p>
       </div>
 

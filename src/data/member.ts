@@ -1,15 +1,10 @@
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../providers/AuthProvider';
-import { useQuery, invalidate } from './query';
+import { useQuery, invalidate, CATALOGUE } from './query';
 import { sportDef, sportIdOf, SportId } from '../lib/sports';
 import { uploadImage } from '../lib/upload';
 import { Emblem, emblemOf } from '../lib/emblem';
-import { PREVIEW, PREVIEW_ME, previewCoaches, previewLocations, previewMySports, previewPacks, previewStats } from './preview';
-
-function useMeId() {
-  const { user } = useAuth();
-  return PREVIEW ? PREVIEW_ME : user?.id ?? null;
-}
+import { PREVIEW, previewCoaches, previewLocations, previewMySports, previewPacks, previewStats } from './preview';
+import { useMeId } from './me';
 
 // ─── Facts about showing up (not points) ────────────────────────────────────
 export interface MemberStats {
@@ -120,7 +115,7 @@ export function usePopularSpots(country: string, lang: string = 'en') {
         lat: r.latitude != null ? Number(r.latitude) : null,
         lng: r.longitude != null ? Number(r.longitude) : null,
       }));
-  });
+  }, CATALOGUE);
 }
 
 // ─── Coaches (partners) ─────────────────────────────────────────────────────
@@ -135,7 +130,7 @@ export function useCoaches() {
       sports: (c.sports || []).map((s: string) => sportIdOf(s)),
       userId: c.user_id ?? null,
     }));
-  });
+  }, CATALOGUE);
 }
 
 // ─── Profile photo (persisted — it used to live only in screen state) ───────

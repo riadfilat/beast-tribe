@@ -102,8 +102,6 @@ PLANS.push({
 
 export const planOf = (id: string | null | undefined) => PLANS.find((p) => p.id === id) || null;
 
-export const sar = (n: number) => `${n.toLocaleString('en-US')} SAR`;
-
 export const PLAN_STATUS_LABEL: Record<string, string> = {
   trial: 'Free trial',
   active: 'Active',

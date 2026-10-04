@@ -1,12 +1,12 @@
 import Link from 'next/link';
-import { requirePartner } from '@/lib/auth';
+import { requireCap } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import { Icon } from '@/components/ui/Icon';
 import WorkoutEditor from '@/components/workouts/WorkoutEditor';
 import { submitWorkout } from '../actions';
 
 export default async function NewCoachWorkoutPage() {
-  const partner = await requirePartner();
+  const partner = await requireCap('workouts');
   const db = createAdminClient();
   const { data: me } = await db.from('partners').select('community:communities(id, name)').eq('id', partner.partner_id).maybeSingle();
   const community = (me as any)?.community;

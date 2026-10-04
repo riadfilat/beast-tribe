@@ -31,7 +31,7 @@ export default function CommunityScreen() {
   const { user } = useAuth();
   const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
   const q = useCommunity(id);
-  const sessions = useBoardSessions(14);
+  const sessions = useBoardSessions();
   const now = useNow();
   const c = q.data;
   const upcoming = (sessions.data ?? []).filter((x) => x.communityId === id && (x.state === 'upcoming' || x.state === 'live'));

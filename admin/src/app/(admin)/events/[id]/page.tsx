@@ -133,6 +133,7 @@ export default async function EditEventPage({ params }: { params: { id: string }
         </div>
 
         <div className="flex items-center gap-2">
+          <input type="hidden" name="is_women_only" value="off" />
           <input type="checkbox" name="is_women_only" id="is_women_only" defaultChecked={event.is_women_only} />
           <label htmlFor="is_women_only" className="text-sm text-gray-600">Women only</label>
         </div>

@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../providers/AuthProvider';
 import { useQuery, invalidate } from './query';
-import { personOf } from './model';
+import { personOf, PERSON_COLUMNS } from './model';
 import { uploadImage } from '../lib/upload';
 import { PREVIEW, PREVIEW_ME, previewPosts } from './preview';
 import type { Person } from '../components/board/people';
@@ -46,7 +46,7 @@ export function useFeed() {
     const [{ data, error }, blocked] = await Promise.all([
       supabase
         .from('feed_posts')
-        .select('id, user_id, content, image_url, created_at, event:events(id, title), workout:workouts(id, title, title_ar), community:communities(id, name, visibility), author:profiles!user_id(id, display_name, full_name, avatar_url), beast_count:beasts(count)')
+        .select(`id, user_id, content, image_url, created_at, event:events(id, title), workout:workouts(id, title, title_ar), community:communities(id, name, visibility), author:profiles!user_id(${PERSON_COLUMNS}), beast_count:beasts(count)`)
         .eq('is_visible', true)
         .eq('is_hidden', false)
         .neq('image_status', 'rejected')

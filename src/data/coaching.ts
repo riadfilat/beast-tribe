@@ -1,11 +1,12 @@
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../providers/AuthProvider';
 import { useQuery, invalidate } from './query';
-import { personOf } from './model';
+import { personOf, PERSON_COLUMNS } from './model';
 import { addDays, localDateKey, startOfLocalDay } from '../i18n/format';
 import { sportIdOf, SportId } from '../lib/sports';
-import { PREVIEW, PREVIEW_ME, previewCoachLinks, previewSessionRows, previewTrainees } from './preview';
+import { PREVIEW, previewCoachLinks, previewSessionRows, previewTrainees } from './preview';
 import type { Person } from '../components/board/people';
+import { CodedError } from './errors';
+import { useMeId } from './me';
 
 // Coaching runs on consent: a coach sends a request, the member accepts and picks what to
 // share (nutrition, body measurements), and either side can end it. The database enforces
@@ -23,11 +24,6 @@ export function sharesLine(t: (k: string, v?: any) => string, sharing: Sharing) 
   return what.length ? t('coach.shares', { what: what.join(t('coach.and')) }) : t('coach.sharesNothing');
 }
 
-function useMe() {
-  const { user } = useAuth();
-  return PREVIEW ? PREVIEW_ME : user?.id ?? null;
-}
-
 const statusOf = (s: any): LinkStatus => (s === 'active' || s === 'paused' ? s : 'pending');
 
 // ─── Member side ────────────────────────────────────────────────────────────
@@ -41,7 +37,7 @@ export interface MyCoach {
 }
 
 export function useMyCoaches() {
-  const me = useMe();
+  const me = useMeId();
   return useQuery<MyCoach[]>(me ? `coaching:mine:${me}` : null, async () => {
     const rows: any[] = PREVIEW
       ? previewCoachLinks
@@ -104,7 +100,7 @@ export interface CoachProfile {
 
 /** The partner record that makes this member a coach (created in the admin). */
 export function useCoachProfile() {
-  const me = useMe();
+  const me = useMeId();
   return useQuery<CoachProfile | null>(me ? `coaching:coach:${me}` : null, async () => {
     if (PREVIEW) return { id: 'c-noor', name: 'Coach Noor' };
     const { data, error } = await supabase
@@ -134,7 +130,7 @@ export function useTrainees(coachId?: string | null) {
       : (
           await supabase
             .from('coach_trainees')
-            .select('id, trainee_id, status, started_at, trainee:profiles!trainee_id(id, display_name, full_name, avatar_url)')
+            .select(`id, trainee_id, status, started_at, trainee:profiles!trainee_id(${PERSON_COLUMNS})`)
             .eq('coach_id', coachId!)
             .order('started_at', { ascending: false })
         ).data || [];
@@ -158,13 +154,7 @@ export function useTrainees(coachId?: string | null) {
   });
 }
 
-export class CoachError extends Error {
-  code: 'ALREADY' | 'generic';
-  constructor(code: 'ALREADY' | 'generic') {
-    super(code);
-    this.code = code;
-  }
-}
+export class CoachError extends CodedError<'ALREADY'> {}
 
 export async function requestTrainee(coachId: string, personId: string) {
   if (PREVIEW) return;
@@ -333,7 +323,8 @@ export function useCoachNotes(coachId?: string | null, traineeId?: string | null
       .select('id, note_type, content, is_private, created_at')
       .eq('coach_id', coachId!)
       .eq('trainee_id', traineeId!)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(100);
     if (error) throw error;
     return (data || []).map((r: any) => ({
       id: r.id,

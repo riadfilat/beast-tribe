@@ -1,23 +1,16 @@
 import { supabase } from '../lib/supabase';
 import { invalidate } from './query';
 import { PREVIEW } from './preview';
+import { CodedError, codeFrom } from './errors';
 
 // Club leaders (migration 059): any member can run one club for free. The club starts invite-only
 // with a join code; a club that wants to be listed for everyone is listed once Beast Tribe verifies it.
 
 export type ClubListing = 'invite' | 'public';
-export type ClubErrorCode = 'NAME' | 'ALREADY_LEADER' | 'NOT_LEADER' | 'generic';
-export class ClubError extends Error {
-  code: ClubErrorCode;
-  constructor(code: ClubErrorCode) {
-    super(code);
-    this.code = code;
-  }
-}
-const toError = (e: any) => {
-  const hit = String(e?.message || '').match(/ALREADY_LEADER|NOT_LEADER|NAME/);
-  return new ClubError((hit?.[0] as ClubErrorCode) || 'generic');
-};
+const CLUB_CODES = ['ALREADY_LEADER', 'NOT_LEADER', 'NAME'] as const;
+export type ClubErrorCode = (typeof CLUB_CODES)[number] | 'generic';
+export class ClubError extends CodedError<ClubErrorCode> {}
+const toError = (e: any) => new ClubError(codeFrom(e, CLUB_CODES));
 
 export async function createClub(input: { name: string; sport: string | null; city: string; description: string; listing: ClubListing }): Promise<{ id: string; joinCode: string }> {
   if (PREVIEW) return { id: 'c-preview', joinCode: 'RUN24X' };

@@ -20,11 +20,13 @@ async function updateProfile(formData: FormData) {
   const { error } = await db.from('partners').update(updates).eq('id', partner.partner_id);
   if (error) throw new Error(error.message);
 
+  // admin_audit_log has no actor-type column: the "partner." prefix marks a partner's own change.
   await db.from('admin_audit_log').insert({
     admin_user_id: partner.id,
-    action: 'update_partner_profile',
+    action: 'partner.update_profile',
     target_table: 'partners',
     target_id: partner.partner_id,
+    details: { actor: 'partner', partner_id: partner.partner_id },
   });
 
   revalidatePath('/partner/profile');

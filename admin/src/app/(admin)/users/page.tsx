@@ -1,15 +1,15 @@
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
+import { searchTerm } from '@/lib/search';
 import SearchInput from '@/components/ui/SearchInput';
-import { Icon } from '@/components/ui/Icon';
 
 export const revalidate = 0;
 
 export default async function UsersPage({
   searchParams,
 }: {
-  searchParams: { q?: string; region?: string; page?: string; premium?: string };
+  searchParams: { q?: string; region?: string; page?: string };
 }) {
   await requireAdmin();
   const db = createAdminClient();
@@ -21,22 +21,18 @@ export default async function UsersPage({
   let query = db
     .from('profiles')
     .select(
-      'id, full_name, display_name, region, is_premium, created_at',
+      'id, full_name, display_name, region, created_at',
       { count: 'exact' }
     )
     .order('created_at', { ascending: false })
     .range(offset, offset + perPage - 1);
 
-  if (searchParams.q) {
-    query = query.or(
-      `full_name.ilike.%${searchParams.q}%,display_name.ilike.%${searchParams.q}%`
-    );
+  const q = searchTerm(searchParams.q);
+  if (q) {
+    query = query.or(`full_name.ilike.%${q}%,display_name.ilike.%${q}%`);
   }
   if (searchParams.region && searchParams.region !== 'all') {
     query = query.eq('region', searchParams.region);
-  }
-  if (searchParams.premium === 'true') {
-    query = query.eq('is_premium', true);
   }
 
   const { data: users, count } = await query;
@@ -46,7 +42,6 @@ export default async function UsersPage({
     const next: Record<string, string> = { page: String(targetPage) };
     if (searchParams.q) next.q = searchParams.q;
     if (searchParams.region) next.region = searchParams.region;
-    if (searchParams.premium) next.premium = searchParams.premium;
     return `/users?${new URLSearchParams(next).toString()}`;
   }
 
@@ -107,9 +102,6 @@ export default async function UsersPage({
                     <p className="font-medium text-gray-800 group-hover:text-brand-teal transition">
                       {user.display_name || user.full_name}
                     </p>
-                    {user.is_premium && (
-                      <span className="inline-flex items-center gap-1 text-xs text-brand-orange font-medium"><Icon name="star" size="xs" />Premium</span>
-                    )}
                   </div>
                 </td>
                 <td className="px-5 py-3 text-gray-500 text-xs">{user.region || '—'}</td>

@@ -6,7 +6,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { makeStyles, useKit } from '../../../src/theme';
 import { useI18n } from '../../../src/i18n';
 import { useAuth } from '../../../src/providers/AuthProvider';
-import { createPack, PackAudience, PackError, setPackPhoto } from '../../../src/data/packs';
+import { createPack, PackAudience, setPackPhoto } from '../../../src/data/packs';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { randomEmblem } from '../../../src/lib/emblem';
 import { Txt } from '../../../src/components/board/Txt';
@@ -15,6 +15,7 @@ import { PatchPreview } from '../../../src/components/board/Patch';
 import { PatchPicker } from '../../../src/components/board/PatchPicker';
 import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
+import { errorKey } from '../../../src/data/errors';
 
 export default function PackCreateScreen() {
   const s = useStyles();
@@ -49,7 +50,7 @@ export default function PackCreateScreen() {
       router.replace({ pathname: '/(tabs)/feed/pack', params: { packId: pack.id } });
     } catch (e: any) {
       haptic('error');
-      toast.show(t(`pack.errors.${e instanceof PackError ? e.code : 'generic'}`), 'error');
+      toast.show(t(errorKey('pack', e)), 'error');
     } finally {
       setBusy(false);
     }

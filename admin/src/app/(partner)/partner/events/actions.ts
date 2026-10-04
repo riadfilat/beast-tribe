@@ -1,65 +1,38 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase-server';
-import { requirePartner } from '@/lib/auth';
+import { requireCap } from '@/lib/auth';
+import { readEventForm } from '@/lib/events';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
 export async function createPartnerEvent(formData: FormData) {
-  const partner = await requirePartner();
+  const partner = await requireCap('events');
   const db = createAdminClient();
 
-  const title = formData.get('title') as string;
-  const event_type = formData.get('event_type') as string;
-  const sport_id = formData.get('sport_id') as string || null;
-  const starts_at = formData.get('starts_at') as string;
-  const ends_at = formData.get('ends_at') as string || null;
-  const location_name = formData.get('location_name') as string || null;
-  const location_city = formData.get('location_city') as string || null;
-  const country = formData.get('country') as string || 'SA';
-  const max_capacity = parseInt(formData.get('max_capacity') as string) || null;
-  const description = formData.get('description') as string || null;
-  const is_women_only = formData.get('is_women_only') === 'on';
+  const values = readEventForm(formData);
 
   // Auto-populate coach/gym name based on partner type
-  const coach_name = partner.partner_type === 'coach' ? partner.business_name : (formData.get('coach_name') as string || null);
-  const gym_name = partner.partner_type === 'gym' ? partner.business_name : (formData.get('gym_name') as string || null);
+  if (partner.partner_type === 'coach') values.coach_name = partner.business_name;
+  if (partner.partner_type === 'gym') values.gym_name = partner.business_name;
 
-  const { data: newEvent, error } = await db.from('events').insert({
-    title,
-    event_type,
-    sport_id: sport_id || undefined,
-    starts_at,
-    ends_at: ends_at || undefined,
-    location_name,
-    location_city,
-    country,
-    coach_name,
-    gym_name,
-    max_capacity,
-    description,
-    is_women_only,
+  // events.partner_id is the link to the partner.
+  const { error } = await db.from('events').insert({
+    country: 'SA',
+    is_women_only: false,
+    ...values,
     created_by: partner.id,
     partner_id: partner.partner_id,
-  })
-    .select('id')
-    .single();
+  });
 
   if (error) throw new Error(error.message);
-
-  // Link in partner_events using the id returned from the insert above
-  const { error: linkError } = await db.from('partner_events').insert({
-    partner_id: partner.partner_id,
-    event_id: newEvent.id,
-  });
-  if (linkError) throw new Error(linkError.message);
 
   revalidatePath('/partner/events');
   redirect('/partner/events');
 }
 
 export async function updatePartnerEvent(eventId: string, formData: FormData) {
-  const partner = await requirePartner();
+  const partner = await requireCap('events');
   const db = createAdminClient();
 
   // Verify the partner owns this event
@@ -72,25 +45,21 @@ export async function updatePartnerEvent(eventId: string, formData: FormData) {
     throw new Error('Unauthorized');
   }
 
-  const updates: Record<string, any> = {};
-  ['title', 'event_type', 'sport_id', 'starts_at', 'ends_at', 'location_name',
-    'location_city', 'country', 'description'].forEach((field) => {
-    const v = formData.get(field);
-    if (v !== null && v !== '') updates[field] = v;
-  });
-
-  const maxCap = formData.get('max_capacity');
-  if (maxCap) updates.max_capacity = parseInt(maxCap as string) || null;
-  updates.is_women_only = formData.get('is_women_only') === 'on';
+  const updates = readEventForm(formData);
+  // The names are set from the partner when the event is created.
+  delete updates.coach_name;
+  delete updates.gym_name;
 
   const { error } = await db.from('events').update(updates).eq('id', eventId);
   if (error) throw new Error(error.message);
 
+  // admin_audit_log has no actor-type column: the "partner." prefix marks a partner's own change.
   await db.from('admin_audit_log').insert({
     admin_user_id: partner.id,
-    action: 'update_partner_event',
+    action: 'partner.update_event',
     target_table: 'events',
     target_id: eventId,
+    details: { actor: 'partner', partner_id: partner.partner_id },
   });
 
   revalidatePath('/partner/events');

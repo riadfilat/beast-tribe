@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './supabase';
+import { localDateKey } from '../i18n/format';
 
 // Daily steps from Apple Health. The member connects once (Apple asks for permission); after that the
 // app syncs the last weeks of daily totals into daily_activity whenever it opens. Steps are private to
@@ -38,7 +39,7 @@ export async function healthConnected(): Promise<boolean> {
   }
 }
 
-const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const dayKey = localDateKey;
 
 /** Ask Apple Health for read access to steps, then sync. Apple never says whether read access was
  *  refused, so "connected" means the member went through the prompt. */

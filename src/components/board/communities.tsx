@@ -3,13 +3,14 @@ import { Image, View } from 'react-native';
 import { useKit } from '../../theme';
 import { useI18n } from '../../i18n';
 import { cityLabel } from '../../lib/cities';
-import { Community, CommunityError, joinCommunityByCode, joinOpenCommunity } from '../../data/communities';
+import { Community, joinCommunityByCode, joinOpenCommunity } from '../../data/communities';
 import { Txt } from './Txt';
 import { Icon } from './Icon';
 import { Press } from './Press';
 import { Field, OutlineButton } from './controls';
 import { toast } from './toast';
 import { haptic } from '../../lib/haptics';
+import { errorKey } from '../../data/errors';
 
 /** A community's mark: its logo, or its initial on a squared tile (communities are places, not patches). */
 export function CommunityTile({ c, size = 44 }: { c: Community; size?: number }) {
@@ -100,7 +101,7 @@ export function JoinCommunityForm({ onJoined }: { onJoined?: (c: { id: string; n
       onJoined?.(c);
     } catch (e: any) {
       haptic('error');
-      setError(t(`community.errors.${e instanceof CommunityError ? e.code : 'generic'}`));
+      setError(t(errorKey('community', e)));
     } finally {
       setBusy(false);
     }

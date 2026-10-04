@@ -8,7 +8,7 @@ import { useI18n } from '../../../src/i18n';
 import { cityLabel } from '../../../src/lib/cities';
 import { clockParts, dayOffset, fmtClock, fmtDateLong, fmtDay, fmtDuration, fmtIn } from '../../../src/i18n/format';
 import { useAuth } from '../../../src/providers/AuthProvider';
-import { useSession, useSessionActions, SessionError } from '../../../src/data/sessions';
+import { useSession, useSessionActions } from '../../../src/data/sessions';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { SESSION_LINK_BASE } from '../../../src/lib/constants';
 import { Txt } from '../../../src/components/board/Txt';
@@ -27,6 +27,7 @@ import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
 import { scheduleEventReminder } from '../../../src/lib/notifications';
 import { GuestJoin } from '../../../src/components/board/guest-join';
+import { errorKey } from '../../../src/data/errors';
 
 export default function SessionScreen() {
   const { id, g } = useLocalSearchParams<{ id: string; g?: string }>();
@@ -127,7 +128,7 @@ export default function SessionScreen() {
       toast.show(result === 'going' ? t('session.joinedToast') : t('session.waitlistToast'), result === 'going' ? 'yours' : 'info');
     } catch (e: any) {
       haptic('error');
-      toast.show(t(`session.errors.${e instanceof SessionError ? e.code : 'generic'}`), 'error');
+      toast.show(t(errorKey('session', e)), 'error');
     } finally {
       setBusy(false);
     }
@@ -160,7 +161,7 @@ export default function SessionScreen() {
       );
       setRose(false);
     } catch (e: any) {
-      toast.show(t(`session.errors.${e instanceof SessionError ? e.code : 'generic'}`), 'error');
+      toast.show(t(errorKey('session', e)), 'error');
     } finally {
       setBusy(false);
     }
@@ -174,7 +175,7 @@ export default function SessionScreen() {
       haptic('warning');
       q.setData((prev) => (prev ? { ...prev, state: 'cancelled', cancelledAt: new Date() } : prev));
     } catch (e: any) {
-      toast.show(t(`session.errors.${e instanceof SessionError ? e.code : 'generic'}`), 'error');
+      toast.show(t(errorKey('session', e)), 'error');
     } finally {
       setBusy(false);
     }

@@ -27,12 +27,13 @@ export default async function LeadsPage({ searchParams }: { searchParams: { stat
   await requireAdmin();
   const db = createAdminClient();
   const current = STATUS.some((s) => s.id === searchParams.status) ? searchParams.status! : 'new';
-  const [{ data: leads }, { data: all }] = await Promise.all([
+  // One count per stage: a row fetch would stop at the API's 1,000-row cap.
+  const [{ data: leads }, ...stageCounts] = await Promise.all([
     db.from('partner_leads').select('*').eq('status', current).order('created_at', { ascending: false }).limit(200),
-    db.from('partner_leads').select('status').limit(5000),
+    ...STATUS.map((s) => db.from('partner_leads').select('id', { count: 'exact', head: true }).eq('status', s.id)),
   ]);
   const counts: Record<string, number> = {};
-  (all || []).forEach((l: any) => (counts[l.status] = (counts[l.status] || 0) + 1));
+  STATUS.forEach((s, i) => (counts[s.id] = stageCounts[i].count || 0));
 
   return (
     <div className="space-y-6">

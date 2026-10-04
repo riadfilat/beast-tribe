@@ -15,6 +15,13 @@ async function requireGym(): Promise<PartnerUser> {
   return partner;
 }
 
+/** Teams and challenges: only partners whose sidebar shows them (see navFor). */
+async function requireGymWith(cap: 'teams' | 'challenges'): Promise<PartnerUser> {
+  const partner = await requireGym();
+  if (!can(partner.partner_type, cap)) throw new Error('Not available for this account');
+  return partner;
+}
+
 function slugify(raw: string) {
   return raw.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '') || 'club';
 }
@@ -200,7 +207,7 @@ export async function markAllAttended(eventId: string) {
 
 /** Start a step challenge in the community (up to 3 months). Members opt in from the app. */
 export async function createChallenge(formData: FormData) {
-  const partner = await requireGym();
+  const partner = await requireGymWith('challenges');
   if (!partner.community_id) throw new Error('Create your community first');
   const str = (k: string) => ((formData.get(k) as string) || '').trim();
   const title = str('title');
@@ -236,7 +243,7 @@ export async function createChallenge(formData: FormData) {
 }
 
 export async function cancelChallenge(challengeId: string) {
-  const partner = await requireGym();
+  const partner = await requireGymWith('challenges');
   const db = createAdminClient();
   const { error } = await db.from('challenges').update({ cancelled_at: new Date().toISOString() }).eq('id', challengeId).eq('community_id', partner.community_id);
   if (error) throw new Error(error.message);
@@ -246,7 +253,7 @@ export async function cancelChallenge(challengeId: string) {
 
 // ─── Teams, the community page, challenge options ──────────────────────────
 export async function addTeam(formData: FormData) {
-  const partner = await requireGym();
+  const partner = await requireGymWith('teams');
   if (!partner.community_id) throw new Error('Create your community first');
   const name = ((formData.get('name') as string) || '').trim();
   const name_ar = ((formData.get('name_ar') as string) || '').trim() || null;
@@ -260,7 +267,7 @@ export async function addTeam(formData: FormData) {
 }
 
 export async function removeTeam(teamId: string) {
-  const partner = await requireGym();
+  const partner = await requireGymWith('teams');
   const db = createAdminClient();
   const { error } = await db.from('community_teams').delete().eq('id', teamId).eq('community_id', partner.community_id);
   if (error) throw new Error(error.message);

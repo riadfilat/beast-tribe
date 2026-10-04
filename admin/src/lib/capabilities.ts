@@ -12,7 +12,7 @@ export interface PartnerKind {
   caps: Cap[];
 }
 
-export const PARTNER_KINDS: Record<string, PartnerKind> = {
+const PARTNER_KINDS: Record<string, PartnerKind> = {
   gym: { label: 'Gym or club', people: 'Members', sessions: 'Classes', community: 'Club', caps: ['community', 'members', 'classes', 'guests', 'facilities', 'teams', 'challenges', 'report', 'poster', 'workouts'] },
   company: { label: 'Company', people: 'People', sessions: 'Sessions', community: 'Community', caps: ['community', 'members', 'classes', 'teams', 'challenges', 'report', 'poster'] },
   school: { label: 'School', people: 'Members', sessions: 'Classes', community: 'Community', caps: ['community', 'members', 'classes', 'guests', 'facilities', 'poster'] },

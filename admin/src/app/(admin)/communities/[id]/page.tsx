@@ -24,37 +24,30 @@ export default async function EditCommunityPage({ params }: { params: { id: stri
   await requireAdmin();
   const db = createAdminClient();
 
-  const { data: community } = await db
-    .from('communities')
-    .select('*')
-    .eq('id', params.id)
-    .maybeSingle();
-
-  if (!community) notFound();
-
-  const [{ data: pkg }, { data: candidates }] = await Promise.all([
-    db.from('community_partners').select('partner_id, role, perk, perk_ar, partner:partners(business_name, partner_type)').eq('community_id', community.id),
+  const [{ data: community }, { data: pkg }, { data: candidates }, membersRes, defaultPacksRes, locationsRes, availablePacksRes] = await Promise.all([
+    db
+      .from('communities')
+      .select('*')
+      .eq('id', params.id)
+      .maybeSingle(),
+    db.from('community_partners').select('partner_id, role, perk, perk_ar, partner:partners(business_name, partner_type)').eq('community_id', params.id),
     db.from('partners').select('id, business_name, partner_type').in('partner_type', ['nutritionist', 'coach', 'gym', 'nutrition']).eq('is_active', true).order('business_name'),
-  ]);
-  const ROLE_LABEL: Record<string, string> = { nutritionist: 'Nutritionist', coach: 'Coach', gym: 'Gym', kitchen: 'Healthy kitchen' };
-
-  const [membersRes, defaultPacksRes, locationsRes, availablePacksRes] = await Promise.all([
     db
       .from('community_members')
       .select('joined_at, role, profile:profiles(id, display_name, full_name, created_at)')
-      .eq('community_id', community.id)
+      .eq('community_id', params.id)
       .order('joined_at', { ascending: false })
       .limit(500),
     db
       .from('packs')
       .select('id, name, animal, emblem_kind, emblem_value, emblem_color, description, is_community_default')
-      .eq('community_id', community.id)
+      .eq('community_id', params.id)
       .eq('is_community_default', true)
       .order('name', { ascending: true }),
     db
       .from('popular_locations')
       .select('id, name, city')
-      .eq('community_id', community.id),
+      .eq('community_id', params.id),
     db
       .from('packs')
       .select('id, name')
@@ -62,6 +55,9 @@ export default async function EditCommunityPage({ params }: { params: { id: stri
       .order('name', { ascending: true })
       .limit(100),
   ]);
+
+  if (!community) notFound();
+  const ROLE_LABEL: Record<string, string> = { nutritionist: 'Nutritionist', coach: 'Coach', gym: 'Gym', kitchen: 'Healthy kitchen' };
 
   const members = (membersRes.data || []).map((r: any) => ({ ...r.profile, joined_at: r.joined_at, role: r.role })).filter((m: any) => m.id);
   const defaultPacks = defaultPacksRes.data || [];

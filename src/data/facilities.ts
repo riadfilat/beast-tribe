@@ -1,10 +1,12 @@
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../providers/AuthProvider';
-import { useQuery, invalidate } from './query';
+import { useQuery, invalidate, CATALOGUE } from './query';
 import { PREVIEW } from './preview';
 import { cityKey, cityKeys } from '../lib/cities';
 import { sportIdOf } from '../lib/sports';
 import { useMySports } from './member';
+import { CodedError, codeFrom } from './errors';
+import { localDateKey } from '../i18n/format';
 
 // Courts, pitches, halls and school facilities that venues list for booking (migration 060).
 // Booking a free slot creates a session and holds the court; the price is split per player.
@@ -49,14 +51,9 @@ export interface Slot {
   free: boolean;
 }
 
-export type BookErrorCode = 'TAKEN' | 'TOO_MANY' | 'DAILY_LIMIT' | 'WOMEN_ONLY' | 'COMMUNITY_ONLY' | 'PACK_ONLY' | 'NOT_FOUND' | 'generic';
-export class BookError extends Error {
-  code: BookErrorCode;
-  constructor(code: BookErrorCode) {
-    super(code);
-    this.code = code;
-  }
-}
+const BOOK_CODES = ['DAILY_LIMIT', 'TAKEN', 'TOO_MANY', 'WOMEN_ONLY', 'COMMUNITY_ONLY', 'PACK_ONLY', 'NOT_FOUND'] as const;
+export type BookErrorCode = (typeof BOOK_CODES)[number] | 'generic';
+export class BookError extends CodedError<BookErrorCode> {}
 
 const SELECT =
   'id, name, name_ar, kind, sport, city, address, image_url, description, description_ar, price_sar, slot_minutes, max_players, audience, community_id, cancel_hours, is_school, latitude, longitude, hours, sports, parent_id, bookable, daily_limit, sort, partner:partners(business_name, name), community:communities(name)';
@@ -125,7 +122,7 @@ export function useFacilities(lang: string) {
       return { f, score, sort: (r as any).sort ?? 0 };
     });
     return scored.sort((a, b) => b.score - a.score || a.sort - b.sort || a.f.name.localeCompare(b.f.name)).map((x) => x.f);
-  });
+  }, CATALOGUE);
 }
 
 export function useFacility(id: string | undefined, lang: string) {
@@ -134,11 +131,11 @@ export function useFacility(id: string | undefined, lang: string) {
     const { data, error } = await supabase.from('facilities').select(SELECT).eq('id', id!).maybeSingle();
     if (error) throw error;
     return data ? toFacility(data, lang) : null;
-  });
+  }, CATALOGUE);
 }
 
 /** YYYY-MM-DD for a local calendar day. */
-export const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+export const dayKey = localDateKey;
 
 export function useFacilitySlots(id: string | undefined, day: string) {
   const { user } = useAuth();
@@ -161,8 +158,7 @@ export async function bookFacility(input: { facilityId: string; startsAt: Date; 
     p_sport: input.sport ?? null,
   });
   if (error) {
-    const hit = String(error.message || '').match(/DAILY_LIMIT|TAKEN|TOO_MANY|WOMEN_ONLY|COMMUNITY_ONLY|PACK_ONLY|NOT_FOUND/);
-    throw new BookError((hit?.[0] as BookErrorCode) || 'generic');
+    throw new BookError(codeFrom(error, BOOK_CODES));
   }
   invalidate('facilities:slots:');
   invalidate('sessions:');

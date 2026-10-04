@@ -1,5 +1,6 @@
 import { createAdminClient } from './supabase-server';
 import { fetchAll } from './fetch-all';
+import { todayRiyadh } from './format';
 
 // Wellness for a gym's or company's community: step challenges (entrants only on the ranking) and
 // a steps total that is only shown when at least five members have connected Apple Health, so no
@@ -100,7 +101,6 @@ export async function loadTeams(communityId: string): Promise<TeamInfo[]> {
   return (data || []).map((t: any) => ({ id: t.id, name: t.name, name_ar: t.name_ar, members: t.members?.[0]?.count ?? 0 }));
 }
 
-export const todayRiyadh = () => new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
 
 export function stateOf(c: ChallengeRow): 'upcoming' | 'live' | 'ended' | 'cancelled' {
   const today = todayRiyadh();

@@ -160,20 +160,3 @@ export async function deleteLocation(locationId: string) {
   revalidatePath('/locations');
   redirect('/locations');
 }
-
-export async function toggleLocationActive(locationId: string, isActive: boolean) {
-  const admin = await requireAdmin();
-  const db = createAdminClient();
-
-  const { error } = await db.from('popular_locations').update({ is_active: isActive }).eq('id', locationId);
-  if (error) throw new Error(error.message);
-
-  await db.from('admin_audit_log').insert({
-    admin_user_id: admin.id,
-    action: isActive ? 'activate_location' : 'deactivate_location',
-    target_table: 'popular_locations',
-    target_id: locationId,
-  });
-
-  revalidatePath('/locations');
-}

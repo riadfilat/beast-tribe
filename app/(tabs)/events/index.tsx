@@ -27,7 +27,7 @@ export default function ExploreScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const meId = PREVIEW ? PREVIEW_ME : user?.id;
-  const q = useBoardSessions(14);
+  const q = useBoardSessions();
   const mySports = useMySports().data ?? [];
   const openCommunities = useOpenCommunities();
   const discover = (openCommunities.data ?? []).slice(0, 3);

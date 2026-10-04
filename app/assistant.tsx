@@ -12,6 +12,7 @@ import { Press } from '../src/components/board/Press';
 import { Magnet } from '../src/components/board/people';
 import { Chip, Field, IconButton } from '../src/components/board/controls';
 import { haptic } from '../src/lib/haptics';
+import { errorKey } from '../src/data/errors';
 
 const SUGGESTIONS = ['partner', 'tonight', 'workout', 'clubs'] as const;
 
@@ -40,7 +41,7 @@ export default function AssistantScreen() {
       const r = await askBeast(next, lang);
       setTurns([...next, { role: 'assistant', content: r.reply, cards: r.cards }]);
     } catch (e: any) {
-      setTurns([...next, { role: 'assistant', content: t(`assistant.errors.${e?.code || 'generic'}`) }]);
+      setTurns([...next, { role: 'assistant', content: t(errorKey('assistant', e)) }]);
     } finally {
       setBusy(false);
       setTimeout(() => scroll.current?.scrollToEnd({ animated: true }), 80);

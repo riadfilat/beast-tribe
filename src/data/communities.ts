@@ -1,7 +1,8 @@
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../providers/AuthProvider';
 import { useQuery, invalidate } from './query';
-import { PREVIEW, PREVIEW_COMPANY, PREVIEW_ME, previewCommunities } from './preview';
+import { PREVIEW, PREVIEW_COMPANY, previewCommunities } from './preview';
+import { CodedError, codeFrom } from './errors';
+import { useMeId } from './me';
 
 // Communities are where Beast Tribe lives. OPEN ones anyone can join from Explore; PRIVATE ones
 // (companies, compounds, clubs) are joined with their invite code. Members can be in several.
@@ -32,23 +33,10 @@ export interface Community {
   notice: string | null;
 }
 
-export type CommunityErrorCode = 'INVALID' | 'ALREADY' | 'FULL' | 'EXPIRED' | 'TOO_MANY' | 'generic';
-export class CommunityError extends Error {
-  code: CommunityErrorCode;
-  constructor(code: CommunityErrorCode) {
-    super(code);
-    this.code = code;
-  }
-}
-const toCommunityError = (e: any) => {
-  const hit = String(e?.message || '').match(/INVALID|ALREADY|FULL|EXPIRED|TOO_MANY/);
-  return new CommunityError((hit?.[0] as CommunityErrorCode) || 'generic');
-};
-
-function useMe() {
-  const { user } = useAuth();
-  return PREVIEW ? PREVIEW_ME : user?.id ?? null;
-}
+const COMMUNITY_CODES = ['INVALID', 'ALREADY', 'FULL', 'EXPIRED', 'TOO_MANY'] as const;
+export type CommunityErrorCode = (typeof COMMUNITY_CODES)[number] | 'generic';
+export class CommunityError extends CodedError<CommunityErrorCode> {}
+const toCommunityError = (e: any) => new CommunityError(codeFrom(e, COMMUNITY_CODES));
 
 const SELECT = 'id, name, description, kind, visibility, is_default, city, logo_url, leader_id, sport, listing, verified_at, notice, allow_guests, members:community_members(count)';
 
@@ -84,7 +72,7 @@ async function myIds(me: string) {
 
 /** Every community I'm in: private ones first, then open ones, the default last. */
 export function useMyCommunities() {
-  const me = useMe();
+  const me = useMeId();
   return useQuery<Community[]>(me ? `communities:mine:${me}` : null, async () => {
     if (PREVIEW) return previewCommunities.filter((c) => c.isMember);
     const ids = await myIds(me!);
@@ -99,7 +87,7 @@ export function useMyCommunities() {
 
 /** Open communities I haven't joined yet. */
 export function useOpenCommunities() {
-  const me = useMe();
+  const me = useMeId();
   return useQuery<Community[]>(me ? `communities:open:${me}` : null, async () => {
     if (PREVIEW) return previewCommunities.filter((c) => c.open && !c.isMember);
     const ids = await myIds(me!);
@@ -110,7 +98,7 @@ export function useOpenCommunities() {
 }
 
 export function useCommunity(id?: string | null) {
-  const me = useMe();
+  const me = useMeId();
   return useQuery<Community | null>(id && me ? `communities:one:${id}` : null, async () => {
     if (PREVIEW) return previewCommunities.find((c) => c.id === id) ?? null;
     const ids = await myIds(me!);

@@ -8,7 +8,7 @@ import { makeStyles, useKit } from '../src/theme';
 import { useI18n } from '../src/i18n';
 import { addDays, clockParts, fmtClock, fmtDay, localDateKey, localDateTime, startOfLocalDay } from '../src/i18n/format';
 import { useAuth } from '../src/providers/AuthProvider';
-import { hostSession, SessionError } from '../src/data/sessions';
+import { hostSession } from '../src/data/sessions';
 import { useCoaches, useMyPackList, useMySports, usePopularSpots } from '../src/data/member';
 import { useMyCommunities } from '../src/data/communities';
 import { useMyCaptaincies } from '../src/data/captains';
@@ -25,6 +25,7 @@ import { Sun } from '../src/components/board/marks';
 import { Chip, Field, MarkerButton, OutlineButton, Segmented, SectionHeading, TextButton } from '../src/components/board/controls';
 import { Group, GroupRow } from '../src/components/board/list';
 import { haptic } from '../src/lib/haptics';
+import { errorKey } from '../src/data/errors';
 
 const SLOTS: Record<'dawn' | 'morning' | 'afternoon' | 'evening' | 'night', string[]> = {
   dawn: ['04:30', '05:00', '05:30', '06:00', '06:30'],
@@ -210,7 +211,7 @@ export default function HostScreen() {
       setDone({ id, title });
     } catch (e: any) {
       haptic('error');
-      setError(t(`session.errors.${e instanceof SessionError ? e.code : 'generic'}`));
+      setError(t(errorKey('session', e)));
     } finally {
       setBusy(false);
     }

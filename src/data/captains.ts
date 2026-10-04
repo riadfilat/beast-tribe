@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../providers/AuthProvider';
 import { useQuery } from './query';
 import { PREVIEW } from './preview';
-import { personOf } from './model';
+import { personOf, PERSON_COLUMNS } from './model';
 import type { Person } from '../components/board/people';
 
 // Beast Captains: a coach assigned to a community to keep its board alive with open sessions
@@ -35,7 +35,7 @@ export function useCaptains(communityId?: string | null) {
     if (error) throw error;
     const ids = (data || []).filter((c: any) => c.starts_on <= today && (!c.ends_on || c.ends_on >= today)).map((c: any) => c.user_id);
     if (!ids.length) return [];
-    const { data: people } = await supabase.from('profiles').select('id, display_name, full_name, avatar_url').in('id', ids);
+    const { data: people } = await supabase.from('profiles').select(`${PERSON_COLUMNS}`).in('id', ids);
     return (people || []).map(personOf).filter(Boolean) as Person[];
   });
 }

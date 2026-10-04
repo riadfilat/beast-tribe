@@ -290,13 +290,6 @@ export const loadClub = cache(async (partner: PartnerUser, communityId: string):
   };
 });
 
-/** The gym's club community id, or null when it has none yet. */
-export async function clubIdOf(partnerId: string): Promise<string | null> {
-  const db = createAdminClient();
-  const { data } = await db.from('partners').select('community_id').eq('id', partnerId).single();
-  return (data as any)?.community_id ?? null;
-}
-
 export const fmtDay = (d: Date) => d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Riyadh' });
 export const fmtTime = (d: Date) => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Riyadh' });
 export function ago(d: Date | null) {
