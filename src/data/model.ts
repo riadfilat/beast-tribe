@@ -45,6 +45,8 @@ export interface Session {
   guestInvite: boolean;
   guestToken: string | null;
   guestPrice: number | null;
+  /** Extra seats after it fills, in case someone drops (0–3). */
+  waitlistMax: number;
   /** A booked court: what each player owes (the court price split per person). */
   share: number | null;
   facilityId: string | null;
@@ -70,7 +72,7 @@ export const SESSION_SELECT = `
   id, title, description, event_type, starts_at, ends_at, location_name, location_city, gym_name,
   country, location_lat, location_lng, image_url, max_capacity, going_count, created_by,
   is_women_only, visibility, pack_id, community_id, price_sar, difficulty, coach_name, cancelled_at, workout_id, drop_in, captain_hosted,
-  guest_open, guest_price_sar, guest_spots, share_sar, facility_id, guest_invite,
+  guest_open, guest_price_sar, guest_spots, share_sar, facility_id, guest_invite, waitlist_max,
   pack:packs(id, name),
   workout:workouts(id, title, title_ar, duration_minutes),
   community:communities(id, name, visibility, is_default),
@@ -145,6 +147,7 @@ export function toSession(row: any, meId: string | null | undefined, myStatus?: 
     // Hosts get the guest key with useGuestToken (it is not readable with the session).
     guestToken: null,
     guestPrice: row.guest_price_sar != null ? Number(row.guest_price_sar) : null,
+    waitlistMax: typeof row.waitlist_max === 'number' ? row.waitlist_max : 3,
     share: row.share_sar != null ? Number(row.share_sar) : null,
     facilityId: row.facility_id || null,
     workout: row.workout?.id

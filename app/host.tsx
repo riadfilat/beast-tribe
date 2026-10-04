@@ -85,7 +85,12 @@ export default function HostScreen() {
   const [spotsTouched, setSpotsTouched] = useState(false);
   const [more, setMore] = useState(false);
   const [duration, setDuration] = useState(60);
-  const [level, setLevel] = useState<'any' | 'easy' | 'medium' | 'hard'>('any');
+  // The level the game is for: the host's own level to start with (players at it, or one below, can join).
+  const [level, setLevel] = useState<'any' | 'easy' | 'medium' | 'hard'>(() => {
+    const own = (profile?.experience_level || '').toLowerCase();
+    return own === 'beginner' || own === 'dreamer' ? 'easy' : own === 'intermediate' || own === 'seeker' ? 'medium' : own === 'advanced' || own === 'mover' || own === 'expert' ? 'hard' : 'any';
+  });
+  const [waitlist, setWaitlist] = useState<'0' | '1' | '2' | '3'>('3');
   const [womenOnly, setWomenOnly] = useState(false);
   const [guests, setGuests] = useState(false);
   const [dropIn, setDropIn] = useState(true);
@@ -221,6 +226,7 @@ export default function HostScreen() {
         lng: spot?.lng ?? null,
         capacity: open ? null : spotsCount,
         dropIn: open,
+        waitlistMax: Number(waitlist),
         repeatWeeks: captaincy ? Number(repeat) : 1,
         difficulty: level === 'any' ? null : level,
         womenOnly,
@@ -273,6 +279,7 @@ export default function HostScreen() {
         coachName: coach?.name ?? null,
         notes,
         cover,
+        waitlistMax: Number(waitlist),
       });
       haptic('success');
       if (photoFailed) setError(t('host.errPhoto'));
@@ -535,6 +542,43 @@ export default function HostScreen() {
           </Press>
         </View>
 
+        {/* Who it's for: players at this level, or one below, can join and are called to fill it. */}
+        <SectionHeading title={t('host.level')} style={s.gap} />
+        <Segmented
+          value={level}
+          onChange={setLevel}
+          options={[
+            { value: 'easy', label: t('session.difficulty.easy') },
+            { value: 'medium', label: t('session.difficulty.medium') },
+            { value: 'hard', label: t('session.difficulty.hard') },
+            { value: 'any', label: t('host.anyLevel') },
+          ]}
+        />
+        {level !== 'any' ? (
+          <Txt v="caption" style={{ marginTop: 6 }}>
+            {t('host.levelSub')}
+          </Txt>
+        ) : null}
+
+        {!open && spotsCount != null ? (
+          <>
+            <SectionHeading title={t('host.waitlist')} style={s.gap} />
+            <Segmented
+              value={waitlist}
+              onChange={setWaitlist}
+              options={[
+                { value: '0', label: t('host.waitlistNone') },
+                { value: '1', label: '1' },
+                { value: '2', label: '2' },
+                { value: '3', label: '3' },
+              ]}
+            />
+            <Txt v="caption" style={{ marginTop: 6 }}>
+              {t('host.waitlistSub')}
+            </Txt>
+          </>
+        ) : null}
+
         <Press onPress={() => setMore((m) => !m)} feedback="selection" style={s.moreToggle}>
           <Txt v="label" size={15} color={p.aqua}>
             {more ? t('host.less') : t('host.more')}
@@ -551,20 +595,6 @@ export default function HostScreen() {
                   <Chip key={d} label={durationLabel(d, lang)} selected={duration === d} onPress={() => setDuration(d)} />
                 ))}
               </ScrollView>
-            </View>
-
-            <View style={{ gap: 8 }}>
-              <SectionHeading title={t('host.level')} />
-              <Segmented
-                value={level}
-                onChange={setLevel}
-                options={[
-                  { value: 'any', label: t('host.anyLevel') },
-                  { value: 'easy', label: t('session.difficulty.easy') },
-                  { value: 'medium', label: t('session.difficulty.medium') },
-                  { value: 'hard', label: t('session.difficulty.hard') },
-                ]}
-              />
             </View>
 
             <Group>

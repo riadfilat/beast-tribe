@@ -15,7 +15,7 @@ import { CodedError, codeFrom } from './errors';
 export type JoinResult = 'going' | 'waitlist';
 const SESSION_CODES = [
   'WOMEN_ONLY_HOST', 'GENDER_NEEDED', 'LINK_INVALID', 'GUESTS_OFF', 'WOMEN_ONLY', 'PACK_ONLY', 'COMMUNITY_ONLY',
-  'GUESTS_FULL', 'EVENT_OVER', 'EVENT_CANCELLED', 'EVENT_NOT_FOUND', 'NOT_HOST',
+  'GUESTS_FULL', 'EVENT_OVER', 'EVENT_CANCELLED', 'EVENT_NOT_FOUND', 'NOT_HOST', 'LEVEL', 'FULL',
 ] as const;
 export type SessionErrorCode = (typeof SESSION_CODES)[number] | 'generic';
 export class SessionError extends CodedError<SessionErrorCode> {}
@@ -237,6 +237,8 @@ export interface HostInput {
   /** Where the session lives when it isn't pack-only (defaults to the open community). */
   communityId?: string | null;
   priceSar?: number | null;
+  /** Extra seats after it fills (0–3). */
+  waitlistMax?: number;
   /** A workout from Train as the session's plan. */
   workoutId?: string | null;
   coachName?: string | null;
@@ -293,6 +295,7 @@ export async function hostSession(meId: string, input: HostInput): Promise<{ id:
       country: input.country,
       created_by: meId,
       drop_in: !!input.dropIn,
+      waitlist_max: Math.min(3, Math.max(0, input.waitlistMax ?? 3)),
       class_series_id: series,
   });
   const { data, error } = await supabase.from('events').insert(row(0, null)).select('id').single();
@@ -334,6 +337,7 @@ export async function hostAtCourt(
     coachName?: string | null;
     notes?: string;
     cover?: string | null;
+    waitlistMax?: number;
   },
 ): Promise<{ id: string; photoFailed: boolean }> {
   if (PREVIEW) {
@@ -355,6 +359,7 @@ export async function hostAtCourt(
   if (input.womenOnly) extras.is_women_only = true;
   if (input.guestInvite && !input.packId) extras.guest_invite = true;
   if (input.coachName) extras.coach_name = input.coachName;
+  if (input.waitlistMax != null) extras.waitlist_max = Math.min(3, Math.max(0, input.waitlistMax));
   if (input.notes?.trim()) extras.description = input.notes.trim();
   if (input.cover && !/^https?:\/\//.test(input.cover)) {
     try {

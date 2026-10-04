@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 import Animated, { FadeOut, LinearTransition } from 'react-native-reanimated';
 import { useKit } from '../../theme';
 import { useI18n } from '../../i18n';
@@ -13,6 +13,7 @@ import { Press } from './Press';
 import { MagnetRow } from './people';
 import { Node, Sun, Tag, Tally, ZigZag } from './marks';
 import { MarkerButton, OutlineButton } from './controls';
+import { sessionPicture } from '../../lib/sportPhotos';
 
 /** Re-render on a clock tick so NOW, LIVE, and countdowns stay true. */
 export function useNow(intervalMs = 30000) {
@@ -39,7 +40,7 @@ export function SessionTags({ s, now }: { s: Session; now: number }) {
   const tags: React.ReactNode[] = [];
   if (s.state === 'cancelled') tags.push(<Tag key="c" label={t('session.cancelled')} tone="danger" />);
   if (s.state === 'live') tags.push(<Tag key="l" label={t('session.live')} tone="marker" solid />);
-  if (s.state !== 'cancelled' && s.isFull) tags.push(<Tag key="f" label={t('session.full')} tone="ink" />);
+  if (s.state !== 'cancelled' && s.isFull) tags.push(<Tag key="f" label={t('session.seatsFilled')} tone="ink" />);
   if (s.dropIn && s.state !== 'cancelled') tags.push(<Tag key="o" label={t('session.dropIn')} tone="marker" />);
   if (s.share != null && s.state !== 'cancelled') tags.push(<Tag key="sh" label={t('pay.eachTag', { amount: money(s.share) })} tone="marker" />);
   if (s.guestOpen && s.state !== 'cancelled') tags.push(<Tag key="g" label={s.guestPrice ? t('pay.guestTag', { amount: money(s.guestPrice) }) : t('pay.guestFree')} tone="aqua" />);
@@ -49,6 +50,30 @@ export function SessionTags({ s, now }: { s: Session; now: number }) {
   if (s.difficulty) tags.push(<Tag key="d" label={t(`session.difficulty.${s.difficulty}`)} tone="ghost" />);
   if (!tags.length) return null;
   return <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>{tags}</View>;
+}
+
+/** "Looking for intermediate players · 2 spots left" / "Seats filled" (upcoming, with seats); else the count. */
+export function seatsLine(s: Session, t: (k: string, v?: any) => string, tn: (k: string, n: number, v?: any) => string) {
+  if (s.state !== 'upcoming' || s.capacity == null || s.dropIn) return { text: capacityLine(s, t, tn), looking: false };
+  // Full: the "Seats filled" tag says it; the line keeps the count.
+  if (s.isFull) return { text: capacityLine(s, t, tn), looking: false };
+  const who = s.difficulty ? t('session.lookingFor', { level: t(`session.levelNoun.${s.difficulty}`) }) : t('session.lookingAny');
+  return { text: `${who} · ${tn('session.spotsLeft', s.spotsLeft ?? 0)}`, looking: true };
+}
+
+/** What the session is played on: its own photo, else the sport's field, else the sport's icon. */
+export function SessionPicture({ s, width, height, radius = 10 }: { s: Session; width: number | '100%'; height: number; radius?: number }) {
+  const { p } = useKit();
+  const [failed, setFailed] = useState(false);
+  const uri = sessionPicture(s.sport, s.imageUrl);
+  if (!uri || failed) {
+    return (
+      <View style={{ width, height, borderRadius: radius, backgroundColor: p.wash, alignItems: 'center', justifyContent: 'center' }}>
+        <Icon sport={s.sport} size={Math.min(height * 0.42, 34)} color={p.inkSoft} />
+      </View>
+    );
+  }
+  return <Image source={{ uri }} onError={() => setFailed(true)} style={{ width, height, borderRadius: radius }} resizeMode="cover" accessibilityIgnoresInvertColors />;
 }
 
 /** "7 of 8 · 1 spot left" / "12 going" */
@@ -137,8 +162,20 @@ export function SessionRow({ s, size = 'normal', now, meId, showDay, rail = true
         ? t('session.startsIn', { in: fmtIn(s.startsAt, lang, new Date(now)) })
         : null;
 
+  const seats = seatsLine(s, t, tn);
   const body = (
     <View style={{ flex: 1, gap: hero ? 8 : 6, paddingBottom: 2 }}>
+      {hero ? (
+        <View>
+          <SessionPicture s={s} width="100%" height={128} radius={12} />
+          <View style={{ position: 'absolute', start: 8, bottom: 8, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, backgroundColor: 'rgba(2,40,40,0.78)' }}>
+            <Icon sport={s.sport} size={14} color="#F4F1EA" />
+            <Txt v="label" size={13} color="#F4F1EA">
+              {sportLabel(t, s.sport)}
+            </Txt>
+          </View>
+        </View>
+      ) : null}
       <Txt v="row" size={hero ? 22 : compact ? 14 : 16} numberOfLines={2} color={dim ? p.inkFaint : p.ink}>
         {s.title || t(`sportNoun.${s.sport}`)}
       </Txt>
@@ -158,8 +195,8 @@ export function SessionRow({ s, size = 'normal', now, meId, showDay, rail = true
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <MagnetRow people={s.roster} total={s.goingCount} max={hero ? 6 : 4} size={hero ? 30 : 24} meId={meId} snapId={justJoined ? meId : null} />
           <Tally count={s.goingCount} capacity={s.capacity} size={hero ? 16 : 13} />
-          <Txt v="meta" size={12}>
-            {capacityLine(s, t, tn)}
+          <Txt v={seats.looking ? 'label' : 'meta'} size={12} color={seats.looking ? p.markerText : undefined}>
+            {seats.text}
           </Txt>
         </View>
       ) : null}
@@ -201,6 +238,7 @@ export function SessionRow({ s, size = 'normal', now, meId, showDay, rail = true
         <View style={{ flex: 1, flexDirection: 'row', gap: 10, paddingVertical: hero ? 18 : compact ? 12 : 16, paddingEnd: 16, borderBottomWidth: last ? 0 : 1, borderBottomColor: p.rule, opacity: s.state === 'cancelled' ? 0.8 : 1 }}>
           {timeBlock}
           {body}
+          {!hero && !compact ? <SessionPicture s={s} width={64} height={64} /> : null}
         </View>
       </Press>
     </Animated.View>

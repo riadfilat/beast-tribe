@@ -33,6 +33,7 @@ const TYPE_ICON: Record<string, IconName> = {
   photo_review: 'photo',
   photo_overdue: 'warning',
   community_request: 'people',
+  players_wanted: 'people',
 };
 
 export default function InboxScreen() {

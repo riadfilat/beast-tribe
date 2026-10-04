@@ -22,7 +22,7 @@ import { Press } from '../../../src/components/board/Press';
 import { Magnet } from '../../../src/components/board/people';
 import { Rule, Sun, Tally } from '../../../src/components/board/marks';
 import { IconButton, MarkerButton, OutlineButton, TextButton } from '../../../src/components/board/controls';
-import { SessionTags, capacityLine, useNow } from '../../../src/components/board/session';
+import { SessionTags, capacityLine, seatsLine, useNow } from '../../../src/components/board/session';
 import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
 import { scheduleEventReminder } from '../../../src/lib/notifications';
@@ -347,8 +347,8 @@ export default function SessionScreen() {
               </Txt>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Tally count={x.goingCount} capacity={x.capacity} size={15} />
-                <Txt v="label" size={13} color={p.inkSoft}>
-                  {capacityLine(x, t, tn)}
+                <Txt v="label" size={13} color={seatsLine(x, t, tn).looking ? p.markerText : p.inkSoft}>
+                  {seatsLine(x, t, tn).looking ? seatsLine(x, t, tn).text : capacityLine(x, t, tn)}
                 </Txt>
               </View>
             </View>
@@ -446,6 +446,9 @@ export default function SessionScreen() {
             </Txt>
             <TextButton label={t('session.leaveWaitlist')} onPress={doLeave} color={p.inkSoft} />
           </View>
+        ) : x.isFull && x.waitlist.length >= x.waitlistMax ? (
+          // Every seat and every waiting-list spot is taken.
+          <OutlineButton label={t('session.seatsFilled')} icon="lock" onPress={() => {}} disabled />
         ) : x.isFull ? (
           <OutlineButton label={t('session.joinWaitlist')} icon="hourglass" onPress={onJoin} loading={busy} />
         ) : (
