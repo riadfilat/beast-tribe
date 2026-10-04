@@ -115,6 +115,11 @@ User wants to launch the app to limited public testers via TestFlight.
 
 ## Session Log (append-only — newest at top)
 
+### 2026-10-04 (morning) — Photo review on phone and desktop, 48-hour window
+- User: admins (Beast Tribe admins only) review uploaded photos from phone or desktop within 48 hours; if nobody reviews, keep notifying admins.
+- DB 067: image_moderation_queue.uploaded_by nullable (place/facility photos have no member; the 066 trigger failed saving them). 068: bt_photo_reminders() + pg_cron 'photo-review-reminders' hourly (:07): push + inbox to every admin_roles user while photos are pending — after new ones wait 10 min (max hourly), then every 6 h, every 3 h once any is past 48 h (photo_overdue); push texts photo_review / photo_overdue (EN/AR). Last send in app_settings 'moderation'.last_reminder. NOTE: the super admin account has NO push token yet — sign into the app with it and allow notifications to get the pushes.
+- Admin: Moderation page shows "N h left to review" / "Overdue by N h" per photo and the overdue count; bigger photo + buttons on phones; content no longer under the phone menu button (admin + partner layouts); /manifest.webmanifest so the dashboard can be added to the home screen. App inbox: photo reminders open the Moderation page.
+
 ### 2026-10-04 (night, later) — Group photos; every uploaded photo checked
 - User: allow a group photo, small once uploaded; catch unacceptable uploads (sexual content, nudity, anything not allowed).
 - DB 066 (tested in a rolled-back transaction, applied): packs.photo_url (+ column grants); bt_check_image() AFTER INSERT/UPDATE triggers on feed_posts.image_url, profiles.avatar_url, events.image_url, packs.photo_url, popular_locations.image_url, facilities.image_url → image_moderation_queue row + pg_net POST to https://beast-tribe.vercel.app/api/moderate with app_settings 'moderation' secret (only our storage URLs; a reused picture reuses its verdict, a re-attached blocked one is cleared at once); bt_take_down_image() (service role) clears the picture everywhere and hides posts (auto_rejected / rejected).

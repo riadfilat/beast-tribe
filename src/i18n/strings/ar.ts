@@ -279,6 +279,8 @@ export const ar: Strings = {
       captain_nudge: '{event}: جلسات هذا الأسبوع لم تكتمل بعد. أضف الجلسة التالية.',
       partner_invite: '{actor} يدعوك للتمرن: {event}',
       club_verified: 'تم توثيق {event} وأصبح ظاهرًا للجميع',
+      photo_review: 'صور بانتظار مراجعتك',
+      photo_overdue: 'صور تنتظر المراجعة منذ أكثر من 48 ساعة',
       fallback: 'نشاط جديد',
     },
     someone: 'أحدهم',

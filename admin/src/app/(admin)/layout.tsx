@@ -31,7 +31,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Link href="/security" className="font-semibold underline">Turn it on</Link>
           </div>
         ) : null}
-        <div className="p-6 max-w-7xl mx-auto">{children}</div>
+        <div className="px-4 pb-6 pt-16 md:p-6 max-w-7xl mx-auto">{children}</div>
       </main>
     </div>
   );

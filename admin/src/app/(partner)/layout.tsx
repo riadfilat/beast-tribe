@@ -37,7 +37,7 @@ export default async function PartnerLayout({ children }: { children: React.Reac
             </Link>
           </div>
         ) : null}
-        <div className="p-6 max-w-6xl mx-auto">{children}</div>
+        <div className="px-4 pb-6 pt-16 md:p-6 max-w-6xl mx-auto print:p-0">{children}</div>
       </main>
     </div>
   );

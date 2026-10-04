@@ -29,14 +29,19 @@ export default async function ModerationPage() {
     .limit(10);
 
   const pending = pendingItems || [];
+  const now = Date.now();
+  const hoursLeft = (created: string) => 48 - (now - new Date(created).getTime()) / 3600000;
+  const overdue = pending.filter((i: any) => hoursLeft(i.created_at) < 0).length;
   const recent = recentItems || [];
 
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Content Moderation</h1>
       <p className="text-sm text-gray-500 mb-6">
-        {pending.length} images pending review · {reportCount || 0} user reports
+        {pending.length} photo{pending.length === 1 ? '' : 's'} to review
+        {overdue ? <span className="text-red-600 font-semibold"> · {overdue} past 48 hours</span> : null} · {reportCount || 0} user reports
       </p>
+      <p className="text-xs text-gray-400 -mt-4 mb-6">Review each photo within 48 hours. Admins get reminders on their phone until the queue is empty.</p>
 
       {/* Pending Queue */}
       {pending.length > 0 && (
@@ -50,7 +55,7 @@ export default async function ModerationPage() {
               return (
                 <div key={item.id} className="bg-white rounded-xl border border-yellow-200 shadow-sm overflow-hidden">
                   {/* Image preview */}
-                  <div className="h-48 bg-gray-100 flex items-center justify-center">
+                  <div className="h-64 md:h-48 bg-gray-100 flex items-center justify-center">
                     {item.image_url ? (
                       <img
                         src={item.image_url}
@@ -67,8 +72,16 @@ export default async function ModerationPage() {
                       {item.uploader?.display_name || item.uploader?.full_name || 'Unknown'}
                     </p>
                     <p className="text-xs text-gray-400 mb-1">
-                      {item.source_table} · {new Date(item.created_at).toLocaleDateString()}
+                      {item.source_table} · {new Date(item.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </p>
+                    {(() => {
+                      const h = hoursLeft(item.created_at);
+                      return (
+                        <p className={`inline-block mb-2 text-xs font-semibold px-2 py-0.5 rounded-full ${h < 0 ? 'bg-red-100 text-red-700' : h < 12 ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'}`}>
+                          {h < 0 ? `Overdue by ${Math.ceil(-h)} h` : `${Math.floor(h)} h left to review`}
+                        </p>
+                      );
+                    })()}
 
                     {/* What the automatic check said */}
                     <div className="mb-3 text-xs">
@@ -88,12 +101,12 @@ export default async function ModerationPage() {
                     {/* Actions */}
                     <div className="flex gap-2">
                       <form action={approveAction} className="flex-1">
-                        <button type="submit" className="w-full py-2 text-sm font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100 transition inline-flex items-center justify-center gap-1.5">
+                        <button type="submit" className="w-full py-3 md:py-2 text-sm font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100 transition inline-flex items-center justify-center gap-1.5">
                           <Icon name="check" size="sm" weight="bold" />Approve
                         </button>
                       </form>
                       <form action={rejectAction} className="flex-1">
-                        <button type="submit" className="w-full py-2 text-sm font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition inline-flex items-center justify-center gap-1.5">
+                        <button type="submit" className="w-full py-3 md:py-2 text-sm font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition inline-flex items-center justify-center gap-1.5">
                           <Icon name="close" size="sm" weight="bold" />Reject
                         </button>
                       </form>

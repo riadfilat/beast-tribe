@@ -258,6 +258,8 @@ export const en = {
       captain_nudge: "{event}: this week's sessions aren't all on the board yet. Add the next one.",
       partner_invite: '{actor} invited you to train: {event}',
       club_verified: '{event} is verified and listed for everyone',
+      photo_review: 'Photos are waiting for your review',
+      photo_overdue: 'Photos have waited over 48 hours for review',
       fallback: 'New activity',
     },
     someone: 'Someone',
