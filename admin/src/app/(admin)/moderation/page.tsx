@@ -70,21 +70,20 @@ export default async function ModerationPage() {
                       {item.source_table} · {new Date(item.created_at).toLocaleDateString()}
                     </p>
 
-                    {/* Auto scan result */}
-                    {item.auto_scan_score !== null && (
-                      <div className="mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500">AI Score:</span>
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                            item.auto_scan_score > 0.7 ? 'bg-red-100 text-red-700' :
-                            item.auto_scan_score > 0.3 ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-green-100 text-green-700'
-                          }`}>
-                            {(item.auto_scan_score * 100).toFixed(0)}% flagged
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                    {/* What the automatic check said */}
+                    <div className="mb-3 text-xs">
+                      {item.auto_scan_result?.verdict ? (
+                        <p className="text-amber-700">
+                          <span className="font-semibold">Check: needs a person</span>
+                          {item.auto_scan_result.categories?.length ? ` · ${item.auto_scan_result.categories.join(', ')}` : ''}
+                          {item.auto_scan_result.reason ? <span className="block text-gray-500 mt-0.5">{item.auto_scan_result.reason}</span> : null}
+                        </p>
+                      ) : item.auto_scan_result?.error ? (
+                        <p className="text-gray-500">Automatic check failed; please review.</p>
+                      ) : (
+                        <p className="text-gray-500">No automatic check (add ANTHROPIC_API_KEY in Vercel to turn it on).</p>
+                      )}
+                    </div>
 
                     {/* Actions */}
                     <div className="flex gap-2">
@@ -155,11 +154,12 @@ export default async function ModerationPage() {
                     {item.status}
                   </span>
                   <span className="text-sm text-gray-700">
-                    {item.uploader?.display_name || item.uploader?.full_name}
+                    {item.uploader?.display_name || item.uploader?.full_name || item.source_table}
                   </span>
+                  {item.status.includes('rejected') && item.rejection_reason ? <span className="text-xs text-gray-500">{item.rejection_reason}</span> : null}
                 </div>
                 <div className="text-xs text-gray-400">
-                  {item.reviewer?.full_name && `by ${item.reviewer.full_name} · `}
+                  {item.reviewer?.full_name ? `by ${item.reviewer.full_name} · ` : item.status.startsWith('auto_') ? 'automatic · ' : ''}
                   {item.reviewed_at && new Date(item.reviewed_at).toLocaleDateString()}
                 </div>
               </div>

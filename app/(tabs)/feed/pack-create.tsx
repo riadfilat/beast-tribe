@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { makeStyles, useKit } from '../../../src/theme';
 import { useI18n } from '../../../src/i18n';
 import { useAuth } from '../../../src/providers/AuthProvider';
-import { createPack, PackAudience, PackError } from '../../../src/data/packs';
+import { createPack, PackAudience, PackError, setPackPhoto } from '../../../src/data/packs';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { randomEmblem } from '../../../src/lib/emblem';
 import { Txt } from '../../../src/components/board/Txt';
@@ -30,6 +31,11 @@ export default function PackCreateScreen() {
   const [emblem, setEmblem] = useState(randomEmblem);
   const [audience, setAudience] = useState<PackAudience>('everyone');
   const [busy, setBusy] = useState(false);
+  const [photo, setPhoto] = useState<string | null>(null);
+  async function pickPhoto() {
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [16, 9], quality: 0.85 });
+    if (!res.canceled && res.assets?.[0]?.uri) setPhoto(res.assets[0].uri);
+  }
   const shown = name.trim() || t('pack.namePlaceholder').replace(/^e\.g\.\s*|^مثال:\s*/, '');
 
   async function create() {
@@ -37,6 +43,8 @@ export default function PackCreateScreen() {
     setBusy(true);
     try {
       const pack = await createPack(meId, name, emblem, audience);
+      // The photo is extra: the group exists even if its upload fails.
+      if (photo) await setPackPhoto(meId, pack.id, photo).catch(() => toast.show(t('pack.photoFailed'), 'error'));
       haptic('success');
       router.replace({ pathname: '/(tabs)/feed/pack', params: { packId: pack.id } });
     } catch (e: any) {
@@ -83,6 +91,13 @@ export default function PackCreateScreen() {
           {!gender ? (
             <TextButton label={t('pack.addGender')} onPress={() => router.push({ pathname: '/(onboarding)/about-you', params: { edit: '1' } })} style={{ alignSelf: 'flex-start', marginTop: 4 }} />
           ) : null}
+
+          <SectionHeading title={t('pack.photo')} style={{ marginTop: 18 }} />
+          {photo ? <Image source={{ uri: photo }} style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 14 }} resizeMode="cover" accessibilityIgnoresInvertColors /> : null}
+          <View style={{ flexDirection: 'row', marginStart: -8 }}>
+            <TextButton label={photo ? t('pack.changePhoto') : t('pack.addPhoto')} onPress={pickPhoto} />
+            {photo ? <TextButton label={t('pack.removePhoto')} onPress={() => setPhoto(null)} /> : null}
+          </View>
 
           <SectionHeading title={t('pack.patch')} style={{ marginTop: 18 }} />
           <PatchPicker value={emblem} onChange={setEmblem} name={shown} />

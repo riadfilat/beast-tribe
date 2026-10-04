@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { uploadImage } from '../lib/upload';
 import { useAuth } from '../providers/AuthProvider';
 import { useQuery, invalidate } from './query';
 import { personOf, Session, SESSION_SELECT, toSession } from './model';
@@ -40,6 +41,8 @@ export interface PackDetail {
   /** Only the pack's creator can restyle it (packs_update_own). */
   canEdit: boolean;
   members: PackMember[];
+  /** Group photo (a small JPEG banner); every upload is checked for content that isn't allowed. */
+  photoUrl: string | null;
 }
 
 export const PACK_EMBLEM_COLUMNS = 'animal, emblem_kind, emblem_value, emblem_color';
@@ -56,10 +59,10 @@ export function usePack(packId?: string | null) {
   return useQuery<PackDetail | null>(packId && me ? `packs:one:${packId}` : null, async () => {
     if (PREVIEW) {
       const pk = previewPacks.find((x) => x.id === packId) ?? previewPacks[0];
-      return { id: pk.id, name: pk.name, emblem: pk.emblem, inviteCode: PREVIEW_PACK_CODE(pk.id), canInvite: true, communityName: null, audience: 'everyone', isLeader: true, canEdit: true, members: previewMembers(pk.id) };
+      return { id: pk.id, name: pk.name, emblem: pk.emblem, inviteCode: PREVIEW_PACK_CODE(pk.id), canInvite: true, communityName: null, audience: 'everyone', photoUrl: null, isLeader: true, canEdit: true, members: previewMembers(pk.id) };
     }
     const [{ data: pack, error }, { data: rows }, { data: code }] = await Promise.all([
-      supabase.from('packs').select(`id, name, created_by, audience, community:communities(name), ${PACK_EMBLEM_COLUMNS}`).eq('id', packId!).maybeSingle(),
+      supabase.from('packs').select(`id, name, created_by, audience, photo_url, community:communities(name), ${PACK_EMBLEM_COLUMNS}`).eq('id', packId!).maybeSingle(),
       supabase.from('pack_members').select('role, joined_at, profile:profiles(id, display_name, full_name, avatar_url)').eq('pack_id', packId!).order('joined_at', { ascending: true }),
       supabase.rpc('pack_invite_code', { p_pack: packId! }),
     ]);
@@ -79,6 +82,7 @@ export function usePack(packId?: string | null) {
       canInvite: !!code,
       communityName: (pack as any).community?.name ?? null,
       audience: ((pack as any).audience as PackAudience) || 'everyone',
+      photoUrl: (pack as any).photo_url ?? null,
       isLeader: members.some((m) => m.id === me && m.role === 'leader'),
       canEdit: !!me && pack.created_by === me,
       members,
@@ -224,4 +228,16 @@ export async function inviteToPack(meId: string, packId: string, userId: string)
   if (PREVIEW) return;
   const { error } = await supabase.from('pack_invites').insert({ pack_id: packId, invited_by: meId, invited_user_id: userId, status: 'pending' });
   if (error && (error as any).code !== '23505') throw new PackError('generic');
+}
+
+
+/** Set or remove the group's photo. Resized to a small JPEG before upload. */
+export async function setPackPhoto(meId: string, packId: string, localUri: string | null) {
+  if (PREVIEW) return;
+  let url: string | null = null;
+  if (localUri) url = await uploadImage(localUri, 'user-uploads', `${meId}/groups/${packId}-${Date.now()}.jpg`, 'group');
+  const { data, error } = await supabase.from('packs').update({ photo_url: url }).eq('id', packId).select('id');
+  if (error || !data?.length) throw new PackError('generic');
+  invalidate(`packs:one:${packId}`);
+  invalidate('member:packs');
 }

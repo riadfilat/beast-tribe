@@ -418,6 +418,11 @@ export const ar: Strings = {
     patch: 'الشارة',
     patchTitle: 'شارة المجموعة',
     changePatch: 'تغيير الشارة',
+    photo: 'صورة المجموعة',
+    photoFailed: 'المجموعة جاهزة، لكن لم تُرفع الصورة. أضفها من صفحة المجموعة.',
+    addPhoto: 'إضافة صورة',
+    changePhoto: 'تغيير الصورة',
+    removePhoto: 'حذف الصورة',
     patchSaved: 'تم تحديث الشارة.',
     kinds: { sport: 'رياضة', beasts: 'وحوش', myths: 'أساطير', marks: 'رموز', emoji: 'إيموجي', letters: 'حروف' },
     glyphs: {

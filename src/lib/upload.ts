@@ -10,13 +10,14 @@ import { supabase } from './supabase';
  * plain JS. (Reading a local file through fetch → blob → ArrayBuffer is unreliable on iOS, which
  * is why uploads used to fail.)
  */
-const SIZE = { avatar: { width: 512, quality: 0.75 }, post: { width: 1080, quality: 0.75 } } as const;
+// group: a group's photo, shown as a banner on the group page — small on purpose.
+const SIZE = { avatar: { width: 512, quality: 0.75 }, group: { width: 640, quality: 0.7 }, post: { width: 1080, quality: 0.75 } } as const;
 
 export async function uploadImage(
   localUri: string,
   bucket: 'event-images' | 'user-uploads',
   path: string,
-  kind: 'post' | 'avatar' = 'post',
+  kind: 'post' | 'avatar' | 'group' = 'post',
 ): Promise<string> {
   const bytes = await jpegBytes(localUri, kind);
   const { error } = await supabase.storage.from(bucket).upload(path, bytes, {
@@ -28,7 +29,7 @@ export async function uploadImage(
   return data.publicUrl;
 }
 
-async function jpegBytes(uri: string, kind: 'post' | 'avatar'): Promise<Uint8Array> {
+async function jpegBytes(uri: string, kind: 'post' | 'avatar' | 'group'): Promise<Uint8Array> {
   try {
     const out = await ImageManipulator.manipulateAsync(uri, [{ resize: { width: SIZE[kind].width } }], {
       compress: SIZE[kind].quality,

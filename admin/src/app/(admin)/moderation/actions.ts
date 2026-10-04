@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
+import { removeStoredFile } from '@/lib/moderation';
 
 export async function approveImage(queueId: string) {
   const admin = await requireAdmin();
@@ -22,13 +23,6 @@ export async function approveImage(queueId: string) {
     .eq('id', queueId);
   if (queueError) throw new Error(queueError.message);
 
-  // Update the source record
-  if (entry.source_table === 'feed_posts') {
-    const { error: postError } = await db.from('feed_posts')
-      .update({ image_status: 'approved' })
-      .eq('id', entry.source_id);
-    if (postError) throw new Error(postError.message);
-  }
 
   // Audit
   await db.from('admin_audit_log').insert({
@@ -54,33 +48,10 @@ export async function rejectImage(queueId: string) {
 
   if (!entry) return;
 
-  // Update queue status
-  const { error: queueError } = await db.from('image_moderation_queue')
-    .update({
-      status: 'rejected',
-      reviewed_by: admin.id,
-      reviewed_at: new Date().toISOString(),
-      rejection_reason: reason || 'Inappropriate content',
-    })
-    .eq('id', queueId);
-  if (queueError) throw new Error(queueError.message);
-
-  // Update the source record
-  if (entry.source_table === 'feed_posts') {
-    const { error: postError } = await db.from('feed_posts')
-      .update({ image_status: 'rejected' })
-      .eq('id', entry.source_id);
-    if (postError) throw new Error(postError.message);
-  }
-
-  // Delete from storage
-  if (entry.image_url) {
-    const path = entry.image_url.split('/user-uploads/')[1];
-    if (path) {
-      const { error: storageError } = await db.storage.from('user-uploads').remove([path]);
-      if (storageError) throw new Error(storageError.message);
-    }
-  }
+  // Off everything that shows it (posts are hidden), then the file itself.
+  const { error: downError } = await db.rpc('bt_take_down_image', { p_queue: queueId, p_reason: reason, p_result: null, p_by: admin.id });
+  if (downError) throw new Error(downError.message);
+  if (entry.image_url) await removeStoredFile(entry.image_url).catch(() => {});
 
   // Audit
   await db.from('admin_audit_log').insert({

@@ -376,6 +376,11 @@ export const en = {
     patch: 'Patch',
     patchTitle: 'Group patch',
     changePatch: 'Change patch',
+    photo: 'Group photo',
+    photoFailed: "The group is ready, but the photo didn't upload. Add it from the group page.",
+    addPhoto: 'Add a photo',
+    changePhoto: 'Change photo',
+    removePhoto: 'Remove photo',
     patchSaved: 'Patch updated.',
     kinds: { sport: 'Sport', beasts: 'Beasts', myths: 'Myths', marks: 'Marks', emoji: 'Emoji', letters: 'Letters' },
     glyphs: {
