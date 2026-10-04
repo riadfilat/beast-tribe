@@ -48,6 +48,6 @@ export function navFor(type: string): NavEntry[] {
   if (has('report')) out.push({ label: 'Monthly report', href: '/partner/report', icon: 'business' });
   if (has('poster')) out.push({ label: 'Join poster', href: '/partner/poster', icon: 'print' });
   if (has('workouts')) out.push({ label: 'Workouts', href: '/partner/workouts', icon: 'workouts' });
-  out.push({ label: 'Plan', href: '/partner/plan', icon: 'payouts' }, { label: 'Profile', href: '/partner/profile', icon: 'settings' });
+  out.push({ label: 'Plan', href: '/partner/plan', icon: 'payouts' }, { label: 'Profile', href: '/partner/profile', icon: 'settings' }, { label: 'Security', href: '/security', icon: 'key' });
   return out;
 }

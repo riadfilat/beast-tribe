@@ -15,9 +15,11 @@ import { PackMark } from '../../src/components/brand/Logo';
 
 type Step = 'email' | 'name' | 'signup-password' | 'signin-password' | 'forgot' | 'reset-sent';
 
+import { MIN_LENGTH, passwordProblem } from '../../src/lib/password';
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REQS = [
-  { key: 'length', test: (pw: string) => pw.length >= 8 },
+  { key: 'length', test: (pw: string) => pw.length >= MIN_LENGTH },
   { key: 'upper', test: (pw: string) => /[A-Z]/.test(pw) },
   { key: 'number', test: (pw: string) => /[0-9]/.test(pw) },
   { key: 'special', test: (pw: string) => /[^A-Za-z0-9]/.test(pw) },
@@ -71,7 +73,11 @@ export default function SignInScreen() {
 
   async function doSignUp() {
     clear();
-    if (!password || password.length < 8 || strength(password) < 2) return setFieldError(t('auth.errors.passwordWeak'));
+    const problem = passwordProblem(password, email.trim());
+    if (problem === 'common') return setFieldError(t('auth.errors.passwordCommon'));
+    if (problem === 'personal') return setFieldError(t('auth.errors.passwordPersonal'));
+    if (problem === 'simple') return setFieldError(t('auth.errors.passwordSimple'));
+    if (problem || strength(password) < 2) return setFieldError(t('auth.errors.passwordWeak'));
     if (!agreed) return setServerError(t('auth.errors.terms'));
     setLoading(true);
     try {

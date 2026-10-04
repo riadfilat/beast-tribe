@@ -39,28 +39,42 @@ export interface PartnerUser {
  * React.cache() ensures this runs only once per server render,
  * even if called from both layout and page.
  */
-const getSessionUser = cache(async () => {
+const getServerSupabase = cache(() => {
   const cookieStore = cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll() {
-          // Read-only in server components
-        },
+  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
       },
-    }
-  );
+      setAll() {
+        // Read-only in server components
+      },
+    },
+  });
+});
 
+const getSessionUser = cache(async () => {
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await getServerSupabase().auth.getUser();
   return user;
 });
+
+/**
+ * Two-step sign-in (authenticator app). `enrolled`: the account has a verified code app.
+ * `verified`: this session entered a code (AAL2). The user was verified with getUser() first,
+ * so the level read from the same session token is trustworthy.
+ */
+export const getTwoStep = cache(async (): Promise<{ enrolled: boolean; verified: boolean }> => {
+  const { data } = await getServerSupabase().auth.mfa.getAuthenticatorAssuranceLevel();
+  return { enrolled: data?.nextLevel === 'aal2', verified: data?.currentLevel === 'aal2' };
+});
+
+/** Accounts with two-step sign-in on must enter their code before any dashboard page. */
+async function requireCodeIfEnrolled() {
+  const step = await getTwoStep();
+  if (step.enrolled && !step.verified) redirect('/login/verify');
+}
 
 /**
  * Require admin access — cached per-request, redirects to /login if not authorized.
@@ -69,6 +83,7 @@ const getSessionUser = cache(async () => {
 export const requireAdmin = cache(async (): Promise<AdminUser> => {
   const user = await getSessionUser();
   if (!user) redirect('/login');
+  await requireCodeIfEnrolled();
 
   const db = createAdminClient();
 
@@ -94,6 +109,7 @@ export const requireAdmin = cache(async (): Promise<AdminUser> => {
 export const requirePartner = cache(async (): Promise<PartnerUser> => {
   const user = await getSessionUser();
   if (!user) redirect('/login');
+  await requireCodeIfEnrolled();
 
   const db = createAdminClient();
 

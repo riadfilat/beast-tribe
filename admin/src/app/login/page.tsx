@@ -51,7 +51,9 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        window.location.href = '/';
+        // Two-step sign-in on: ask for the authenticator code before anything else.
+        const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        window.location.href = aal?.nextLevel === 'aal2' && aal.currentLevel !== 'aal2' ? '/login/verify' : '/';
       }
     } catch {
       setError('Connection error. Please try again.');

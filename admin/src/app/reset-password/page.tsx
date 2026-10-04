@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase-browser';
 import Link from 'next/link';
 import { Icon } from '@/components/ui/Icon';
 import { PackMark } from '@/components/brand/Logo';
+import { DASHBOARD_MIN_LENGTH, MIN_LENGTH, passwordProblem, passwordScore } from '@/lib/password';
 
 function ResetPasswordForm() {
   const [password, setPassword] = useState('');
@@ -47,8 +48,19 @@ function ResetPasswordForm() {
       return;
     }
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
+    // Dashboard accounts need 12 characters, members 10; common and guessable passwords are refused.
+    const supabaseCheck = createClient();
+    const { data: who } = await supabaseCheck.auth.getUser();
+    const { data: role } = who.user ? await supabaseCheck.from('admin_roles').select('role').eq('user_id', who.user.id).maybeSingle() : { data: null };
+    const min = role ? DASHBOARD_MIN_LENGTH : MIN_LENGTH;
+    const problem = passwordProblem(password, who.user?.email || '', min);
+    if (problem) {
+      setError(
+        problem === 'short' ? `Use at least ${min} characters.`
+        : problem === 'common' ? 'That password is too common. Pick one that is harder to guess.'
+        : problem === 'personal' ? "Don't use your email in your password."
+        : 'Avoid repeated or keyboard patterns like 123456 or qwerty.',
+      );
       return;
     }
 
@@ -132,9 +144,19 @@ function ResetPasswordForm() {
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-aqua focus:border-transparent outline-none transition"
                   placeholder="••••••••"
                   required
-                  minLength={8}
+                  minLength={10}
                   autoFocus
                 />
+                {password ? (
+                  <div className="mt-2 flex items-center gap-2" aria-live="polite">
+                    <div className="flex-1 grid grid-cols-4 gap-1">
+                      {[1, 2, 3, 4].map((n) => (
+                        <div key={n} className={`h-1.5 rounded-full ${passwordScore(password) >= n ? (passwordScore(password) <= 1 ? 'bg-red-500' : passwordScore(password) === 2 ? 'bg-amber-500' : 'bg-emerald-600') : 'bg-gray-200'}`} />
+                      ))}
+                    </div>
+                    <span className="text-xs text-gray-500 w-14 text-right">{['', 'Weak', 'Fair', 'Good', 'Strong'][passwordScore(password)]}</span>
+                  </div>
+                ) : null}
               </div>
 
               <div>

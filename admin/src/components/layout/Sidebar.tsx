@@ -28,6 +28,7 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Moderation', href: '/moderation', icon: 'moderation' },
   { label: 'Partners', href: '/partners', icon: 'partners' },
   { label: 'Workouts', href: '/workouts', icon: 'workouts' },
+  { label: 'Security', href: '/security', icon: 'key' },
 ];
 
 interface SidebarProps {

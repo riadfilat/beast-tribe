@@ -115,6 +115,13 @@ User wants to launch the app to limited public testers via TestFlight.
 
 ## Session Log (append-only — newest at top)
 
+### 2026-10-04 (late) — Login security pass (from the user's reel: "5 ways your login isn't secure")
+- 1 Token storage: app keeps the Supabase session in AsyncStorage (app sandbox, no web-script exposure, but unencrypted). NEXT NATIVE BUILD (both platforms): add expo-secure-store and store the session encrypted (large-session pattern: AES key in SecureStore). Adding the package changes the fingerprint, so it waits for that build. Admin site cookies are script-readable because login/verify/security/reset/sign-out use the browser client; moving them to server actions would allow httpOnly cookies.
+- 2 Server-side checks: audited — every admin/partner server action calls requireAdmin/requirePartner (+ ownership checks); only the public lead form is unauthenticated (honeypot + per-IP limits). DB access is RLS.
+- 3 2FA: dashboard two-step sign-in (Supabase MFA, TOTP). /security (QR enroll, turn off), /login/verify (code step), requireAdmin/requirePartner redirect to /login/verify when an enrolled account's session is not AAL2; banner on admin pages until the admin enrols; Security link in both sidebars. Not yet forced for admins without a factor (avoid lock-out before the user enrols) — flip to mandatory once the super admin has enrolled.
+- 4 Rate limits: Supabase Auth per-IP limits + our own (join codes 10/h, assistant 25/day, lead form). CAPTCHA (Turnstile) + stricter limits need the Supabase dashboard (sbp_ token expired 2026-10-04).
+- 5 Passwords: src/lib/password.ts (+ admin copy): min 10 (dashboard accounts 12), common-password list, email-part and keyboard-pattern checks; app sign-up and the reset page (with strength meter). Server-side minimum/leaked-password check is a Supabase dashboard setting.
+
 ### 2026-10-04 (night) — Gender captured at the start; women-only / men-only by gender
 - User: capture gender at the start so only women can create women-only groups and only men men-only groups.
 - DB 064 (tested as real non-admin members in a rolled-back transaction, then applied): only women create women-only groups (PACK_CREATE_WOMEN), only men men-only (PACK_CREATE_MEN), no gender → PACK_GENDER_NEEDED; only women host women-only sessions (WOMEN_ONLY_HOST); joining a women-only session with no gender → GENDER_NEEDED (was a free pass); gender is set once — later changes only by admins/dashboard (GENDER_LOCKED). Service role, admins and bt.trusted functions are exempt (bt_trusted_caller()).
