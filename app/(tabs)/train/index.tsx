@@ -83,6 +83,8 @@ export default function TrainScreen() {
     return Array.from(m.entries()).sort((a, b) => mine(a[0]) - mine(b[0]) || b[1] - a[1]);
   }, [all, mySports.join(',')]);
   const hasSaved = all.some((w) => w.saved);
+  // Not every sport has workouts (squash, riding…): training only follows the member's sports that do.
+  const trainSports = mySports.filter((sp) => SPORT_PLAN[sp] || sports.some(([id]) => id === sp));
 
   const filtered = all.filter((w) => {
     if (filter === 'saved') return w.saved;
@@ -95,7 +97,7 @@ export default function TrainScreen() {
   // On All, the library shows the member's own sports (everything when they haven't picked any);
   // a sport chip shows that sport. Either way it is grouped by level.
   const library = filtered.filter(
-    (w) => w.source === 'library' && (filter !== 'all' || (w.id !== today?.id && (!mySports.length || mySports.includes(w.sport as any)))) && (!lvl || w.level === lvl),
+    (w) => w.source === 'library' && (filter !== 'all' || (w.id !== today?.id && (!trainSports.length || trainSports.includes(w.sport as any)))) && (!lvl || w.level === lvl),
   );
   const byLevel = LEVELS.map((l) => ({ l, list: library.filter((w) => w.level === l) })).filter((g) => g.list.length);
   const unlevelled = library.filter((w) => !LEVELS.includes(w.level as Lvl));
@@ -139,11 +141,11 @@ export default function TrainScreen() {
         ) : null}
 
         {/* For your sports: one tap to the plan or workouts for the sports you play */}
-        {filter === 'all' && mySports.length ? (
+        {filter === 'all' && trainSports.length ? (
           <View style={{ marginTop: 14 }}>
             <SectionHeading title={t('plan.forSports')} style={s.heading} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 16 }}>
-              {mySports.map((sp) => {
+              {trainSports.map((sp) => {
                 const slug = SPORT_PLAN[sp];
                 const pr = slug ? programs.find((x) => x.slug === slug) : null;
                 return (
