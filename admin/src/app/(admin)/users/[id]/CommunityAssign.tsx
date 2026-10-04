@@ -83,7 +83,7 @@ export default function CommunityAssign({
         </button>
       </div>
       <p className="text-[11px] text-gray-400 mt-2">
-        Assigning to a community auto-joins the user to that community&apos;s default packs.
+        Assigning to a community auto-joins the user to that community&apos;s default groups.
       </p>
     </div>
   );

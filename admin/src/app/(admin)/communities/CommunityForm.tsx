@@ -155,7 +155,7 @@ export default function CommunityForm({ action, community }: CommunityFormProps)
               <input type="radio" name="visibility" value="private" defaultChecked={(community?.visibility || 'private') === 'private'} className="mt-0.5" />
               <span className="text-sm">
                 <span className="font-medium text-gray-800 block">Private (invite code)</span>
-                <span className="text-xs text-gray-500">Companies, compounds, clubs. Members join with the community's code; only they see its sessions, packs and posts.</span>
+                <span className="text-xs text-gray-500">Companies, compounds, clubs. Members join with the community's code; only they see its sessions, groups and posts.</span>
               </span>
             </label>
             <label className="flex items-start gap-2 p-3 rounded-lg border border-gray-200 cursor-pointer has-[:checked]:border-brand-teal has-[:checked]:bg-brand-teal/5">

@@ -270,13 +270,13 @@ export default async function EditCommunityPage({ params }: { params: { id: stri
         </div>
       </section>
 
-      {/* Default Packs */}
+      {/* Default groups */}
       <section className="mt-10">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Default Packs</h2>
+            <h2 className="text-lg font-bold text-gray-900">Default Groups</h2>
             <p className="text-xs text-gray-500">
-              New community members are auto-joined to these packs.
+              New community members are auto-joined to these groups.
             </p>
           </div>
         </div>
@@ -284,7 +284,7 @@ export default async function EditCommunityPage({ params }: { params: { id: stri
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 space-y-3">
           {defaultPacks.length === 0 ? (
             <p className="text-sm text-gray-400 px-1 py-2">
-              No default packs yet. Add one below.
+              No default groups yet. Add one below.
             </p>
           ) : (
             <div className="divide-y divide-gray-50">
@@ -304,7 +304,7 @@ export default async function EditCommunityPage({ params }: { params: { id: stri
                     }}
                   >
                     <ConfirmButton
-                      confirmMessage={`Remove "${p.name}" as a default pack? Existing members keep their membership; new joiners won't be auto-added.`}
+                      confirmMessage={`Remove "${p.name}" as a default group? Existing members keep their membership; new joiners won't be auto-added.`}
                       className="text-xs px-2.5 py-1 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 hover:border-red-200 hover:text-red-600 transition"
                     >
                       Remove
@@ -361,7 +361,7 @@ export default async function EditCommunityPage({ params }: { params: { id: stri
         <h3 className="text-sm font-semibold text-red-600 mb-2">Danger Zone</h3>
         <p className="text-xs text-gray-500 mb-3">
           Deleting permanently removes this community. Members will be unassigned;
-          community-scoped packs and locations are cascaded by the database.
+          community-scoped groups and locations are cascaded by the database.
         </p>
         <form
           action={async () => {

@@ -59,7 +59,7 @@ export default function ForCompaniesPage() {
         <div className="mt-12 grid md:grid-cols-3 gap-px bg-[#0B2626]/10 rounded-2xl overflow-hidden">
           {[
             { t: 'People move for people', d: 'The colleague waiting at the 6 pm run does more than any reminder email. Beast Tribe makes that easy to set up, every week.' },
-            { t: 'A challenge ends. A habit needs a crowd.', d: 'Step challenges start the energy. Sessions, packs and a shared feed keep it going after the last day.' },
+            { t: 'A challenge ends. A habit needs a crowd.', d: 'Step challenges start the energy. Sessions, groups and a shared feed keep it going after the last day.' },
             { t: 'You can’t report what you can’t see', d: 'Most wellness spend has no numbers behind it. Your dashboard shows who took part, how often, and what they joined.' },
           ].map((x) => (
             <div key={x.t} className="bg-[#F4F1EA] p-7">
@@ -157,7 +157,7 @@ export default function ForCompaniesPage() {
                 q: 'Who sets up the sessions?',
                 a: 'Your people can, and many do. If you want it handled, add a Beast Captain: a coach we assign who hosts three open sessions a week for your employees. Anyone can drop in, with no pressure if they can’t make it. It is paid by the hour, only for sessions that were held, on top of the seat price.',
               },
-              { q: 'Can we have women-only groups?', a: 'Yes. Packs and sessions can be women only or men only.' },
+              { q: 'Can we have women-only groups?', a: 'Yes. Groups and sessions can be women only or men only.' },
               { q: 'How do we start?', a: 'Most companies start with one four-week team challenge. It fits inside the free trial, and you see the numbers before you pay anything.' },
             ].map((f) => (
               <details key={f.q} className="group py-5">

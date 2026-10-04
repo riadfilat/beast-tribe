@@ -65,7 +65,7 @@ export default async function CommunitiesPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Communities</h1>
           <p className="text-sm text-gray-500">
-            Forced-membership tribes (default packs auto-joined) ·{' '}
+            Forced-membership tribes (default groups auto-joined) ·{' '}
             {list.length.toLocaleString()} total
           </p>
         </div>
@@ -147,7 +147,7 @@ export default async function CommunitiesPage() {
                     <span className="font-semibold text-gray-700">
                       {defaultPackCounts[c.id] || 0}
                     </span>{' '}
-                    default packs
+                    default groups
                   </span>
                   <span>
                     <span className="font-semibold text-gray-700">

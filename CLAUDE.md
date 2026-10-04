@@ -115,6 +115,9 @@ User wants to launch the app to limited public testers via TestFlight.
 
 ## Session Log (append-only — newest at top)
 
+### 2026-10-04 (evening) — "Pack" renamed to "Group" for members
+- User: change the word pack to group or team so it's simpler. Chose **Group / مجموعة**: "Team / فريق" is already the company-team word in step challenges, and the Arabic had mixed فريق and مجموعة for packs. All member-facing text (EN + AR, feminine agreement), website (privacy, /for-companies, /s/ share page), admin labels and the store listing copy. Code, routes and tables still say pack/packs.
+
 ### 2026-10-04 (later) — 12 workouts per sport, clearer week card, levels everywhere
 - User: at least 12 workouts under each sport; the week-plan control should be a highlighted box like Next up; plans and workouts must show beginner / intermediate / advanced.
 - Library: scripts/library (kit.js helpers, check.js validator, sports/<sport>.js × 22, build.js loader). 264 new library workouts, 4 per level per sport, EN + AR, only the 104 library exercises; padel written first as the reference, the other 21 by parallel writers held to check.js. DB 063: workouts.library_key (unique) so build.js updates in place. Every workout walked through the player's step logic (264/264 play to the end). Re-run: `PG_URL=… node scripts/library/build.js`.

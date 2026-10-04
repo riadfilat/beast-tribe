@@ -46,7 +46,7 @@ export default function AddDefaultPackForm({ communityId, availablePacks }: Prop
         onClick={() => setOpen(true)}
         className="text-xs px-3 py-1.5 bg-brand-orange text-white rounded-lg hover:bg-orange-500 transition"
       >
-        + Add Default Pack
+        + Add Default Group
       </button>
     );
   }
@@ -74,7 +74,7 @@ export default function AddDefaultPackForm({ communityId, availablePacks }: Prop
               : 'bg-white text-gray-600 border-gray-200'
           }`}
         >
-          Use existing pack
+          Use existing group
         </button>
       </div>
 
@@ -83,7 +83,7 @@ export default function AddDefaultPackForm({ communityId, availablePacks }: Prop
           <>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
-                Pack Name <span className="text-red-500">*</span>
+                Group Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -96,7 +96,7 @@ export default function AddDefaultPackForm({ communityId, availablePacks }: Prop
               />
             </div>
             <div className="flex items-end gap-3">
-              <PackPatch pack={{ id: 'preview', name: name || 'Pack', emblem_kind: 'glyph', emblem_value: glyph, emblem_color: color }} size={52} />
+              <PackPatch pack={{ id: 'preview', name: name || 'Group', emblem_kind: 'glyph', emblem_value: glyph, emblem_color: color }} size={52} />
               <div className="flex-1">
                 <label className="block text-xs font-medium text-gray-700 mb-1">Patch</label>
                 <select
@@ -145,11 +145,11 @@ export default function AddDefaultPackForm({ communityId, availablePacks }: Prop
         ) : (
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              Pack <span className="text-red-500">*</span>
+              Group <span className="text-red-500">*</span>
             </label>
             {availablePacks.length === 0 ? (
               <p className="text-xs text-gray-400">
-                No global packs available. Switch to &ldquo;Create new&rdquo; instead.
+                No global groups available. Switch to &ldquo;Create new&rdquo; instead.
               </p>
             ) : (
               <select
@@ -159,7 +159,7 @@ export default function AddDefaultPackForm({ communityId, availablePacks }: Prop
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-brand-aqua focus:border-brand-aqua outline-none"
               >
                 <option value="" disabled>
-                  Select a pack…
+                  Select a group…
                 </option>
                 {availablePacks.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -169,7 +169,7 @@ export default function AddDefaultPackForm({ communityId, availablePacks }: Prop
               </select>
             )}
             <p className="text-[11px] text-gray-400 mt-1">
-              The pack will be moved into this community and marked as default.
+              The group will be moved into this community and marked as default.
             </p>
           </div>
         )}
@@ -180,7 +180,7 @@ export default function AddDefaultPackForm({ communityId, availablePacks }: Prop
             disabled={pending}
             className="px-4 py-1.5 bg-brand-orange text-white rounded-lg text-xs font-medium hover:bg-orange-500 transition disabled:opacity-50"
           >
-            {pending ? 'Saving…' : 'Add Default Pack'}
+            {pending ? 'Saving…' : 'Add Default Group'}
           </button>
           <button
             type="button"

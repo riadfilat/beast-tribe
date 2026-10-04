@@ -155,7 +155,7 @@ export async function addCommunityDefaultPack(communityId: string, formData: For
     const glyph = ((formData.get('emblem_value') as string) || 'wolf').trim();
     const color = ((formData.get('emblem_color') as string) || 'slate').trim();
     const description = ((formData.get('description') as string) || '').trim() || null;
-    if (!name) throw new Error('Pack name is required');
+    if (!name) throw new Error('Group name is required');
     if (!GLYPH_IDS.includes(glyph)) throw new Error('Invalid patch');
     if (!PATCH_PAINT[color]) throw new Error('Invalid colour');
 

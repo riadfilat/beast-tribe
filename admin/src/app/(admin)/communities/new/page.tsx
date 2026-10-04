@@ -14,7 +14,7 @@ export default async function NewCommunityPage() {
         </Link>
         <h1 className="text-2xl font-bold text-gray-900 mt-2">New Community</h1>
         <p className="text-sm text-gray-500">
-          Create a tribe — members are auto-joined to default packs scoped here.
+          Create a tribe — members are auto-joined to default groups scoped here.
         </p>
       </div>
 

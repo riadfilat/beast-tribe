@@ -88,7 +88,7 @@ export default async function UserDetailPage({ params }: { params: { id: string 
 
         {packMembership.data?.pack && (
           <div className="mt-4 px-4 py-2 bg-brand-teal/5 rounded-lg flex items-center gap-2">
-            <span className="text-xs text-gray-500">Pack:</span>
+            <span className="text-xs text-gray-500">Group:</span>
             <PackPatch pack={packMembership.data.pack} size={22} />
             <span className="text-sm font-medium text-brand-teal">{packMembership.data.pack.name}</span>
             <span className="text-xs text-gray-400 ml-2">({packMembership.data.role})</span>

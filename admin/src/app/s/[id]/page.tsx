@@ -6,7 +6,7 @@ import { Lockup } from '@/components/brand/Logo';
 
 // Public landing for a shared session link (https://beast-tribe.vercel.app/s/<id>).
 // The app's Share sheet sends this URL, mostly over WhatsApp, so it must preview well
-// and open the session in the app. Pack-only sessions show nothing beyond "private".
+// and open the session in the app. Group-only sessions show nothing beyond "private".
 
 export const dynamic = 'force-dynamic';
 
@@ -51,7 +51,7 @@ const COPY = {
     womenOnly: 'Women only',
     cancelled: 'This session was cancelled.',
     finished: 'This session has finished.',
-    private: 'This is a pack session. Open Beast Tribe to see it if you’re in the pack.',
+    private: 'This is a group session. Open Beast Tribe to see it if you’re in the group.',
     missing: 'This session isn’t on the board anymore.',
     directions: 'Directions',
     session: 'Session',

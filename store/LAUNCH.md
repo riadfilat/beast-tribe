@@ -63,10 +63,10 @@ SHOW UP
 TRAIN EVERY DAY
 • Today's workout, the Operation Beast library, and workouts from coaches.
 • A timer that follows the workout: AMRAP, every minute, intervals, rounds.
-• Log what you did and share it with your community or your pack, or keep it to yourself.
+• Log what you did and share it with your community or your group, or keep it to yourself.
 
 YOUR CREW
-• Start a pack with your friends and pick its patch. Only members see it.
+• Start a group with your friends and pick its patch. Only members see it.
 • Share the wins and give a Beast.
 
 AND MORE
@@ -95,10 +95,10 @@ Free to join. Made by Operation Beast.
 تمرّن كل يوم
 • تمرين اليوم، ومكتبة أوبريشن بيست، وتمارين من المدربين.
 • مؤقت يتبع التمرين: أكبر عدد جولات، كل دقيقة، فترات، جولات.
-• سجّل ما أنجزته وشاركه مع مجتمعك أو فريقك، أو احتفظ به لنفسك.
+• سجّل ما أنجزته وشاركه مع مجتمعك أو مجموعتك، أو احتفظ به لنفسك.
 
-فريقك
-• أنشئ فريقًا مع أصدقائك واختر شارته. لا يراه إلا أعضاؤه.
+مجموعتك
+• أنشئ مجموعة مع أصدقائك واختر شارتها. لا يراها إلا أعضاؤها.
 • شارك إنجازاتك وأرسل بيست.
 
 والمزيد
@@ -112,7 +112,7 @@ Free to join. Made by Operation Beast.
 **App Privacy (nutrition labels)** — Tracking: **No**. All items: *linked to the user*, purpose *App Functionality*, not used for tracking.
 - Contact Info → Email Address, Name
 - Health & Fitness → Health (body measurements you record or share with a coach), Fitness (workouts, nutrition and water logs)
-- User Content → Photos or Videos; Emails or Text Messages (session and pack chat); Other User Content (posts, comments)
+- User Content → Photos or Videos; Emails or Text Messages (session and group chat); Other User Content (posts, comments)
 - Identifiers → User ID
 - Not collected: location from the device, contacts, browsing, purchases, diagnostics, advertising data.
 
@@ -125,7 +125,7 @@ Beast Tribe is a community app for Operation Beast members: find and join in-per
 Sign in with the demo account (email and password in the fields above).
 - Board tab: today's sessions. Open one and tap I'M IN.
 - Train tab: open a workout and tap Start workout; Finish to log it.
-- Tribe tab: feed, communities (open ones can be joined with one tap), packs.
+- Tribe tab: feed, communities (open ones can be joined with one tap), groups.
 - Account deletion: You → Settings → Delete account.
 - Moderation: any post can be reported and its author blocked from the ••• menu.
 There are no purchases in the app.
@@ -135,7 +135,7 @@ Demo account: `appreview@operationbeast.com` (password in CLAUDE.md › reviewer
 ## Google Play Console
 
 - **App name:** Beast Tribe · **Default language:** English (add Arabic translation)
-- **Short description (80):** EN `Find sessions, train with your crew, share the wins. By Operation Beast.` · AR `اعثر على التمارين، تمرّن مع فريقك، وشارك إنجازاتك. من أوبريشن بيست.`
+- **Short description (80):** EN `Find sessions, train with your friends, share the wins. By Operation Beast.` · AR `اعثر على التمارين، تمرّن مع فريقك، وشارك إنجازاتك. من أوبريشن بيست.`
 - **Full description:** same as the App Store descriptions above.
 - **Category:** Health & Fitness · **Contact email:** support@operationbeast.com
 - **App access:** "All or some functionality is restricted" → demo account above.

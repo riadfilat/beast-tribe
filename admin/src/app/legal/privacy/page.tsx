@@ -38,7 +38,7 @@ export default function PrivacyPolicyPage() {
               </li>
               <li>
                 <strong>Profile information</strong> — optional details you add to your profile, such as
-                your bio, sports interests, goals, and community or pack membership.
+                your bio, sports interests, goals, and community or group membership.
               </li>
               <li>
                 <strong>Photos and content you upload</strong> — profile pictures, event images, and any
@@ -46,11 +46,11 @@ export default function PrivacyPolicyPage() {
               </li>
               <li>
                 <strong>Event participation</strong> — the events you create, join, or attend, and your
-                activity within community packs.
+                activity within community groups.
               </li>
               <li>
                 <strong>About you</strong> — optional details such as your city, country, date of birth and
-                gender (gender is used for women-only and men-only sessions and packs).
+                gender (gender is used for women-only and men-only sessions and groups).
               </li>
               <li>
                 <strong>Training and nutrition</strong> — the workouts and sets you log, your training plan,
@@ -74,7 +74,7 @@ export default function PrivacyPolicyPage() {
             <ul className="list-disc space-y-1 pl-6">
               <li>Create and maintain your account and profile.</li>
               <li>Display your content and activity to other members of your community.</li>
-              <li>Enable core features such as events, packs, posts, and messaging.</li>
+              <li>Enable core features such as events, groups, posts, and messaging.</li>
               <li>Send you push notifications you have opted into.</li>
               <li>Keep the community safe by moderating content and enforcing our Terms of Service.</li>
               <li>Diagnose technical issues and improve the App.</li>
@@ -86,7 +86,7 @@ export default function PrivacyPolicyPage() {
             <ul className="list-disc space-y-1 pl-6">
               <li>
                 <strong>Other members</strong> see your name and photo, the sessions you join and the posts
-                you share, only in the communities and packs you share with them. They never see your date
+                you share, only in the communities and groups you share with them. They never see your date
                 of birth, gender, training log, food log or measurements.
               </li>
               <li>
