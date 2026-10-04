@@ -10,6 +10,7 @@ import { Txt } from '../../src/components/board/Txt';
 import { Icon } from '../../src/components/board/Icon';
 import { IconButton, MarkerButton, SectionHeading, TextButton } from '../../src/components/board/controls';
 import { SessionRows } from '../../src/components/board/plan';
+import { LevelTag } from '../../src/components/board/level';
 import { toast } from '../../src/components/board/toast';
 
 // A plan in full: what it's for, how it works, every week's sessions, and one button to start.
@@ -87,9 +88,12 @@ export default function ProgramScreen() {
               <Txt v="hero" size={40} accessibilityRole="header">
                 {lang === 'en' ? prog.title.toUpperCase() : prog.title}
               </Txt>
-              <Txt v="label" size={14} color={p.inkSoft}>
-                {t('plan.planMeta', { weeks: prog.weeks, days: prog.daysPerWeek, min: prog.minutes ?? 30 })}
-              </Txt>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <LevelTag level={prog.level} />
+                <Txt v="label" size={14} color={p.inkSoft}>
+                  {t('plan.planMeta', { weeks: prog.weeks, days: prog.daysPerWeek, min: prog.minutes ?? 30 })}
+                </Txt>
+              </View>
               <Txt v="body" size={16}>
                 {prog.summary}
               </Txt>

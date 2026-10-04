@@ -8,6 +8,7 @@ import { Icon } from './Icon';
 import { Press } from './Press';
 import { Magnet } from './people';
 import { Tag } from './marks';
+import { LevelTag } from './level';
 
 type T = (k: string, v?: any) => string;
 type TN = (k: string, n: number, v?: any) => string;
@@ -83,9 +84,13 @@ export function WorkoutRow({ w, onPress, last }: { w: Workout; onPress: () => vo
           {w.title}
         </Txt>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          {w.level !== 'any' ? <LevelTag level={w.level} /> : null}
           <Icon sport={w.sport} size={13} color={p.inkSoft} />
           <Txt v="meta" numberOfLines={1} style={{ flexShrink: 1 }}>
-            {workoutLine(w, t, tn)}
+            {(() => {
+              const b = mainBlock(w);
+              return b ? blockLine(b, t, tn) : '';
+            })()}
           </Txt>
         </View>
         {w.community ? (

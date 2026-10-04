@@ -26,7 +26,7 @@
  "cues":[["Dumbbells to the sides of the chest.","الدمبلات إلى جانبي الصدر."],["Forearms vertical at the bottom.","الساعدان عموديان في الأسفل."],["Press up and slightly together.","ادفع للأعلى مع تقريبهما قليلًا."]],
  "mistakes":[["Dropping the weights at the end of the set.","إسقاط الأوزان في نهاية المجموعة."]],
  "safety":[["Bring the weights back to the thighs before sitting up.","أعد الأوزان إلى الفخذين قبل الجلوس."]],"breath":["Inhale down, exhale up.","شهيق للأسفل وزفير للأعلى."],"easier":"push_up","harder":"bench_press"},
-{"slug":"overhead_press","name":"Standing overhead press","ar":"ضغط الكتف بالبار وقوفًا","cat":"strength","pattern":"push_v","mech":"compound","pm":["front_delts","triceps"],"sm":["side_delts","upper_back","core"],"eq":["dumbbells"],"lvl":"medium","track":"reps_weight","rest":120,"tempo":"2-0-1-0","sports":["padel","tennis"],"aliases":[],
+{"slug":"overhead_press","name":"Standing overhead press","ar":"ضغط الكتف بالدمبل وقوفًا","cat":"strength","pattern":"push_v","mech":"compound","pm":["front_delts","triceps"],"sm":["side_delts","upper_back","core"],"eq":["dumbbells"],"lvl":"medium","track":"reps_weight","rest":120,"tempo":"2-0-1-0","sports":["padel","tennis"],"aliases":[],
  "setup":[["Weights at the shoulders, glutes and core tight.","الأوزان عند الكتفين والأرداف والبطن مشدودة."]],
  "cues":[["Press straight up, head moves back slightly then through.","ادفع للأعلى والرأس يتراجع قليلًا ثم يتقدم."],["Lock out with biceps by the ears.","أنهِ والعضلة ذات الرأسين قرب الأذنين."],["Ribs stay down, no leaning back.","الأضلاع للأسفل دون ميل للخلف."]],
  "mistakes":[["Arching the lower back to finish.","تقويس أسفل الظهر لإنهاء الحركة."]],

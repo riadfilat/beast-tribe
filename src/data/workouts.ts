@@ -184,7 +184,8 @@ export function useWorkouts(lang: string) {
       .eq('program_only', false)
       .order('featured', { ascending: false })
       .order('published_at', { ascending: false })
-      .limit(80);
+      // The whole library (about 12 per sport) plus coach workouts; sport and level filters run on the phone.
+      .limit(500);
     if (error) throw error;
     const rows = await withAuthorProfiles(data || []);
     const [counts, saved] = await Promise.all([countsFor(rows.map((r: any) => r.id)), savedSet(me!)]);

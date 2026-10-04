@@ -17,7 +17,8 @@ import { useExercises } from '../../../src/data/exercises';
 import { activeWeekFocus, Goal, GOAL_SPORT, ProgramSession, recommendedSlug, startPlan, TrainLevel, useFocusSessions, useMyPlan, usePrograms } from '../../../src/data/programs';
 import { useMySports } from '../../../src/data/member';
 import { useAuth } from '../../../src/providers/AuthProvider';
-import { FindPlanCard, FocusSheet, NextUpCard, RecommendedCard, SessionRows, WeekFocusSheet } from '../../../src/components/board/plan';
+import { FindPlanCard, FocusSheet, NextUpCard, RecommendedCard, WeekCard, WeekFocusSheet } from '../../../src/components/board/plan';
+import { LEVELS, LEVEL_KEY, LevelBars, Lvl } from '../../../src/components/board/level';
 import { toast } from '../../../src/components/board/toast';
 import { schedulePlanReminder } from '../../../src/lib/notifications';
 
@@ -70,14 +71,17 @@ export default function TrainScreen() {
     }
   };
   const [filter, setFilter] = useState<Filter>('all');
+  const [lvl, setLvl] = useState<Lvl | null>(null);
 
   const all = q.data ?? [];
   const today = useMemo(() => todaysWorkout(all), [all]);
   const sports = useMemo(() => {
     const m = new Map<string, number>();
     all.forEach((w) => m.set(w.sport, (m.get(w.sport) ?? 0) + 1));
-    return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
-  }, [all]);
+    // The member's own sports first, then the rest by how many workouts they have.
+    const mine = (id: string) => (mySports.includes(id as any) ? 0 : 1);
+    return Array.from(m.entries()).sort((a, b) => mine(a[0]) - mine(b[0]) || b[1] - a[1]);
+  }, [all, mySports.join(',')]);
   const hasSaved = all.some((w) => w.saved);
 
   const filtered = all.filter((w) => {
@@ -88,7 +92,13 @@ export default function TrainScreen() {
     return true;
   });
   const coaches = filtered.filter((w) => w.source === 'coach');
-  const library = filtered.filter((w) => w.source === 'library' && (filter !== 'all' || w.id !== today?.id));
+  // On All, the library shows the member's own sports (everything when they haven't picked any);
+  // a sport chip shows that sport. Either way it is grouped by level.
+  const library = filtered.filter(
+    (w) => w.source === 'library' && (filter !== 'all' || (w.id !== today?.id && (!mySports.length || mySports.includes(w.sport as any)))) && (!lvl || w.level === lvl),
+  );
+  const byLevel = LEVELS.map((l) => ({ l, list: library.filter((w) => w.level === l) })).filter((g) => g.list.length);
+  const unlevelled = library.filter((w) => !LEVELS.includes(w.level as Lvl));
   const open = (w: Workout) => router.push({ pathname: '/workout/[id]', params: { id: w.id } });
 
   return (
@@ -117,24 +127,15 @@ export default function TrainScreen() {
 
         {/* This week: stay on the plan, or focus on something else for a week */}
         {filter === 'all' && (plan || goal) ? (
-          <View style={s.weekRow}>
-            <Press onPress={() => setWeekOpen(true)} feedback="selection" accessibilityRole="button" style={s.weekChip}>
-              <Txt v="label" size={13} color={p.inkSoft}>
-                {t('plan.thisWeek')}
-              </Txt>
-              <Txt v="row" size={14}>
-                {focusOther ? t(`plan.goals.${focusOther}`) : t('plan.onPlan')}
-              </Txt>
-              <Icon name="chevron" size={11} color={p.inkSoft} weight="bold" style={{ transform: [{ rotate: '90deg' }] }} />
-            </Press>
-            <TextButton label={t('plan.changeGoal')} onPress={() => setFocusOpen(true)} />
-          </View>
-        ) : null}
-        {focusOther && picks.sessions.length && filter === 'all' ? (
-          <View style={s.section}>
-            <SectionHeading title={t('plan.focusPicks')} style={s.heading} />
-            <SessionRows sessions={picks.sessions} onOpen={(ps) => router.push({ pathname: '/workout/[id]', params: { id: ps.workoutId } })} />
-          </View>
+          <WeekCard
+            plan={plan}
+            goal={goal}
+            focusOther={focusOther}
+            picks={picks.sessions}
+            onOpenSession={(ps) => (focusOther ? router.push({ pathname: '/workout/[id]', params: { id: ps.workoutId } }) : openSession(ps))}
+            onSwitch={() => setWeekOpen(true)}
+            onChangeGoal={() => setFocusOpen(true)}
+          />
         ) : null}
 
         {/* For your sports: one tap to the plan or workouts for the sports you play */}
@@ -228,11 +229,32 @@ export default function TrainScreen() {
           </View>
         ) : null}
 
-        {library.length ? (
+        {/* How hard: filter the list to one level */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[s.chipRow, { paddingTop: 0 }]}>
+          <Chip label={t('plan.anyLevel')} selected={!lvl} onPress={() => setLvl(null)} />
+          {LEVELS.map((l) => (
+            <Chip key={l} label={t(`plan.levels.${LEVEL_KEY[l]}`)} selected={lvl === l} onPress={() => setLvl(lvl === l ? null : l)} />
+          ))}
+        </ScrollView>
+
+        {byLevel.map((g) => (
+          <View key={g.l} style={s.section}>
+            <View style={[s.heading, { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, marginBottom: 2 }]}>
+              <LevelBars level={g.l} color={g.l === 'easy' ? p.aqua : p.ink} size={13} />
+              <Txt v="label" size={13} color={p.inkSoft} style={lang === 'en' ? { textTransform: 'uppercase', letterSpacing: 0.8 } : null}>
+                {`${t(`plan.levelGroup.${LEVEL_KEY[g.l]}`)} · ${g.list.length}`}
+              </Txt>
+            </View>
+            {g.list.map((w, i) => (
+              <WorkoutRow key={w.id} w={w} onPress={() => open(w)} last={i === g.list.length - 1} />
+            ))}
+          </View>
+        ))}
+        {unlevelled.length ? (
           <View style={s.section}>
             <SectionHeading title={t('train.library')} style={s.heading} />
-            {library.map((w, i) => (
-              <WorkoutRow key={w.id} w={w} onPress={() => open(w)} last={i === library.length - 1} />
+            {unlevelled.map((w, i) => (
+              <WorkoutRow key={w.id} w={w} onPress={() => open(w)} last={i === unlevelled.length - 1} />
             ))}
           </View>
         ) : null}
@@ -322,7 +344,5 @@ const useStyles = makeStyles(({ p }) => ({
   logRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: p.rule },
   libraryRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 16, marginTop: 4, marginBottom: 6, padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: p.ruleStrong },
   libraryIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: p.ink, alignItems: 'center', justifyContent: 'center' },
-  weekRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginTop: 14 },
-  weekChip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1.5, borderColor: p.ruleStrong },
   sportCard: { width: 132, gap: 6, padding: 12, borderRadius: 12, borderWidth: 1.5, borderColor: p.rule },
 }));

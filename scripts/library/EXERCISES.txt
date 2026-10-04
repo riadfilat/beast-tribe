@@ -1,0 +1,105 @@
+# The only exercises a workout may use (slug | English | Arabic | category | equipment | sides | tracking | level)
+bike | Bike | الدراجة الثابتة | cardio | eq: bike | both sides | distance_time | lvl easy
+easy_jog | Easy run | هرولة خفيفة | cardio | eq: none | both sides | distance_time | lvl easy
+rower | Rowing machine | جهاز التجديف | cardio | eq: rower | both sides | distance_time | lvl medium
+run | Tempo run | جري بإيقاع ثابت | cardio | eq: none | both sides | distance_time | lvl medium
+sprint | Sprint | العدو السريع | cardio | eq: none | both sides | distance_time | lvl hard
+walk | Brisk walk | المشي السريع | cardio | eq: none | both sides | distance_time | lvl easy
+box_jump | Box jump | القفز على الصندوق | conditioning | eq: box | both sides | reps | lvl medium
+burpee | Burpee | البيربي | conditioning | eq: none | both sides | reps | lvl hard
+farmer_carry | Farmer's carry | مشية المزارع | conditioning | eq: dumbbells | both sides | distance | lvl easy
+jump_rope | Jump rope | نط الحبل | conditioning | eq: jump_rope | both sides | time | lvl medium
+jump_squat | Jump squat | سكوات مع القفز | conditioning | eq: none | both sides | reps | lvl medium
+kettlebell_swing | Kettlebell swing | أرجحة الكيتل بل | conditioning | eq: kettlebell | both sides | reps_weight | lvl medium
+lateral_shuffle | Lateral shuffle | الخطوات الجانبية | conditioning | eq: none | both sides | time | lvl medium
+lunge_jump | Split-squat jump | طعن مع القفز والتبديل | conditioning | eq: none | both sides | reps | lvl hard
+med_ball_rotational_throw | Rotational medicine ball throw | رمي الكرة الطبية مع الدوران | conditioning | eq: med_ball | per side | reps | lvl medium
+med_ball_slam | Medicine ball slam | ضرب الكرة الطبية بالأرض | conditioning | eq: med_ball | both sides | reps | lvl medium
+mountain_climber | Mountain climbers | متسلق الجبال | conditioning | eq: none | both sides | time | lvl medium
+quick_feet | Quick feet | خطوات سريعة في المكان | conditioning | eq: none | both sides | time | lvl easy
+shuttle_run | Shuttle run | الجري المكوكي | conditioning | eq: none | both sides | time | lvl medium
+skater_jump | Skater jumps | قفزات المتزلج | conditioning | eq: none | per side | reps | lvl medium
+sled_push | Sled push | دفع الزلاجة | conditioning | eq: sled | both sides | distance | lvl hard
+step_burpee | Step-back burpee | بيربي بخطوة للخلف | conditioning | eq: none | both sides | reps | lvl medium
+wall_ball | Wall ball | رمي الكرة على الحائط | conditioning | eq: wall_ball | both sides | reps | lvl medium
+bicycle_crunch | Bicycle crunch | تمرين الدراجة للبطن | core | eq: mat | both sides | reps | lvl medium
+bird_dog | Bird dog | تمرين الطائر والكلب | core | eq: mat | both sides | reps | lvl easy
+copenhagen_plank | Copenhagen plank | بلانك كوبنهاغن | core | eq: bench | per side | time | lvl hard
+dead_bug | Dead bug | تمرين الحشرة الميتة | core | eq: mat | both sides | reps | lvl easy
+hanging_knee_raise | Hanging knee raise | رفع الركبتين مع التعلق | core | eq: pull_up_bar | both sides | reps | lvl medium
+hollow_hold | Hollow hold | ثبات القارب (هولو) | core | eq: mat | both sides | time | lvl hard
+knee_plank | Plank on knees | البلانك على الركبتين | core | eq: mat | both sides | time | lvl easy
+pallof_press | Pallof press | تمرين بالوف | core | eq: band | per side | reps | lvl easy
+plank | Plank | البلانك | core | eq: mat | both sides | time | lvl easy
+plank_shoulder_tap | Plank shoulder taps | بلانك مع لمس الكتف | core | eq: none | both sides | reps | lvl medium
+russian_twist | Russian twist | الالتواء الروسي | core | eq: med_ball | both sides | reps | lvl medium
+side_plank | Side plank | البلانك الجانبي | core | eq: mat | per side | time | lvl medium
+suitcase_carry | Suitcase carry | مشية الحقيبة | core | eq: kettlebell | per side | distance | lvl medium
+ankle_mobility | Knee-to-wall ankle mobility | مرونة الكاحل عند الحائط | mobility | eq: none | per side | reps | lvl easy
+cat_cow | Cat-cow | القطة والبقرة | mobility | eq: mat | both sides | reps | lvl easy
+hip_openers | Hip openers | فتح الورك | mobility | eq: none | per side | reps | lvl easy
+leg_swings | Leg swings | أرجحة الرجل | mobility | eq: none | per side | reps | lvl easy
+neck_rolls | Neck mobility | تحريك الرقبة | mobility | eq: none | both sides | time | lvl easy
+shoulder_rolls | Shoulder rolls | تدوير الكتفين | mobility | eq: none | both sides | time | lvl easy
+thoracic_rotation | Thoracic rotation | تدوير الظهر العلوي | mobility | eq: mat | per side | reps | lvl easy
+worlds_greatest_stretch | World's greatest stretch | أعظم إطالة في العالم | mobility | eq: none | per side | reps | lvl medium
+air_squat | Air squat | سكوات بوزن الجسم | strength | eq: none | both sides | reps | lvl easy
+back_squat | Barbell back squat | السكوات الخلفي بالبار | strength | eq: barbell,rack | both sides | reps_weight | lvl hard
+band_pull_up | Band-assisted pull-up | العقلة بمساعدة شريط المقاومة | strength | eq: pull_up_bar,band | both sides | reps | lvl medium
+barbell_row | Barbell bent-over row | سحب البار منحنيًا | strength | eq: barbell | both sides | reps_weight | lvl hard
+bench_press | Barbell bench press | ضغط الصدر بالبار | strength | eq: barbell,bench,rack | both sides | reps_weight | lvl hard
+biceps_curl | Dumbbell biceps curl | تمرين البايسبس بالدمبل | strength | eq: dumbbells | both sides | reps_weight | lvl easy
+box_squat | Squat to bench | سكوات إلى المقعد | strength | eq: bench | both sides | reps | lvl easy
+bulgarian_split_squat | Bulgarian split squat | السكوات البلغاري | strength | eq: bench,dumbbells | per side | reps_weight | lvl medium
+calf_raise | Calf raise | رفع السمانة | strength | eq: none | both sides | reps | lvl easy
+deadlift | Barbell deadlift | الرفعة الميتة بالبار | strength | eq: barbell | both sides | reps_weight | lvl hard
+decline_push_up | Decline push-up | الضغط مع رفع القدمين | strength | eq: bench | both sides | reps | lvl hard
+dips | Bench dips | الغطس على المقعد | strength | eq: bench | both sides | reps | lvl medium
+dumbbell_bench_press | Dumbbell bench press | ضغط الصدر بالدمبل | strength | eq: dumbbells,bench | both sides | reps_weight | lvl medium
+dumbbell_row | Single-arm dumbbell row | سحب الدمبل بذراع واحدة | strength | eq: dumbbells,bench | per side | reps_weight | lvl easy
+face_pull | Face pull | السحب نحو الوجه | strength | eq: cable | both sides | reps_weight | lvl easy
+front_squat | Front squat | السكوات الأمامي بالبار | strength | eq: barbell,rack | both sides | reps_weight | lvl hard
+glute_bridge | Glute bridge | جسر الأرداف | strength | eq: mat | both sides | reps | lvl easy
+goblet_squat | Goblet squat | سكوات الكأس | strength | eq: kettlebell | both sides | reps_weight | lvl medium
+hip_hinge | Bodyweight hip hinge | الانحناء من الورك بوزن الجسم | strength | eq: none | both sides | reps | lvl easy
+hip_thrust | Hip thrust | دفع الحوض | strength | eq: bench,barbell | both sides | reps_weight | lvl medium
+incline_push_up | Incline push-up | الضغط المائل | strength | eq: bench | both sides | reps | lvl easy
+inverted_row | Inverted row | السحب المقلوب | strength | eq: rack,barbell | both sides | reps | lvl easy
+kettlebell_deadlift | Kettlebell deadlift | الرفعة الميتة بالكيتل بل | strength | eq: kettlebell | both sides | reps_weight | lvl easy
+knee_push_up | Push-up on knees | الضغط على الركبتين | strength | eq: mat | both sides | reps | lvl easy
+lat_pulldown | Lat pulldown | السحب العالي | strength | eq: cable | both sides | reps_weight | lvl easy
+lateral_lunge | Lateral lunge | الطعن الجانبي | strength | eq: none | per side | reps | lvl medium
+lateral_raise | Lateral raise | الرفرفة الجانبية | strength | eq: dumbbells | both sides | reps_weight | lvl easy
+nordic_curl | Nordic hamstring curl | تمرين النورديك للفخذ الخلفية | strength | eq: mat | both sides | reps | lvl hard
+overhead_press | Standing overhead press | ضغط الكتف بالبار وقوفًا | strength | eq: dumbbells | both sides | reps_weight | lvl medium
+pike_push_up | Pike push-up | ضغط الكتف بوضعية الهرم | strength | eq: none | both sides | reps | lvl medium
+pull_up | Pull-up | العقلة | strength | eq: pull_up_bar | both sides | reps | lvl hard
+push_press | Push press | الدفع فوق الرأس | strength | eq: dumbbells | both sides | reps_weight | lvl medium
+push_up | Push-up | الضغط | strength | eq: none | both sides | reps | lvl medium
+reverse_lunge | Reverse lunge | الطعن الخلفي | strength | eq: none | per side | reps | lvl easy
+romanian_deadlift | Romanian deadlift | الرفعة الميتة الرومانية | strength | eq: dumbbells | both sides | reps_weight | lvl medium
+single_leg_calf_raise | Single-leg calf raise | رفع السمانة برجل واحدة | strength | eq: none | per side | reps | lvl medium
+single_leg_rdl | Single-leg Romanian deadlift | الرفعة الرومانية برجل واحدة | strength | eq: dumbbells | per side | reps_weight | lvl medium
+split_squat | Split squat | سكوات الطعن الثابت | strength | eq: none | per side | reps | lvl easy
+step_up | Step-up | الصعود على الصندوق | strength | eq: box | per side | reps_weight | lvl easy
+triceps_extension | Overhead triceps extension | تمرين الترايسبس فوق الرأس | strength | eq: dumbbells | both sides | reps_weight | lvl easy
+walking_lunge | Walking lunge | الطعن مع المشي | strength | eq: none | per side | reps | lvl medium
+wall_sit | Wall sit | الجلوس على الحائط | strength | eq: none | both sides | time | lvl easy
+calf_stretch | Calf stretch | إطالة السمانة | stretch | eq: none | per side | time | lvl easy
+chest_stretch | Doorway chest stretch | إطالة الصدر عند الباب | stretch | eq: none | both sides | time | lvl easy
+childs_pose | Child's pose | وضعية الطفل | stretch | eq: mat | both sides | time | lvl easy
+figure_four_stretch | Figure-four glute stretch | إطالة الأرداف بوضعية الرقم 4 | stretch | eq: mat | per side | time | lvl easy
+hamstring_stretch | Hamstring stretch | إطالة الفخذ الخلفية | stretch | eq: none | per side | time | lvl easy
+hip_flexor_stretch | Kneeling hip flexor stretch | إطالة مثنيات الورك على الركبة | stretch | eq: mat | per side | time | lvl easy
+lat_stretch | Lat stretch | إطالة جانب الظهر | stretch | eq: none | per side | time | lvl easy
+quad_stretch | Standing quad stretch | إطالة الفخذ الأمامية وقوفًا | stretch | eq: none | per side | time | lvl easy
+standing_forward_fold | Standing forward fold | الانحناء للأمام وقوفًا | stretch | eq: none | both sides | time | lvl easy
+arm_circles | Arm circles | دوائر الذراعين | warmup | eq: none | both sides | time | lvl easy
+band_pull_apart | Band pull-apart | فتح شريط المقاومة | warmup | eq: band | both sides | reps | lvl easy
+high_knees | High knees | رفع الركبتين عاليًا | warmup | eq: none | both sides | time | lvl medium
+inchworm | Inchworm | مشية الدودة | warmup | eq: none | both sides | reps | lvl medium
+jumping_jack | Jumping jacks | جامبينغ جاك | warmup | eq: none | both sides | time | lvl easy
+kettlebell_halo | Kettlebell halo | تدوير الكيتل بل حول الرأس | warmup | eq: kettlebell | both sides | reps | lvl easy
+march | High-knee march | المشي في المكان برفع الركبتين | warmup | eq: none | both sides | time | lvl easy
+skips | A-skips | حجل مع رفع الركبة | warmup | eq: none | both sides | distance | lvl easy
+step_jack | Step jacks | جامبينغ جاك بدون قفز | warmup | eq: none | both sides | time | lvl easy

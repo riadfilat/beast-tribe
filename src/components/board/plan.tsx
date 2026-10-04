@@ -11,6 +11,7 @@ import { Icon } from './Icon';
 import { Press } from './Press';
 import { Chip, MarkerButton, OutlineButton, TextButton } from './controls';
 import { toast } from './toast';
+import { LevelTag } from './level';
 
 const LEVELS: TrainLevel[] = ['beginner', 'intermediate', 'advanced'];
 const DAYS = [2, 3, 4, 5];
@@ -230,7 +231,10 @@ export function RecommendedCard({ program, onStart, onSee, busy }: { program: Pr
       <Txt v="hero" size={30}>
         {lang === 'en' ? program.title.toUpperCase() : program.title}
       </Txt>
-      <Txt v="meta">{t('plan.planMeta', { weeks: program.weeks, days: program.daysPerWeek, min: program.minutes ?? 30 })}</Txt>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <LevelTag level={program.level} />
+        <Txt v="meta">{t('plan.planMeta', { weeks: program.weeks, days: program.daysPerWeek, min: program.minutes ?? 30 })}</Txt>
+      </View>
       <Txt v="body" size={15} color={p.inkSoft}>
         {program.summary}
       </Txt>
@@ -290,6 +294,102 @@ export function SessionRows({ sessions, onOpen }: { sessions: ProgramSession[]; 
           {s.done ? <Icon name="check" size={16} color={p.aqua} weight="bold" /> : <Icon name="chevron" size={13} color={p.inkFaint} weight="bold" />}
         </Press>
       ))}
+    </View>
+  );
+}
+
+/**
+ * This week, as its own box under Next up: what the week is for, each session with a tick when done,
+ * and the one switch (train something else this week, or back to the plan).
+ */
+export function WeekCard({
+  plan,
+  goal,
+  focusOther,
+  picks,
+  onOpenSession,
+  onSwitch,
+  onChangeGoal,
+}: {
+  plan: MyPlan | null;
+  goal: Goal | null;
+  focusOther: Goal | null;
+  picks: ProgramSession[];
+  onOpenSession: (s: ProgramSession) => void;
+  onSwitch: () => void;
+  onChangeGoal: () => void;
+}) {
+  const { p, lang } = useKit();
+  const { t } = useI18n();
+  const week = plan && !focusOther ? plan.sessions.filter((s) => s.week === plan.week) : focusOther ? picks : [];
+  const title = focusOther
+    ? t('plan.focusWeek', { goal: t(`plan.goals.${focusOther}`) })
+    : plan
+      ? plan.program.title
+      : goal
+        ? t(`plan.goals.${goal}`)
+        : '';
+  const caps = lang === 'en' ? { textTransform: 'uppercase' as const, letterSpacing: 0.8 } : null;
+  return (
+    <View style={{ marginHorizontal: 16, marginTop: 12, padding: 16, borderRadius: 16, borderWidth: 2, borderColor: p.ink, backgroundColor: p.wash, gap: 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <Icon name="calendar" size={14} color={p.ink} />
+        <Txt v="label" size={12} color={p.ink} style={[{ flex: 1 }, caps]} numberOfLines={1}>
+          {plan && !focusOther ? `${t('plan.thisWeek')} · ${t('plan.weekOf', { w: plan.week, total: plan.program.weeks })}` : t('plan.thisWeek')}
+        </Txt>
+        <TextButton label={t('plan.changeGoal')} onPress={onChangeGoal} />
+      </View>
+      <View style={{ gap: 2 }}>
+        <Txt v="title" size={22} numberOfLines={2}>
+          {title}
+        </Txt>
+        <Txt v="meta" color={p.inkSoft}>
+          {focusOther ? t('plan.planWaits') : plan ? t('plan.onPlanSub') : t('plan.goalSub.' + (goal ?? 'busy'))}
+        </Txt>
+      </View>
+      {week.length ? (
+        <View style={{ borderTopWidth: 1, borderTopColor: p.rule }}>
+          {week.map((s, i) => {
+            const isNext = !focusOther && plan?.next?.id === s.id;
+            return (
+              <Press
+                key={s.id}
+                onPress={() => onOpenSession(s)}
+                feedback="selection"
+                depress={0.99}
+                accessibilityRole="button"
+                accessibilityState={{ checked: s.done }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderBottomWidth: i === week.length - 1 ? 0 : 1, borderBottomColor: p.rule }}
+              >
+                <View
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: s.done ? p.aqua : 'transparent',
+                    borderWidth: s.done ? 0 : 1.5,
+                    borderColor: isNext ? p.marker : p.ruleStrong,
+                  }}
+                >
+                  {s.done ? <Icon name="check" size={13} color={p.board} weight="bold" /> : <Txt v="label" size={12}>{String(i + 1)}</Txt>}
+                </View>
+                <View style={{ flex: 1, gap: 1 }}>
+                  <Txt v="row" size={15} numberOfLines={1} color={s.done ? p.inkSoft : p.ink}>
+                    {s.focus}
+                  </Txt>
+                  <Txt v="meta" numberOfLines={1}>
+                    {`${s.minutes} ${lang === 'ar' ? 'د' : 'min'}${s.done ? ` · ${t('common.done')}` : isNext ? ` · ${t('plan.nextUp')}` : ''}`}
+                  </Txt>
+                </View>
+                <Icon name="chevron" size={12} color={p.inkFaint} weight="bold" />
+              </Press>
+            );
+          })}
+        </View>
+      ) : null}
+      <OutlineButton label={focusOther ? t('plan.backToPlan') : t('plan.switchWeek')} icon={focusOther ? 'back' : 'refresh'} onPress={onSwitch} />
     </View>
   );
 }

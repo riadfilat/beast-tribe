@@ -23,7 +23,13 @@ const lib = Object.fromEntries(
 // ─── small helpers (EN + AR side by side) ─────────────────────────────────────
 const AR_DIGITS = (s) => s; // keep Western digits, as the app does
 // Reps inside a set count carry their unit ("30–45 s", "40 m", "10 / side"): say it in Arabic too.
-const arUnits = (r) => String(r).replace(' / side', ' لكل جهة').replace(/ min$/, ' د').replace(/ s$/, ' ث').replace(/ km$/, ' كم').replace(/ m$/, ' م');
+const arUnits = (r) => {
+  let s = String(r);
+  const side = s.endsWith(' / side');
+  if (side) s = s.slice(0, -' / side'.length);
+  s = s.replace(/ min$/, ' د').replace(/ s$/, ' ث').replace(/ km$/, ' كم').replace(/ m$/, ' م');
+  return side ? `${s} لكل جهة` : s;
+};
 const sets = (n, r) => [`${n} × ${r}`, `${n} × ${arUnits(r)}`];
 const secs = (n) => [`${n} s`, `${n} ث`];
 const mins = (n) => [`${n} min`, `${n} د`];
