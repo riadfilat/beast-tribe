@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://your-project.supabase.co';
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'your-anon-key';
@@ -28,6 +28,15 @@ export function getSupabase(): SupabaseClient {
         detectSessionInUrl: false,
       },
     });
+    // Refresh the sign-in token only while the app is open; stop the timer in the background.
+    if (Platform.OS !== 'web') {
+      const client = _supabase;
+      client.auth.startAutoRefresh();
+      AppState.addEventListener('change', (state) => {
+        if (state === 'active') client.auth.startAutoRefresh();
+        else client.auth.stopAutoRefresh();
+      });
+    }
   }
   return _supabase;
 }

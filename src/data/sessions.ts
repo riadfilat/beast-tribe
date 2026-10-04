@@ -7,7 +7,7 @@ import { useQuery, invalidate } from './query';
 import { MyStatus, Session, SESSION_SELECT, toSession, personOf } from './model';
 import { PREVIEW, PREVIEW_ME, previewMyRsvps, previewSessionRows } from './preview';
 import { addDays, startOfLocalDay } from '../i18n/format';
-import { uploadImage } from '../lib/upload';
+import { removeStoredImage, uploadImage } from '../lib/upload';
 import { bookFacility } from './facilities';
 import type { Person } from '../components/board/people';
 import { CodedError, codeFrom } from './errors';
@@ -299,7 +299,11 @@ export async function hostSession(meId: string, input: HostInput): Promise<{ id:
       class_series_id: series,
   });
   const { data, error } = await supabase.from('events').insert(row(0, null)).select('id').single();
-  if (error) throw toSessionError(error);
+  if (error) {
+    // Don't leave the uploaded cover behind for a session that was never created.
+    if (imageUrl && imageUrl !== input.cover) removeStoredImage(imageUrl);
+    throw toSessionError(error);
+  }
   const ids = [data.id];
   // The same slot for the following weeks, tied together as one series.
   const weeks = Math.min(12, Math.max(1, Math.round(input.repeatWeeks ?? 1)));
@@ -369,7 +373,10 @@ export async function hostAtCourt(
     }
   }
   // The court is booked either way; extras that fail to save don't undo it.
-  if (Object.keys(extras).length) await supabase.from('events').update(extras).eq('id', id);
+  if (Object.keys(extras).length) {
+    const { error: extrasErr } = await supabase.from('events').update(extras).eq('id', id);
+    if (extrasErr && extras.image_url) removeStoredImage(extras.image_url);
+  }
   invalidate('sessions:');
   return { id, photoFailed };
 }

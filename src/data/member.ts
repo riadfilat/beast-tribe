@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { useQuery, invalidate, CATALOGUE } from './query';
 import { sportDef, sportIdOf, SportId } from '../lib/sports';
-import { uploadImage } from '../lib/upload';
+import { removeStoredImage, uploadImage } from '../lib/upload';
 import { Emblem, emblemOf } from '../lib/emblem';
 import { PREVIEW, previewCoaches, previewLocations, previewMySports, previewPacks, previewStats } from './preview';
 import { useMeId } from './me';
@@ -138,9 +138,15 @@ export function useCoaches() {
 // ─── Profile photo (persisted — it used to live only in screen state) ───────
 export async function saveAvatar(meId: string, localUri: string): Promise<string> {
   if (PREVIEW) return localUri;
+  const { data: before } = await supabase.from('profiles').select('avatar_url').eq('id', meId).maybeSingle();
   const url = await uploadImage(localUri, 'user-uploads', `${meId}/avatar-${Date.now()}.jpg`, 'avatar');
   const { error } = await supabase.from('profiles').update({ avatar_url: url }).eq('id', meId);
-  if (error) throw error;
+  if (error) {
+    removeStoredImage(url);
+    throw error;
+  }
+  // The old photo isn't used any more.
+  if (before?.avatar_url && before.avatar_url !== url) removeStoredImage(before.avatar_url);
   invalidate('sessions:');
   return url;
 }

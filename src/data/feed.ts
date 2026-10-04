@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../providers/AuthProvider';
 import { useQuery, invalidate } from './query';
 import { personOf, PERSON_COLUMNS } from './model';
-import { uploadImage } from '../lib/upload';
+import { removeStoredImage, uploadImage } from '../lib/upload';
 import { PREVIEW, PREVIEW_ME, previewPosts } from './preview';
 import type { Person } from '../components/board/people';
 
@@ -93,14 +93,19 @@ export async function createPost(meId: string, input: { content: string; imageUr
     post_type: input.eventId ? 'recap' : 'activity',
     is_visible: true,
   });
-  if (error) throw error;
+  if (error) {
+    removeStoredImage(imageUrl);
+    throw error;
+  }
   invalidate('feed:');
 }
 
 export async function deletePost(postId: string) {
   if (PREVIEW) return;
+  const { data: before } = await supabase.from('feed_posts').select('image_url').eq('id', postId).maybeSingle();
   const { error } = await supabase.from('feed_posts').delete().eq('id', postId);
   if (error) throw error;
+  removeStoredImage(before?.image_url);
   invalidate('feed:');
 }
 

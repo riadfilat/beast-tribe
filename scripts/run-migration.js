@@ -45,16 +45,20 @@ async function tryConnect(url) {
     return;
   }
 
-  for (const f of files) {
-    const sql = fs.readFileSync(f, 'utf8');
-    console.log(`--- Applying ${f} ---`);
-    try {
-      await client.query(sql);
-      console.log(`    ✓ ${f} applied`);
-    } catch (e) {
-      console.error(`    ✗ ${f} FAILED: ${e.message}`);
+  // Always release the connection, whatever happens while applying.
+  try {
+    for (const f of files) {
+      const sql = fs.readFileSync(f, 'utf8');
+      console.log(`--- Applying ${f} ---`);
+      try {
+        await client.query(sql);
+        console.log(`    ✓ ${f} applied`);
+      } catch (e) {
+        console.error(`    ✗ ${f} FAILED: ${e.message}`);
+      }
     }
+  } finally {
+    await client.end();
   }
-  await client.end();
   console.log('\nDONE');
 })();

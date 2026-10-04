@@ -67,3 +67,18 @@ export function base64ToBytes(b64: string): Uint8Array {
   }
   return out.subarray(0, o);
 }
+
+/**
+ * Delete a photo we stored earlier, once nothing points at it (a replaced avatar or group photo, a
+ * deleted post). Only files in our own buckets are touched, and storage policies only let a member
+ * remove files in their own folder. Best effort: a failure leaves a stray file, never an error.
+ */
+export async function removeStoredImage(url: string | null | undefined) {
+  const m = url?.match(/\/storage\/v1\/object\/public\/(user-uploads|event-images)\/([^?#]+)/);
+  if (!m) return;
+  try {
+    await supabase.storage.from(m[1]).remove([decodeURIComponent(m[2])]);
+  } catch {
+    // leave it; nothing references it
+  }
+}

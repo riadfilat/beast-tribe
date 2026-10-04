@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { uploadImage } from '../lib/upload';
+import { removeStoredImage, uploadImage } from '../lib/upload';
 import { useQuery, invalidate } from './query';
 import { personOf, Session, SESSION_SELECT, toSession, PERSON_COLUMNS } from './model';
 import { PREVIEW, previewPacks, previewSessionRows, previewPackMembers, PREVIEW_PACK_CODE } from './preview';
@@ -288,9 +288,15 @@ export async function inviteToPack(meId: string, packId: string, userId: string)
 export async function setPackPhoto(meId: string, packId: string, localUri: string | null) {
   if (PREVIEW) return;
   let url: string | null = null;
+  const { data: before } = await supabase.from('packs').select('photo_url').eq('id', packId).maybeSingle();
   if (localUri) url = await uploadImage(localUri, 'user-uploads', `${meId}/groups/${packId}-${Date.now()}.jpg`, 'group');
   const { data, error } = await supabase.from('packs').update({ photo_url: url }).eq('id', packId).select('id');
-  if (error || !data?.length) throw new PackError('generic');
+  if (error || !data?.length) {
+    removeStoredImage(url);
+    throw new PackError('generic');
+  }
+  // The replaced or removed photo isn't used any more.
+  if (before?.photo_url && before.photo_url !== url) removeStoredImage(before.photo_url);
   invalidate(`packs:one:${packId}`);
   invalidate('member:packs');
 }

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { AppState } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../providers/AuthProvider';
 import { useQuery, invalidate } from './query';
@@ -63,18 +64,35 @@ export function useUnreadCount() {
   return q.data ?? 0;
 }
 
-/** Keep the bell's unread dot live: refresh the inbox the moment a notification lands. */
+/** Keep the bell's unread dot live: refresh the inbox the moment a notification lands. The live
+ *  connection is held only while the app is open; coming back refreshes whatever arrived meanwhile. */
 export function useInboxLive() {
   const { user } = useAuth();
   const me = user?.id;
   useEffect(() => {
     if (PREVIEW || !me) return;
-    const channel = supabase
-      .channel(`inbox:${me}:${Math.random().toString(36).slice(2, 8)}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${me}` }, () => invalidate('inbox:'))
-      .subscribe();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    const open = () => {
+      if (channel) return;
+      channel = supabase
+        .channel(`inbox:${me}:${Math.random().toString(36).slice(2, 8)}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${me}` }, () => invalidate('inbox:'))
+        .subscribe();
+    };
+    const close = () => {
+      if (channel) supabase.removeChannel(channel);
+      channel = null;
+    };
+    open();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        open();
+        invalidate('inbox:');
+      } else if (state === 'background') close();
+    });
     return () => {
-      supabase.removeChannel(channel);
+      sub.remove();
+      close();
     };
   }, [me]);
 }
