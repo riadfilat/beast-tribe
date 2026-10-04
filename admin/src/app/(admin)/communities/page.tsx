@@ -21,43 +21,19 @@ export default async function CommunitiesPage() {
   await requireRole('admin');
   const db = createAdminClient();
 
+  // Counts come back with the communities (one query; counting rows in JS broke past 1,000 members).
   const { data: communities } = await db
     .from('communities')
-    .select('*')
+    .select('id, name, slug, description, logo_url, cover_url, country, city, is_active, visibility, members:community_members(count), locations:popular_locations(count), default_packs:packs(count)')
+    .eq('default_packs.is_community_default', true)
     .order('country', { ascending: true })
     .order('name', { ascending: true });
 
-  const list = (communities || []) as CommunityRow[];
-  const ids = list.map((c) => c.id);
-
-  // Pull aggregate counts in parallel
-  const [memberRows, locationRows, defaultPackRows] = await Promise.all([
-    ids.length
-      ? db.from('community_members').select('community_id').in('community_id', ids)
-      : Promise.resolve({ data: [] as { community_id: string | null }[] }),
-    ids.length
-      ? db.from('popular_locations').select('community_id').in('community_id', ids)
-      : Promise.resolve({ data: [] as { community_id: string | null }[] }),
-    ids.length
-      ? db
-          .from('packs')
-          .select('community_id, is_community_default')
-          .in('community_id', ids)
-          .eq('is_community_default', true)
-      : Promise.resolve({ data: [] as { community_id: string | null }[] }),
-  ]);
-
-  function countBy(rows: { community_id: string | null }[] | null | undefined): Record<string, number> {
-    const map: Record<string, number> = {};
-    for (const r of rows || []) {
-      if (!r.community_id) continue;
-      map[r.community_id] = (map[r.community_id] || 0) + 1;
-    }
-    return map;
-  }
-  const memberCounts = countBy((memberRows.data as any) || []);
-  const locationCounts = countBy((locationRows.data as any) || []);
-  const defaultPackCounts = countBy((defaultPackRows.data as any) || []);
+  const list = (communities || []) as (CommunityRow & { members?: { count: number }[]; locations?: { count: number }[]; default_packs?: { count: number }[] })[];
+  const countOf = (x?: { count: number }[]) => x?.[0]?.count ?? 0;
+  const memberCounts: Record<string, number> = Object.fromEntries(list.map((c) => [c.id, countOf(c.members)]));
+  const locationCounts: Record<string, number> = Object.fromEntries(list.map((c) => [c.id, countOf(c.locations)]));
+  const defaultPackCounts: Record<string, number> = Object.fromEntries(list.map((c) => [c.id, countOf(c.default_packs)]));
 
   return (
     <div>

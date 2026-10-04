@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { removeStoredImage, uploadImage } from '../lib/upload';
 import { useQuery, invalidate } from './query';
-import { personOf, Session, SESSION_SELECT, toSession, PERSON_COLUMNS } from './model';
+import { personOf, Session, SESSION_LIST_SELECT, toSession, PERSON_COLUMNS } from './model';
 import { PREVIEW, previewPacks, previewSessionRows, previewPackMembers, PREVIEW_PACK_CODE } from './preview';
 import { Emblem, emblemColumns, emblemOf } from '../lib/emblem';
 import type { Person } from '../components/board/people';
@@ -107,10 +107,14 @@ export function usePackSessions(packId?: string | null, memberIds: string[] = []
         .limit(200);
       ids = Array.from(new Set((data || []).map((r: any) => r.event_id)));
     }
-    let q = supabase.from('events').select(SESSION_SELECT).gte('starts_at', nowIso).is('cancelled_at', null).eq('roster.status', 'going');
+    let q = supabase.from('events').select(SESSION_LIST_SELECT).gte('starts_at', nowIso).is('cancelled_at', null).eq('roster.status', 'going');
     if (!isUuid(packId)) return [];
     q = ids.length ? q.or(`id.in.(${ids.join(',')}),pack_id.eq.${packId}`) : q.eq('pack_id', packId!);
-    const { data, error } = await q.order('starts_at', { ascending: true }).limit(12);
+    const { data, error } = await q
+      .order('starts_at', { ascending: true })
+      .order('created_at', { referencedTable: 'roster', ascending: true })
+      .limit(4, { referencedTable: 'roster' })
+      .limit(12);
     if (error) throw error;
     const mine = new Set<string>();
     if (me && data?.length) {

@@ -1,3 +1,4 @@
+import { TRAIN_ENABLED } from '../lib/constants';
 import { sportIdOf, SportId } from '../lib/sports';
 import type { Person } from '../components/board/people';
 
@@ -14,7 +15,6 @@ export interface Session {
   durationMin: number;
   place: string | null;
   city: string | null;
-  country: string | null;
   lat: number | null;
   lng: number | null;
   imageUrl: string | null;
@@ -37,8 +37,6 @@ export interface Session {
   communityName: string | null;
   /** Lives in a private (invite-code) community: only its members see it. */
   communityPrivate: boolean;
-  /** Price per spot in SAR, when paid sessions are switched on (PAYMENTS_ENABLED). */
-  priceSar: number | null;
   /** A class open to people outside its community, for this guest price. */
   guestOpen: boolean;
   /** People outside the community can join with the session's private link. */
@@ -51,7 +49,6 @@ export interface Session {
   share: number | null;
   /** A paid court's full price. */
   court: number | null;
-  facilityId: string | null;
   /** The plan for the session, when the host attached a workout the viewer can see. */
   workout: { id: string; title: string; titleAr: string | null; minutes: number | null } | null;
   host: Person | null;
@@ -70,17 +67,24 @@ export const DEFAULT_DURATION_MIN = 120;
 /** The profile columns personOf() needs. */
 export const PERSON_COLUMNS = 'id, display_name, full_name, avatar_url';
 
-export const SESSION_SELECT = `
-  id, title, description, event_type, starts_at, ends_at, location_name, location_city, gym_name,
-  country, location_lat, location_lng, image_url, max_capacity, going_count, created_by,
-  is_women_only, visibility, pack_id, community_id, price_sar, difficulty, coach_name, cancelled_at, workout_id, drop_in, captain_hosted,
-  guest_open, guest_price_sar, guest_spots, share_sar, court_sar, facility_id, guest_invite, waitlist_max,
-  pack:packs(id, name),
-  workout:workouts(id, title, title_ar, duration_minutes),
-  community:communities(id, name, visibility, is_default),
+// Columns every session view needs. Lists use SESSION_LIST_SELECT; the session page adds the
+// description and, while Train is on, the attached workout.
+const SESSION_COLUMNS = `
+  id, title, event_type, starts_at, ends_at, location_name, location_city, gym_name,
+  location_lat, location_lng, image_url, max_capacity, going_count, created_by,
+  is_women_only, visibility, pack_id, community_id, difficulty, coach_name, cancelled_at, drop_in, captain_hosted,
+  guest_open, guest_price_sar, share_sar, court_sar, guest_invite, waitlist_max,
+  pack:packs(name),
+  community:communities(name, visibility),
   host:profiles!events_created_by_fkey(${PERSON_COLUMNS}),
-  roster:event_rsvps(user_id, status, created_at, profile:profiles(${PERSON_COLUMNS}))
-`;
+  roster:event_rsvps(user_id, status, created_at, profile:profiles(${PERSON_COLUMNS}))`;
+
+export const SESSION_LIST_SELECT = SESSION_COLUMNS;
+
+export const SESSION_SELECT = `${SESSION_COLUMNS}, description${TRAIN_ENABLED ? ', workout:workouts(id, title, title_ar, duration_minutes)' : ''}`;
+
+/** Faces shown on a session row; lists fetch only this many from the roster. */
+export const ROSTER_FACES = 6;
 
 export function personOf(profile: any): Person | null {
   if (!profile?.id) return null;
@@ -123,7 +127,6 @@ export function toSession(row: any, meId: string | null | undefined, myStatus?: 
     durationMin: Math.max(15, Math.round((endsAt.getTime() - startsAt.getTime()) / 60000)),
     place: row.location_name || row.gym_name || null,
     city: row.location_city || null,
-    country: row.country || null,
     lat: row.location_lat != null ? Number(row.location_lat) : null,
     lng: row.location_lng != null ? Number(row.location_lng) : null,
     imageUrl: row.image_url || null,
@@ -143,7 +146,6 @@ export function toSession(row: any, meId: string | null | undefined, myStatus?: 
     communityId: row.community_id || null,
     communityName: row.community?.name || row.gym_name || null,
     communityPrivate: row.community?.visibility === 'private',
-    priceSar: row.price_sar != null ? Number(row.price_sar) : null,
     guestOpen: !!row.guest_open,
     guestInvite: !!row.guest_invite,
     // Hosts get the guest key with useGuestToken (it is not readable with the session).
@@ -153,7 +155,6 @@ export function toSession(row: any, meId: string | null | undefined, myStatus?: 
     // A free court has nothing to split, so it reads like any other session.
     share: Number(row.share_sar) > 0 ? Number(row.share_sar) : null,
     court: Number(row.court_sar) > 0 ? Number(row.court_sar) : null,
-    facilityId: row.facility_id || null,
     workout: row.workout?.id
       ? { id: row.workout.id, title: row.workout.title || '', titleAr: row.workout.title_ar || null, minutes: row.workout.duration_minutes ?? null }
       : null,

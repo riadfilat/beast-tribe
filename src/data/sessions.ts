@@ -4,7 +4,7 @@ import { cancelEventReminder } from '../lib/notifications';
 import { useAuth } from '../providers/AuthProvider';
 import { useMemo } from 'react';
 import { useQuery, invalidate } from './query';
-import { MyStatus, Session, SESSION_SELECT, toSession, personOf } from './model';
+import { MyStatus, ROSTER_FACES, Session, SESSION_LIST_SELECT, SESSION_SELECT, toSession, personOf } from './model';
 import { PREVIEW, PREVIEW_ME, previewMyRsvps, previewSessionRows } from './preview';
 import { addDays, startOfLocalDay } from '../i18n/format';
 import { removeStoredImage, uploadImage } from '../lib/upload';
@@ -77,7 +77,7 @@ export function useBoardSessions(days = BOARD_DAYS) {
       const to = addDays(from, BOARD_DAYS);
       let q = supabase
         .from('events')
-        .select(SESSION_SELECT)
+        .select(SESSION_LIST_SELECT)
         .gte('starts_at', from.toISOString())
         .lt('starts_at', to.toISOString())
         .eq('country', country)
@@ -91,7 +91,7 @@ export function useBoardSessions(days = BOARD_DAYS) {
       const { data, error } = await q
         .order('starts_at', { ascending: true })
         .order('created_at', { referencedTable: 'roster', ascending: true })
-        .limit(8, { referencedTable: 'roster' })
+        .limit(ROSTER_FACES, { referencedTable: 'roster' })
         .limit(300);
       if (error) throw error;
       rows = data || [];
@@ -126,17 +126,13 @@ export function useSession(id?: string | null) {
       row = previewSessionRows().find((r) => r.id === id) ?? null;
       myStatus = (previewMyRsvps().find((r) => r.event_id === id)?.status as MyStatus) ?? null;
     } else {
-      const [ev, rsvp] = await Promise.all([
-        supabase.from('events').select(SESSION_SELECT).eq('id', id!).maybeSingle(),
-        supabase.from('event_rsvps').select('status').eq('event_id', id!).eq('user_id', meId!).in('status', ['going', 'waitlist']).maybeSingle(),
-      ]);
+      // The full roster (going and waiting) is on the row, so my own status is read from it.
+      const ev = await supabase.from('events').select(SESSION_SELECT).eq('id', id!).maybeSingle();
       if (ev.error) throw ev.error;
-      if (rsvp.error) throw rsvp.error;
       row = ev.data;
-      myStatus = (rsvp.data?.status as MyStatus) ?? null;
     }
     if (!row) return null;
-    const s = toSession(row, meId, myStatus);
+    const s = toSession(row, meId, myStatus ?? undefined);
     const waitRows = (row.roster || [])
       .filter((r: any) => r.status === 'waitlist')
       .sort((a: any, b: any) => (a.created_at || '').localeCompare(b.created_at || ''));
@@ -158,15 +154,16 @@ export function useMySessions() {
       rows = previewSessionRows().filter((r) => mine.has(r.id) || r.created_by === meId);
     } else {
       const ids = Array.from(mine.keys());
-      let q = supabase.from('events').select(SESSION_SELECT).eq('roster.status', 'going').gte('starts_at', since.toISOString());
+      let q = supabase.from('events').select(SESSION_LIST_SELECT).eq('roster.status', 'going').gte('starts_at', since.toISOString());
       q = ids.length ? q.or(`id.in.(${ids.join(',')}),created_by.eq.${meId}`) : q.eq('created_by', meId!);
+      // Newest first, so the cap drops the oldest history rather than what's coming up.
       const { data, error } = await q
-        .order('starts_at', { ascending: true })
+        .order('starts_at', { ascending: false })
         .order('created_at', { referencedTable: 'roster', ascending: true })
-        .limit(8, { referencedTable: 'roster' })
+        .limit(ROSTER_FACES, { referencedTable: 'roster' })
         .limit(300);
       if (error) throw error;
-      rows = data || [];
+      rows = (data || []).reverse();
     }
     const now = Date.now();
     return rows.map((r) => toSession(r, meId, mine.get(r.id) ?? null, now));

@@ -21,7 +21,7 @@ export default async function EventsPage(
 
   let query = db
     .from('events')
-    .select('*, sport:sports(name, emoji), rsvp_count:event_rsvps(count)', { count: 'exact' })
+    .select('id, title, starts_at, coach_name, gym_name, location_city, country, max_capacity, sport:sports(name, emoji), rsvp_count:event_rsvps(count)', { count: 'exact' })
     .order('starts_at', { ascending: false })
     .range(offset, offset + perPage - 1);
 

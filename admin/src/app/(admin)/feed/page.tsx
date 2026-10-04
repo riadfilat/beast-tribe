@@ -22,7 +22,7 @@ export default async function FeedPage(
   const showHidden = searchParams.show_hidden === '1';
 
   let query = db.from('feed_posts')
-    .select('*, profile:profiles(full_name, display_name), sport:sports(name, emoji), beast_count:beasts(count)', { count: 'exact' })
+    .select('id, content, image_url, image_status, is_hidden, post_type, created_at, profile:profiles(full_name, display_name), sport:sports(name, emoji), beast_count:beasts(count)', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(offset, offset + perPage - 1);
 

@@ -1,3 +1,4 @@
+import { TRAIN_ENABLED } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../providers/AuthProvider';
 import { useQuery, invalidate, CATALOGUE } from './query';
@@ -137,7 +138,8 @@ export function useProgram(slug: string | null | undefined, lang: string) {
 /** The member's active plan, with what's done and what's next. */
 export function useMyPlan(lang: string) {
   const { user } = useAuth();
-  return useQuery<MyPlan | null>(!PREVIEW && user ? `programs:mine:${lang}:${user.id}` : null, async () => {
+  // Train is off for launch: no plan to show, so nothing to fetch.
+  return useQuery<MyPlan | null>(TRAIN_ENABLED && !PREVIEW && user ? `programs:mine:${lang}:${user.id}` : null, async () => {
     const { data: en, error } = await supabase
       .from('program_enrollments')
       .select('id, started_at, program:programs(*)')

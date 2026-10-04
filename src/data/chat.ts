@@ -94,11 +94,12 @@ export function useLiveChat(type: 'event' | 'pack', targetId?: string | null) {
         .from('chat_messages')
         .select(SELECT)
         .eq('room_id', room.id)
-        .order('created_at', { ascending: true })
-        .limit(200);
+        .order('created_at', { ascending: false })
+        .limit(100);
       if (!alive) return;
       if (msgErr) setError(msgErr.message);
-      const msgs = (data || []).map(toMsg);
+      // The newest 100, shown oldest first.
+      const msgs = (data || []).reverse().map(toMsg);
       msgs.forEach((m) => seen.current.add(m.id));
       setMessages(msgs);
       setLoading(false);

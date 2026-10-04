@@ -54,12 +54,10 @@ export function useUnreadCount() {
   const me = PREVIEW ? PREVIEW_ME : user?.id;
   const q = useQuery<number>(me ? `inbox:unread:${me}` : null, async () => {
     if (PREVIEW) return previewNotifications().filter((n) => !n.read_at).length;
-    const { count, error } = await supabase
-      .from('notifications')
-      .select('id', { count: 'exact', head: true })
-      .is('read_at', null);
+    // The bell only shows a dot, so one unread row is enough to know.
+    const { data, error } = await supabase.from('notifications').select('id').is('read_at', null).limit(1);
     if (error) throw error;
-    return count ?? 0;
+    return data?.length ?? 0;
   });
   return q.data ?? 0;
 }

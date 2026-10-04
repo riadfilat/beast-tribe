@@ -23,8 +23,9 @@ export default async function PartnersPage() {
   const db = createAdminClient();
 
   const { data: partners } = await db.from('partners')
-    .select('*, profile:profiles!user_id(full_name)')
-    .order('created_at', { ascending: false });
+    .select('id, business_name, partner_type, city, country, contact_email, contact_phone, is_active, is_verified, profile:profiles!user_id(full_name)')
+    .order('created_at', { ascending: false })
+    .limit(500);
 
   return (
     <div>
