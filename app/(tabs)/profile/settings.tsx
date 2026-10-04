@@ -125,6 +125,9 @@ export default function SettingsScreen() {
           <Txt v="caption" align="center" style={{ maxWidth: 300 }}>
             {t('settings.iconCredit', { credit: GLYPH_CREDIT })}
           </Txt>
+          <Txt v="caption" align="center" style={{ maxWidth: 300 }}>
+            {t('settings.photoCredit')}
+          </Txt>
         </View>
       </ScrollView>
     </SafeAreaView>

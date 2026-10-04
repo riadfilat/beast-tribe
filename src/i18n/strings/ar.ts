@@ -217,7 +217,7 @@ export const ar: Strings = {
     clear: 'مسح',
   },
   host: {
-    levelSub: 'ينضم لاعبو هذا المستوى، أو المستوى الأقل منه بدرجة.',
+    levelSub: 'ننبّه لاعبي هذا المستوى أولًا، ثم المستوى الأقل منه بدرجة، حتى تكتمل المقاعد.',
     waitlist: 'قائمة الانتظار',
     waitlistSub: 'مقاعد إضافية إن اعتذر أحد.',
     waitlistNone: 'بدون',
@@ -589,6 +589,7 @@ export const ar: Strings = {
     deleting: 'جارٍ الحذف…',
     version: 'الإصدار {v}',
     iconCredit: 'أيقونات الشارات من {credit}',
+    photoCredit: 'صور الأماكن: وادي حنيفة بعدسة Peter Dowley (CC BY 2.0)، حديقة السلام بعدسة Hamza A. Durrani (CC BY 4.0)، شاطئ كايت بعدسة Iamfinehere (CC0)، عبر ويكيميديا كومنز؛ والبقية من Unsplash.',
   },
   auth: {
     tagline: 'أيقظ الوحش بداخلك.',

@@ -196,7 +196,7 @@ export const en = {
     clear: 'Clear',
   },
   host: {
-    levelSub: 'Players at this level, or one level below, can join.',
+    levelSub: 'We call players at this level first, then one level below, until the seats fill.',
     waitlist: 'Waiting list',
     waitlistSub: 'Extra seats in case someone drops.',
     waitlistNone: 'None',
@@ -547,6 +547,7 @@ export const en = {
     deleting: 'Deleting…',
     version: 'Version {v}',
     iconCredit: 'Group patch icons by {credit}',
+    photoCredit: 'Place photos: Wadi Hanifah by Peter Dowley (CC BY 2.0), Salam Park by Hamza A. Durrani (CC BY 4.0), Kite Beach by Iamfinehere (CC0), via Wikimedia Commons; others from Unsplash.',
   },
   auth: {
     tagline: 'Awaken the beast.',
