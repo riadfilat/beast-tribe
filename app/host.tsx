@@ -77,6 +77,7 @@ export default function HostScreen() {
   const [duration, setDuration] = useState(60);
   const [level, setLevel] = useState<'any' | 'easy' | 'medium' | 'hard'>('any');
   const [womenOnly, setWomenOnly] = useState(false);
+  const [guests, setGuests] = useState(false);
   const [dropIn, setDropIn] = useState(true);
   const [repeat, setRepeat] = useState<'1' | '4' | '8'>('1');
   // Every session lives somewhere: one of my communities or one of my packs.
@@ -99,6 +100,8 @@ export default function HostScreen() {
   const where = audience ?? (communities[0] ? { kind: 'community' as const, id: communities[0].id } : null);
   const packId = where?.kind === 'pack' ? where.id : null;
   const communityId = where?.kind === 'community' ? where.id : null;
+  const chosen = communityId ? communities.find((c) => c.id === communityId) : null;
+  const guestable = !!chosen && !chosen.open && chosen.allowGuests !== false;
   const coachSlots = useCoachSlots(coachId, dayKey).data ?? [];
   // A Beast Captain hosting in their community: open sessions, repeated weekly.
   const captaincy = (useMyCaptaincies().data ?? []).find((c) => c.communityId === communityId) ?? null;
@@ -186,6 +189,7 @@ export default function HostScreen() {
         repeatWeeks: captaincy ? Number(repeat) : 1,
         difficulty: level === 'any' ? null : level,
         womenOnly,
+        guestInvite: guestable && guests,
         packId,
         communityId,
         priceSar: PAYMENTS_ENABLED && Number(price) > 0 ? Number(price) : null,
@@ -303,6 +307,12 @@ export default function HostScreen() {
                 <Chip key={x.id} label={x.name} icon="lock" selected={where?.kind === 'pack' && where.id === x.id} onPress={() => setAudience({ kind: 'pack', id: x.id })} />
               ))}
             </ScrollView>
+            {/* A private community's session: the host can let outsiders join with the session's link. */}
+            {guestable ? (
+              <Group style={{ marginTop: 10 }}>
+                <GroupRow label={t('host.guests')} toggle={guests} onToggle={setGuests} />
+              </Group>
+            ) : null}
           </>
         ) : null}
 

@@ -26,7 +26,7 @@ export default async function ClubPage() {
   const [challenges, steps, { data: pageRow }, { data: programs }] = await Promise.all([
     loadChallenges(partner.community_id),
     loadStepsSummary(club.members.map((m) => m.id)),
-    db.from('communities').select('notice, notice_ar, notice_until, featured_program_id').eq('id', partner.community_id).single(),
+    db.from('communities').select('notice, notice_ar, notice_until, featured_program_id, allow_guests').eq('id', partner.community_id).single(),
     db.from('programs').select('id, title, weeks, days_per_week').eq('status', 'published').order('sort'),
   ]);
   const page: any = pageRow || {};
@@ -295,6 +295,13 @@ export default async function ClubPage() {
               <label className={label} htmlFor="cp-notice">Notice (shown at the top of your community page)</label>
               <textarea id="cp-notice" name="notice" maxLength={280} defaultValue={page.notice || ''} className={`${input} h-20 resize-none`} placeholder="Wellness day this Thursday. Lunch walk at 12:30 from the lobby." />
             </div>
+            <label className="flex items-start gap-2 text-sm text-gray-700">
+              <input type="checkbox" name="allow_guests" defaultChecked={page.allow_guests !== false} className="mt-1" />
+              <span>
+                Members can invite guests to their sessions
+                <span className="block text-xs text-gray-500">The host shares the session's link; people outside your {isCompany ? 'community' : 'club'} join only that session.</span>
+              </span>
+            </label>
             <div>
               <label className={label} htmlFor="cp-notice-ar">Notice in Arabic (optional)</label>
               <textarea id="cp-notice-ar" name="notice_ar" dir="rtl" maxLength={280} defaultValue={page.notice_ar || ''} className={`${input} h-16 resize-none`} />

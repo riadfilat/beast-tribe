@@ -14,7 +14,7 @@ const montserrat = Montserrat({ subsets: ['latin'], weight: ['600', '800'], vari
 const kufi = Noto_Kufi_Arabic({ subsets: ['arabic'], weight: ['500', '700'], variable: '--font-kufi', display: 'swap' });
 
 const SITE = 'https://beast-tribe.vercel.app';
-const APP_LINK = (id: string) => `beasttribe://session/${id}`;
+const APP_LINK = (id: string, g?: string | null) => `beasttribe://session/${id}${g ? `?g=${encodeURIComponent(g)}` : ''}`;
 
 type Lang = 'en' | 'ar';
 
@@ -77,6 +77,8 @@ const COPY = {
 
 interface Row {
   id: string;
+  guest_invite?: boolean;
+  guest_token?: string | null;
   title: string | null;
   event_type: string | null;
   starts_at: string;
@@ -102,7 +104,7 @@ async function getSession(id: string): Promise<Row | null> {
   const { data } = await db
     .from('events')
     .select(
-      'id, title, event_type, starts_at, ends_at, location_name, location_city, gym_name, country, location_lat, location_lng, image_url, max_capacity, going_count, visibility, is_women_only, cancelled_at, host:profiles!events_created_by_fkey(display_name, full_name)',
+      'id, title, event_type, starts_at, ends_at, location_name, location_city, gym_name, country, location_lat, location_lng, image_url, max_capacity, going_count, visibility, is_women_only, cancelled_at, guest_invite, guest_token, host:profiles!events_created_by_fkey(display_name, full_name)',
     )
     .eq('id', id)
     .maybeSingle();
@@ -146,10 +148,12 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   };
 }
 
-export default async function SessionLinkPage({ params }: { params: { id: string } }) {
+export default async function SessionLinkPage({ params, searchParams }: { params: { id: string }; searchParams: { g?: string } }) {
   const lang = langOf();
   const c = COPY[lang];
   const row = await getSession(params.id);
+  // A guest link: pass its key into the app so someone outside the community can join.
+  const g = row?.guest_invite && searchParams.g && searchParams.g === row.guest_token ? searchParams.g : null;
   const ar = lang === 'ar';
 
   const shell = (body: React.ReactNode) => (
@@ -173,7 +177,7 @@ export default async function SessionLinkPage({ params }: { params: { id: string
     return shell(
       <div className="flex flex-1 flex-col justify-center gap-6">
         <p className="text-2xl font-extrabold leading-snug">{row ? c.private : c.missing}</p>
-        {row ? <OpenButton id={row.id} label={c.open} /> : null}
+        {row ? <OpenButton id={row.id} g={g} label={c.open} /> : null}
         <p className="text-sm text-[#F4F1EA]/70">{c.tagline}</p>
       </div>,
     );
@@ -234,17 +238,17 @@ export default async function SessionLinkPage({ params }: { params: { id: string
       {status ? <p className="mt-6 text-lg font-extrabold text-[#FF7A70]">{status}</p> : null}
 
       <div className="mt-auto pt-10">
-        <OpenButton id={row.id} label={c.open} />
+        <OpenButton id={row.id} g={g} label={c.open} />
         <p className="mt-4 text-center text-sm text-[#F4F1EA]/70">{c.soon}</p>
       </div>
     </>,
   );
 }
 
-function OpenButton({ id, label }: { id: string; label: string }) {
+function OpenButton({ id, g, label }: { id: string; g?: string | null; label: string }) {
   return (
     <a
-      href={APP_LINK(id)}
+      href={APP_LINK(id, g)}
       className="flex h-14 w-full items-center justify-center rounded-[10px] bg-[#E88F24] text-base font-extrabold uppercase tracking-wide text-[#023C3C] hover:opacity-90"
     >
       {label}

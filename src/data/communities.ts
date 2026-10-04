@@ -15,6 +15,8 @@ export interface Community {
   kind: CommunityKind;
   open: boolean;
   isDefault: boolean;
+  /** Hosts may let guests join their sessions with the session's link. */
+  allowGuests?: boolean;
   city: string | null;
   logoUrl: string | null;
   members: number;
@@ -48,7 +50,7 @@ function useMe() {
   return PREVIEW ? PREVIEW_ME : user?.id ?? null;
 }
 
-const SELECT = 'id, name, description, kind, visibility, is_default, city, logo_url, leader_id, sport, listing, verified_at, notice, members:community_members(count)';
+const SELECT = 'id, name, description, kind, visibility, is_default, city, logo_url, leader_id, sport, listing, verified_at, notice, allow_guests, members:community_members(count)';
 
 function toCommunity(r: any, mine: Set<string>): Community {
   return {
@@ -58,6 +60,7 @@ function toCommunity(r: any, mine: Set<string>): Community {
     kind: (r.kind || 'club') as CommunityKind,
     open: r.visibility === 'open',
     isDefault: !!r.is_default,
+    allowGuests: r.allow_guests !== false,
     city: r.city ?? null,
     logoUrl: r.logo_url ?? null,
     members: r.members?.[0]?.count ?? 0,

@@ -282,6 +282,7 @@ export async function saveCommunityPage(formData: FormData) {
       notice_ar: str('notice_ar', 280),
       notice_until: until && /^\d{4}-\d{2}-\d{2}$/.test(until) ? until : null,
       featured_program_id: plan && /^[0-9a-f-]{36}$/.test(plan) ? plan : null,
+      allow_guests: formData.get('allow_guests') === 'on',
     })
     .eq('id', partner.community_id);
   if (error) throw new Error(error.message);

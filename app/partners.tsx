@@ -58,7 +58,7 @@ function Setup({ initial, onDone }: { initial: PartnerProfile; onDone: () => voi
   const sports = useMySports().data ?? [];
   const [f, setF] = useState<PartnerProfile>({ ...initial, open: true });
   const [busy, setBusy] = useState(false);
-  const female = profile?.gender === 'female';
+  const hasGender = profile?.gender === 'female' || profile?.gender === 'male';
 
   async function save() {
     if (!meId) return;
@@ -88,7 +88,8 @@ function Setup({ initial, onDone }: { initial: PartnerProfile; onDone: () => voi
         <View style={{ marginTop: 18 }}>
           <Group>
             <GroupRow icon="people" label={t('partners.open')} sub={t('partners.openSub')} toggle={f.open} onToggle={(v) => setF({ ...f, open: v })} />
-            {female ? <GroupRow icon="shield" label={t('partners.womenOnly')} sub={t('partners.womenOnlySub')} toggle={f.womenOnly} onToggle={(v) => setF({ ...f, womenOnly: v })} /> : null}
+            <GroupRow icon="people" label={t('partners.sameCommunity')} toggle={f.sameCommunity} onToggle={(v) => setF({ ...f, sameCommunity: v })} />
+            {hasGender ? <GroupRow icon="shield" label={t('partners.sameGender')} toggle={f.sameGender} onToggle={(v) => setF({ ...f, sameGender: v })} /> : null}
           </Group>
         </View>
 

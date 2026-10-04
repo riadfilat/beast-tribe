@@ -11,7 +11,7 @@ import type { Person } from '../components/board/people';
 
 export type JoinResult = 'going' | 'waitlist';
 export type SessionErrorCode =
-  | 'WOMEN_ONLY' | 'WOMEN_ONLY_HOST' | 'GENDER_NEEDED' | 'PACK_ONLY' | 'COMMUNITY_ONLY' | 'GUESTS_FULL' | 'EVENT_OVER' | 'EVENT_CANCELLED' | 'EVENT_NOT_FOUND' | 'NOT_HOST' | 'generic';
+  | 'WOMEN_ONLY' | 'WOMEN_ONLY_HOST' | 'GENDER_NEEDED' | 'LINK_INVALID' | 'GUESTS_OFF' | 'PACK_ONLY' | 'COMMUNITY_ONLY' | 'GUESTS_FULL' | 'EVENT_OVER' | 'EVENT_CANCELLED' | 'EVENT_NOT_FOUND' | 'NOT_HOST' | 'generic';
 
 export class SessionError extends Error {
   code: SessionErrorCode;
@@ -23,7 +23,7 @@ export class SessionError extends Error {
 
 function toSessionError(e: any): SessionError {
   const m = String(e?.message || e || '');
-  const hit = m.match(/WOMEN_ONLY_HOST|GENDER_NEEDED|WOMEN_ONLY|PACK_ONLY|COMMUNITY_ONLY|GUESTS_FULL|EVENT_OVER|EVENT_CANCELLED|EVENT_NOT_FOUND|NOT_HOST/);
+  const hit = m.match(/WOMEN_ONLY_HOST|GENDER_NEEDED|LINK_INVALID|GUESTS_OFF|WOMEN_ONLY|PACK_ONLY|COMMUNITY_ONLY|GUESTS_FULL|EVENT_OVER|EVENT_CANCELLED|EVENT_NOT_FOUND|NOT_HOST/);
   return new SessionError((hit?.[0] as SessionErrorCode) || 'generic', m);
 }
 
@@ -211,6 +211,8 @@ export interface HostInput {
   capacity?: number | null;
   difficulty?: 'easy' | 'medium' | 'hard' | null;
   womenOnly?: boolean;
+  /** Let people outside the community join with the session's link. */
+  guestInvite?: boolean;
   packId?: string | null;
   /** Where the session lives when it isn't pack-only (defaults to the open community). */
   communityId?: string | null;
@@ -259,6 +261,7 @@ export async function hostSession(meId: string, input: HostInput): Promise<{ id:
       max_capacity: input.dropIn ? null : input.capacity ?? null,
       difficulty: input.difficulty ?? null,
       is_women_only: !!input.womenOnly,
+      guest_invite: !input.packId && !!input.guestInvite,
       pack_id: input.packId ?? null,
       community_id: input.packId ? null : input.communityId ?? null,
       visibility: input.packId ? 'pack' : 'community',
@@ -288,4 +291,43 @@ export async function hostSession(meId: string, input: HostInput): Promise<{ id:
   await supabase.from('event_rsvps').upsert(ids.map((id) => ({ event_id: id, user_id: meId, status: 'going' })), { onConflict: 'event_id,user_id' });
   invalidate('sessions:');
   return { id: data.id, photoFailed };
+}
+
+
+// ─── Guests invited by link ─────────────────────────────────────────────────
+export interface GuestPreview {
+  id: string;
+  title: string;
+  sport: string;
+  startsAt: Date;
+  endsAt: Date | null;
+  place: string | null;
+  city: string | null;
+  host: string | null;
+  community: string | null;
+  going: number;
+  capacity: number | null;
+  womenOnly: boolean;
+  imageUrl: string | null;
+}
+
+/** What someone outside the community sees from a session's guest link (null: link not valid any more). */
+export async function guestPreview(eventId: string, token: string): Promise<GuestPreview | null> {
+  const { data, error } = await supabase.rpc('guest_session_preview', { p_event: eventId, p_token: token });
+  if (error) throw error;
+  const r: any = Array.isArray(data) ? data[0] : data;
+  if (!r) return null;
+  return {
+    id: r.id, title: r.title, sport: r.sport, startsAt: new Date(r.starts_at), endsAt: r.ends_at ? new Date(r.ends_at) : null,
+    place: r.place ?? null, city: r.city ?? null, host: r.host ?? null, community: r.community ?? null,
+    going: r.going ?? 0, capacity: r.capacity ?? null, womenOnly: !!r.women_only, imageUrl: r.image_url ?? null,
+  };
+}
+
+/** Join a session as a guest with its link. Same checks as joining (women only, capacity). */
+export async function joinAsGuest(eventId: string, token: string): Promise<'going' | 'waitlist'> {
+  const { data, error } = await supabase.rpc('join_as_guest', { p_event: eventId, p_token: token });
+  if (error) throw toSessionError(error);
+  invalidate('sessions:');
+  return data === 'waitlist' ? 'waitlist' : 'going';
 }

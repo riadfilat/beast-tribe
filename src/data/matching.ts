@@ -13,7 +13,10 @@ export const PARTNER_TIMES: PartnerTime[] = ['early', 'morning', 'midday', 'even
 
 export interface PartnerProfile {
   open: boolean;
-  womenOnly: boolean;
+  /** Only people who share one of my communities (not the default one). */
+  sameCommunity: boolean;
+  /** Only people of my gender. */
+  sameGender: boolean;
   times: PartnerTime[];
   /** Easy running pace, seconds per km. */
   paceS: number | null;
@@ -56,12 +59,13 @@ export function usePartnerProfile() {
   const { user } = useAuth();
   const me = meOf(user?.id);
   return useQuery<PartnerProfile>(me ? `partners:me:${me}` : null, async () => {
-    if (PREVIEW) return { open: false, womenOnly: false, times: [], paceS: null, note: '' };
-    const { data, error } = await supabase.from('partner_profiles').select('open, women_only, times, run_pace_s, note').eq('user_id', me!).maybeSingle();
+    if (PREVIEW) return { open: false, sameCommunity: false, sameGender: false, times: [], paceS: null, note: '' };
+    const { data, error } = await supabase.from('partner_profiles').select('open, same_community, same_gender, times, run_pace_s, note').eq('user_id', me!).maybeSingle();
     if (error) throw error;
     return {
       open: !!data?.open,
-      womenOnly: !!data?.women_only,
+      sameCommunity: !!data?.same_community,
+      sameGender: !!data?.same_gender,
       times: ((data?.times as PartnerTime[]) || []).filter((x) => PARTNER_TIMES.includes(x)),
       paceS: data?.run_pace_s ?? null,
       note: data?.note || '',
@@ -72,7 +76,7 @@ export function usePartnerProfile() {
 export async function savePartnerProfile(meId: string, p: PartnerProfile) {
   if (PREVIEW) return;
   const { error } = await supabase.from('partner_profiles').upsert(
-    { user_id: meId, open: p.open, women_only: p.womenOnly, times: p.times, run_pace_s: p.paceS, note: p.note.trim().slice(0, 140) || null },
+    { user_id: meId, open: p.open, same_community: p.sameCommunity, same_gender: p.sameGender, times: p.times, run_pace_s: p.paceS, note: p.note.trim().slice(0, 140) || null },
     { onConflict: 'user_id' },
   );
   if (error) throw error;

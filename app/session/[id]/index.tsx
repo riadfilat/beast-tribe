@@ -26,9 +26,10 @@ import { SessionTags, capacityLine, useNow } from '../../../src/components/board
 import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
 import { scheduleEventReminder } from '../../../src/lib/notifications';
+import { GuestJoin } from '../../../src/components/board/guest-join';
 
 export default function SessionScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, g } = useLocalSearchParams<{ id: string; g?: string }>();
   const s = useStyles();
   const { p, lang } = useKit();
   const { t, tn } = useI18n();
@@ -50,6 +51,15 @@ export default function SessionScreen() {
     return (
       <SafeAreaView style={s.screen}>
         <IconButton name="back" label={t('common.back')} onPress={back} style={{ marginStart: 6 }} />
+      </SafeAreaView>
+    );
+  }
+  if (!x && g && !q.error) {
+    // Opened from a guest link by someone outside the community.
+    return (
+      <SafeAreaView style={s.screen}>
+        <IconButton name="back" label={t('common.back')} onPress={back} style={{ marginStart: 6 }} />
+        <GuestJoin eventId={id} token={String(g)} onJoined={q.refetch} />
       </SafeAreaView>
     );
   }
@@ -84,7 +94,8 @@ export default function SessionScreen() {
     .join(' · ');
 
   const whereLine = [x.place, x.city].filter(Boolean).join(' · ');
-  const link = `${SESSION_LINK_BASE}${x.id}`;
+  // With guests allowed, the link carries the guest key so people outside the community can join.
+  const link = `${SESSION_LINK_BASE}${x.id}${x.guestInvite && x.guestToken ? `?g=${x.guestToken}` : ''}`;
 
   async function onJoin() {
     if (busy || !x) return;
