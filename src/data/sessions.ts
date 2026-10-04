@@ -8,6 +8,7 @@ import { MyStatus, Session, SESSION_SELECT, toSession, personOf } from './model'
 import { PREVIEW, PREVIEW_ME, previewMyRsvps, previewSessionRows } from './preview';
 import { addDays, startOfLocalDay } from '../i18n/format';
 import { uploadImage } from '../lib/upload';
+import { bookFacility } from './facilities';
 import type { Person } from '../components/board/people';
 import { CodedError, codeFrom } from './errors';
 
@@ -312,6 +313,61 @@ export async function hostSession(meId: string, input: HostInput): Promise<{ id:
   return { id: data.id, photoFailed };
 }
 
+
+/**
+ * Host at a bookable court: the booking rules apply (a free slot, the court's daily limit, its
+ * community), the booking creates the session, then the host's extras are added to it.
+ */
+export async function hostAtCourt(
+  meId: string,
+  input: {
+    facilityId: string;
+    startsAt: Date;
+    players: number;
+    title: string;
+    sport: string;
+    communityId: string | null;
+    packId: string | null;
+    difficulty?: 'easy' | 'medium' | 'hard' | null;
+    womenOnly?: boolean;
+    guestInvite?: boolean;
+    coachName?: string | null;
+    notes?: string;
+    cover?: string | null;
+  },
+): Promise<{ id: string; photoFailed: boolean }> {
+  if (PREVIEW) {
+    await wait(600);
+    return { id: 's-yours', photoFailed: false };
+  }
+  const id = await bookFacility({
+    facilityId: input.facilityId,
+    startsAt: input.startsAt,
+    players: input.players,
+    title: input.title,
+    communityId: input.communityId,
+    packId: input.packId,
+    sport: input.sport,
+  });
+  let photoFailed = false;
+  const extras: Record<string, any> = {};
+  if (input.difficulty) extras.difficulty = input.difficulty;
+  if (input.womenOnly) extras.is_women_only = true;
+  if (input.guestInvite && !input.packId) extras.guest_invite = true;
+  if (input.coachName) extras.coach_name = input.coachName;
+  if (input.notes?.trim()) extras.description = input.notes.trim();
+  if (input.cover && !/^https?:\/\//.test(input.cover)) {
+    try {
+      extras.image_url = await uploadImage(input.cover, 'event-images', `${meId}/${Date.now()}.jpg`);
+    } catch {
+      photoFailed = true;
+    }
+  }
+  // The court is booked either way; extras that fail to save don't undo it.
+  if (Object.keys(extras).length) await supabase.from('events').update(extras).eq('id', id);
+  invalidate('sessions:');
+  return { id, photoFailed };
+}
 
 // ─── Guests invited by link ─────────────────────────────────────────────────
 export interface GuestPreview {

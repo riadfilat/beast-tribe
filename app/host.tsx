@@ -8,8 +8,10 @@ import { makeStyles, useKit } from '../src/theme';
 import { useI18n } from '../src/i18n';
 import { addDays, clockParts, fmtClock, fmtDay, localDateKey, localDateTime, startOfLocalDay } from '../src/i18n/format';
 import { useAuth } from '../src/providers/AuthProvider';
-import { hostSession } from '../src/data/sessions';
-import { useCoaches, useMyPackList, useMySports, usePopularSpots } from '../src/data/member';
+import { hostAtCourt, hostSession } from '../src/data/sessions';
+import { useHostPlaces, type Place } from '../src/data/places';
+import { BookError, useFacilitySlots } from '../src/data/facilities';
+import { useCoaches, useMyPackList, useMySports } from '../src/data/member';
 import { useMyCommunities } from '../src/data/communities';
 import { useMyCaptaincies } from '../src/data/captains';
 import { cityLabel } from '../src/lib/cities';
@@ -27,9 +29,10 @@ import { Group, GroupRow } from '../src/components/board/list';
 import { haptic } from '../src/lib/haptics';
 import { errorKey } from '../src/data/errors';
 
-const SLOTS: Record<'dawn' | 'morning' | 'afternoon' | 'evening' | 'night', string[]> = {
-  dawn: ['04:30', '05:00', '05:30', '06:00', '06:30'],
-  morning: ['07:00', '07:30', '08:00', '09:00', '10:00', '11:00'],
+// Four parts of the day, one row of times at a time.
+type Period = 'morning' | 'afternoon' | 'evening' | 'night';
+const SLOTS: Record<Period, string[]> = {
+  morning: ['04:30', '05:00', '05:30', '06:00', '06:30', '07:00', '07:30', '08:00', '09:00', '10:00', '11:00'],
   afternoon: ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00'],
   evening: ['17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30'],
   night: ['21:00', '21:30', '22:00', '22:30', '23:00'],
@@ -59,7 +62,6 @@ export default function HostScreen() {
   const { user, profile } = useAuth();
   const meId = PREVIEW ? PREVIEW_ME : user?.id ?? null;
   const country = profile?.region || 'SA';
-  const spots = usePopularSpots(country, lang).data ?? [];
   const mySports = useMySports().data ?? [];
   const packs = useMyPackList().data ?? [];
   const communities = useMyCommunities().data ?? [];
@@ -69,7 +71,13 @@ export default function HostScreen() {
   const [sport, setSport] = useState<SportId | null>(params.sport ? sportIdOf(params.sport) : null);
   const [dayKey, setDayKey] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
-  const [spotId, setSpotId] = useState<string | null>(null);
+  const [picked, setPicked] = useState<Place | null>(null);
+  const [slotAt, setSlotAt] = useState<number | null>(null);
+  const [allSports, setAllSports] = useState(false);
+  const [period, setPeriod] = useState<Period>(() => {
+    const h = new Date().getHours();
+    return h < 11 ? 'morning' : h < 16 ? 'afternoon' : h < 21 ? 'evening' : 'night';
+  });
   const [place, setPlace] = useState('');
   const [city, setCity] = useState(profile?.city || '');
   const [name, setName] = useState('');
@@ -99,8 +107,14 @@ export default function HostScreen() {
   const now = new Date();
   const days = useMemo(() => Array.from({ length: 14 }, (_, i) => addDays(startOfLocalDay(now), i)), []);
   const coach = coaches.find((c) => c.id === coachId) ?? null;
-  // Default: the first community (private ones are listed first).
-  const where = audience ?? (communities[0] ? { kind: 'community' as const, id: communities[0].id } : null);
+  const places = useHostPlaces(sport, lang);
+  // A bookable court: its free slots, length and rules decide the time; booking it creates the session.
+  const court = picked?.facility?.bookable ? picked.facility : null;
+  const courtSlots = useFacilitySlots(court?.id, dayKey ?? localDateKey(now)).data ?? [];
+  // A community's court lives in that community; otherwise the first community (private ones are listed first).
+  const where = court?.communityId
+    ? { kind: 'community' as const, id: court.communityId }
+    : audience ?? (communities[0] ? { kind: 'community' as const, id: communities[0].id } : null);
   const packId = where?.kind === 'pack' ? where.id : null;
   const communityId = where?.kind === 'community' ? where.id : null;
   const chosen = communityId ? communities.find((c) => c.id === communityId) : null;
@@ -112,10 +126,15 @@ export default function HostScreen() {
 
   // Preselect a spot handed over from the board.
   useEffect(() => {
-    if (!params.spot || !spots.length || spotId) return;
-    const spot = spots.find((x) => x.id === params.spot);
-    if (spot) pickSpot(spot.id);
-  }, [params.spot, spots.length]);
+    if (!params.spot || picked) return;
+    const spot = [...places.community, ...places.more].find((x) => x.key === `s:${params.spot}`);
+    if (spot) pickPlace(spot);
+  }, [params.spot, places.more.length]);
+
+  // A place that doesn't fit a newly picked sport is let go.
+  useEffect(() => {
+    if (picked && sport && !picked.sports.includes(sport)) setPicked(null);
+  }, [sport]);
 
   // A workout handed over from Train ("with your crew") sets the sport, the length and the name.
   useEffect(() => {
@@ -137,18 +156,30 @@ export default function HostScreen() {
     const rest = SPORT_LIST.filter((x) => !mySports.includes(x.id));
     return [...mine, ...rest];
   }, [mySports]);
+  // The member's own sports first; the rest one tap away.
+  const shortList = mySports.length > 0 && !allSports;
+  const shownSports = shortList ? sportOrder.filter((x) => mySports.includes(x.id) || x.id === sport) : sportOrder;
 
-  const spotChoices = spots.filter((x) => !sport || x.sports.includes(sport));
   const autoTitle = sport && time ? t('autoTitle', { period: t(`periods.${periodOf(time)}`), sport: t(`sportNoun.${sport}`) }) : '';
   const example = autoTitle || t('autoTitle', { period: t('periods.evening'), sport: t('sportNoun.padel') });
 
-  function pickSpot(id: string) {
-    const spot = spots.find((x) => x.id === id);
-    if (!spot) return;
-    setSpotId(id);
-    setPlace(spot.name);
-    setCity(spot.city);
-    if (!sport && spot.sports[0]) setSport(spot.sports[0] as SportId);
+  function pickPlace(x: Place) {
+    if (picked?.key === x.key) {
+      setPicked(null);
+      setSlotAt(null);
+      return;
+    }
+    setPicked(x);
+    setPlace(x.name);
+    setCity(x.city ?? '');
+    setSlotAt(null);
+    if (!sport) setSport((x.sports.find((v) => mySports.includes(v as any)) ?? x.sports[0] ?? null) as SportId | null);
+    const f = x.facility;
+    if (f?.bookable) {
+      setDuration(f.slotMinutes);
+      setCoachId(null);
+      if (!spotsTouched) setSpotsCount(f.maxPlayers);
+    }
   }
 
   function isPast(key: string, hhmm: string) {
@@ -162,6 +193,7 @@ export default function HostScreen() {
 
   async function submit() {
     setError('');
+    if (court) return submitCourt();
     if (!sport || !dayKey || !time) {
       setError(t('host.errMissing'));
       haptic('warning');
@@ -176,7 +208,7 @@ export default function HostScreen() {
     setBusy(true);
     try {
       const startsAt = localDateTime(dayKey, time);
-      const spot = spots.find((x) => x.id === spotId);
+      const spot = picked;
       const title = name.trim() || autoTitle;
       const { id, photoFailed } = await hostSession(meId, {
         title,
@@ -212,6 +244,44 @@ export default function HostScreen() {
     } catch (e: any) {
       haptic('error');
       setError(t(errorKey('session', e)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitCourt() {
+    if (!court || !sport || !dayKey || !slotAt) {
+      setError(t('host.errMissing'));
+      haptic('warning');
+      return;
+    }
+    if (!meId) return;
+    setBusy(true);
+    try {
+      const title = name.trim() || autoTitle || court.name;
+      const { id, photoFailed } = await hostAtCourt(meId, {
+        facilityId: court.id,
+        startsAt: new Date(slotAt),
+        players: Math.min(spotsCount ?? court.maxPlayers, court.maxPlayers),
+        title,
+        sport,
+        communityId: where?.kind === 'community' ? where.id : null,
+        packId,
+        difficulty: level === 'any' ? null : level,
+        womenOnly,
+        guestInvite: guestable && guests,
+        coachName: coach?.name ?? null,
+        notes,
+        cover,
+      });
+      haptic('success');
+      if (photoFailed) setError(t('host.errPhoto'));
+      const at = new Date(slotAt);
+      setTime(`${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`);
+      setDone({ id, title });
+    } catch (e: any) {
+      haptic('error');
+      setError(t(errorKey(e instanceof BookError ? 'courts' : 'session', e)));
     } finally {
       setBusy(false);
     }
@@ -273,9 +343,11 @@ export default function HostScreen() {
     );
   }
 
-  const timeRows: { key: string; label: string; times: { v: string; booked?: boolean }[] }[] = coach && dayKey
+  const timeRows: { key: string; label: string; times: { v: string; booked?: boolean }[] }[] = coach && dayKey && !court
     ? [{ key: 'coach', label: coach.name, times: coachSlots.map((x) => ({ v: x.start, booked: x.booked })) }]
-    : (Object.keys(SLOTS) as (keyof typeof SLOTS)[]).map((k) => ({ key: k, label: t(`periods.${k}`), times: SLOTS[k].map((v) => ({ v })) }));
+    : [{ key: period, label: '', times: SLOTS[period].map((v) => ({ v })) }];
+  const courtDay = court && dayKey ? courtSlots.filter((x) => x.startsAt.getTime() > Date.now()) : [];
+  const courtClosed = !!court && !!dayKey && !court.openDays.includes(new Date(`${dayKey}T12:00:00`).getDay());
 
   return (
     <KeyboardAvoidingView style={s.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -291,12 +363,13 @@ export default function HostScreen() {
       <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <SectionHeading title={t('host.sport')} />
         <View style={s.wrap}>
-          {sportOrder.map((x) => (
+          {shownSports.map((x) => (
             <Chip key={x.id} sport={x.id} label={t(`sports.${x.id}`)} selected={sport === x.id} onPress={() => setSport(x.id)} />
           ))}
+          {mySports.length ? <Chip label={allSports ? t('host.fewerSports') : t('host.moreSports')} icon={allSports ? 'minus' : 'plus'} onPress={() => setAllSports((v) => !v)} /> : null}
         </View>
 
-        {communities.length + packs.length > 1 ? (
+        {communities.length + packs.length > 1 && !court?.communityId ? (
           <>
             <SectionHeading title={t('host.audience')} style={s.gap} />
             <Txt v="meta" style={{ marginTop: -6, marginBottom: 8 }}>
@@ -319,6 +392,35 @@ export default function HostScreen() {
           </>
         ) : null}
 
+        {/* Place: the member's community courts first, then courts and spots for the sport. */}
+        <SectionHeading title={t('host.place')} style={s.gap} />
+        {places.community.length ? (
+          <>
+            <Txt v="label" size={13} color={p.inkSoft} style={s.rowLabel}>
+              {places.community[0].facility?.communityName ? t('host.placeCommunity', { name: places.community[0].facility.communityName }) : t('courts.yourCommunity')}
+            </Txt>
+            <PlaceRow items={places.community} picked={picked} onPick={pickPlace} />
+          </>
+        ) : null}
+        {places.more.length ? (
+          <>
+            <Txt v="label" size={13} color={p.inkSoft} style={s.rowLabel}>
+              {places.community.length ? t('host.placeMore') : sport ? t('host.placeFor', { sport: t(`sports.${sport}`) }) : t('host.placeForYou')}
+            </Txt>
+            <PlaceRow items={places.more} picked={picked} onPick={pickPlace} />
+          </>
+        ) : null}
+        {court ? (
+          <Txt v="caption" style={{ marginTop: 2 }}>
+            {[t('host.courtNote', { min: court.slotMinutes, n: court.maxPlayers }), court.dailyLimit ? t('courts.dailyRule', { n: court.dailyLimit, sport: t(`sports.${court.sport}`) }) : null].filter(Boolean).join(' ')}
+          </Txt>
+        ) : (
+          <View style={{ gap: 10, marginTop: places.community.length + places.more.length ? 4 : 0 }}>
+            <Field value={place} onChangeText={(v) => { setPlace(v); setPicked(null); }} placeholder={t('host.placePlaceholder')} />
+            <Field value={city} onChangeText={setCity} placeholder={t('host.cityPlaceholder')} />
+          </View>
+        )}
+
         <SectionHeading title={t('host.day')} style={s.gap} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.row}>
           {days.map((d, i) => {
@@ -328,8 +430,11 @@ export default function HostScreen() {
                 key={key}
                 label={i === 0 ? t('board.today') : i === 1 ? t('board.tomorrow') : fmtDay(d, lang, now)}
                 selected={dayKey === key}
+                disabled={!!court && !court.openDays.includes(d.getDay())}
+                struck={!!court && !court.openDays.includes(d.getDay())}
                 onPress={() => {
                   setDayKey(key);
+                  setSlotAt(null);
                   if (time && isPast(key, time)) setTime(null);
                 }}
               />
@@ -338,54 +443,52 @@ export default function HostScreen() {
         </ScrollView>
 
         <SectionHeading title={t('host.time')} style={s.gap} />
-        <View style={{ gap: 12 }}>
-          {timeRows.map((r) =>
-            r.times.length ? (
-              <View key={r.key} style={{ gap: 6 }}>
-                <Txt v="label" size={13} color={p.inkSoft}>
-                  {r.label}
-                </Txt>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.row}>
-                  {r.times.map(({ v, booked }) => {
-                    const past = !!dayKey && isPast(dayKey, v);
-                    const { time: c, suffix } = clockParts(localDateTime('2000-01-01', v), lang);
-                    return (
-                      <Chip key={v} label={`${c} ${suffix}`} selected={time === v} disabled={past || booked} struck={past || booked} onPress={() => setTime(v)} />
-                    );
-                  })}
-                </ScrollView>
-              </View>
-            ) : null,
-          )}
-        </View>
-
-        <SectionHeading title={t('host.place')} style={s.gap} />
-        {spotChoices.length ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[s.row, { paddingBottom: 12 }]}>
-            {spotChoices.slice(0, 10).map((x) => (
-              <Press key={x.id} onPress={() => pickSpot(x.id)} feedback="selection" style={[s.spot, spotId === x.id ? { borderColor: p.ink } : null]}>
-                {x.imageUrl ? <Image source={{ uri: x.imageUrl }} style={s.spotImg} /> : <View style={[s.spotImg, { backgroundColor: p.wash }]} />}
-                <View style={{ padding: 8 }}>
-                  <Txt v="label" size={13} numberOfLines={1}>
-                    {x.name}
-                  </Txt>
-                  <Txt v="caption" size={11}>
-                    {cityLabel(x.city, lang)}
-                  </Txt>
-                </View>
-                {spotId === x.id ? (
-                  <View style={s.spotCheck}>
-                    <Icon name="check" size={12} color={p.board} weight="bold" />
+        {court ? (
+          !dayKey ? (
+            <Txt v="meta">{t('host.pickDay')}</Txt>
+          ) : courtClosed ? (
+            <Txt v="meta">{t('courts.closed')}</Txt>
+          ) : courtDay.some((x) => x.free) ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.row}>
+              {courtDay.map((x) => {
+                const { time: c, suffix } = clockParts(x.startsAt, lang);
+                const at = x.startsAt.getTime();
+                return <Chip key={at} label={`${c} ${suffix}`} selected={slotAt === at} disabled={!x.free} struck={!x.free} onPress={() => setSlotAt(at)} />;
+              })}
+            </ScrollView>
+          ) : (
+            <Txt v="meta">{dayKey === localDateKey(now) ? t('courts.doneToday') : t('courts.fullDay')}</Txt>
+          )
+        ) : (
+          <>
+            {coach && dayKey ? null : (
+              <Segmented value={period} onChange={setPeriod} options={(Object.keys(SLOTS) as Period[]).map((k) => ({ value: k, label: t(`periods.${k}`) }))} />
+            )}
+            <View style={{ gap: 12, marginTop: 10 }}>
+              {timeRows.map((r) =>
+                r.times.length ? (
+                  <View key={r.key} style={{ gap: 6 }}>
+                    {r.label ? (
+                      <Txt v="label" size={13} color={p.inkSoft}>
+                        {r.label}
+                      </Txt>
+                    ) : null}
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.row}>
+                      {r.times.map(({ v, booked }) => {
+                        const past = !!dayKey && isPast(dayKey, v);
+                        const { time: c, suffix } = clockParts(localDateTime('2000-01-01', v), lang);
+                        return (
+                          <Chip key={v} label={`${c} ${suffix}`} selected={time === v} disabled={past || booked} struck={past || booked} onPress={() => setTime(v)} />
+                        );
+                      })}
+                    </ScrollView>
                   </View>
-                ) : null}
-              </Press>
-            ))}
-          </ScrollView>
-        ) : null}
-        <View style={{ gap: 10 }}>
-          <Field value={place} onChangeText={(v) => { setPlace(v); setSpotId(null); }} placeholder={t('host.placePlaceholder')} />
-          <Field value={city} onChangeText={setCity} placeholder={t('host.cityPlaceholder')} />
-        </View>
+                ) : null,
+              )}
+            </View>
+          </>
+        )}
+
 
         <SectionHeading title={t('host.name')} style={s.gap} />
         <Field value={name} onChangeText={setName} placeholder={t('host.namePlaceholder', { example })} maxLength={80} />
@@ -423,7 +526,7 @@ export default function HostScreen() {
             {spotsCount == null ? t('session.noLimit') : String(spotsCount)}
           </Txt>
           <Press
-            onPress={() => { setSpotsTouched(true); setSpotsCount((n) => (n == null ? 2 : Math.min(200, n + 1))); }}
+            onPress={() => { setSpotsTouched(true); setSpotsCount((n) => (n == null ? 2 : Math.min(court?.maxPlayers ?? 200, n + 1))); }}
             feedback="selection"
             accessibilityLabel="+"
             style={s.stepBtn}
@@ -441,7 +544,7 @@ export default function HostScreen() {
 
         {more ? (
           <View style={{ gap: 18 }}>
-            <View style={{ gap: 8 }}>
+            <View style={{ gap: 8, display: court ? 'none' : 'flex' }}>
               <SectionHeading title={t('host.duration')} />
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.row}>
                 {DURATIONS.map((d) => (
@@ -524,6 +627,44 @@ export default function HostScreen() {
   );
 }
 
+function PlaceRow({ items, picked, onPick }: { items: Place[]; picked: Place | null; onPick: (x: Place) => void }) {
+  const s = useStyles();
+  const { p, lang } = useKit();
+  const { t } = useI18n();
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[s.row, { paddingBottom: 12 }]}>
+      {items.map((x) => {
+        const f = x.facility;
+        const line =
+          x.reason === 'community'
+            ? f && !f.price ? t('host.tagFree') : f ? t('host.tagPrice', { n: f.price }) : ''
+            : x.reason === 'used'
+              ? t('host.tagPlayed')
+              : cityLabel(x.city, lang) || '';
+        const on = picked?.key === x.key;
+        return (
+          <Press key={x.key} onPress={() => onPick(x)} feedback="selection" accessibilityRole="button" accessibilityState={{ selected: on }} style={[s.spot, on ? { borderColor: p.ink } : null]}>
+            {x.imageUrl ? <Image source={{ uri: x.imageUrl }} style={s.spotImg} /> : <View style={[s.spotImg, { backgroundColor: p.wash }]} />}
+            <View style={{ padding: 8 }}>
+              <Txt v="label" size={13} numberOfLines={1}>
+                {x.name}
+              </Txt>
+              <Txt v="caption" size={11} numberOfLines={1}>
+                {[line, f && !f.bookable ? t('courts.classesOnly') : null].filter(Boolean).join(' · ')}
+              </Txt>
+            </View>
+            {on ? (
+              <View style={s.spotCheck}>
+                <Icon name="check" size={12} color={p.board} weight="bold" />
+              </View>
+            ) : null}
+          </Press>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
 function fmtEnd(hhmm: string, minutes: number) {
   const [h, m] = hhmm.split(':').map(Number);
   const total = h * 60 + m + minutes;
@@ -553,6 +694,7 @@ const useStyles = makeStyles(({ p }) => ({
   gap: { marginTop: 18 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   row: { gap: 8 },
+  rowLabel: { marginTop: 4, marginBottom: 6 },
   spot: { width: 150, borderRadius: 10, borderWidth: 1.5, borderColor: p.rule, overflow: 'hidden' },
   spotImg: { width: '100%', height: 84 },
   spotCheck: { position: 'absolute', top: 6, end: 6, width: 22, height: 22, borderRadius: 11, backgroundColor: p.ink, alignItems: 'center', justifyContent: 'center' },
