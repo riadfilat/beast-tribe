@@ -9,8 +9,9 @@ import { Icon } from './Icon';
 import { Magnet } from './people';
 
 /**
- * What a session costs each person, said plainly: the court price split per player, or the guest
- * price of a class. Payment is made at the venue for now; the venue marks it as paid.
+ * What a session costs each person, said plainly: the court price split equally between everyone
+ * who is in (it drops as people join), or the guest price of a class. Payment is made at the venue
+ * for now; the venue marks it as paid.
  */
 export function PayBlock({ x, meId, isGuest }: { x: Session; meId: string | null; isGuest: boolean }) {
   const { p } = useKit();
@@ -20,9 +21,9 @@ export function PayBlock({ x, meId, isGuest }: { x: Session; meId: string | null
   const dueOf = (id: string) => dues.find((d) => d.userId === id) ?? null;
 
   if (x.share != null) {
-    const players = x.capacity ?? x.goingCount;
-    const total = x.share * players;
-    const open = Math.max(0, players - x.goingCount);
+    const inCount = Math.max(1, x.goingCount);
+    const court = x.court ?? x.share * inCount;
+    const open = x.capacity != null ? Math.max(0, x.capacity - x.goingCount) : 0;
     return (
       <View style={{ gap: 12 }}>
         <Txt v="title" size={18}>
@@ -36,7 +37,7 @@ export function PayBlock({ x, meId, isGuest }: { x: Session; meId: string | null
             </Txt>
           </View>
           <Txt v="body" size={14} color={p.inkSoft} style={{ flex: 1, paddingBottom: 6 }}>
-            {t('pay.splitLine', { total: money(total), n: players })}
+            {tn('pay.splitLine', inCount, { total: money(court) })}
           </Txt>
         </View>
         <View style={{ borderTopWidth: 1, borderTopColor: p.rule }}>
@@ -57,24 +58,19 @@ export function PayBlock({ x, meId, isGuest }: { x: Session; meId: string | null
                   </View>
                 ) : null}
                 <Txt v="time" size={15}>
-                  {money(x.share!)}
+                  {money(d?.paid ? d.amount : x.share!)}
                 </Txt>
               </View>
             );
           })}
-          {open > 0 ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9 }}>
-              <View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, borderColor: p.ruleStrong, borderStyle: 'dashed' }} />
-              <Txt v="row" size={14} color={p.inkSoft} style={{ flex: 1 }}>
-                {tn('pay.openSpots', open)}
-              </Txt>
-              <Txt v="time" size={15} color={p.inkSoft}>
-                {money(open * x.share)}
-              </Txt>
-            </View>
-          ) : null}
         </View>
-        <Txt v="caption">{open > 0 ? t('pay.splitNoteOpen') : t('pay.splitNote')}</Txt>
+        {/* What a full court would cost each: the reason to bring friends */}
+        {open > 0 && x.capacity ? (
+          <Txt v="body" size={14} color={p.inkSoft}>
+            {t('pay.whenFull', { n: x.capacity, amount: money(court / x.capacity) })}
+          </Txt>
+        ) : null}
+        <Txt v="caption">{t('pay.splitNote')}</Txt>
       </View>
     );
   }

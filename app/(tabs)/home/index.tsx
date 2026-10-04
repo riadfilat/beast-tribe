@@ -33,7 +33,7 @@ import { TRAIN_ENABLED } from '../../../src/lib/constants';
 export default function BoardScreen() {
   const s = useStyles();
   const { p, lang } = useKit();
-  const { t } = useI18n();
+  const { t, tn } = useI18n();
   const router = useRouter();
   const { user, profile } = useAuth();
   const meId = PREVIEW ? PREVIEW_ME : user?.id;
@@ -125,8 +125,17 @@ export default function BoardScreen() {
     />
   );
 
-  const city = profile?.city ? cityLabel(profile.city, lang) : t(`onboarding.countries.${country}`);
-  const count = upcoming.length + live.length;
+  // Today, said to you: what you're in and what's still open to join (the city is already yours).
+  const todayOn = today.filter((x) => x.state !== 'cancelled');
+  const todayIn = todayOn.filter((x) => x.isHost || x.myStatus === 'going').length;
+  const todayOpen = todayOn.length - todayIn;
+  const todayLine = todayIn
+    ? tn('board.todayIn', todayIn) + (todayOpen ? tn('board.todayInMore', todayOpen) : '')
+    : todayOpen
+      ? tn('board.todayOpen', todayOpen)
+      : upcoming.length
+        ? tn('board.todayNoneWeek', upcoming.length)
+        : null;
 
   return (
     <SafeAreaView style={s.screen} edges={['top']}>
@@ -179,9 +188,9 @@ export default function BoardScreen() {
           <Txt v="hero" accessibilityRole="header">
             {lang === 'ar' ? t('board.today') : t('board.today').toUpperCase()}
           </Txt>
-          {count > 0 ? (
+          {todayLine ? (
             <Txt v="meta" style={{ marginTop: 2 }}>
-              {city} · {countLabel(count, lang)}
+              {todayLine}
             </Txt>
           ) : null}
         </View>
@@ -239,16 +248,6 @@ export default function BoardScreen() {
       <LocationAsk />
     </SafeAreaView>
   );
-}
-
-function countLabel(n: number, lang: string) {
-  if (lang === 'ar') {
-    if (n === 1) return 'جلسة واحدة';
-    if (n === 2) return 'جلستان';
-    if (n % 100 >= 3 && n % 100 <= 10) return `${n} جلسات`;
-    return `${n} جلسة`;
-  }
-  return `${n} session${n === 1 ? '' : 's'}`;
 }
 
 // ─── Empty board: the cold start ────────────────────────────────────────────

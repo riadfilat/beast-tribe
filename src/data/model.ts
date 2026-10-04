@@ -47,8 +47,10 @@ export interface Session {
   guestPrice: number | null;
   /** Extra seats after it fills, in case someone drops (0–3). */
   waitlistMax: number;
-  /** A booked court: what each player owes (the court price split per person). */
+  /** A paid court: what each player in owes right now (the court price ÷ players in). Null when free. */
   share: number | null;
+  /** A paid court's full price. */
+  court: number | null;
   facilityId: string | null;
   /** The plan for the session, when the host attached a workout the viewer can see. */
   workout: { id: string; title: string; titleAr: string | null; minutes: number | null } | null;
@@ -72,7 +74,7 @@ export const SESSION_SELECT = `
   id, title, description, event_type, starts_at, ends_at, location_name, location_city, gym_name,
   country, location_lat, location_lng, image_url, max_capacity, going_count, created_by,
   is_women_only, visibility, pack_id, community_id, price_sar, difficulty, coach_name, cancelled_at, workout_id, drop_in, captain_hosted,
-  guest_open, guest_price_sar, guest_spots, share_sar, facility_id, guest_invite, waitlist_max,
+  guest_open, guest_price_sar, guest_spots, share_sar, court_sar, facility_id, guest_invite, waitlist_max,
   pack:packs(id, name),
   workout:workouts(id, title, title_ar, duration_minutes),
   community:communities(id, name, visibility, is_default),
@@ -148,7 +150,9 @@ export function toSession(row: any, meId: string | null | undefined, myStatus?: 
     guestToken: null,
     guestPrice: row.guest_price_sar != null ? Number(row.guest_price_sar) : null,
     waitlistMax: typeof row.waitlist_max === 'number' ? row.waitlist_max : 3,
-    share: row.share_sar != null ? Number(row.share_sar) : null,
+    // A free court has nothing to split, so it reads like any other session.
+    share: Number(row.share_sar) > 0 ? Number(row.share_sar) : null,
+    court: Number(row.court_sar) > 0 ? Number(row.court_sar) : null,
     facilityId: row.facility_id || null,
     workout: row.workout?.id
       ? { id: row.workout.id, title: row.workout.title || '', titleAr: row.workout.title_ar || null, minutes: row.workout.duration_minutes ?? null }

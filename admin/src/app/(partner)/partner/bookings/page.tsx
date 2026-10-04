@@ -111,7 +111,7 @@ function BookingCard({ b, upcoming }: { b: Booking; upcoming?: boolean }) {
         ))}
         {open ? (
           <li className="px-5 py-2.5 text-xs text-gray-500">
-            {open} spot{open === 1 ? '' : 's'} not taken yet · {money(open * b.share)} still to be covered. If they stay empty, the organiser covers them.
+            {open} spot{open === 1 ? '' : 's'} not taken yet. The court price is split equally between the players who are in, so each share drops as more join.
           </li>
         ) : null}
       </ul>

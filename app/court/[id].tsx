@@ -23,7 +23,7 @@ type Audience = { kind: 'community' | 'pack'; id: string; name: string };
 export default function CourtScreen() {
   const s = useStyles();
   const { p, lang } = useKit();
-  const { t } = useI18n();
+  const { t, tn } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -253,8 +253,9 @@ export default function CourtScreen() {
             </View>
             <View style={{ flex: 1, gap: 2, paddingBottom: 6 }}>
               <Txt v="body" size={14}>
-                {t('pay.splitLine', { total: money(f.price), n })}
+                {tn('pay.splitLine', n, { total: money(f.price) })}
               </Txt>
+              <Txt v="caption">{t('courts.splitRule')}</Txt>
               <Txt v="caption">{t('courts.payNote', { h: f.cancelHours })}</Txt>
             </View>
           </View>

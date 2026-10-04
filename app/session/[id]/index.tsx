@@ -459,7 +459,7 @@ export default function SessionScreen() {
               </Txt>
             ) : null}
             <MarkerButton
-              label={isGuest && x.guestPrice ? t('pay.joinGuest', { amount: money(x.guestPrice) }) : x.share != null ? t('pay.joinShare', { amount: money(x.share) }) : t('session.imIn')}
+              label={isGuest && x.guestPrice ? t('pay.joinGuest', { amount: money(x.guestPrice) }) : x.share != null && x.court ? t('pay.joinShare', { amount: money(x.court / (Math.max(0, x.goingCount) + 1)) }) : t('session.imIn')}
               onPress={onJoin}
               loading={busy}
             />
