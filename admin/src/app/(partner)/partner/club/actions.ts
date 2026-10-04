@@ -2,7 +2,7 @@
 
 import { randomUUID } from 'crypto';
 import { createAdminClient } from '@/lib/supabase-server';
-import { ownsCommunity, requirePartner, type PartnerUser } from '@/lib/auth';
+import { ownsCommunity, requireCap, requirePartner, type PartnerUser } from '@/lib/auth';
 import { can } from '@/lib/capabilities';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
@@ -13,6 +13,39 @@ async function requireGym(): Promise<PartnerUser> {
   const partner = await requirePartner();
   if (!ownsCommunity(partner.partner_type)) throw new Error('This account does not run a community');
   return partner;
+}
+
+/** Classes, sessions and events: every partner whose sidebar shows them (see navFor). */
+const requireSessions = () => requireCap('classes');
+
+/** Where a partner's sessions go: its own club, or the open Beast Tribe community (everyone in the city). */
+async function sessionHome(partner: PartnerUser): Promise<string> {
+  if (ownsCommunity(partner.partner_type)) {
+    if (!partner.community_id) throw new Error('Create your club first');
+    return partner.community_id;
+  }
+  const { data } = await createAdminClient().from('communities').select('id').eq('is_default', true).limit(1).maybeSingle();
+  if (!data) throw new Error('The open community is missing');
+  return (data as any).id;
+}
+
+/** The app reads a session's sport from event_type: use the chosen sport's name, else a gym class. */
+async function eventTypeFor(sportId: string | null) {
+  if (!sportId) return 'gym_class';
+  const { data } = await createAdminClient().from('sports').select('name').eq('id', sportId).maybeSingle();
+  return ((data as any)?.name as string | undefined)?.toLowerCase() || 'gym_class';
+}
+
+/** Riyadh date + time + length from a session form, or an error message. */
+function whenOf(str: (k: string) => string) {
+  const date = str('date');
+  const time = str('time');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) throw new Error('Title, date and time are needed');
+  const duration = Math.min(480, Math.max(10, parseInt(str('duration')) || 60));
+  const first = new Date(`${date}T${time}:00+03:00`);
+  if (isNaN(first.getTime())) throw new Error('That date or time is not valid');
+  if (first.getTime() < Date.now() - 3600000) throw new Error('Pick a time in the future');
+  return { first, duration };
 }
 
 /** Teams and challenges: only partners whose sidebar shows them (see navFor). */
@@ -82,16 +115,15 @@ export async function newClubCode() {
 
 /** Schedule a class, optionally repeating weekly. Times are Riyadh time. */
 export async function createClass(formData: FormData) {
-  const partner = await requireGym();
-  if (!partner.community_id) throw new Error('Create your club first');
+  const partner = await requireSessions();
+  const communityId = await sessionHome(partner);
+  const inClub = communityId === partner.community_id;
   const db = createAdminClient();
   const str = (k: string) => ((formData.get(k) as string) || '').trim();
 
   const title = str('title');
-  const date = str('date');
-  const time = str('time');
-  if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) throw new Error('Title, date and time are needed');
-  const duration = Math.min(480, Math.max(10, parseInt(str('duration')) || 60));
+  if (!title) throw new Error('Title, date and time are needed');
+  const { first, duration } = whenOf(str);
   const capacity = parseInt(str('capacity')) || null;
   const weeks = Math.min(12, Math.max(1, parseInt(str('repeat')) || 1));
   // Guests: people outside the community can join for a guest price and pay at the desk.
@@ -99,9 +131,7 @@ export async function createClass(formData: FormData) {
   const guestPrice = guestOpen ? Math.round(parseFloat(str('guest_price_sar') || '0') * 100) / 100 : null;
   if (guestOpen && !(guestPrice! >= 0 && guestPrice! <= 5000)) throw new Error('The guest price is not valid');
   const guestSpots = guestOpen && str('guest_spots') ? Math.max(0, parseInt(str('guest_spots')) || 0) : null;
-  const first = new Date(`${date}T${time}:00+03:00`);
-  if (isNaN(first.getTime())) throw new Error('That date or time is not valid');
-  if (first.getTime() < Date.now() - 3600000) throw new Error('Pick a time in the future');
+  const eventType = await eventTypeFor(str('sport_id') || null);
 
   const { data: p } = await db.from('partners').select('city, country, address').eq('id', partner.partner_id).single();
   const series = weeks > 1 ? randomUUID() : null;
@@ -111,21 +141,21 @@ export async function createClass(formData: FormData) {
     return {
       title,
       description: str('description') || null,
-      event_type: 'gym_class',
+      event_type: eventType,
       sport_id: str('sport_id') || null,
       starts_at: starts.toISOString(),
       ends_at: ends.toISOString(),
       max_capacity: capacity,
       location_name: str('location_name') || partner.business_name,
-      location_city: (p as any)?.city || null,
+      location_city: str('location_city') || (p as any)?.city || null,
       country: (p as any)?.country || 'SA',
       coach_name: str('coach_name') || null,
-      gym_name: partner.business_name,
+      gym_name: inClub ? partner.business_name : null,
       difficulty: str('difficulty') || null,
       is_women_only: formData.get('is_women_only') === 'on',
       created_by: partner.id,
       partner_id: partner.partner_id,
-      community_id: partner.community_id,
+      community_id: communityId,
       visibility: 'community',
       is_class: true,
       class_series_id: series,
@@ -142,9 +172,51 @@ export async function createClass(formData: FormData) {
   redirect('/partner/classes?created=' + weeks);
 }
 
+/** Edit one session. The time can change only while nobody is booked (they would not be told). */
+export async function updateClass(eventId: string, formData: FormData) {
+  const partner = await requireSessions();
+  const e = await ownedEvent(partner, eventId);
+  if (e.cancelled_at) throw new Error('This one is cancelled');
+  const db = createAdminClient();
+  const str = (k: string) => ((formData.get(k) as string) || '').trim();
+  const title = str('title');
+  if (!title) throw new Error('A title is needed');
+
+  const sportId = str('sport_id') || null;
+  const updates: Record<string, any> = {
+    title,
+    description: str('description') || null,
+    sport_id: sportId,
+    event_type: await eventTypeFor(sportId),
+    coach_name: str('coach_name') || null,
+    location_name: str('location_name') || null,
+    max_capacity: parseInt(str('capacity')) || null,
+    difficulty: str('difficulty') || null,
+    is_women_only: formData.get('is_women_only') === 'on',
+  };
+  if (formData.has('location_city')) updates.location_city = str('location_city') || null;
+
+  if (str('date') && str('time')) {
+    const { first, duration } = whenOf(str);
+    const moved = first.getTime() !== new Date(e.starts_at).getTime() || duration !== Math.round((new Date(e.ends_at ?? e.starts_at).getTime() - new Date(e.starts_at).getTime()) / 60000);
+    if (moved) {
+      const { count } = await db.from('event_rsvps').select('user_id', { count: 'exact', head: true }).eq('event_id', eventId).in('status', ['going', 'waitlist']);
+      if (count) throw new Error('People are booked, so the time can no longer change. Cancel it (they are notified) and post a new one.');
+      updates.starts_at = first.toISOString();
+      updates.ends_at = new Date(first.getTime() + duration * 60000).toISOString();
+    }
+  }
+
+  const { error } = await db.from('events').update(updates).eq('id', eventId);
+  if (error) throw new Error(error.message);
+  revalidatePath('/partner/classes');
+  revalidatePath(`/partner/classes/${eventId}`);
+  redirect(`/partner/classes/${eventId}`);
+}
+
 async function ownedEvent(partner: PartnerUser, eventId: string) {
   const db = createAdminClient();
-  const { data: e } = await db.from('events').select('id, title, partner_id, community_id, created_by, class_series_id, starts_at, cancelled_at').eq('id', eventId).single();
+  const { data: e } = await db.from('events').select('id, title, partner_id, community_id, created_by, class_series_id, starts_at, ends_at, cancelled_at').eq('id', eventId).single();
   if (!e) throw new Error('Class not found');
   const mine = (e as any).partner_id === partner.partner_id || (partner.community_id && (e as any).community_id === partner.community_id && (e as any).created_by === partner.id);
   if (!mine) throw new Error('Not your class');
@@ -153,7 +225,7 @@ async function ownedEvent(partner: PartnerUser, eventId: string) {
 
 /** Cancel one class or every upcoming class in its weekly series; booked members are notified. */
 export async function cancelClass(eventId: string, formData: FormData) {
-  const partner = await requireGym();
+  const partner = await requireSessions();
   const e = await ownedEvent(partner, eventId);
   const db = createAdminClient();
   const scope = formData.get('scope') === 'series' && e.class_series_id ? 'series' : 'one';
@@ -177,7 +249,7 @@ export async function cancelClass(eventId: string, formData: FormData) {
 
 /** Mark whether a booked member actually came. */
 export async function setAttendance(eventId: string, userId: string, came: boolean) {
-  const partner = await requireGym();
+  const partner = await requireSessions();
   await ownedEvent(partner, eventId);
   const db = createAdminClient();
   const { error } = await db
@@ -191,7 +263,7 @@ export async function setAttendance(eventId: string, userId: string, came: boole
 
 /** Everyone booked came: one tap after a full class. */
 export async function markAllAttended(eventId: string) {
-  const partner = await requireGym();
+  const partner = await requireSessions();
   await ownedEvent(partner, eventId);
   const db = createAdminClient();
   const { error } = await db

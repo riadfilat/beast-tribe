@@ -1,7 +1,7 @@
 // One dashboard for every kind of partner. What a partner sees depends on what they run:
-// a community, classes, guest spots, bookable facilities, workouts, events.
+// a community, sessions (classes or events), guest spots, bookable facilities, workouts.
 
-export type Cap = 'community' | 'members' | 'classes' | 'guests' | 'facilities' | 'teams' | 'challenges' | 'report' | 'poster' | 'workouts' | 'events';
+export type Cap = 'community' | 'members' | 'classes' | 'guests' | 'facilities' | 'teams' | 'challenges' | 'report' | 'poster' | 'workouts';
 
 export interface PartnerKind {
   label: string;
@@ -17,15 +17,20 @@ const PARTNER_KINDS: Record<string, PartnerKind> = {
   company: { label: 'Company', people: 'People', sessions: 'Sessions', community: 'Community', caps: ['community', 'members', 'classes', 'teams', 'challenges', 'report', 'poster'] },
   school: { label: 'School', people: 'Members', sessions: 'Classes', community: 'Community', caps: ['community', 'members', 'classes', 'guests', 'facilities', 'poster'] },
   venue: { label: 'Courts and venues', people: 'Players', sessions: 'Bookings', community: 'Venue', caps: ['facilities'] },
-  coach: { label: 'Coach', people: 'Trainees', sessions: 'Sessions', community: 'Community', caps: ['events', 'workouts'] },
+  coach: { label: 'Coach', people: 'Trainees', sessions: 'Sessions', community: 'Community', caps: ['classes', 'workouts'] },
   leader: { label: 'Club leader', people: 'Members', sessions: 'Sessions', community: 'Club', caps: ['community', 'members', 'classes', 'poster'] },
-  event_company: { label: 'Event company', people: 'Guests', sessions: 'Events', community: 'Community', caps: ['events'] },
-  nutritionist: { label: 'Nutritionist', people: 'Clients', sessions: 'Sessions', community: 'Community', caps: ['events', 'workouts'] },
-  nutrition: { label: 'Restaurant', people: 'Guests', sessions: 'Events', community: 'Community', caps: ['events'] },
+  event_company: { label: 'Event company', people: 'Guests', sessions: 'Events', community: 'Community', caps: ['classes'] },
+  nutritionist: { label: 'Nutritionist', people: 'Clients', sessions: 'Sessions', community: 'Community', caps: ['classes', 'workouts'] },
+  nutrition: { label: 'Restaurant', people: 'Guests', sessions: 'Events', community: 'Community', caps: ['classes'] },
 };
 
-export const kindOf = (type: string): PartnerKind => PARTNER_KINDS[type] || { label: type, people: 'Members', sessions: 'Events', community: 'Community', caps: ['events'] };
+export const kindOf = (type: string): PartnerKind => PARTNER_KINDS[type] || { label: type, people: 'Members', sessions: 'Events', community: 'Community', caps: ['classes'] };
 export const can = (type: string, cap: Cap) => kindOf(type).caps.includes(cap);
+/** One of this partner's sessions, in lower case: "class", "event" or "session". */
+export const sessionWord = (type: string) => {
+  const s = kindOf(type).sessions;
+  return s === 'Classes' ? 'class' : s === 'Events' ? 'event' : 'session';
+};
 
 export interface NavEntry {
   label: string;
@@ -42,7 +47,6 @@ export function navFor(type: string): NavEntry[] {
   if (has('members')) out.push({ label: k.people, href: '/partner/members', icon: 'users' });
   if (has('classes')) out.push({ label: k.sessions, href: '/partner/classes', icon: 'events' });
   if (has('facilities')) out.push({ label: 'Courts and facilities', href: '/partner/facilities', icon: 'locations' }, { label: 'Bookings', href: '/partner/bookings', icon: 'key' });
-  if (has('events')) out.push({ label: 'My events', href: '/partner/events', icon: 'events' });
   if (has('teams')) out.push({ label: 'Teams', href: '/partner/teams', icon: 'communities' });
   if (has('challenges')) out.push({ label: 'Challenges', href: '/partner/challenges', icon: 'steps' });
   if (has('report')) out.push({ label: 'Monthly report', href: '/partner/report', icon: 'business' });

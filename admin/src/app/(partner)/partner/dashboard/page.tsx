@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { requirePartner } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
-import { can, kindOf, navFor } from '@/lib/capabilities';
-import { loadClub, fmtDay, fmtTime } from '@/lib/club';
+import { can, kindOf, navFor, sessionWord } from '@/lib/capabilities';
+import { loadClub, loadSessions, fmtDay, fmtTime } from '@/lib/club';
 import { monthRange } from '@/lib/format';
 import { loadBookings, loadFacilities, loadIncome, money } from '@/lib/venue';
 import { Icon, type IconName } from '@/components/ui/Icon';
@@ -26,7 +26,7 @@ interface Next {
 }
 
 // One overview for every kind of partner. Each block appears only if the partner runs that thing:
-// a community, classes, guest spots, courts, workouts, events.
+// a community, sessions (classes or events), guest spots, courts, workouts.
 export default async function PartnerOverviewPage() {
   const partner = await requirePartner();
   const type = partner.partner_type;
@@ -38,23 +38,21 @@ export default async function PartnerOverviewPage() {
   const hasCommunity = can(type, 'community');
   const hasFacilities = can(type, 'facilities');
   const hasGuests = can(type, 'guests');
-  const hasEvents = can(type, 'events');
+  const hasSessions = can(type, 'classes');
   const hasWorkouts = can(type, 'workouts');
 
-  const [club, facilities, bookings, income, eventsRes, workoutsRes, usesRes] = await Promise.all([
+  const [club, facilities, bookings, income, sessions, workoutsRes, usesRes] = await Promise.all([
     hasCommunity && partner.community_id ? loadClub(partner, partner.community_id) : Promise.resolve(null),
     hasFacilities ? loadFacilities(partner.partner_id) : Promise.resolve([]),
     hasFacilities ? loadBookings(partner.partner_id) : Promise.resolve([]),
     hasFacilities || hasGuests ? loadIncome(partner.partner_id, m.from, m.to) : Promise.resolve(null),
-    hasEvents
-      ? db.from('events').select('id, title, starts_at, location_city, max_capacity, rsvp_count:event_rsvps(count)').eq('partner_id', partner.partner_id).is('cancelled_at', null).gte('starts_at', new Date(now - 30 * 86400000).toISOString()).order('starts_at').limit(100)
-      : Promise.resolve({ data: [] as any[] }),
+    // A club's sessions come from the club (same cached load); everyone else's from their own posts.
+    hasSessions && (!hasCommunity || partner.community_id) ? loadSessions(partner) : Promise.resolve(null),
     hasWorkouts ? db.from('workouts').select('id, status').eq('author_partner_id', partner.partner_id) : Promise.resolve({ data: [] as any[] }),
     hasWorkouts
       ? db.from('workout_logs').select('id', { count: 'exact', head: true }).eq('counted', true).eq('coach_partner_id', partner.partner_id).gte('completed_at', `${m.from}T00:00:00+03:00`)
       : Promise.resolve({ count: 0 }),
   ]);
-  const events = ((eventsRes as any).data || []) as any[];
   const workouts = ((workoutsRes as any).data || []) as any[];
   const uses = (usesRes as any).count || 0;
 
@@ -72,9 +70,10 @@ export default async function PartnerOverviewPage() {
   const liveBookings = bookings.filter((b) => !b.cancelled);
   const upcomingBookings = liveBookings.filter((b) => b.endsAt.getTime() >= now);
   const unpaidBookings = liveBookings.filter((b) => b.endsAt.getTime() < now && b.paid < b.price);
-  const upcomingEvents = events.filter((e) => new Date(e.starts_at).getTime() > now);
-  const unmarked = club ? club.past.filter((c) => !c.cancelled && c.isClass && c.going > 0 && c.attended === 0 && now - c.startsAt.getTime() < 30 * 86400000).length : 0;
-  const guestClasses = club ? club.upcoming.filter((c) => c.guestOpen && !c.cancelled).length : 0;
+  const coming = sessions ? sessions.upcoming.filter((c) => !c.cancelled) : [];
+  const one = sessionWord(type);
+  const unmarked = sessions ? sessions.past.filter((c) => !c.cancelled && c.isClass && c.going > 0 && c.attended === 0 && now - c.startsAt.getTime() < 30 * 86400000).length : 0;
+  const guestClasses = sessions ? sessions.upcoming.filter((c) => c.guestOpen && !c.cancelled).length : 0;
 
   // ── What needs you today ──
   const todo: Todo[] = [];
@@ -82,16 +81,15 @@ export default async function PartnerOverviewPage() {
   if (hasFacilities && !facilities.length) todo.push({ text: 'List your first court or facility with its hours and price. It can be booked right away.', href: '/partner/facilities/new', cta: 'Add it' });
   if (unpaidBookings.length) todo.push({ text: `${unpaidBookings.length} past booking${unpaidBookings.length === 1 ? ' is' : 's are'} not fully marked paid.`, href: '/partner/bookings', cta: 'Open bookings' });
   if (guestsUnpaid) todo.push({ text: `${guestsUnpaid} guest${guestsUnpaid === 1 ? '' : 's'} from recent classes ${guestsUnpaid === 1 ? 'is' : 'are'} not marked paid.`, href: '/partner/classes', cta: 'Open classes' });
-  if (unmarked) todo.push({ text: `${unmarked} past ${unmarked === 1 ? 'class has' : 'classes have'} no attendance marked.`, href: '/partner/classes', cta: 'Mark who came' });
+  if (unmarked) todo.push({ text: `${unmarked} past ${unmarked === 1 ? `${one} has` : `${kind.sessions.toLowerCase()} have`} no attendance marked.`, href: '/partner/classes', cta: 'Mark who came' });
   if (club && club.counts.atRisk) todo.push({ text: `${club.counts.atRisk} ${kind.people.toLowerCase()} ${club.counts.atRisk === 1 ? 'has' : 'have'} done nothing for over 30 days.`, href: '/partner/members?status=at_risk', cta: 'See who' });
-  if (club && can(type, 'classes') && !club.upcoming.length) todo.push({ text: `Nothing is scheduled. Post this week's ${kind.sessions.toLowerCase()}.`, href: '/partner/classes/new', cta: 'Schedule' });
-  if (club && hasGuests && club.upcoming.length && !guestClasses) todo.push({ text: 'None of your coming classes is open to guests. Open a few spots to people outside your community for a guest price.', href: '/partner/classes/new', cta: 'Open a class' });
+  if (sessions && !coming.length) todo.push({ text: `Nothing is scheduled. Post this week's ${kind.sessions.toLowerCase()}.`, href: '/partner/classes/new', cta: 'Schedule' });
+  if (club && hasGuests && coming.length && !guestClasses) todo.push({ text: 'None of your coming classes is open to guests. Open a few spots to people outside your community for a guest price.', href: '/partner/classes/new', cta: 'Open a class' });
   if (hasWorkouts && !hasCommunity && !workouts.length) todo.push({ text: 'Write your first workout for the Train tab. You are paid each time a member finishes one.', href: '/partner/workouts/new', cta: 'Write it' });
-  if (hasEvents && !upcomingEvents.length) todo.push({ text: 'You have nothing coming up. Post your next session.', href: '/partner/events/new', cta: 'Create it' });
 
   // ── Coming up, across everything this partner runs ──
   const next: Next[] = [
-    ...(club ? club.upcoming.filter((c) => !c.cancelled) : []).map((c) => ({
+    ...coming.map((c) => ({
       id: `c${c.id}`,
       at: c.startsAt,
       title: c.title,
@@ -100,9 +98,8 @@ export default async function PartnerOverviewPage() {
       tag: c.guestOpen ? (c.guestPrice ? `Guests SAR ${c.guestPrice}` : 'Guests welcome') : undefined,
     })),
     ...upcomingBookings
-      .filter((b) => !club || !club.upcoming.some((c) => c.id === b.eventId))
+      .filter((b) => !coming.some((c) => c.id === b.eventId))
       .map((b) => ({ id: `b${b.id}`, at: b.startsAt, title: b.facility, sub: `${b.booker} · ${b.people.length} of ${b.players} players · ${money(b.share)} each`, href: '/partner/bookings', tag: 'Court booking' })),
-    ...upcomingEvents.map((e) => ({ id: `e${e.id}`, at: new Date(e.starts_at), title: e.title, sub: `${e.rsvp_count?.[0]?.count || 0}${e.max_capacity ? ` of ${e.max_capacity}` : ''} joined${e.location_city ? ` · ${e.location_city}` : ''}`, href: `/partner/events/${e.id}` })),
   ]
     .sort((a, b) => a.at.getTime() - b.at.getTime())
     .slice(0, 8);
@@ -123,17 +120,13 @@ export default async function PartnerOverviewPage() {
             {club ? ` · ${club.community.name}` : ''}
           </p>
         </div>
-        {can(type, 'classes') && club ? (
+        {sessions ? (
           <Link href="/partner/classes/new" className={btnPrimary}>
-            + New {kind.sessions === 'Classes' ? 'class' : 'session'}
+            + New {one}
           </Link>
         ) : hasFacilities ? (
           <Link href="/partner/facilities/new" className={btnPrimary}>
             + Add a facility
-          </Link>
-        ) : hasEvents ? (
-          <Link href="/partner/events/new" className={btnPrimary}>
-            + New event
           </Link>
         ) : null}
       </div>
@@ -164,12 +157,11 @@ export default async function PartnerOverviewPage() {
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {club ? <Stat label={kind.people} value={club.counts.members} hint={`${club.counts.new30} joined in 30 days`} href="/partner/members" /> : null}
         {club ? <Stat label="Active this week" value={club.counts.active7} hint={club.counts.members ? `${Math.round((club.counts.active7 / club.counts.members) * 100)}% of ${kind.people.toLowerCase()}` : undefined} tone="aqua" href="/partner/members" /> : null}
-        {club && can(type, 'classes') ? <Stat label="Bookings, 30 days" value={club.month.bookings} hint={club.month.fill != null ? `${Math.round(club.month.fill * 100)}% average fill` : undefined} tone="orange" href="/partner/classes" /> : null}
+        {sessions && !club ? <Stat label="Coming up" value={coming.length} hint={`Your ${kind.sessions.toLowerCase()}`} href="/partner/classes" /> : null}
+        {sessions ? <Stat label="Bookings, 30 days" value={sessions.month.bookings} hint={sessions.month.fill != null ? `${Math.round(sessions.month.fill * 100)}% average fill` : undefined} tone="orange" href="/partner/classes" /> : null}
         {hasGuests && income ? <Stat label="Guests this month" value={income.guestBookings} hint={income.guestBookings ? `${money(income.guestDue)} · ${money(income.guestPaid)} paid` : 'People outside your community'} tone="orange" href="/partner/classes" /> : null}
         {hasFacilities && income ? <Stat label="Court bookings this month" value={income.courtBookings} hint={`${upcomingBookings.length} coming up`} href="/partner/bookings" /> : null}
         {hasFacilities && income ? <Stat label="Booked this month" value={money(income.courtDue)} hint={`${money(income.courtPaid)} marked paid`} tone="aqua" href="/partner/bookings" /> : null}
-        {hasEvents ? <Stat label="Coming up" value={upcomingEvents.length} hint="Your sessions and events" href="/partner/events" /> : null}
-        {hasEvents ? <Stat label="Joined, 30 days" value={events.reduce((t, e) => t + (e.rsvp_count?.[0]?.count || 0), 0)} tone="orange" href="/partner/events" /> : null}
         {hasWorkouts && !hasCommunity ? <Stat label="Workouts published" value={workouts.filter((w) => w.status === 'published').length} href="/partner/workouts" /> : null}
         {hasWorkouts && !hasCommunity ? <Stat label="Finished this month" value={uses} hint="Times members completed your workouts" tone="aqua" href="/partner/workouts" /> : null}
       </section>

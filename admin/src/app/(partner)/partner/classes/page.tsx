@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { ownsCommunity, requirePartner } from '@/lib/auth';
-import { loadClub, fmtDay, fmtTime, type ClubClass } from '@/lib/club';
+import { ownsCommunity, requireCap } from '@/lib/auth';
+import { kindOf, sessionWord } from '@/lib/capabilities';
+import { loadSessions, fmtDay, fmtTime, type ClubClass } from '@/lib/club';
 import { FillBar, Stat, btnPrimary, card } from '@/components/club/ui';
 
 export const revalidate = 0;
@@ -16,11 +17,13 @@ function byDay(list: ClubClass[]) {
 }
 
 export default async function ClassesPage({ searchParams }: { searchParams: { created?: string } }) {
-  const partner = await requirePartner();
-  if (!ownsCommunity(partner.partner_type)) redirect('/partner/dashboard');
-  if (!partner.community_id) redirect('/partner/club');
-  const club = await loadClub(partner, partner.community_id);
-  if (!club) redirect('/partner/club');
+  const partner = await requireCap('classes');
+  // A club runs its sessions inside the club, so it needs the club first.
+  if (ownsCommunity(partner.partner_type) && !partner.community_id) redirect('/partner/club');
+  const club = await loadSessions(partner);
+  const plural = kindOf(partner.partner_type).sessions;
+  const one = sessionWord(partner.partner_type);
+  const inClub = !!club.club;
 
   const upcoming = club.upcoming.filter((c) => c.startsAt.getTime() - Date.now() < 14 * 86400000);
   const later = club.upcoming.length - upcoming.length;
@@ -32,25 +35,27 @@ export default async function ClassesPage({ searchParams }: { searchParams: { cr
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Classes</h1>
-          <p className="text-sm text-gray-500">Members see these in the app under your club and book with one tap. Full classes fill the waitlist; a freed spot goes to the next in line.</p>
+          <h1 className="text-2xl font-bold text-gray-900">{plural}</h1>
+          <p className="text-sm text-gray-500">
+            {inClub ? 'Members see these in the app under your club' : 'People in your city see these on their Board in the app'} and book with one tap. When it is full, the waitlist fills; a freed spot goes to the next in line.
+          </p>
         </div>
         <Link href="/partner/classes/new" className={btnPrimary}>
-          + New class
+          + New {one}
         </Link>
       </div>
 
       {created ? (
         <div className="rounded-lg bg-[#E8F5EE] text-[#25704F] text-sm px-4 py-3">
-          {created === 1 ? 'Class scheduled.' : `${created} weekly classes scheduled.`} Your members can book now.
+          {created === 1 ? 'Scheduled.' : `${created} weeks scheduled.`} {inClub ? 'Your members' : 'People'} can book now.
         </div>
       ) : null}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Stat label="Bookings, 30 days" value={club.month.bookings} />
         <Stat label="Average fill" value={club.month.fill != null ? `${Math.round(club.month.fill * 100)}%` : '—'} hint="Classes with a capacity" tone="aqua" />
-        <Stat label="Classes held, 30 days" value={club.month.classesHeld} tone="orange" />
-        <Stat label="Attendance to mark" value={unmarked} hint="Past classes with bookings" tone="coral" />
+        <Stat label={`${plural} held, 30 days`} value={club.month.classesHeld} tone="orange" />
+        <Stat label="Attendance to mark" value={unmarked} hint={`Past ${plural.toLowerCase()} with bookings`} tone="coral" />
       </div>
 
       <section>
@@ -73,7 +78,7 @@ export default async function ClassesPage({ searchParams }: { searchParams: { cr
           <div className={`${card} p-10 text-center`}>
             <p className="text-gray-500 text-sm">Nothing scheduled. Post your weekly timetable once and repeat it for up to 12 weeks.</p>
             <Link href="/partner/classes/new" className={`${btnPrimary} mt-4`}>
-              Schedule a class
+              Schedule {one === 'event' ? 'an' : 'a'} {one}
             </Link>
           </div>
         )}
@@ -109,7 +114,7 @@ function ClassRow({ c, past }: { c: ClubClass; past?: boolean }) {
         <div className="flex-1 min-w-0">
           <p className={`text-sm font-medium truncate ${c.cancelled ? 'line-through text-gray-400' : 'text-gray-900'}`}>{c.title}</p>
           <p className="text-xs text-gray-400 truncate">
-            {[c.byMember ? 'Set up by a member' : c.coach, c.sport, c.seriesId ? 'Weekly' : null, c.court ? 'Court booking' : null].filter(Boolean).join(' · ') || 'Class'}
+            {[c.byMember ? 'Set up by a member' : c.coach, c.sport, c.seriesId ? 'Weekly' : null, c.court ? 'Court booking' : null].filter(Boolean).join(' · ')}
             {c.guestOpen ? <span className="ml-2 inline-block rounded-full bg-[#FFF1DC] text-[#9A5A0B] px-2 py-0.5 text-[11px] font-semibold">{c.guestPrice ? `Guests SAR ${c.guestPrice}` : 'Guests welcome'}</span> : null}
           </p>
         </div>

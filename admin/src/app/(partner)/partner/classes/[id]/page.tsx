@@ -1,35 +1,41 @@
 import Link from 'next/link';
-import { notFound, redirect } from 'next/navigation';
-import { ownsCommunity, requirePartner } from '@/lib/auth';
+import { notFound } from 'next/navigation';
+import { ownsCommunity, requireCap } from '@/lib/auth';
+import { kindOf, sessionWord } from '@/lib/capabilities';
+import { SessionFields } from '@/components/club/SessionFields';
 import { createAdminClient } from '@/lib/supabase-server';
 import { fmtDay, fmtTime } from '@/lib/club';
 import SubmitButton from '@/components/SubmitButton';
 import { ConfirmButton } from '@/components/ConfirmSubmit';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar, FillBar, btnGhost, card, input } from '@/components/club/ui';
-import { cancelClass, markAllAttended, setAttendance } from '../../club/actions';
+import { cancelClass, markAllAttended, setAttendance, updateClass } from '../../club/actions';
 import { markPaid } from '../../facilities/actions';
 
 export const revalidate = 0;
 
 export default async function ClassPage({ params }: { params: { id: string } }) {
-  const partner = await requirePartner();
-  if (!ownsCommunity(partner.partner_type)) redirect('/partner/dashboard');
+  const partner = await requireCap('classes');
   const db = createAdminClient();
+  const plural = kindOf(partner.partner_type).sessions;
+  const one = sessionWord(partner.partner_type);
 
   const { data: e } = await db
     .from('events')
-    .select('id, title, description, starts_at, ends_at, max_capacity, coach_name, location_name, difficulty, is_women_only, cancelled_at, cancel_reason, class_series_id, partner_id, community_id, guest_open, guest_price_sar, guest_spots, sport:sports(name, emoji)')
+    .select('id, title, description, starts_at, ends_at, max_capacity, coach_name, location_name, location_city, difficulty, is_women_only, cancelled_at, cancel_reason, class_series_id, partner_id, community_id, sport_id, guest_open, guest_price_sar, guest_spots, sport:sports(name, emoji)')
     .eq('id', params.id)
     .single();
-  if (!e || ((e as any).partner_id !== partner.partner_id && (e as any).community_id !== partner.community_id)) notFound();
+  // The partner's own sessions, or (for a club) sessions members set up inside the club.
+  const inMyClub = !!partner.community_id && ownsCommunity(partner.partner_type) && (e as any)?.community_id === partner.community_id;
+  if (!e || ((e as any).partner_id !== partner.partner_id && !inMyClub)) notFound();
   const ev: any = e;
   const mine = ev.partner_id === partner.partner_id;
 
-  const [{ data: rs }, { data: dues }] = await Promise.all([
+  const [{ data: rs }, { data: dues }, { data: sports }] = await Promise.all([
     db.from('event_rsvps').select('user_id, status, created_at, attended_at').eq('event_id', ev.id).in('status', ['going', 'waitlist']).order('created_at'),
     // What guests owe for this class (members book free).
     db.from('session_dues').select('user_id, amount_sar, paid_at').eq('event_id', ev.id).eq('kind', 'guest'),
+    db.from('sports').select('id, name, emoji').eq('is_active', true).order('name'),
   ]);
   const ids = (rs || []).map((r: any) => r.user_id);
   const { data: profiles } = ids.length ? await db.from('profiles').select('id, full_name, display_name, avatar_url').in('id', ids) : { data: [] as any[] };
@@ -50,7 +56,7 @@ export default async function ClassPage({ params }: { params: { id: string } }) 
   return (
     <div className="max-w-3xl space-y-6">
       <Link href="/partner/classes" className="text-sm text-[#147070] hover:underline inline-flex items-center gap-1">
-        <Icon name="back" size="sm" /> Classes
+        <Icon name="back" size="sm" /> {plural}
       </Link>
 
       <div>
@@ -156,6 +162,40 @@ export default async function ClassPage({ params }: { params: { id: string } }) 
       ) : null}
 
       {mine && !ev.cancelled_at && !started ? (
+        <details className={`${card} p-5`}>
+          <summary className="font-semibold text-gray-900 cursor-pointer">Edit</summary>
+          <form action={updateClass.bind(null, ev.id)} className="space-y-5 mt-4">
+            <SessionFields
+              sports={(sports || []) as any}
+              d={{
+                title: ev.title,
+                sportId: ev.sport_id,
+                coach: ev.coach_name,
+                // Riyadh is UTC+3 all year.
+                date: new Date(starts.getTime() + 3 * 3600000).toISOString().slice(0, 10),
+                time: new Date(starts.getTime() + 3 * 3600000).toISOString().slice(11, 16),
+                duration: ev.ends_at ? Math.round((new Date(ev.ends_at).getTime() - starts.getTime()) / 60000) : 60,
+                capacity: ev.max_capacity,
+                difficulty: ev.difficulty,
+                locationName: ev.location_name,
+                city: ev.location_city,
+                description: ev.description,
+                womenOnly: ev.is_women_only,
+              }}
+              one={one}
+              placeName={partner.business_name}
+              showCity={!ownsCommunity(partner.partner_type)}
+              showRepeat={false}
+              lockTime={going.length + waiting.length > 0}
+            />
+            <SubmitButton pendingLabel="Saving…" className={`${btnGhost} w-full`}>
+              Save changes
+            </SubmitButton>
+          </form>
+        </details>
+      ) : null}
+
+      {mine && !ev.cancelled_at && !started ? (
         <section className={`${card} p-5`}>
           <h2 className="font-semibold text-gray-900">Cancel</h2>
           <p className="text-xs text-gray-500 mb-3">Everyone booked or waiting gets a notification in the app.</p>
@@ -164,7 +204,7 @@ export default async function ClassPage({ params }: { params: { id: string } }) 
             {ev.class_series_id ? (
               <div className="flex gap-4 text-sm text-gray-600">
                 <label className="flex items-center gap-2">
-                  <input type="radio" name="scope" value="one" defaultChecked /> Only this class
+                  <input type="radio" name="scope" value="one" defaultChecked /> Only this {one}
                 </label>
                 <label className="flex items-center gap-2">
                   <input type="radio" name="scope" value="series" /> This and all later weeks
@@ -172,7 +212,7 @@ export default async function ClassPage({ params }: { params: { id: string } }) 
               </div>
             ) : null}
             <ConfirmButton confirmMessage="Cancel and notify everyone booked?" className={`${btnGhost} text-[#9E3A33] border-[#F3CFCC] hover:bg-[#FCEBEA]`}>
-              Cancel class
+              Cancel {one}
             </ConfirmButton>
           </form>
         </section>

@@ -1,6 +1,6 @@
 import { cache } from 'react';
 import { createAdminClient } from './supabase-server';
-import type { PartnerUser } from './auth';
+import { ownsCommunity, type PartnerUser } from './auth';
 import { fetchAll } from './fetch-all';
 
 // A gym's club, measured. Everything per member is club activity only: booking or coming to the
@@ -90,6 +90,102 @@ function weekStart(d: Date) {
   return x;
 }
 
+const EVENT_COLUMNS = 'id, title, starts_at, ends_at, max_capacity, is_class, class_series_id, created_by, partner_id, coach_name, cancelled_at, guest_open, guest_price_sar, facility_id, sport:sports(name, emoji)';
+
+type Counts = { going: number; waitlist: number; attended: number };
+
+function toClass(e: any, counts: Counts | undefined, partner: PartnerUser, memberSet: Set<string>): ClubClass {
+  const pe = counts ?? { going: 0, waitlist: 0, attended: 0 };
+  return {
+    id: e.id,
+    title: e.title,
+    startsAt: new Date(e.starts_at),
+    endsAt: e.ends_at ? new Date(e.ends_at) : null,
+    capacity: e.max_capacity,
+    going: pe.going,
+    waitlist: pe.waitlist,
+    attended: pe.attended,
+    coach: e.coach_name,
+    cancelled: !!e.cancelled_at,
+    isClass: !!e.is_class || e.partner_id === partner.partner_id,
+    byMember: e.partner_id !== partner.partner_id && memberSet.has(e.created_by),
+    sport: e.sport ? `${e.sport.emoji || ''} ${e.sport.name}`.trim() : null,
+    seriesId: e.class_series_id,
+    guestOpen: !!e.guest_open,
+    guestPrice: e.guest_price_sar != null ? Number(e.guest_price_sar) : null,
+    court: !!e.facility_id,
+  };
+}
+
+/** Booking counts per event from its RSVP rows. */
+function countRsvps(rsvps: any[]) {
+  const perEvent = new Map<string, Counts>();
+  for (const r of rsvps) {
+    const pe = perEvent.get(r.event_id) ?? { going: 0, waitlist: 0, attended: 0 };
+    if (r.status === 'going') pe.going++;
+    if (r.status === 'waitlist') pe.waitlist++;
+    if (r.attended_at) pe.attended++;
+    perEvent.set(r.event_id, pe);
+  }
+  return perEvent;
+}
+
+function monthOf(classes: ClubClass[], rsvps: any[], now: Date) {
+  const since30 = new Date(now.getTime() - 30 * DAY);
+  const held30 = classes.filter((c) => c.startsAt <= now && c.startsAt >= since30 && !c.cancelled && c.isClass);
+  const withCap = held30.filter((c) => c.capacity);
+  return {
+    bookings: rsvps.filter((r) => (r.status === 'going' || r.status === 'waitlist') && new Date(r.created_at) >= since30).length,
+    fill: withCap.length ? withCap.reduce((t, c) => t + Math.min(1, c.going / (c.capacity || 1)), 0) / withCap.length : null,
+    classesHeld: held30.length,
+  };
+}
+
+export interface Sessions {
+  upcoming: ClubClass[];
+  past: ClubClass[];
+  month: { bookings: number; fill: number | null; classesHeld: number };
+  /** The partner's own club, when it runs one; otherwise its sessions are open to everyone in the city. */
+  club: ClubData | null;
+}
+
+/**
+ * Everything a partner has on the board, for the Classes / Sessions / Events page.
+ * A gym, company, school or leader runs them inside its club; a coach, event company or
+ * restaurant posts them to everyone (the open Beast Tribe community).
+ */
+export const loadSessions = cache(async (partner: PartnerUser): Promise<Sessions> => {
+  if (ownsCommunity(partner.partner_type) && partner.community_id) {
+    const club = await loadClub(partner, partner.community_id);
+    if (club) return { upcoming: club.upcoming, past: club.past, month: club.month, club };
+  }
+  const db = createAdminClient();
+  const now = new Date();
+  const eventRows = await fetchAll((a, b) =>
+    db
+      .from('events')
+      .select(EVENT_COLUMNS)
+      .eq('partner_id', partner.partner_id)
+      .gte('starts_at', new Date(now.getTime() - 91 * DAY).toISOString())
+      .lte('starts_at', new Date(now.getTime() + 60 * DAY).toISOString())
+      .order('starts_at')
+      .order('id')
+      .range(a, b),
+  );
+  const ids = (eventRows || []).map((e: any) => e.id as string);
+  const rsvps = (
+    await Promise.all(chunk(ids, 60).map((c) => fetchAll((a, b) => db.from('event_rsvps').select('event_id, user_id, status, created_at, attended_at').in('event_id', c).order('id').range(a, b))))
+  ).flat() as any[];
+  const perEvent = countRsvps(rsvps);
+  const classes = (eventRows || []).map((e: any) => toClass(e, perEvent.get(e.id), partner, new Set()));
+  return {
+    upcoming: classes.filter((c) => c.startsAt > now),
+    past: classes.filter((c) => c.startsAt <= now).reverse(),
+    month: monthOf(classes, rsvps, now),
+    club: null,
+  };
+});
+
 export const loadClub = cache(async (partner: PartnerUser, communityId: string): Promise<ClubData | null> => {
   const db = createAdminClient();
   const now = new Date();
@@ -104,7 +200,7 @@ export const loadClub = cache(async (partner: PartnerUser, communityId: string):
     fetchAll((a, b) =>
       db
         .from('events')
-        .select('id, title, starts_at, ends_at, max_capacity, is_class, class_series_id, created_by, partner_id, coach_name, cancelled_at, guest_open, guest_price_sar, facility_id, sport:sports(name, emoji)')
+        .select(EVENT_COLUMNS)
         .eq('community_id', communityId)
         .gte('starts_at', since90.toISOString())
         .lte('starts_at', until.toISOString())
@@ -220,28 +316,7 @@ export const loadClub = cache(async (partner: PartnerUser, communityId: string):
     }
   }
 
-  const classes: ClubClass[] = (eventRows || []).map((e: any) => {
-    const pe = perEvent.get(e.id) ?? { going: 0, waitlist: 0, attended: 0 };
-    return {
-      id: e.id,
-      title: e.title,
-      startsAt: new Date(e.starts_at),
-      endsAt: e.ends_at ? new Date(e.ends_at) : null,
-      capacity: e.max_capacity,
-      going: pe.going,
-      waitlist: pe.waitlist,
-      attended: pe.attended,
-      coach: e.coach_name,
-      cancelled: !!e.cancelled_at,
-      isClass: !!e.is_class || e.partner_id === partner.partner_id,
-      byMember: e.partner_id !== partner.partner_id && memberSet.has(e.created_by),
-      sport: e.sport ? `${e.sport.emoji || ''} ${e.sport.name}`.trim() : null,
-      seriesId: e.class_series_id,
-      guestOpen: !!e.guest_open,
-      guestPrice: e.guest_price_sar != null ? Number(e.guest_price_sar) : null,
-      court: !!e.facility_id,
-    };
-  });
+  const classes: ClubClass[] = (eventRows || []).map((e: any) => toClass(e, perEvent.get(e.id), partner, memberSet));
   const upcoming = classes.filter((c) => c.startsAt > now);
   const past = classes.filter((c) => c.startsAt <= now).reverse();
   const held30 = past.filter((c) => c.startsAt >= since30 && !c.cancelled && c.isClass);
