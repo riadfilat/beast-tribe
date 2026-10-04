@@ -986,7 +986,7 @@ export const en = {
     by: 'AI assistant',
     tileSub: 'Ask for a partner, a session or a workout',
     hello: 'What do you feel like doing?',
-    intro: 'Ask in your own words. I look through sessions, people open to training partners, workouts and clubs you can see.',
+    intro: 'Ask in your own words. I look through sessions, courts, people open to training partners and clubs you can see.',
     suggest: {
       partner: 'Find me a running partner at my level',
       tonight: "What's on near me tomorrow evening?",

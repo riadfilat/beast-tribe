@@ -120,10 +120,9 @@ export default function AssistantScreen() {
             returnKeyType="send"
             onSubmitEditing={() => ask(text)}
             maxLength={500}
-            containerStyle={{ flex: 1 }}
             trailing={<IconButton name="send" label={t('assistant.send')} onPress={() => ask(text)} />}
           />
-          <Txt v="caption" align="center" style={{ marginTop: 6 }}>
+          <Txt v="caption" align="center" style={{ marginTop: 8 }}>
             {t('assistant.note')}
           </Txt>
         </View>
