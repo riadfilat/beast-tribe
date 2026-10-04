@@ -5,7 +5,7 @@ export const SPORTS: [string, string][] = [
   ['hyrox', 'Hyrox'], ['crossfit', 'CrossFit'], ['gym', 'Gym'], ['running', 'Running'], ['walking', 'Walking'],
   ['cycling', 'Cycling'], ['swimming', 'Swimming'], ['yoga', 'Yoga'], ['pilates', 'Pilates'], ['padel', 'Padel'],
   ['tennis', 'Tennis'], ['football', 'Football'], ['basketball', 'Basketball'], ['boxing', 'Boxing'], ['mma', 'MMA'],
-  ['hiking', 'Hiking'], ['climbing', 'Climbing'], ['meditation', 'Meditation'], ['horse_riding', 'Horse riding'],
+  ['hiking', 'Hiking'], ['climbing', 'Climbing'], ['meditation', 'Meditation'], ['horse_riding', 'Horse riding'], ['squash', 'Squash'], ['table_tennis', 'Table tennis'],
 ];
 
 export const FORMATS: [string, string][] = [

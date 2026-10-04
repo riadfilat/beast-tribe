@@ -28,13 +28,13 @@ const SPORTS: Record<Lang, Record<string, string>> = {
     running: 'Running', walking: 'Walking', gym: 'Gym', crossfit: 'CrossFit', hyrox: 'Hyrox', cycling: 'Cycling',
     swimming: 'Swimming', yoga: 'Yoga', pilates: 'Pilates', football: 'Football', basketball: 'Basketball', tennis: 'Tennis',
     padel: 'Padel', pickleball: 'Pickleball', badminton: 'Badminton', volleyball: 'Volleyball', boxing: 'Boxing', mma: 'MMA',
-    hiking: 'Hiking', climbing: 'Climbing', skateboarding: 'Skate', meditation: 'Meditation', horse_riding: 'Horse riding',
+    hiking: 'Hiking', climbing: 'Climbing', skateboarding: 'Skate', meditation: 'Meditation', horse_riding: 'Horse riding', squash: 'Squash', table_tennis: 'Table tennis',
   },
   ar: {
     running: 'جري', walking: 'مشي', gym: 'جيم', crossfit: 'كروس فت', hyrox: 'هايروكس', cycling: 'دراجات',
     swimming: 'سباحة', yoga: 'يوغا', pilates: 'بيلاتس', football: 'كرة قدم', basketball: 'كرة سلة', tennis: 'تنس',
     padel: 'بادل', pickleball: 'بيكلبول', badminton: 'ريشة طائرة', volleyball: 'كرة طائرة', boxing: 'ملاكمة', mma: 'فنون قتالية',
-    hiking: 'هايكنج', climbing: 'تسلق', skateboarding: 'تزلج', meditation: 'تأمل', horse_riding: 'ركوب الخيل',
+    hiking: 'هايكنج', climbing: 'تسلق', skateboarding: 'تزلج', meditation: 'تأمل', horse_riding: 'ركوب الخيل', squash: 'إسكواش', table_tennis: 'تنس الطاولة',
   },
 };
 

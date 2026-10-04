@@ -5,7 +5,7 @@ export type SportId =
   | 'running' | 'walking' | 'gym' | 'crossfit' | 'hyrox' | 'cycling' | 'swimming'
   | 'yoga' | 'pilates' | 'football' | 'basketball' | 'tennis' | 'padel' | 'pickleball'
   | 'badminton' | 'volleyball' | 'boxing' | 'mma' | 'hiking' | 'climbing'
-  | 'skateboarding' | 'meditation' | 'horse_riding' | 'community' | 'other';
+  | 'skateboarding' | 'meditation' | 'horse_riding' | 'squash' | 'table_tennis' | 'community' | 'other';
 
 export interface SportDef {
   id: SportId;
@@ -39,6 +39,8 @@ export const SPORT_LIST: SportDef[] = [
   { id: 'skateboarding', sf: 'figure.skateboarding', ion: 'speedometer', dbName: 'Skate' },
   { id: 'meditation', sf: 'figure.mind.and.body', ion: 'leaf', dbName: 'Meditation' },
   { id: 'horse_riding', sf: 'figure.equestrian.sports', ion: 'paw', dbName: 'Horse Riding' },
+  { id: 'squash', sf: 'figure.squash', ion: 'tennisball', dbName: 'Squash' },
+  { id: 'table_tennis', sf: 'figure.table.tennis', ion: 'tennisball-outline', dbName: 'Table Tennis' },
 ];
 
 const EXTRA: SportDef[] = [
@@ -54,6 +56,7 @@ const ALIASES: Record<string, SportId> = {
   hiit: 'hyrox', 'group fitness': 'gym', fitness: 'gym',
   soccer: 'football', skate: 'skateboarding', skating: 'skateboarding',
   'horse riding': 'horse_riding', horseback: 'horse_riding', 'horseback riding': 'horse_riding', equestrian: 'horse_riding', riding: 'horse_riding',
+  'table tennis': 'table_tennis', 'ping pong': 'table_tennis', pingpong: 'table_tennis',
 };
 
 /** Normalise any event_type / sport name coming from the database. */
