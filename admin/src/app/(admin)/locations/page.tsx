@@ -7,11 +7,12 @@ import { Icon } from '@/components/ui/Icon';
 
 export const revalidate = 0;
 
-export default async function LocationsPage({
-  searchParams,
-}: {
-  searchParams: { q?: string; country?: string; status?: string; community?: string };
-}) {
+export default async function LocationsPage(
+  props: {
+    searchParams: Promise<{ q?: string; country?: string; status?: string; community?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   await requireRole('admin');
   const db = createAdminClient();
 

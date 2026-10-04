@@ -9,7 +9,8 @@ import PartnerFields from '../PartnerFields';
 const LEAD_TYPE: Record<string, string> = { gym: 'gym', company: 'company', coach: 'coach', venue: 'nutrition' };
 const LEAD_PLAN: Record<string, string> = { gym: 'studio', company: 'company', coach: 'coach', venue: 'venue' };
 
-export default async function NewPartnerPage({ searchParams }: { searchParams: { lead?: string } }) {
+export default async function NewPartnerPage(props: { searchParams: Promise<{ lead?: string }> }) {
+  const searchParams = await props.searchParams;
   await requireRole('admin');
   const db = createAdminClient();
   const [{ data: communities }, { data: lead }] = await Promise.all([

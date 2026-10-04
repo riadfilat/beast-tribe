@@ -11,7 +11,8 @@ export const revalidate = 0;
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-export default async function EditPartnerPage({ params }: { params: { id: string } }) {
+export default async function EditPartnerPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   await requireRole('admin');
   const db = createAdminClient();
 

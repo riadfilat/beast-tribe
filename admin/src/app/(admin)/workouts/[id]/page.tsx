@@ -10,7 +10,8 @@ import { reviewWorkout, updateWorkout } from '../actions';
 
 export const revalidate = 0;
 
-export default async function EditWorkoutPage({ params }: { params: { id: string } }) {
+export default async function EditWorkoutPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   await requireRole('admin');
   const db = createAdminClient();
   const [{ data: w }, { data: communities }] = await Promise.all([

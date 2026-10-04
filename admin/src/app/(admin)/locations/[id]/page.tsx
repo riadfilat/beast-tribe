@@ -8,7 +8,8 @@ import { ConfirmButton } from '@/components/ConfirmSubmit';
 
 export const revalidate = 0;
 
-export default async function EditLocationPage({ params }: { params: { id: string } }) {
+export default async function EditLocationPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   await requireRole('admin');
   const db = createAdminClient();
 

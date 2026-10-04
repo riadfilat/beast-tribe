@@ -20,7 +20,8 @@ import { Icon } from '@/components/ui/Icon';
 
 export const revalidate = 0;
 
-export default async function EditCommunityPage({ params }: { params: { id: string } }) {
+export default async function EditCommunityPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   await requireRole('admin');
   const db = createAdminClient();
 

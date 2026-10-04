@@ -11,7 +11,8 @@ export const revalidate = 0;
 
 const sportName = (v: string) => SPORTS.find(([k]) => k === v)?.[1] ?? v;
 
-export default async function MyWorkoutsPage({ searchParams }: { searchParams: { sent?: string } }) {
+export default async function MyWorkoutsPage(props: { searchParams: Promise<{ sent?: string }> }) {
+  const searchParams = await props.searchParams;
   const partner = await requireCap('workouts');
   const db = createAdminClient();
   const m = monthRange();

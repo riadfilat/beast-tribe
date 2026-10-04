@@ -10,7 +10,8 @@ import { createFacility, updateFacility } from '../actions';
 
 export const revalidate = 0;
 
-export default async function FacilityPage({ params }: { params: { id?: string } }) {
+export default async function FacilityPage(props: { params: Promise<{ id?: string }> }) {
+  const params = await props.params;
   const partner = await requirePartner();
   if (!can(partner.partner_type, 'facilities')) redirect('/partner/dashboard');
   const db = createAdminClient();

@@ -9,7 +9,8 @@ import { resubmitWorkout } from '../actions';
 
 export const revalidate = 0;
 
-export default async function EditCoachWorkoutPage({ params }: { params: { id: string } }) {
+export default async function EditCoachWorkoutPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const partner = await requireCap('workouts');
   const db = createAdminClient();
   const [{ data: w }, { data: me }] = await Promise.all([

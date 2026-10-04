@@ -7,7 +7,8 @@ import UserActions from './UserActions';
 import CommunityAssign from './CommunityAssign';
 import { Icon } from '@/components/ui/Icon';
 
-export default async function UserDetailPage({ params }: { params: { id: string } }) {
+export default async function UserDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   await requireRole('admin');
   const db = createAdminClient();
 

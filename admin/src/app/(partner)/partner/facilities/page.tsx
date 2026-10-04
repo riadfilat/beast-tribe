@@ -9,7 +9,8 @@ import { setFacilityActive } from './actions';
 
 export const revalidate = 0;
 
-export default async function FacilitiesPage({ searchParams }: { searchParams: { saved?: string } }) {
+export default async function FacilitiesPage(props: { searchParams: Promise<{ saved?: string }> }) {
+  const searchParams = await props.searchParams;
   const partner = await requirePartner();
   if (!can(partner.partner_type, 'facilities')) redirect('/partner/dashboard');
   const [facilities, bookings] = await Promise.all([loadFacilities(partner.partner_id), loadBookings(partner.partner_id, new Date())]);

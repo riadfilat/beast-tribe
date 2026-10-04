@@ -10,7 +10,8 @@ export const metadata: Metadata = { title: 'Get Beast Tribe', description: 'Down
 export const revalidate = 300;
 
 // Where posters and QR codes point. Shows the download buttons once the links are set (admin › Business).
-export default async function GetPage({ searchParams }: { searchParams: { code?: string } }) {
+export default async function GetPage(props: { searchParams: Promise<{ code?: string }> }) {
+  const searchParams = await props.searchParams;
   const db = createAdminClient();
   const { data } = await db.from('app_settings').select('value').eq('key', 'app_links').maybeSingle();
   const links: { ios?: string | null; android?: string | null } = (data?.value as any) || {};

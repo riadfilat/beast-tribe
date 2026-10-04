@@ -27,7 +27,7 @@ export async function submitLead(_prev: LeadState, formData: FormData): Promise<
   if (business_name.length < 2 || contact_name.length < 2) return { ok: false, error: 'Add your name and your business name.' };
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok: false, error: 'That email does not look right.' };
 
-  const h = headers();
+  const h = await headers();
   const ip = (h.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown';
   const ip_hash = createHash('sha256').update(`${ip}:${new Date().toISOString().slice(0, 10)}`).digest('hex').slice(0, 32);
 

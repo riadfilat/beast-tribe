@@ -6,11 +6,12 @@ import SearchInput from '@/components/ui/SearchInput';
 
 export const revalidate = 0;
 
-export default async function UsersPage({
-  searchParams,
-}: {
-  searchParams: { q?: string; region?: string; page?: string };
-}) {
+export default async function UsersPage(
+  props: {
+    searchParams: Promise<{ q?: string; region?: string; page?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   await requireRole('admin');
   const db = createAdminClient();
 

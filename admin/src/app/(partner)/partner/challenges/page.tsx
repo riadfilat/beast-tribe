@@ -20,7 +20,8 @@ const STATE_STYLE = {
 // Workouts are logged in the app's Train tab, which is off for launch.
 const METRICS: Metric[] = (['active_days', 'workouts', 'minutes', 'sessions', 'steps'] as Metric[]).filter((m) => TRAIN_ENABLED || m !== 'workouts');
 
-export default async function ChallengesPage({ searchParams }: { searchParams: { c?: string } }) {
+export default async function ChallengesPage(props: { searchParams: Promise<{ c?: string }> }) {
+  const searchParams = await props.searchParams;
   const partner = await requireCap('challenges');
   if (!partner.community_id) redirect('/partner/club');
 

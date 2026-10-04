@@ -17,7 +17,8 @@ const TABS: { key: string; label: string }[] = [
 ];
 const sportName = (v: string) => SPORTS.find(([k]) => k === v)?.[1] ?? v;
 
-export default async function WorkoutsPage({ searchParams }: { searchParams: { status?: string } }) {
+export default async function WorkoutsPage(props: { searchParams: Promise<{ status?: string }> }) {
+  const searchParams = await props.searchParams;
   await requireRole('admin');
   const db = createAdminClient();
   const since = new Date(Date.now() - 30 * 86400000).toISOString();

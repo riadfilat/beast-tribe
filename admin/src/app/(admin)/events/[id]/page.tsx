@@ -6,7 +6,8 @@ import { notFound } from 'next/navigation';
 import { ConfirmButton } from '@/components/ConfirmSubmit';
 import SubmitButton from '@/components/SubmitButton';
 
-export default async function EditEventPage({ params }: { params: { id: string } }) {
+export default async function EditEventPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   await requireRole('admin');
   const db = createAdminClient();
 

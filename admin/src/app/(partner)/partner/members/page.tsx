@@ -9,7 +9,10 @@ export const revalidate = 0;
 const FILTERS: (MemberStatus | 'all')[] = ['all', 'active', 'new', 'quiet', 'at_risk'];
 const SORTS = { last: 'Last active', joined: 'Joined', booked: 'Bookings' } as const;
 
-export default async function MembersPage({ searchParams }: { searchParams: { status?: string; q?: string; sort?: string } }) {
+export default async function MembersPage(
+  props: { searchParams: Promise<{ status?: string; q?: string; sort?: string }> }
+) {
+  const searchParams = await props.searchParams;
   const partner = await requirePartner();
   if (!ownsCommunity(partner.partner_type)) redirect('/partner/dashboard');
   if (!partner.community_id) redirect('/partner/club');

@@ -27,7 +27,8 @@ function age(d: string) {
   return days <= 0 ? 'today' : days === 1 ? 'yesterday' : `${days} days ago`;
 }
 
-export default async function LeadsPage({ searchParams }: { searchParams: { status?: string } }) {
+export default async function LeadsPage(props: { searchParams: Promise<{ status?: string }> }) {
+  const searchParams = await props.searchParams;
   await requireRole('admin');
   const db = createAdminClient();
   const current = STATUS.some((s) => s.id === searchParams.status) ? searchParams.status! : 'new';

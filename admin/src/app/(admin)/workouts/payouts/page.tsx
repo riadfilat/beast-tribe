@@ -11,7 +11,8 @@ import { saveCoachPay } from '../actions';
 export const revalidate = 0;
 
 
-export default async function CoachPayPage({ searchParams }: { searchParams: { month?: string } }) {
+export default async function CoachPayPage(props: { searchParams: Promise<{ month?: string }> }) {
+  const searchParams = await props.searchParams;
   await requireRole('admin');
   const db = createAdminClient();
   const m = monthRange(searchParams.month);

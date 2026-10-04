@@ -13,7 +13,8 @@ export const revalidate = 0;
 
 const day = (d: string | null) => (d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Asia/Riyadh' }) : '—');
 
-export default async function CaptainsPage({ searchParams }: { searchParams: { m?: string; community?: string } }) {
+export default async function CaptainsPage(props: { searchParams: Promise<{ m?: string; community?: string }> }) {
+  const searchParams = await props.searchParams;
   await requireRole('admin');
   const db = createAdminClient();
   const month = monthRange(searchParams.m);

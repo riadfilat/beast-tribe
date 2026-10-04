@@ -7,11 +7,12 @@ import Link from 'next/link';
 import { ConfirmButton } from '@/components/ConfirmSubmit';
 import { Icon } from '@/components/ui/Icon';
 
-export default async function FeedPage({
-  searchParams,
-}: {
-  searchParams: { page?: string; show_hidden?: string };
-}) {
+export default async function FeedPage(
+  props: {
+    searchParams: Promise<{ page?: string; show_hidden?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   await requireAdmin();
   const db = createAdminClient();
 

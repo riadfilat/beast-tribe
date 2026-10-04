@@ -40,8 +40,8 @@ export interface PartnerUser {
  * React.cache() ensures this runs only once per server render,
  * even if called from both layout and page.
  */
-const getServerSupabase = cache(() => {
-  const cookieStore = cookies();
+const getServerSupabase = cache(async () => {
+  const cookieStore = await cookies();
   return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     cookies: {
       getAll() {
@@ -57,7 +57,7 @@ const getServerSupabase = cache(() => {
 const getSessionUser = cache(async () => {
   const {
     data: { user },
-  } = await getServerSupabase().auth.getUser();
+  } = await (await getServerSupabase()).auth.getUser();
   return user;
 });
 
@@ -67,7 +67,7 @@ const getSessionUser = cache(async () => {
  * so the level read from the same session token is trustworthy.
  */
 export const getTwoStep = cache(async (): Promise<{ enrolled: boolean; verified: boolean }> => {
-  const { data } = await getServerSupabase().auth.mfa.getAuthenticatorAssuranceLevel();
+  const { data } = await (await getServerSupabase()).auth.mfa.getAuthenticatorAssuranceLevel();
   return { enrolled: data?.nextLevel === 'aal2', verified: data?.currentLevel === 'aal2' };
 });
 

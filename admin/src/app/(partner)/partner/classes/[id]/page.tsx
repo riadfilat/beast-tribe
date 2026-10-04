@@ -14,7 +14,8 @@ import { markPaid } from '../../facilities/actions';
 
 export const revalidate = 0;
 
-export default async function ClassPage({ params }: { params: { id: string } }) {
+export default async function ClassPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const partner = await requireCap('classes');
   const db = createAdminClient();
   const plural = kindOf(partner.partner_type).sessions;

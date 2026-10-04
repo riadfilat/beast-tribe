@@ -16,7 +16,8 @@ function byDay(list: ClubClass[]) {
   return [...groups.entries()];
 }
 
-export default async function ClassesPage({ searchParams }: { searchParams: { created?: string } }) {
+export default async function ClassesPage(props: { searchParams: Promise<{ created?: string }> }) {
+  const searchParams = await props.searchParams;
   const partner = await requireCap('classes');
   // A club runs its sessions inside the club, so it needs the club first.
   if (ownsCommunity(partner.partner_type) && !partner.community_id) redirect('/partner/club');

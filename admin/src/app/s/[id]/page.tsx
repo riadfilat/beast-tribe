@@ -99,8 +99,8 @@ async function getSession(id: string): Promise<Row | null> {
   return (data as unknown as Row) ?? null;
 }
 
-function langOf(): Lang {
-  const al = headers().get('accept-language') || '';
+async function langOf(): Promise<Lang> {
+  const al = (await headers()).get('accept-language') || '';
   return al.trim().toLowerCase().startsWith('ar') ? 'ar' : 'en';
 }
 
@@ -133,9 +133,13 @@ const sportName = (row: Row, lang: Lang) => SPORT_NAMES[(row.event_type || '').t
 const firstName = (row: Row) => (row.host?.display_name || row.host?.full_name || '').trim().split(/\s+/)[0] || '';
 const placeOf = (row: Row) => [row.location_name || row.gym_name, row.location_city].filter(Boolean).join(' · ');
 
-export async function generateMetadata({ params, searchParams }: { params: { id: string }; searchParams: { g?: string } }): Promise<Metadata> {
+export async function generateMetadata(
+  props: { params: Promise<{ id: string }>; searchParams: Promise<{ g?: string }> }
+): Promise<Metadata> {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const row = await getSession(params.id);
-  const lang = langOf();
+  const lang = await langOf();
   const base: Metadata = { metadataBase: new URL(SITE), robots: { index: false, follow: false } };
   if (!row || hidden(row, searchParams?.g)) {
     return { ...base, title: COPY[lang].brand, description: COPY[lang].tagline, openGraph: { title: COPY[lang].brand, description: COPY[lang].tagline, images: ['/og-default.png'] } };
@@ -152,8 +156,12 @@ export async function generateMetadata({ params, searchParams }: { params: { id:
   };
 }
 
-export default async function SessionLinkPage({ params, searchParams }: { params: { id: string }; searchParams: { g?: string } }) {
-  const lang = langOf();
+export default async function SessionLinkPage(
+  props: { params: Promise<{ id: string }>; searchParams: Promise<{ g?: string }> }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
+  const lang = await langOf();
   const c = COPY[lang];
   const row = await getSession(params.id);
   // A guest link: pass its key into the app so someone outside the community can join.
