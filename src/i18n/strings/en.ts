@@ -331,6 +331,16 @@ export const en = {
     joinWithCode: 'Join with a code',
     members: p({ one: '{n} member', other: '{n} members' }),
   },
+  leaders: {
+    title: 'Community leaders',
+    sub: 'People who run clubs: runs, rides, riding and more. Join with one tap, free.',
+    all: 'All',
+    community: 'Community',
+    sportCommunity: '{sport} community',
+    joined: 'Joined',
+    joinA11y: 'Join {name}',
+    empty: 'No community leaders listed yet. Leaders show here once Beast Tribe verifies them.',
+  },
   community: {
     groups: 'Groups',
     groupsEmpty: 'No groups of yours here yet. Start one for your crew.',

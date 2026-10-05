@@ -10,13 +10,14 @@ import {
   deleteCommunity,
   removeCommunityDefaultPack,
   removeUserFromCommunity,
-  regenerateJoinCode, verifyClub,
+  regenerateJoinCode, verifyClub, setCommunityLeader, removeCommunityLeader,
   addCommunityPartner,
   removeCommunityPartner,
 } from '../actions';
 import SubmitButton from '@/components/SubmitButton';
 import { ConfirmButton } from '@/components/ConfirmSubmit';
 import { Icon } from '@/components/ui/Icon';
+import { SPORTS } from '@/lib/workouts';
 
 export const revalidate = 0;
 
@@ -60,6 +61,10 @@ export default async function EditCommunityPage(props: { params: Promise<{ id: s
   if (!community) notFound();
   const ROLE_LABEL: Record<string, string> = { nutritionist: 'Nutritionist', coach: 'Coach', gym: 'Gym', kitchen: 'Healthy kitchen' };
 
+  const { data: leaderProfile } = community?.leader_id
+    ? await db.from('profiles').select('display_name, full_name').eq('id', community.leader_id).maybeSingle()
+    : { data: null };
+  const leaderName = leaderProfile?.display_name || leaderProfile?.full_name || null;
   const members = (membersRes.data || []).map((r: any) => ({ ...r.profile, joined_at: r.joined_at, role: r.role })).filter((m: any) => m.id);
   const defaultPacks = defaultPacksRes.data || [];
   const locations = locationsRes.data || [];
@@ -100,24 +105,79 @@ export default async function EditCommunityPage(props: { params: Promise<{ id: s
       {community.leader_id ? (
         <div className="mb-6 rounded-xl border border-[#E88F24]/40 bg-[#FDF6EC] px-5 py-4 flex flex-wrap items-center justify-between gap-4">
           <div className="text-sm text-gray-700">
-            <p className="font-semibold text-gray-900">Member-run club{community.sport ? ` · ${community.sport}` : ''}</p>
+            <p className="font-semibold text-gray-900">
+              Led by {leaderName || 'a member'}{community.sport ? ` · ${SPORTS.find(([id]) => id === community.sport)?.[1] ?? community.sport} community` : ''}
+            </p>
             <p className="mt-0.5">
-              {community.listing === 'public' ? 'The leader wants it listed for everyone.' : 'Invite only (join with the code).'}{' '}
+              {community.listing === 'public' ? 'Listed for everyone.' : 'Invite only (join with the code).'}{' '}
               {community.verified_at ? `Verified ${new Date(community.verified_at).toLocaleDateString()}.` : 'Not verified yet.'}
             </p>
-            <p className="text-xs text-gray-500 mt-1">Free for the leader. Verifying shows a Verified badge and, if they chose it, lists the club in Discover.</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Free for the leader. Verified + listed communities show under Community leaders in the app (Tribe › Communities) with one-tap Join.
+            </p>
           </div>
-          <form
-            action={async () => {
-              'use server';
-              await verifyClub(community.id, !community.verified_at);
-            }}
-          >
-            <button className={community.verified_at ? 'text-xs px-3 py-1.5 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50' : 'text-sm px-4 py-2 rounded-lg bg-brand-orange text-brand-teal font-semibold hover:brightness-95'}>
-              {community.verified_at ? 'Remove verification' : 'Verify club'}
-            </button>
-          </form>
+          <div className="flex items-center gap-2">
+            <form
+              action={async () => {
+                'use server';
+                await verifyClub(community.id, !community.verified_at);
+              }}
+            >
+              <button className={community.verified_at ? 'text-xs px-3 py-1.5 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50' : 'text-sm px-4 py-2 rounded-lg bg-brand-orange text-brand-teal font-semibold hover:brightness-95'}>
+                {community.verified_at ? 'Remove verification' : 'Verify club'}
+              </button>
+            </form>
+            <form
+              action={async () => {
+                'use server';
+                await removeCommunityLeader(community.id);
+              }}
+            >
+              <button className="text-xs px-3 py-1.5 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50">Remove leader</button>
+            </form>
+          </div>
         </div>
+      ) : null}
+
+      {!community.is_default ? (
+        <details className="mb-6 rounded-xl border border-gray-200 bg-white px-5 py-4">
+          <summary className="cursor-pointer text-sm font-semibold text-gray-900">
+            {community.leader_id ? 'Change the community leader' : 'Add a community leader'}
+            <span className="ml-2 font-normal text-gray-500">a run club, a riding stable, an influencer…</span>
+          </summary>
+          <form
+            action={async (formData: FormData) => {
+              'use server';
+              await setCommunityLeader(community.id, formData);
+            }}
+            className="mt-4 grid gap-3 sm:grid-cols-[1fr_200px] items-end"
+          >
+            <label className="text-xs font-medium text-gray-600">
+              Leader&apos;s email in the app
+              <input name="email" type="email" required placeholder="leader@example.com" className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+            </label>
+            <label className="text-xs font-medium text-gray-600">
+              What they lead
+              <select name="sport" defaultValue={community.sport ?? ''} className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white">
+                <option value="">General community</option>
+                {SPORTS.map(([id, label]) => (
+                  <option key={id} value={id}>
+                    {label} community
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700 sm:col-span-2">
+              <input type="checkbox" name="list" defaultChecked />
+              Verify and list it under Community leaders (anyone can join with one tap)
+            </label>
+            <div className="sm:col-span-2">
+              <SubmitButton pendingLabel="Saving…" className="px-4 py-2 bg-brand-orange text-brand-teal rounded-lg text-sm font-semibold">
+                {community.leader_id ? 'Change leader' : 'Make leader'}
+              </SubmitButton>
+            </div>
+          </form>
+        </details>
       ) : null}
 
       {community.visibility === 'private' ? (

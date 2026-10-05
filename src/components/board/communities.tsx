@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Image, View } from 'react-native';
+import { Image, ScrollView, View } from 'react-native';
 import { useKit } from '../../theme';
 import { useI18n } from '../../i18n';
 import { cityLabel } from '../../lib/cities';
@@ -7,7 +7,8 @@ import { Community, joinCommunityByCode, joinOpenCommunity } from '../../data/co
 import { Txt } from './Txt';
 import { Icon } from './Icon';
 import { Press } from './Press';
-import { Field, OutlineButton } from './controls';
+import { Chip, Field, MarkerButton, OutlineButton, SectionHeading } from './controls';
+import { Magnet } from './people';
 import { toast } from './toast';
 import { haptic } from '../../lib/haptics';
 import { errorKey } from '../../data/errors';
@@ -77,6 +78,108 @@ export function CommunityRow({ c, onPress, onJoined, last }: { c: Community; onP
         {c.isMember && onPress ? <Icon name="chevron" size={14} color={p.inkFaint} weight="bold" /> : null}
       </Tap>
       {!c.isMember ? <OutlineButton label={t('community.join')} onPress={join} loading={busy} style={{ height: 38 }} /> : null}
+    </View>
+  );
+}
+
+// ─── Community leaders ──────────────────────────────────────────────────────
+/** "Running community" — what the leader does, in the reader's language (raw text if it isn't one of ours). */
+function whatTheyLead(t: (k: string, v?: any) => string, sport: string | null) {
+  if (!sport) return t('leaders.community');
+  const name = t(`sports.${sport}`);
+  return t('leaders.sportCommunity', { sport: name.startsWith('sports.') ? sport : name });
+}
+
+/** One leader: their face, their name, what they lead and the club, and one tap to join. */
+export function LeaderRow({ c, onPress, onJoined, last }: { c: Community; onPress: () => void; onJoined?: () => void; last?: boolean }) {
+  const { p } = useKit();
+  const { t, tn } = useI18n();
+  const [busy, setBusy] = useState(false);
+  const [joined, setJoined] = useState(c.isMember);
+  const name = c.leaderName || t('club.leader');
+
+  async function join() {
+    setBusy(true);
+    try {
+      await joinOpenCommunity(c.id);
+      setJoined(true);
+      haptic('success');
+      toast.show(t('community.joined', { name: c.name }), 'yours');
+      onJoined?.();
+    } catch {
+      haptic('error');
+      toast.show(t('community.errors.generic'), 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: last ? 0 : 1, borderBottomColor: p.rule }}>
+      <Press onPress={onPress} feedback="selection" depress={0.99} accessibilityRole="button" accessibilityLabel={`${name}, ${whatTheyLead(t, c.sport)}, ${c.name}`} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
+        <Magnet person={{ id: c.leaderId || c.id, name, avatarUrl: c.leaderAvatar }} size={52} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Txt v="row" size={15} numberOfLines={1} style={{ flexShrink: 1 }}>
+              {name}
+            </Txt>
+            {c.verified ? <Icon name="check" size={12} color={p.aqua} /> : null}
+          </View>
+          <Txt v="label" size={13} color={p.markerText} numberOfLines={1}>
+            {whatTheyLead(t, c.sport)}
+          </Txt>
+          <Txt v="meta" numberOfLines={1}>
+            {[c.name, tn('tribe.members', c.members)].join(' · ')}
+          </Txt>
+        </View>
+      </Press>
+      {joined ? (
+        <View accessible accessibilityLabel={t('leaders.joined')} style={{ height: 38, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1.5, borderColor: p.rule, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Icon name="check" size={13} color={p.inkSoft} />
+          <Txt v="label" size={14} color={p.inkSoft}>
+            {t('leaders.joined')}
+          </Txt>
+        </View>
+      ) : (
+        <MarkerButton label={t('community.join')} onPress={join} loading={busy} feedback="light" style={{ height: 38, paddingHorizontal: 16 }} accessibilityLabel={t('leaders.joinA11y', { name: c.name })} />
+      )}
+    </View>
+  );
+}
+
+/** "Community leaders": people who run run clubs, rides, stables… filtered by sport, joined with one tap. */
+export function LeadersSection({ leaders, onOpen, onJoined }: { leaders: Community[]; onOpen: (c: Community) => void; onJoined?: () => void }) {
+  const { t } = useI18n();
+  const [sport, setSport] = useState<string | null>(null);
+  // Sports in the list, the busiest first; a filter only shows when there's something to choose.
+  const counts = new Map<string, number>();
+  for (const c of leaders) if (c.sport) counts.set(c.sport, (counts.get(c.sport) ?? 0) + 1);
+  const sports = Array.from(counts.keys()).sort((a, b) => counts.get(b)! - counts.get(a)!);
+  const shown = sport ? leaders.filter((c) => c.sport === sport) : leaders;
+
+  return (
+    <View>
+      <SectionHeading title={t('leaders.title')} />
+      <Txt v="meta" style={{ marginBottom: 8 }}>
+        {t('leaders.sub')}
+      </Txt>
+      {sports.length > 1 ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }} style={{ marginHorizontal: -16 }}>
+          <View style={{ width: 8 }} />
+          <Chip label={t('leaders.all')} selected={!sport} onPress={() => setSport(null)} />
+          {sports.map((s) => (
+            <Chip key={s} sport={s} label={t(`sports.${s}`).startsWith('sports.') ? s : t(`sports.${s}`)} selected={sport === s} onPress={() => setSport(sport === s ? null : s)} />
+          ))}
+          <View style={{ width: 8 }} />
+        </ScrollView>
+      ) : null}
+      {leaders.length ? (
+        shown.map((c, i) => <LeaderRow key={c.id} c={c} onPress={() => onOpen(c)} onJoined={onJoined} last={i === shown.length - 1} />)
+      ) : (
+        <Txt v="meta" style={{ marginTop: 4 }}>
+          {t('leaders.empty')}
+        </Txt>
+      )}
     </View>
   );
 }

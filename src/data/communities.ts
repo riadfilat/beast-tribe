@@ -27,6 +27,8 @@ export interface Community {
   /** A member-run club (run club, padel group): its leader. */
   leaderId: string | null;
   leaderName: string | null;
+  /** The leader's photo, on the Community leaders list. */
+  leaderAvatar?: string | null;
   sport: string | null;
   listing: 'invite' | 'public';
   verified: boolean;
@@ -114,6 +116,35 @@ export function useCommunity(id?: string | null) {
       leaderName = lp?.display_name || lp?.full_name || null;
     }
     return { ...toCommunity(data, ids), joinCode: (code as string | null) ?? null, leaderName };
+  });
+}
+
+/**
+ * Communities run by a leader (a run club, a riding stable, a creator) that Beast Tribe verified and
+ * listed: open to anyone with one tap. Joined ones stay on the list so members see they're in.
+ */
+export function useLeaderCommunities() {
+  const me = useMeId();
+  return useQuery<Community[]>(me ? `communities:leaders:${me}` : null, async () => {
+    if (PREVIEW) return previewCommunities.filter((c) => c.leaderId && c.open);
+    const [ids, { data, error }] = await Promise.all([
+      myIds(me!),
+      supabase.from('communities').select(SELECT).eq('visibility', 'open').eq('is_active', true).not('leader_id', 'is', null).not('verified_at', 'is', null).limit(200),
+    ]);
+    if (error) throw error;
+    const rows = (data || []).map((r) => toCommunity(r, ids));
+    const leaderIds = Array.from(new Set(rows.map((c) => c.leaderId!)));
+    if (leaderIds.length) {
+      const { data: people } = await supabase.from('profiles').select('id, display_name, full_name, avatar_url').in('id', leaderIds);
+      const byId = new Map((people || []).map((x: any) => [x.id as string, x]));
+      for (const c of rows) {
+        const lp: any = byId.get(c.leaderId!);
+        c.leaderName = lp?.display_name || lp?.full_name || null;
+        c.leaderAvatar = lp?.avatar_url ?? null;
+      }
+    }
+    // Biggest first, so a new member lands on the clubs people actually turn up to.
+    return rows.sort((a, b) => b.members - a.members || a.name.localeCompare(b.name));
   });
 }
 

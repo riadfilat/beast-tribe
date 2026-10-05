@@ -5,6 +5,7 @@ import { requireRole } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { GLYPH_IDS, PATCH_PAINT } from '@/components/brand/PackPatch';
+import { SPORT_NAMES } from '@/lib/workouts';
 
 function slugify(raw: string): string {
   return raw
@@ -261,6 +262,65 @@ export async function verifyClub(communityId: string, verified: boolean) {
   await db.from('admin_audit_log').insert({ admin_user_id: admin.id, action: verified ? 'verify_club' : 'unverify_club', target_table: 'communities', target_id: communityId });
   revalidatePath(`/communities/${communityId}`);
   revalidatePath('/leads');
+}
+
+// ─── Community leaders: a person who runs this community, listed in the app ──
+/**
+ * Makes a member (found by their app email) the leader of this community, with the sport they lead.
+ * "List" verifies it and opens it, so it shows under Community leaders in the app with one-tap Join.
+ */
+export async function setCommunityLeader(communityId: string, formData: FormData) {
+  const admin = await requireRole('admin');
+  const db = createAdminClient();
+  const email = ((formData.get('email') as string) || '').trim().toLowerCase();
+  const sportRaw = ((formData.get('sport') as string) || '').trim();
+  const sport = sportRaw in SPORT_NAMES ? sportRaw : null;
+  const list = formData.get('list') === 'on';
+  if (!email) throw new Error("Add the leader's email");
+
+  const { data: userId, error: findErr } = await db.rpc('bt_user_id_by_email', { p_email: email });
+  if (findErr) throw new Error(findErr.message);
+  if (!userId) throw new Error(`No member has signed up with ${email}. Ask the leader to create their account in the app first.`);
+
+  const { data: c, error: readErr } = await db.from('communities').select('id, name, verified_at, is_default').eq('id', communityId).single();
+  if (readErr || !c) throw new Error(readErr?.message || 'Community not found');
+  if (c.is_default) throw new Error('The default community has no leader.');
+
+  const { error } = await db
+    .from('communities')
+    .update({
+      leader_id: userId,
+      sport,
+      listing: list ? 'public' : 'invite',
+      verified_at: list ? c.verified_at || new Date().toISOString() : c.verified_at,
+      ...(list ? { visibility: 'open' } : {}),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', communityId);
+  if (error) {
+    if (error.code === '23505') throw new Error('This person already leads another community. One community per leader.');
+    throw new Error(error.message);
+  }
+
+  // The leader runs the community: admin there (hosts, invites, edits it from the app).
+  const { error: memberErr } = await db.from('community_members').upsert({ community_id: communityId, user_id: userId, role: 'admin' }, { onConflict: 'community_id,user_id' });
+  if (memberErr) throw new Error(memberErr.message);
+
+  if (list && !c.verified_at) {
+    await db.rpc('bt_notify', { p_user_ids: [userId], p_type: 'club_verified', p_actor: null, p_data: { event_title: c.name, community_id: c.id } });
+  }
+  await db.from('admin_audit_log').insert({ admin_user_id: admin.id, action: 'set_community_leader', target_table: 'communities', target_id: communityId, details: { leader_id: userId, sport, list } });
+  revalidatePath(`/communities/${communityId}`);
+}
+
+/** Takes the leader off this community (they stay a member); it leaves the Community leaders list. */
+export async function removeCommunityLeader(communityId: string) {
+  const admin = await requireRole('admin');
+  const db = createAdminClient();
+  const { error } = await db.from('communities').update({ leader_id: null, updated_at: new Date().toISOString() }).eq('id', communityId);
+  if (error) throw new Error(error.message);
+  await db.from('admin_audit_log').insert({ admin_user_id: admin.id, action: 'remove_community_leader', target_table: 'communities', target_id: communityId });
+  revalidatePath(`/communities/${communityId}`);
 }
 
 // ─── Package: experts and venues included with a community ─────────────────
