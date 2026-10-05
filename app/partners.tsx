@@ -8,7 +8,10 @@ import { useAuth } from '../src/providers/AuthProvider';
 import { PREVIEW, PREVIEW_ME } from '../src/data/preview';
 import { useMySports } from '../src/data/member';
 import { useMySessions } from '../src/data/sessions';
-import { fmtPace, invitePartner, Partner, PartnerProfile, PARTNER_TIMES, PartnerTime, savePartnerProfile, usePartnerProfile, usePartners } from '../src/data/matching';
+import { fmtPace, invitePartner, Partner, PartnerProfile, PARTNER_TIMES, PartnerTime, savePartnerProfile, selfLevel, usePartnerProfile, usePartners } from '../src/data/matching';
+import { useMyCommunities } from '../src/data/communities';
+import { AboutYouFields, ClearAbout, ShowLevelRow } from '../src/components/board/matching';
+import { LevelTag } from '../src/components/board/level';
 import { fmtDay, fmtClock } from '../src/i18n/format';
 import { Txt } from '../src/components/board/Txt';
 import { Icon } from '../src/components/board/Icon';
@@ -90,6 +93,7 @@ function Setup({ initial, onDone }: { initial: PartnerProfile; onDone: () => voi
             <GroupRow icon="people" label={t('partners.open')} sub={t('partners.openSub')} toggle={f.open} onToggle={(v) => setF({ ...f, open: v })} />
             <GroupRow icon="people" label={t('partners.sameCommunity')} toggle={f.sameCommunity} onToggle={(v) => setF({ ...f, sameCommunity: v })} />
             {hasGender ? <GroupRow icon="shield" label={t('partners.sameGender')} toggle={f.sameGender} onToggle={(v) => setF({ ...f, sameGender: v })} /> : null}
+            <ShowLevelRow value={f.showLevel} level={selfLevel(profile as any)} onChange={(v) => setF({ ...f, showLevel: v })} />
           </Group>
         </View>
 
@@ -126,6 +130,15 @@ function Setup({ initial, onDone }: { initial: PartnerProfile; onDone: () => voi
             {t('partners.privacy')}
           </Txt>
         </View>
+
+        <Txt v="title" size={20} style={{ marginTop: 28 }}>
+          {t('partners.aboutTitle')}
+        </Txt>
+        <Txt v="body" size={14} color={p.inkSoft} style={{ marginTop: 4 }}>
+          {t('partners.aboutSub')}
+        </Txt>
+        <AboutYouFields value={f} onChange={setF} />
+        <ClearAbout value={f} onChange={setF} />
       </ScrollView>
       <View style={[s.bar, { paddingBottom: 12 + insets.bottom }]}>
         <MarkerButton label={f.open ? t('partners.saveOpen') : t('common.save')} onPress={save} loading={busy} />
@@ -140,13 +153,29 @@ function Suggestions() {
   const { t } = useI18n();
   const router = useRouter();
   const sports = useMySports().data ?? [];
+  // Your communities, private or open (the default one is everyone, so "Everywhere" covers it).
+  const communities = (useMyCommunities().data ?? []).filter((c) => !c.isDefault);
   const [sport, setSport] = useState<string | null>(null);
-  const q = usePartners(true, sport);
+  const [community, setCommunity] = useState<string | null>(null);
+  const q = usePartners(true, sport, community);
   const [inviting, setInviting] = useState<Partner | null>(null);
   const list = q.data ?? [];
   return (
     <>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }} refreshControl={<RefreshControl refreshing={q.refreshing} onRefresh={q.refetch} tintColor={p.ink} />}>
+        {communities.length ? (
+          <>
+            <Txt v="label" size={12} color={p.inkSoft} style={s.filterLabel}>
+              {t('partners.where')}
+            </Txt>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[s.chips, { paddingBottom: 0 }]}>
+              <Chip label={t('partners.everywhere')} icon="globe" selected={!community} onPress={() => setCommunity(null)} />
+              {communities.map((c) => (
+                <Chip key={c.id} label={c.name} icon={c.open ? 'people' : 'lock'} selected={community === c.id} onPress={() => setCommunity(community === c.id ? null : c.id)} />
+              ))}
+            </ScrollView>
+          </>
+        ) : null}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
           <Chip label={t('explore.allSports')} selected={!sport} onPress={() => setSport(null)} />
           {sports.map((id) => (
@@ -165,7 +194,7 @@ function Suggestions() {
               {t('partners.emptyTitle')}
             </Txt>
             <Txt v="body" color={p.inkSoft}>
-              {t('partners.emptyBody')}
+              {community ? t('partners.emptyCommunity') : t('partners.emptyBody')}
             </Txt>
             <OutlineButton label={t('partners.findClub')} icon="people" onPress={() => router.push({ pathname: '/(tabs)/feed', params: { tab: 'communities' } })} />
           </View>
@@ -181,7 +210,8 @@ function PartnerCard({ x, onInvite }: { x: Partner; onInvite: () => void }) {
   const { t, tn } = useI18n();
   const reasons = [
     x.sport ? t(`sports.${x.sport}`) : null,
-    x.closeLevel ? t('partners.similarLevel') : null,
+    // Their level shows as a tag when both of you share it; "similar level" otherwise.
+    x.closeLevel && !x.level ? t('partners.similarLevel') : null,
     x.times.length ? x.times.slice(0, 2).map((y) => t(`partners.times.${y}`)).join(' / ') : null,
     x.sport === 'running' && x.paceS ? `${fmtPace(x.paceS)} /km` : null,
   ].filter(Boolean);
@@ -196,12 +226,17 @@ function PartnerCard({ x, onInvite }: { x: Partner; onInvite: () => void }) {
           <Txt v="caption" numberOfLines={2}>
             {reasons.join(' · ')}
           </Txt>
+          {x.level ? <LevelTag level={x.level} /> : null}
         </View>
       </View>
-      {x.club || x.together ? (
+      {x.club || x.together || x.sameVibe || x.sharedGoals.length ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
           {x.club ? <Badge label={x.club} icon="people" /> : null}
           {x.together ? <Badge label={tn('partners.together', x.together)} icon="check" /> : null}
+          {x.sameVibe ? <Badge label={t('partners.sameVibe')} icon="bolt" /> : null}
+          {x.sharedGoals.slice(0, 2).map((g) => (
+            <Badge key={g} label={t(`partners.goalsShared.${g}`)} icon="heart" />
+          ))}
         </View>
       ) : null}
       {x.note ? (
@@ -214,7 +249,7 @@ function PartnerCard({ x, onInvite }: { x: Partner; onInvite: () => void }) {
   );
 }
 
-function Badge({ label, icon }: { label: string; icon: 'people' | 'check' }) {
+function Badge({ label, icon }: { label: string; icon: 'people' | 'check' | 'bolt' | 'heart' }) {
   const { p } = useKit();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 6, backgroundColor: p.wash }}>
@@ -292,6 +327,7 @@ const useStyles = makeStyles(({ p }) => ({
   body: { paddingHorizontal: 20, paddingBottom: 32 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chips: { gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
+  filterLabel: { paddingHorizontal: 16, paddingTop: 12, letterSpacing: 0.4 },
   privacy: { flexDirection: 'row', gap: 8, marginTop: 20, padding: 12, borderRadius: 10, backgroundColor: p.wash },
   bar: { paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1, borderTopColor: p.rule, backgroundColor: p.boardDeep },
 }));

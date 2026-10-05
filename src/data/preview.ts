@@ -365,3 +365,23 @@ export function previewWorkoutRows(): any[] {
       ] }),
   ];
 }
+
+// Training partners (web preview): the member's own matching settings, and people to suggest.
+export const previewPartnerProfile: import('./matching').PartnerProfile = {
+  open: true, sameCommunity: false, sameGender: false, times: ['evening'], paceS: null, note: '',
+  showLevel: true, work: 'desk', goals: ['friends', 'compete'], vibe: 'push',
+};
+const PREVIEW_PARTNERS = [
+  { who: people.majed, sport: 'padel', level: 'medium', communities: [COMPANY.id], club: COMPANY.name, times: ['evening'], vibe: true, goals: ['compete'], together: 2, note: L('Padel after work, happy to drill too.', 'بادل بعد الدوام، وأحب التمارين أيضًا.') },
+  { who: people.omar, sport: 'padel', level: 'hard', communities: ['c-smash'], club: null, times: ['night'], vibe: true, goals: [], together: 0, note: null },
+  { who: people.reem, sport: 'running', level: 'medium', communities: ['c-dawn'], club: L('Dawn Runners', 'عدّائو الفجر'), times: ['early'], vibe: false, goals: ['friends'], together: 1, note: L('Easy 5K, training for my first 10K.', '٥ كم بهدوء، أتدرب لأول ١٠ كم.') },
+  { who: people.turki, sport: 'running', level: null, communities: [COMPANY.id], club: COMPANY.name, times: ['evening'], vibe: false, goals: [], together: 0, note: null },
+  { who: people.hessa, sport: 'yoga', level: 'easy', communities: ['c-dawn'], club: L('Dawn Runners', 'عدّائو الفجر'), times: ['morning'], vibe: false, goals: ['friends'], together: 0, note: null },
+];
+export function previewPartners(sport: string | null, community: string | null, showLevel: boolean): import('./matching').Partner[] {
+  return PREVIEW_PARTNERS.filter((x) => (!sport || x.sport === sport) && (!community || x.communities.includes(community))).map((x) => ({
+    id: x.who.id, name: x.who.display_name, avatarUrl: x.who.avatar_url, sport: x.sport, sports: [x.sport], times: x.times as any, paceS: null,
+    note: x.note, closeLevel: x.level === 'medium', club: x.club, together: x.together,
+    level: showLevel ? (x.level as any) : null, sameVibe: x.vibe, sharedGoals: x.goals as any,
+  }));
+}
