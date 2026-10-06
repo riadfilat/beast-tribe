@@ -8,7 +8,8 @@ import { useAuth } from '../src/providers/AuthProvider';
 import { PREVIEW, PREVIEW_ME } from '../src/data/preview';
 import { useMySports } from '../src/data/member';
 import { useMySessions } from '../src/data/sessions';
-import { fmtPace, invitePartner, Partner, PartnerProfile, PARTNER_TIMES, PartnerTime, savePartnerProfile, usePartnerProfile, usePartners } from '../src/data/matching';
+import { fmtPace, GROUP_SIZES, invitePartner, Partner, PartnerProfile, PARTNER_TIMES, PartnerTime, PLAY_GOALS, savePartnerProfile, usePartnerProfile, usePartners, WORK_STYLES } from '../src/data/matching';
+import { useMyCommunities } from '../src/data/communities';
 import { fmtDay, fmtClock } from '../src/i18n/format';
 import { Txt } from '../src/components/board/Txt';
 import { Icon } from '../src/components/board/Icon';
@@ -90,6 +91,7 @@ function Setup({ initial, onDone }: { initial: PartnerProfile; onDone: () => voi
             <GroupRow icon="people" label={t('partners.open')} sub={t('partners.openSub')} toggle={f.open} onToggle={(v) => setF({ ...f, open: v })} />
             <GroupRow icon="people" label={t('partners.sameCommunity')} toggle={f.sameCommunity} onToggle={(v) => setF({ ...f, sameCommunity: v })} />
             {hasGender ? <GroupRow icon="shield" label={t('partners.sameGender')} toggle={f.sameGender} onToggle={(v) => setF({ ...f, sameGender: v })} /> : null}
+            <GroupRow icon="eye" label={t('partners.showLevel')} sub={t('partners.showLevelSub')} toggle={f.showLevel} onToggle={(v) => setF({ ...f, showLevel: v })} />
           </Group>
         </View>
 
@@ -117,6 +119,33 @@ function Setup({ initial, onDone }: { initial: PartnerProfile; onDone: () => voi
           </>
         ) : null}
 
+        {/* Optional: helps the matching, never shown as a profile */}
+        <SectionHeading title={t('partners.aboutTitle')} style={{ marginTop: 22 }} />
+        <Txt v="label" size={13} color={p.inkSoft}>
+          {t('partners.work')}
+        </Txt>
+        <View style={[s.wrap, { marginTop: 6 }]}>
+          {WORK_STYLES.map((x) => (
+            <Chip key={x} label={t(`partners.works.${x}`)} selected={f.workStyle === x} onPress={() => setF({ ...f, workStyle: f.workStyle === x ? null : x })} />
+          ))}
+        </View>
+        <Txt v="label" size={13} color={p.inkSoft} style={{ marginTop: 14 }}>
+          {t('partners.goalsTitle')}
+        </Txt>
+        <View style={[s.wrap, { marginTop: 6 }]}>
+          {PLAY_GOALS.map((x) => (
+            <Chip key={x} label={t(`partners.goals.${x}`)} selected={f.goals.includes(x)} onPress={() => setF({ ...f, goals: f.goals.includes(x) ? f.goals.filter((y) => y !== x) : [...f.goals, x] })} />
+          ))}
+        </View>
+        <Txt v="label" size={13} color={p.inkSoft} style={{ marginTop: 14 }}>
+          {t('partners.groupTitle')}
+        </Txt>
+        <View style={[s.wrap, { marginTop: 6 }]}>
+          {GROUP_SIZES.map((x) => (
+            <Chip key={x} label={t(`partners.groups.${x}`)} selected={f.groupSize === x} onPress={() => setF({ ...f, groupSize: f.groupSize === x ? null : x })} />
+          ))}
+        </View>
+
         <SectionHeading title={t('partners.note')} style={{ marginTop: 16 }} />
         <Field value={f.note} onChangeText={(v) => setF({ ...f, note: v })} placeholder={t('partners.notePlaceholder')} maxLength={140} />
 
@@ -141,7 +170,10 @@ function Suggestions() {
   const router = useRouter();
   const sports = useMySports().data ?? [];
   const [sport, setSport] = useState<string | null>(null);
-  const q = usePartners(true, sport);
+  // Look inside one of my communities, or everywhere (my city, plus anyone who shares a community).
+  const communities = (useMyCommunities().data ?? []).filter((c) => !c.isDefault);
+  const [community, setCommunity] = useState<string | null>(null);
+  const q = usePartners(true, sport, community);
   const [inviting, setInviting] = useState<Partner | null>(null);
   const list = q.data ?? [];
   return (
@@ -153,6 +185,14 @@ function Suggestions() {
             <Chip key={id} sport={id} label={t(`sports.${id}`)} selected={sport === id} onPress={() => setSport(sport === id ? null : id)} />
           ))}
         </ScrollView>
+        {communities.length ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[s.chips, { paddingTop: 0 }]}>
+            <Chip label={t('partners.anywhere')} icon="globe" selected={!community} onPress={() => setCommunity(null)} />
+            {communities.map((c) => (
+              <Chip key={c.id} label={c.name} icon={c.open ? 'people' : 'shield'} selected={community === c.id} onPress={() => setCommunity(community === c.id ? null : c.id)} />
+            ))}
+          </ScrollView>
+        ) : null}
         {q.loading ? null : list.length ? (
           <View style={{ paddingHorizontal: 16, gap: 12 }}>
             {list.map((x) => (
@@ -181,7 +221,7 @@ function PartnerCard({ x, onInvite }: { x: Partner; onInvite: () => void }) {
   const { t, tn } = useI18n();
   const reasons = [
     x.sport ? t(`sports.${x.sport}`) : null,
-    x.closeLevel ? t('partners.similarLevel') : null,
+    x.level ? t(`partners.levels.${x.level}`) : x.closeLevel ? t('partners.similarLevel') : null,
     x.times.length ? x.times.slice(0, 2).map((y) => t(`partners.times.${y}`)).join(' / ') : null,
     x.sport === 'running' && x.paceS ? `${fmtPace(x.paceS)} /km` : null,
   ].filter(Boolean);
@@ -198,10 +238,13 @@ function PartnerCard({ x, onInvite }: { x: Partner; onInvite: () => void }) {
           </Txt>
         </View>
       </View>
-      {x.club || x.together ? (
+      {x.club || x.together || x.sharedGoals.length ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
           {x.club ? <Badge label={x.club} icon="people" /> : null}
           {x.together ? <Badge label={tn('partners.together', x.together)} icon="check" /> : null}
+          {x.sharedGoals.slice(0, 2).map((g) => (
+            <Badge key={g} label={t(`partners.goals.${g}`)} icon="check" />
+          ))}
         </View>
       ) : null}
       {x.note ? (

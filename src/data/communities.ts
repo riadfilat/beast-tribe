@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { useQuery, invalidate } from './query';
-import { PREVIEW, PREVIEW_COMPANY, previewCommunities } from './preview';
+import { PREVIEW, PREVIEW_COMPANY, previewCommunities, previewLeaders } from './preview';
 import { CodedError, codeFrom } from './errors';
 import { useMeId } from './me';
 
@@ -82,6 +82,41 @@ export function useMyCommunities() {
     return (data || [])
       .map((r) => toCommunity(r, ids))
       .sort((a, b) => Number(a.open) - Number(b.open) || Number(a.isDefault) - Number(b.isDefault) || a.name.localeCompare(b.name));
+  });
+}
+
+/** A verified community run by a person (a run club, a cycling crew): join with one tap. */
+export interface CommunityLeader {
+  id: string;
+  name: string;
+  sport: string | null;
+  city: string | null;
+  logoUrl: string | null;
+  kind: string;
+  members: number;
+  leaderName: string;
+  leaderAvatar: string | null;
+  joined: boolean;
+}
+
+export function useCommunityLeaders() {
+  const me = useMeId();
+  return useQuery<CommunityLeader[]>(me ? `communities:leaders:${me}` : null, async () => {
+    if (PREVIEW) return previewLeaders() as CommunityLeader[];
+    const { data, error } = await supabase.rpc('community_leaders');
+    if (error) throw error;
+    return ((data as any[]) || []).map((r) => ({
+      id: r.id,
+      name: r.name,
+      sport: r.sport ?? null,
+      city: r.city ?? null,
+      logoUrl: r.logo_url ?? null,
+      kind: r.kind || 'club',
+      members: r.members ?? 0,
+      leaderName: r.leader_name || r.name,
+      leaderAvatar: r.leader_avatar ?? null,
+      joined: !!r.joined,
+    }));
   });
 }
 
