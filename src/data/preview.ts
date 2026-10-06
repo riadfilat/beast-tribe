@@ -58,34 +58,6 @@ const people = {
 };
 const crowd = Object.values(people).filter((x) => x.id !== PREVIEW_ME);
 
-/** Sample community leaders for the Communities tab (design preview only). */
-export const previewLeaders = () =>
-  ([
-    ['l-1', people.sara, L('Riyadh Dawn Runners', 'عدّاؤو الفجر'), 'running', 'Riyadh', 1240],
-    ['l-2', people.majed, L('Wadi Riders', 'دراجو الوادي'), 'cycling', 'Riyadh', 860],
-    ['l-3', people.noura, L('Desert Hooves', 'حوافر الصحراء'), 'horse_riding', 'Riyadh', 312],
-    ['l-4', people.faisal, L('Padel Nights', 'ليالي البادل'), 'padel', 'Riyadh', 640],
-    ['l-5', people.lama, L('Ladies Who Lift', 'سيدات القوة'), 'gym', 'Jeddah', 455],
-    ['l-6', people.omar, L('Tuwaiq Trail Club', 'نادي درب طويق'), 'hiking', 'Riyadh', 528],
-    ['l-7', people.hessa, L('Calm Flow Yoga', 'يوغا الهدوء'), 'yoga', 'Khobar', 290],
-    ['l-8', people.khalid, L('Five-a-side Fridays', 'كرة الجمعة'), 'football', 'Riyadh', 702],
-    ['l-9', people.reem, L('Corniche Swim Squad', 'سباحو الكورنيش'), 'swimming', 'Jeddah', 233],
-    ['l-10', people.turki, L('Hyrox Riyadh', 'هايروكس الرياض'), 'hyrox', 'Riyadh', 410],
-    ['l-11', people.dana, L('Racket Sisters', 'أخوات المضرب'), 'tennis', 'Riyadh', 188],
-    ['l-12', people.yousef, L('Northside Hoopers', 'سلة الشمال'), 'basketball', 'Dammam', 264],
-  ] as const).map(([id, who, name, sport, city, members], i) => ({
-    id,
-    name,
-    sport,
-    city,
-    logoUrl: null,
-    kind: 'club',
-    members,
-    leaderName: who.display_name,
-    leaderAvatar: who.avatar_url,
-    joined: i === 3,
-  }));
-
 function roster(n: number, opts: { me?: boolean; waitlist?: number; offset?: number } = {}) {
   const rows: any[] = [];
   const pool = crowd.slice(opts.offset ?? 0).concat(crowd.slice(0, opts.offset ?? 0));

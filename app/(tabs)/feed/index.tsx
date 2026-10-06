@@ -12,7 +12,7 @@ import { useMyPackList, PackSummary } from '../../../src/data/member';
 import { joinOpenPack, useOpenPacks } from '../../../src/data/packs';
 import { errorKey } from '../../../src/data/errors';
 import { Community, useMyCommunities, useOpenCommunities } from '../../../src/data/communities';
-import { CommunityLeaders, CommunityRow, JoinCommunityForm } from '../../../src/components/board/communities';
+import { CommunityRow, JoinCommunityForm } from '../../../src/components/board/communities';
 import { RequestCommunityCard } from '../../../src/components/board/clubs';
 import { useMySessions } from '../../../src/data/sessions';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
@@ -174,7 +174,7 @@ export default function TribeScreen() {
       ) : tab === 'communities' ? (
         <CommunitiesPane
           mine={communities.data ?? []}
-          open={(openCommunities.data ?? []).filter((c) => !(c.leaderId && c.verified))}
+          open={openCommunities.data ?? []}
           refreshing={communities.refreshing}
           onRefresh={() => { communities.refetch(); openCommunities.refetch(); }}
           onOpen={(c) => router.push({ pathname: '/(tabs)/feed/community', params: { id: c.id } })}
@@ -282,8 +282,6 @@ function CommunitiesPane({ mine, open, refreshing, onRefresh, onOpen }: { mine: 
       ) : (
         <Txt v="meta">{t('community.noneYet')}</Txt>
       )}
-      {/* People who run communities: join with one tap */}
-      <CommunityLeaders onJoined={onRefresh} />
       <View style={{ marginTop: 24 }}>
         <JoinCommunityForm onJoined={onRefresh} />
       </View>

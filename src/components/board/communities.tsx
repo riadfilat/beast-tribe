@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { Image, ScrollView, View } from 'react-native';
+import { Image, View } from 'react-native';
 import { useKit } from '../../theme';
 import { useI18n } from '../../i18n';
 import { cityLabel } from '../../lib/cities';
-import { Community, CommunityLeader, joinCommunityByCode, joinOpenCommunity, useCommunityLeaders } from '../../data/communities';
+import { Community, joinCommunityByCode, joinOpenCommunity } from '../../data/communities';
 import { Txt } from './Txt';
 import { Icon } from './Icon';
 import { Press } from './Press';
-import { Chip, Field, MarkerButton, OutlineButton, SectionHeading } from './controls';
+import { Field, OutlineButton } from './controls';
 import { toast } from './toast';
 import { haptic } from '../../lib/haptics';
 import { errorKey } from '../../data/errors';
@@ -135,114 +135,6 @@ export function JoinCommunityForm({ onJoined }: { onJoined?: (c: { id: string; n
         />
         <OutlineButton label={t('community.join')} onPress={join} loading={busy} disabled={!code.trim()} style={{ height: 52 }} />
       </View>
-    </View>
-  );
-}
-
-// ─── Community leaders ──────────────────────────────────────────────────────
-/**
- * People who run a community (a run club, a cycling crew, a riding stable), verified by Beast Tribe.
- * Like following someone: their photo, their name, what they run, and one tap to join.
- */
-export function CommunityLeaders({ onJoined }: { onJoined?: () => void }) {
-  const { p } = useKit();
-  const { t } = useI18n();
-  const q = useCommunityLeaders();
-  const [sport, setSport] = useState<string | null>(null);
-  const all = q.data ?? [];
-  if (!all.length) return null;
-  const sports = Array.from(new Set(all.map((x) => x.sport).filter(Boolean))) as string[];
-  const list = sport ? all.filter((x) => x.sport === sport) : all;
-  return (
-    <View style={{ marginTop: 24 }}>
-      <SectionHeading title={t('leaders.title')} />
-      <Txt v="meta" style={{ marginBottom: 10 }}>
-        {t('leaders.sub')}
-      </Txt>
-      {sports.length > 1 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 6 }} style={{ marginHorizontal: -16 }}>
-          <View style={{ width: 8 }} />
-          <Chip label={t('explore.allSports')} selected={!sport} onPress={() => setSport(null)} />
-          {sports.map((x) => (
-            <Chip key={x} sport={x as any} label={t(`sports.${x}`)} selected={sport === x} onPress={() => setSport(sport === x ? null : x)} />
-          ))}
-          <View style={{ width: 8 }} />
-        </ScrollView>
-      ) : null}
-      {list.map((x, i) => (
-        <LeaderRow
-          key={x.id}
-          x={x}
-          last={i === list.length - 1}
-          onJoined={() => {
-            q.refetch();
-            onJoined?.();
-          }}
-        />
-      ))}
-    </View>
-  );
-}
-
-function LeaderRow({ x, last, onJoined }: { x: CommunityLeader; last: boolean; onJoined: () => void }) {
-  const { p, lang } = useKit();
-  const { t, tn } = useI18n();
-  const [busy, setBusy] = useState(false);
-  const what = x.sport ? t('leaders.runs', { sport: t(`sports.${x.sport}`) }) : t(`community.kinds.${x.kind}`);
-  const initials = x.leaderName
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
-
-  async function join() {
-    setBusy(true);
-    try {
-      await joinOpenCommunity(x.id);
-      haptic('success');
-      toast.show(t('community.joined', { name: x.name }), 'yours');
-      onJoined();
-    } catch {
-      haptic('error');
-      toast.show(t('community.errors.generic'), 'error');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: last ? 0 : 1, borderBottomColor: p.rule }}>
-      {x.leaderAvatar ? (
-        <Image source={{ uri: x.leaderAvatar }} style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: p.wash }} accessibilityIgnoresInvertColors />
-      ) : (
-        <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: p.wash, alignItems: 'center', justifyContent: 'center' }}>
-          <Txt v="label" size={16}>
-            {initials}
-          </Txt>
-        </View>
-      )}
-      <View style={{ flex: 1, gap: 1 }}>
-        <Txt v="row" size={15} numberOfLines={1}>
-          {x.leaderName}
-        </Txt>
-        <Txt v="label" size={13} color={p.markerText} numberOfLines={1}>
-          {what}
-        </Txt>
-        <Txt v="caption" numberOfLines={1}>
-          {[x.name, tn('tribe.members', x.members)].filter(Boolean).join(' · ')}
-        </Txt>
-      </View>
-      {x.joined ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10 }}>
-          <Icon name="check" size={13} color={p.aqua} />
-          <Txt v="label" size={13} color={p.aqua}>
-            {t('leaders.joined')}
-          </Txt>
-        </View>
-      ) : (
-        <MarkerButton label={t('community.join')} onPress={join} loading={busy} style={{ height: 38, paddingHorizontal: 18 }} feedback="light" />
-      )}
     </View>
   );
 }
