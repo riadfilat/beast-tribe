@@ -215,6 +215,14 @@ export const previewCommunities: import('./communities').Community[] = [
   { id: 'c-padel', name: L('Padel Gang', 'شلة البادل'), description: L('Padel nights across Riyadh, every level.', 'ليالي بادل في الرياض لكل المستويات.'), kind: 'club', open: true, isDefault: false, city: RIYADH, logoUrl: null, members: 186, joinCode: null, isMember: false, leaderId: null, leaderName: null, sport: null, listing: 'invite', verified: false, notice: null },
   { id: 'c-runners', name: L('Riyadh Runners', 'عدّاؤو الرياض'), description: L('Weekly dawn runs across Riyadh.', 'جري أسبوعي مع الفجر في الرياض.'), kind: 'club', open: true, isDefault: false, city: RIYADH, logoUrl: null, members: 312, joinCode: null, isMember: false, leaderId: null, leaderName: null, sport: null, listing: 'invite', verified: false, notice: null },
   { id: 'c-football', name: L('Weekend Football', 'كورة الويكند'), description: L('Five-a-side every Friday and Saturday.', 'خماسيات كل جمعة وسبت.'), kind: 'club', open: true, isDefault: false, city: RIYADH, logoUrl: null, members: 240, joinCode: null, isMember: false, leaderId: null, leaderName: null, sport: null, listing: 'invite', verified: false, notice: null },
+  ...[
+    { id: 'c-dawn', leader: people.sara, sport: 'running', name: L('Dawn Runners', 'عدّائو الفجر'), about: L('5 km at sunrise, three mornings a week.', '٥ كم مع الشروق، ثلاث مرات في الأسبوع.'), members: 428, isMember: true },
+    { id: 'c-wheels', leader: people.khalid, sport: 'cycling', name: L('Riyadh Wheels', 'عجلات الرياض'), about: L('Weekend rides from 30 to 80 km.', 'جولات نهاية الأسبوع من ٣٠ إلى ٨٠ كم.'), members: 265, isMember: false },
+    { id: 'c-stable', leader: people.lama, sport: 'horse_riding', name: L('Desert Riders', 'فرسان الصحراء'), about: L('Riding lessons and desert trails for every level.', 'دروس فروسية ومسارات صحراوية لكل المستويات.'), members: 97, isMember: false },
+    { id: 'c-smash', leader: people.omar, sport: 'padel', name: L('Smash Club', 'نادي سماش'), about: L('Padel drills and mixed matches.', 'تمارين بادل ومباريات مختلطة.'), members: 210, isMember: false },
+    { id: 'c-flow', leader: people.dana, sport: 'yoga', name: L('Flow with Dana', 'فلو مع دانة'), about: L('Sunset yoga in the park.', 'يوغا الغروب في الحديقة.'), members: 154, isMember: false },
+    { id: 'c-trails', leader: people.faisal, sport: 'hiking', name: L('Tuwaiq Trails', 'مسارات طويق'), about: L('Monthly hikes on the Tuwaiq escarpment.', 'هايكنج شهري على جبال طويق.'), members: 188, isMember: false },
+  ].map((x): import('./communities').Community => ({ id: x.id, name: x.name, description: x.about, kind: 'club', open: true, isDefault: false, city: RIYADH, logoUrl: null, members: x.members, joinCode: null, isMember: x.isMember, leaderId: x.leader.id, leaderName: x.leader.display_name, leaderAvatar: x.leader.avatar_url, sport: x.sport, listing: 'public', verified: true, notice: null })),
 ];
 
 export const previewStats = { attended: 23, hosted: 4, met: 57 };
@@ -356,4 +364,24 @@ export function previewWorkoutRows(): any[] {
         B('Court strength', 'قوة الملعب', { format: 'rounds', rounds: 4 }, [['Lateral lunges', 'طعنات جانبية', '5 / side', '5 لكل جهة'], ['Split-squat jumps', 'قفزات الطعن', '4 / side', '4 لكل رجل'], ['Shuttle runs (5 m)', 'جري مكوكي (5 م)', '6'], ['Calf raises', 'رفع السمانة', '15']]),
       ] }),
   ];
+}
+
+// Training partners (web preview): the member's own matching settings, and people to suggest.
+export const previewPartnerProfile: import('./matching').PartnerProfile = {
+  open: true, sameCommunity: false, sameGender: false, times: ['evening'], paceS: null, note: '',
+  showLevel: true, work: 'desk', goals: ['friends', 'compete'], vibe: 'push',
+};
+const PREVIEW_PARTNERS = [
+  { who: people.majed, sport: 'padel', level: 'medium', communities: [COMPANY.id], club: COMPANY.name, times: ['evening'], vibe: true, goals: ['compete'], together: 2, note: L('Padel after work, happy to drill too.', 'بادل بعد الدوام، وأحب التمارين أيضًا.') },
+  { who: people.omar, sport: 'padel', level: 'hard', communities: ['c-smash'], club: null, times: ['night'], vibe: true, goals: [], together: 0, note: null },
+  { who: people.reem, sport: 'running', level: 'medium', communities: ['c-dawn'], club: L('Dawn Runners', 'عدّائو الفجر'), times: ['early'], vibe: false, goals: ['friends'], together: 1, note: L('Easy 5K, training for my first 10K.', '٥ كم بهدوء، أتدرب لأول ١٠ كم.') },
+  { who: people.turki, sport: 'running', level: null, communities: [COMPANY.id], club: COMPANY.name, times: ['evening'], vibe: false, goals: [], together: 0, note: null },
+  { who: people.hessa, sport: 'yoga', level: 'easy', communities: ['c-dawn'], club: L('Dawn Runners', 'عدّائو الفجر'), times: ['morning'], vibe: false, goals: ['friends'], together: 0, note: null },
+];
+export function previewPartners(sport: string | null, community: string | null, showLevel: boolean): import('./matching').Partner[] {
+  return PREVIEW_PARTNERS.filter((x) => (!sport || x.sport === sport) && (!community || x.communities.includes(community))).map((x) => ({
+    id: x.who.id, name: x.who.display_name, avatarUrl: x.who.avatar_url, sport: x.sport, sports: [x.sport], times: x.times as any, paceS: null,
+    note: x.note, closeLevel: x.level === 'medium', club: x.club, together: x.together,
+    level: showLevel ? (x.level as any) : null, sameVibe: x.vibe, sharedGoals: x.goals as any,
+  }));
 }

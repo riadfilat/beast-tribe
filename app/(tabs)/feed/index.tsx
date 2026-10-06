@@ -11,8 +11,8 @@ import { useFeed, toggleBeast, createPost, deletePost, reportPost, blockMember, 
 import { useMyPackList, PackSummary } from '../../../src/data/member';
 import { joinOpenPack, useOpenPacks } from '../../../src/data/packs';
 import { errorKey } from '../../../src/data/errors';
-import { Community, useMyCommunities, useOpenCommunities } from '../../../src/data/communities';
-import { CommunityRow, JoinCommunityForm } from '../../../src/components/board/communities';
+import { Community, useLeaderCommunities, useMyCommunities, useOpenCommunities } from '../../../src/data/communities';
+import { CommunityRow, JoinCommunityForm, LeadersSection } from '../../../src/components/board/communities';
 import { RequestCommunityCard } from '../../../src/components/board/clubs';
 import { useMySessions } from '../../../src/data/sessions';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
@@ -44,6 +44,7 @@ export default function TribeScreen() {
   const packs = useMyPackList();
   const communities = useMyCommunities();
   const openCommunities = useOpenCommunities();
+  const leaders = useLeaderCommunities();
   const [tab, setTab] = useState<Tab>('feed');
 
   useEffect(() => {
@@ -175,8 +176,9 @@ export default function TribeScreen() {
         <CommunitiesPane
           mine={communities.data ?? []}
           open={openCommunities.data ?? []}
+          leaders={leaders.data ?? []}
           refreshing={communities.refreshing}
-          onRefresh={() => { communities.refetch(); openCommunities.refetch(); }}
+          onRefresh={() => { communities.refetch(); openCommunities.refetch(); leaders.refetch(); }}
           onOpen={(c) => router.push({ pathname: '/(tabs)/feed/community', params: { id: c.id } })}
         />
       ) : (
@@ -271,9 +273,12 @@ function PostItem({ post, meId, onBeast, onMore, onOpenEvent, onOpenWorkout }: {
 
 // ─── Packs ──────────────────────────────────────────────────────────────────
 // ─── Communities ────────────────────────────────────────────────────────────
-function CommunitiesPane({ mine, open, refreshing, onRefresh, onOpen }: { mine: Community[]; open: Community[]; refreshing: boolean; onRefresh: () => void; onOpen: (c: Community) => void }) {
+function CommunitiesPane({ mine, open, leaders, refreshing, onRefresh, onOpen }: { mine: Community[]; open: Community[]; leaders: Community[]; refreshing: boolean; onRefresh: () => void; onOpen: (c: Community) => void }) {
   const { p } = useKit();
   const { t } = useI18n();
+  // Leader-run communities have their own list; don't show them twice.
+  const led = new Set(leaders.map((c) => c.id));
+  const others = open.filter((c) => !led.has(c.id));
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={p.ink} />}>
       <SectionHeading title={t('community.mine')} />
@@ -283,19 +288,22 @@ function CommunitiesPane({ mine, open, refreshing, onRefresh, onOpen }: { mine: 
         <Txt v="meta">{t('community.noneYet')}</Txt>
       )}
       <View style={{ marginTop: 24 }}>
+        <LeadersSection leaders={leaders} onOpen={onOpen} onJoined={onRefresh} />
+      </View>
+      <View style={{ marginTop: 24 }}>
         <JoinCommunityForm onJoined={onRefresh} />
       </View>
       <View style={{ marginTop: 20 }}>
         <RequestCommunityCard />
       </View>
-      {open.length ? (
+      {others.length ? (
         <View style={{ marginTop: 24 }}>
           <SectionHeading title={t('community.discover')} />
           <Txt v="meta" style={{ marginBottom: 4 }}>
             {t('community.discoverSub')}
           </Txt>
-          {open.map((c, i) => (
-            <CommunityRow key={c.id} c={c} onPress={() => onOpen(c)} onJoined={onRefresh} last={i === open.length - 1} />
+          {others.map((c, i) => (
+            <CommunityRow key={c.id} c={c} onPress={() => onOpen(c)} onJoined={onRefresh} last={i === others.length - 1} />
           ))}
         </View>
       ) : null}

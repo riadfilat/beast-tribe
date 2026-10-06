@@ -20,6 +20,7 @@ import { Magnet } from '../../../src/components/board/people';
 import { MarkerButton, OutlineButton, SectionHeading } from '../../../src/components/board/controls';
 import { TrainingMetricsSection } from '../../../src/components/board/metrics';
 import { StepsCard } from '../../../src/components/board/wellness';
+import { PartnersSection } from '../../../src/components/board/matching';
 import { Sheet } from '../../../src/components/board/sheet';
 import { Group, GroupRow } from '../../../src/components/board/list';
 import { SessionRow, useNow } from '../../../src/components/board/session';
@@ -179,6 +180,9 @@ export default function YouScreen() {
           </Txt>
         )}
 
+        {/* Training partners: matching, your level, optional answers */}
+        <PartnersSection style={s.section} />
+
         {/* Packs */}
         {packs.length ? (
           <>
@@ -198,7 +202,6 @@ export default function YouScreen() {
 
         <Group style={{ marginHorizontal: 16, marginTop: 28 }}>
           <GroupRow icon="calendar" label={t('you.mySessions')} onPress={() => router.push('/my-sessions')} />
-          <GroupRow icon="people" label={t('partners.title')} onPress={() => router.push('/partners')} />
           <GroupRow icon="sparkle" label={t('assistant.title')} onPress={() => router.push('/assistant')} />
           <GroupRow icon="nutrition" label={t('you.nutrition')} onPress={() => router.push('/(tabs)/home/nutrition')} />
           {isCoach ? <GroupRow icon="coach" label={t('you.coach')} onPress={() => router.push('/(tabs)/profile/coach-dashboard')} /> : null}
