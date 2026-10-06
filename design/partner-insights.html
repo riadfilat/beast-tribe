@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beast Tribe · Partner Insights</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family: 'SlamDunk'; src: url('../assets/fonts/SlamDunk.ttf') format('truetype'); font-display: swap; }
+  :root {
+    --teal: #023C3C; --teal-2: #034E4E; --teal-deep: #012828;
+    --orange: #E88F24; --orange-ink: #B8650A; --aqua: #56C4C4; --aqua-ink: #1E8C8C;
+    --coral: #EF8C86; --coral-ink: #C2453E; --green: #3FA27A;
+    --chalk: #F4F1EA; --paper: #FBFAF6; --card: #FFFFFF;
+    --ink: #0E2B2B; --ink-2: #48605E; --ink-3: #82938F; --rule: #E6E2D8; --rule-2: #D7D2C5;
+    --shadow: 0 1px 0 rgba(2,60,60,.04), 0 8px 24px -12px rgba(2,60,60,.18);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--paper); color: var(--ink); font: 15px/1.5 'Poppins', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  h1, h2, h3, .mont { font-family: 'Montserrat', system-ui, sans-serif; }
+  .num { font-family: 'SlamDunk', 'Montserrat', sans-serif; letter-spacing: .5px; font-weight: 400; }
+
+  /* ── Top bar ─────────────────────────────────────────────── */
+  .top { background: radial-gradient(120% 140% at 0% 0%, var(--teal-2) 0%, var(--teal) 45%, var(--teal-deep) 100%); color: var(--chalk); }
+  .top-in { max-width: 1240px; margin: 0 auto; padding: 18px 28px 0; }
+  .bar { display: flex; align-items: center; gap: 18px; }
+  .bar img { height: 26px; display: block; }
+  .bar .label { font: 700 12px 'Montserrat'; letter-spacing: 3px; text-transform: uppercase; color: #A3C4C0; padding-left: 18px; border-left: 1px solid rgba(244,241,234,.18); }
+  .bar .sp { flex: 1; }
+  .who { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #CFE2DE; }
+  .who b { color: var(--chalk); font-weight: 600; }
+  .ava { width: 32px; height: 32px; border-radius: 10px; background: var(--orange); color: var(--teal); display: grid; place-items: center; font: 800 12px 'Montserrat'; }
+  .tabs { display: flex; gap: 4px; margin-top: 22px; }
+  .tab { appearance: none; border: 0; cursor: pointer; background: transparent; color: #A3C4C0; padding: 12px 18px 14px; font: 700 14px 'Montserrat'; border-radius: 12px 12px 0 0; display: flex; align-items: center; gap: 8px; }
+  .tab:hover { color: var(--chalk); }
+  .tab[aria-selected="true"] { background: var(--paper); color: var(--teal); }
+  .tab .dot { width: 8px; height: 8px; border-radius: 4px; }
+
+  /* ── Page ────────────────────────────────────────────────── */
+  .page { max-width: 1240px; margin: 0 auto; padding: 26px 28px 60px; }
+  .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
+  .seg { display: inline-flex; background: #EEEAE0; border-radius: 10px; padding: 3px; }
+  .seg button { border: 0; background: transparent; padding: 7px 13px; border-radius: 8px; font: 600 13px 'Poppins'; color: var(--ink-2); cursor: pointer; }
+  .seg button.on { background: var(--card); color: var(--teal); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .toolbar .sp { flex: 1; }
+  .toggle { display: inline-flex; align-items: center; gap: 9px; font-size: 13px; color: var(--ink-2); cursor: pointer; user-select: none; }
+  .toggle input { display: none; }
+  .toggle .sw { width: 36px; height: 20px; border-radius: 10px; background: var(--rule-2); position: relative; transition: background .2s; }
+  .toggle .sw::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 8px; background: #fff; transition: left .2s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+  .toggle input:checked + .sw { background: var(--teal); }
+  .toggle input:checked + .sw::after { left: 18px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid var(--teal); background: var(--teal); color: var(--chalk); padding: 9px 16px; border-radius: 10px; font: 700 13px 'Montserrat'; letter-spacing: .3px; cursor: pointer; }
+  .btn.ghost { background: transparent; color: var(--teal); }
+
+  /* Headline */
+  .hero { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end; margin: 4px 0 26px; }
+  .eyebrow { font: 800 12px 'Montserrat'; letter-spacing: 3px; text-transform: uppercase; color: var(--orange-ink); margin-bottom: 10px; }
+  .hero h1 { font-size: 40px; line-height: 1.08; letter-spacing: -.8px; margin: 0; font-weight: 800; max-width: 860px; }
+  .hero h1 em { font-style: normal; color: var(--orange-ink); }
+  .hero p { margin: 12px 0 0; color: var(--ink-2); font-size: 16px; max-width: 760px; }
+  .score { text-align: right; }
+  .score .num { font-size: 92px; line-height: .85; color: var(--teal); }
+  .score small { display: block; font: 600 12px 'Montserrat'; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-3); margin-top: 6px; }
+
+  /* KPI tiles */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+  .kpi { background: var(--card); border: 1px solid var(--rule); border-radius: 16px; padding: 16px 18px 12px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+  .kpi .k { font: 600 12.5px 'Poppins'; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+  .kpi .v { display: flex; align-items: baseline; gap: 8px; margin-top: 6px; }
+  .kpi .v .num { font-size: 44px; line-height: 1; color: var(--ink); }
+  .kpi .v .of { font-size: 13px; color: var(--ink-3); }
+  .kpi .d { font: 600 12.5px 'Poppins'; margin-top: 4px; }
+  .up { color: var(--green); } .down { color: var(--coral-ink); } .flat { color: var(--ink-3); }
+  .kpi svg.spark { position: absolute; right: 14px; top: 14px; width: 84px; height: 30px; }
+  .kpi .k { padding-right: 92px; }
+  .why { color: var(--ink-3); cursor: help; font-size: 12px; border: 1px solid var(--rule-2); border-radius: 50%; width: 15px; height: 15px; display: inline-grid; place-items: center; font-weight: 600; }
+
+  /* Cards */
+  .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; margin-bottom: 14px; }
+  .card { background: var(--card); border: 1px solid var(--rule); border-radius: 18px; padding: 20px 22px; box-shadow: var(--shadow); position: relative; min-width: 0; }
+  .c4 { grid-column: span 4; } .c5 { grid-column: span 5; } .c6 { grid-column: span 6; } .c7 { grid-column: span 7; } .c8 { grid-column: span 8; } .c12 { grid-column: span 12; }
+  .card h3 { margin: 0; font-size: 16px; font-weight: 800; letter-spacing: -.2px; }
+  .card .sub { margin: 3px 0 14px; font-size: 13px; color: var(--ink-3); }
+  .card .head { display: flex; align-items: flex-start; gap: 10px; }
+  .card .head > div { flex: 1; }
+  .insight { margin-top: 14px; padding: 12px 14px; background: #F5F2EA; border-radius: 12px; font-size: 13.5px; color: var(--ink); display: flex; gap: 10px; }
+  .insight b { font-weight: 600; }
+  .insight .ico { flex: none; width: 22px; height: 22px; border-radius: 7px; background: var(--teal); color: var(--chalk); display: grid; place-items: center; font: 800 12px 'Montserrat'; }
+  .tag { font: 700 10.5px 'Montserrat'; letter-spacing: 1px; text-transform: uppercase; padding: 3px 7px; border-radius: 6px; white-space: nowrap; }
+  .tag.road { background: #FDF0DF; color: var(--orange-ink); border: 1px dashed #F0C48C; }
+  .tag.live { background: #E3F4EE; color: #23704F; }
+  body.hide-road [data-road] { display: none !important; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-2); }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+  /* Do this next */
+  .next { background: linear-gradient(160deg, var(--teal-2), var(--teal) 55%, var(--teal-deep)); color: var(--chalk); border: 0; }
+  .next h3 { color: var(--chalk); }
+  .next .sub { color: #A3C4C0; }
+  .act { display: flex; gap: 12px; padding: 13px 0; border-top: 1px solid rgba(244,241,234,.12); }
+  .act:first-of-type { border-top: 0; padding-top: 4px; }
+  .act .n { flex: none; width: 26px; height: 26px; border-radius: 8px; background: var(--orange); color: var(--teal); display: grid; place-items: center; font: 800 13px 'Montserrat'; }
+  .act b { display: block; font: 700 14px 'Montserrat'; margin-bottom: 2px; }
+  .act span { display: block; font-size: 13px; color: #CFE2DE; }
+  .act .go { margin-top: 8px; display: flex; gap: 6px; font: 700 12px 'Montserrat'; color: var(--orange); letter-spacing: .3px; cursor: pointer; }
+
+  /* Bars */
+  .rows { display: flex; flex-direction: column; gap: 11px; }
+  .row { display: grid; grid-template-columns: 128px 1fr 96px; gap: 12px; align-items: center; font-size: 13.5px; }
+  .row .nm { color: var(--ink); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .track { height: 12px; border-radius: 6px; background: #EFEBE2; position: relative; overflow: visible; }
+  .fill { position: absolute; inset: 0 auto 0 0; border-radius: 6px; }
+  .over { position: absolute; top: 0; bottom: 0; border-radius: 0 6px 6px 0; background: repeating-linear-gradient(135deg, var(--coral) 0 4px, #F7C3BF 4px 8px); }
+  .mark { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--ink); opacity: .55; border-radius: 1px; }
+  .row .val { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .row .val small { display: block; font-weight: 500; font-size: 11.5px; white-space: nowrap; }
+  .muted { color: var(--ink-3); }
+
+  /* Heatmap */
+  .heat { display: grid; grid-template-columns: 36px repeat(7, 1fr); gap: 4px; font-size: 11.5px; color: var(--ink-3); }
+  .heat .cell { height: 26px; border-radius: 6px; }
+  .heat .h { display: flex; align-items: center; }
+  .heat .d { text-align: center; font-weight: 600; color: var(--ink-2); }
+
+  /* People list */
+  .people { display: flex; flex-direction: column; }
+  .person { display: grid; grid-template-columns: 34px 1fr auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--rule); }
+  .person:first-child { border-top: 0; }
+  .pa { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font: 800 12px 'Montserrat'; color: var(--teal); }
+  .person b { font-weight: 600; font-size: 14px; display: block; }
+  .person span { font-size: 12.5px; color: var(--ink-3); }
+  .pill { font: 700 11.5px 'Montserrat'; padding: 6px 11px; border-radius: 999px; border: 1.5px solid var(--teal); color: var(--teal); background: transparent; cursor: pointer; }
+  .pill.warm { border-color: var(--orange); background: var(--orange); color: var(--teal); }
+
+  /* Value strip */
+  .value { display: grid; grid-template-columns: 1.2fr repeat(3, 1fr); gap: 0; background: var(--chalk); border: 1px solid var(--rule-2); border-radius: 18px; overflow: hidden; margin-top: 4px; }
+  .value > div { padding: 20px 22px; border-left: 1px solid var(--rule-2); }
+  .value > div:first-child { border-left: 0; background: var(--orange); color: var(--teal); }
+  .value .k { font: 800 11.5px 'Montserrat'; letter-spacing: 2px; text-transform: uppercase; opacity: .85; }
+  .value .num { font-size: 40px; line-height: 1.05; display: block; margin-top: 6px; }
+  .value p { margin: 4px 0 0; font-size: 13px; color: var(--ink-2); }
+  .value > div:first-child p { color: var(--teal); opacity: .85; }
+  .value h2 { margin: 6px 0 0; font-size: 22px; line-height: 1.15; font-weight: 800; }
+
+  .privacy { display: flex; gap: 12px; align-items: center; margin-top: 18px; padding: 14px 18px; border-radius: 14px; border: 1px dashed var(--rule-2); color: var(--ink-2); font-size: 13px; }
+  .privacy .lock { width: 30px; height: 30px; border-radius: 9px; background: #E3F4EE; color: #23704F; display: grid; place-items: center; flex: none; }
+
+  .view { display: none; } .view.on { display: block; animation: rise .35s ease both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .funnel { display: flex; flex-direction: column; gap: 8px; }
+  .fstep { display: grid; grid-template-columns: 150px 1fr 54px; gap: 12px; align-items: center; font-size: 13.5px; }
+  .fbar { height: 30px; border-radius: 8px; background: var(--aqua); display: flex; align-items: center; padding-left: 10px; color: var(--teal); font: 700 12px 'Montserrat'; }
+
+  .mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .mini > div { background: #F7F5EF; border-radius: 12px; padding: 12px; }
+  .mini .num { font-size: 30px; display: block; line-height: 1.05; }
+  .mini small { color: var(--ink-3); font-size: 12px; }
+
+  .stack { display: flex; height: 14px; border-radius: 7px; overflow: hidden; margin: 6px 0 10px; }
+  table.t { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.t th { text-align: left; font: 700 11px 'Montserrat'; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink-3); padding: 0 8px 8px 0; border-bottom: 1px solid var(--rule); }
+  table.t td { padding: 10px 8px 10px 0; border-bottom: 1px solid var(--rule); font-variant-numeric: tabular-nums; }
+  table.t tr:last-child td { border-bottom: 0; }
+
+  @media (max-width: 1000px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .c4, .c5, .c6, .c7, .c8 { grid-column: span 12; }
+    .value { grid-template-columns: 1fr 1fr; }
+    .value > div:nth-child(3) { border-left: 0; }
+    .hero { grid-template-columns: 1fr; } .score { text-align: left; }
+    .hero h1 { font-size: 32px; }
+  }
+  @media (max-width: 560px) {
+    .top-in, .page { padding-left: 16px; padding-right: 16px; }
+    .bar .label, #whoName { display: none; }
+    .bar img { height: 22px; }
+    .kpis { grid-template-columns: 1fr; }
+    .value { grid-template-columns: 1fr; } .value > div { border-left: 0; border-top: 1px solid var(--rule-2); }
+    .row { grid-template-columns: 96px 1fr 80px; }
+    .tab { padding: 10px 12px 12px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="bar">
+      <img src="../assets/brand/beast-tribe-lockup-on-dark.svg" alt="Beast Tribe">
+      <span class="label">Partner insights</span>
+      <span class="sp"></span>
+      <span class="who"><span id="whoName"><b>Your Company</b> · Company plan</span><span class="ava" id="whoAva">YC</span></span>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-view="company"><span class="dot" style="background:var(--orange)"></span>Company</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="gym"><span class="dot" style="background:var(--aqua)"></span>Gym &amp; club</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="community"><span class="dot" style="background:var(--coral)"></span>Community leader</button>
+    </nav>
+  </div>
+</header>
+
+<main class="page">
+  <div class="toolbar">
+    <div class="seg" id="period">
+      <button>This week</button><button class="on">This month</button><button>This quarter</button>
+    </div>
+    <span class="muted" style="font-size:13px">1–31 October · compared with September · <b style="color:var(--ink-2)">sample data</b></span>
+    <span class="sp"></span>
+    <label class="toggle" title="Hide what isn't built yet"><input type="checkbox" id="liveOnly"><span class="sw"></span>Live features only</label>
+    <button class="btn ghost">⬇ Monthly report (PDF)</button>
+  </div>
+
+  <!-- ═════════════════════════ COMPANY ═════════════════════════ -->
+  <section class="view on" id="company">
+    <div class="hero">
+      <div>
+        <div class="eyebrow">Your people this month</div>
+        <h1><em>62% of your people moved together</em>, up 9 points. Finance is quiet, and Tuesday padel is your best idea yet.</h1>
+        <p>298 of 480 seats joined at least one session, challenge or group activity. That's above the Saudi company median of 41%.</p>
+      </div>
+      <div class="score"><span class="num">62%</span><small>Participation</small></div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="k">Active people <span class="why" title="Booked, came, or took part in a challenge this month">?</span></div><div class="v"><span class="num">298</span><span class="of">of 480 seats</span></div><div class="d up">▲ 41 vs September</div><svg class="spark" data-spark="180,196,205,214,231,247,257,298" data-color="#E88F24"></svg></div>
+      <div class="kpi"><div class="k">Sessions together</div><div class="v"><span class="num">146</span></div><div class="d up">▲ 28%</div><svg class="spark" data-spark="70,82,88,96,104,112,114,146" data-color="#56C4C4"></svg></div>
+      <div class="kpi"><div class="k">Hours moved</div><div class="v"><span class="num">1,240</span></div><div class="d up">▲ 17% · 4.2 h per active person</div><svg class="spark" data-spark="820,860,910,960,1010,1060,1060,1240" data-color="#3FA27A"></svg></div>
+      <div class="kpi" data-road><div class="k">New connections <span class="tag road">Roadmap</span></div><div class="v"><span class="num">212</span></div><div class="d up">▲ colleagues who met across teams</div><svg class="spark" data-spark="40,62,80,101,130,151,170,212" data-color="#EF8C86"></svg></div>
+    </div>
+
+    <div class="grid">
+      <div class="card c8">
+        <div class="head"><div><h3>Participation, week by week</h3><div class="sub">Share of seats active each week, against companies your size</div></div>
+          <div class="legend"><span><i style="background:var(--orange)"></i>Your Company</span><span data-road><i style="background:var(--ink-3)"></i>Saudi median <span class="tag road">Roadmap</span></span></div></div>
+        <svg id="chartCo" width="100%" height="250"></svg>
+        <div class="insight"><span class="ico">!</span><div><b>The jump came in week 7</b>, when the "October Steps" team challenge launched. Challenges add about 14 points while they run, so plan the next one for November.</div></div>
+      </div>
+      <div class="card c4 next">
+        <h3>Do this next</h3><div class="sub">Three moves, picked from this month's data</div>
+        <div class="act"><span class="n">1</span><div><b>Give Finance a lunchtime walk</b><span>18% active, the lowest team, and 3 weeks quiet. Lunchtime is when they're free.</span><div class="go">Create the session →</div></div></div>
+        <div class="act"><span class="n">2</span><div><b>Add a second Tuesday padel court</b><span>It fills in under 2 hours, with 11 people on the waitlist each week.</span><div class="go">Book a court →</div></div></div>
+        <div class="act"><span class="n">3</span><div><b>Thank your 6 champions</b><span>They hosted 38% of all sessions. A shout-out keeps them going.</span><div class="go">See champions →</div></div></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card c6">
+        <div class="head"><div><h3>By team</h3><div class="sub">Share of each team active this month · the line is the company average</div></div></div>
+        <div class="rows" id="teamsCo"></div>
+        <div class="insight"><span class="ico">i</span><div>Teams under 5 people are grouped as <b>"Other"</b>, so no one can be singled out.</div></div>
+      </div>
+      <div class="card c6">
+        <div class="head"><div><h3>When your people move</h3><div class="sub">Sessions started, by day and time</div></div></div>
+        <div class="heat" id="heatCo"></div>
+        <div class="insight"><span class="ico">↗</span><div><b>Sunday and Tuesday evenings</b> carry 46% of all activity. Mornings are almost empty: a 7am run club is an easy win for early starters.</div></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card c4">
+        <h3>Team challenge</h3><div class="sub">October Steps · average per person · day 12 of 21</div>
+        <div class="rows" id="challengeCo"></div>
+        <div class="insight"><span class="ico">★</span><div>81% of seats joined, the highest of any challenge so far.</div></div>
+      </div>
+      <div class="card c4">
+        <h3>Your champions</h3><div class="sub">People who bring others along</div>
+        <div class="people" id="champsCo"></div>
+      </div>
+      <div class="card c4" data-road>
+        <div class="head"><div><h3>How people feel</h3><div class="sub">Opt-in monthly check, 1 to 5 · team results need 5+ answers</div></div><span class="tag road">Roadmap</span></div>
+        <div class="mini">
+          <div><span class="num">3.9</span><small>Energy <span class="up">▲ 0.3</span></small></div>
+          <div><span class="num">4.2</span><small>Belonging <span class="up">▲ 0.4</span></small></div>
+          <div><span class="num">2.8</span><small>Stress <span class="up">▼ 0.2</span></small></div>
+        </div>
+        <div class="insight"><span class="ico">♥</span><div>People who joined 4 or more sessions report <b>0.8 points more energy</b> than those who joined none.</div></div>
+      </div>
+    </div>
+
+    <div class="value">
+      <div><div class="k">What October cost</div><h2>SAR 4,800 for 480 seats</h2><p>SAR 10 per seat. Nothing per session, nothing per booking.</p></div>
+      <div><div class="k">Per active person</div><span class="num">SAR 16</span><p>A gym membership averages SAR 250 a month.</p></div>
+      <div><div class="k">Sessions organised for you</div><span class="num">146</span><p>About 70 HR hours you didn't spend in group chats.</p></div>
+      <div data-road><div class="k">People who met across teams</div><span class="num">212</span><p>New links between departments. <span class="tag road">Roadmap</span></p></div>
+    </div>
+    <div class="privacy"><span class="lock">🔒</span><div>Participation only, never personal health data. Each person decides what they share; team numbers need at least 5 people.</div></div>
+  </section>
+
+  <!-- ═════════════════════════ GYM & CLUB ═════════════════════════ -->
+  <section class="view" id="gym">
+    <div class="hero">
+      <div>
+        <div class="eyebrow">Your members this month</div>
+        <h1><em>41 members are drifting.</em> A call this week could keep about SAR 28,700 a year. Your 6pm classes are turning people away.</h1>
+        <p>612 of 786 members came, booked or posted in the last two weeks. Retention after 90 days is 71%, up from 64% in the spring.</p>
+      </div>
+      <div class="score"><span class="num">78%</span><small>Members active</small></div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="k">Active members <span class="why" title="Booked, came, or posted in the last 14 days">?</span></div><div class="v"><span class="num">612</span><span class="of">of 786</span></div><div class="d up">▲ 3 points</div><svg class="spark" data-spark="560,571,580,577,590,598,604,612" data-color="#3FA27A"></svg></div>
+      <div class="kpi"><div class="k">Class fill rate</div><div class="v"><span class="num">84%</span></div><div class="d up">▲ 6 points</div><svg class="spark" data-spark="71,73,75,78,77,80,82,84" data-color="#56C4C4"></svg></div>
+      <div class="kpi" data-road><div class="k">Kept after 90 days <span class="tag road">Roadmap</span></div><div class="v"><span class="num">71%</span></div><div class="d up">▲ 7 points</div><svg class="spark" data-spark="62,64,64,66,67,69,70,71" data-color="#E88F24"></svg></div>
+      <div class="kpi"><div class="k">Turned away</div><div class="v"><span class="num">96</span><span class="of">waitlist spots</span></div><div class="d down">Demand you didn't serve</div><svg class="spark" data-spark="40,46,52,58,66,71,84,96" data-color="#EF8C86"></svg></div>
+    </div>
+
+    <div class="grid">
+      <div class="card c7">
+        <div class="head"><div><h3>Member health</h3><div class="sub">Active: last 2 weeks · Quiet: 2 to 4 weeks · At risk: gone a month</div></div>
+          <div class="legend"><span><i style="background:var(--green)"></i>Active</span><span><i style="background:var(--orange)"></i>Quiet</span><span><i style="background:var(--coral)"></i>At risk</span></div></div>
+        <svg id="chartGym" width="100%" height="250"></svg>
+        <div class="insight"><span class="ico">!</span><div><b>At risk is rising</b> (41, up from 27). Most stopped after a schedule change on 8 Oct. A personal call wins back about 1 in 3.</div></div>
+      </div>
+      <div class="card c5">
+        <div class="head"><div><h3>Call these first</h3><div class="sub">At risk, ranked by how long they've been with you</div></div></div>
+        <div class="people" id="callGym"></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card c6">
+        <div class="head"><div><h3>Classes</h3><div class="sub">How full each class runs · striped: people on the waitlist</div></div></div>
+        <div class="rows" id="classesGym"></div>
+        <div class="insight"><span class="ico">↗</span><div><b>6pm HIIT and Ladies' Spin</b> turn away 58 people a month. A second slot at 7pm would fill on day one.</div></div>
+      </div>
+      <div class="card c6">
+        <div class="head"><div><h3>Courts and studios, by hour</h3><div class="sub">Booked share of each hour this month</div></div></div>
+        <div class="heat" id="heatGym"></div>
+        <div class="insight"><span class="ico">$</span><div><b>7 to 10am runs at 31%.</b> Try a "Sunrise" price or a members-only morning game to fill it.</div></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card c4" data-road>
+        <div class="head"><div><h3>The first 30 days</h3><div class="sub">October's new members</div></div><span class="tag road">Roadmap</span></div>
+        <div class="funnel" id="funnelGym"></div>
+        <div class="insight"><span class="ico">3</span><div>Members who come <b>3 times in their first month stay 2.4× longer</b>. Today, 46% get there.</div></div>
+      </div>
+      <div class="card c4">
+        <h3>Coaches</h3><div class="sub">Fill rate and how often people come back</div>
+        <table class="t" id="coachesGym"></table>
+      </div>
+      <div class="card c4">
+        <div class="head"><div><h3>Guests and money at the desk</h3><div class="sub">Guest links and court shares marked paid</div></div></div>
+        <div class="mini">
+          <div><span class="num">74</span><small>Guests came</small></div>
+          <div data-road><span class="num">13</span><small>Became members <span class="tag road">Roadmap</span></small></div>
+          <div><span class="num">9.8k</span><small>SAR collected</small></div>
+        </div>
+        <div class="insight"><span class="ico">→</span><div>1 in 6 guests joined within a month, worth about <b>SAR 9,100 a year</b> in new memberships.</div></div>
+      </div>
+    </div>
+
+    <div class="value">
+      <div><div class="k">What October cost</div><h2>SAR 790 a month</h2><p>Flat. 0% on classes, guests and court bookings.</p></div>
+      <div data-road><div class="k">Revenue kept if you call the 41</div><span class="num">SAR 28.7k</span><p>A year, at a 1-in-3 win-back. <span class="tag road">Roadmap</span></p></div>
+      <div><div class="k">Guest revenue</div><span class="num">SAR 9.8k</span><p>Collected at the desk this month.</p></div>
+      <div><div class="k">Bookings handled</div><span class="num">1,932</span><p>No calls, no spreadsheets, no WhatsApp.</p></div>
+    </div>
+    <div class="privacy"><span class="lock">🔒</span><div>You see bookings, check-ins and posts in your club. Members' own training, meals and body data stay private unless they choose to share them with a coach.</div></div>
+  </section>
+
+  <!-- ═════════════════════════ COMMUNITY ═════════════════════════ -->
+  <section class="view" id="community">
+    <div class="hero">
+      <div>
+        <div class="eyebrow">Your tribe this month</div>
+        <h1><em>38 games this week.</em> Thursday padel is your heartbeat, and 14 new neighbours still haven't played.</h1>
+        <p>Andorra Sports Tribe has 186 members, 64% of them active weekly. 92% of the people who say "I'm in" show up.</p>
+      </div>
+      <div class="score"><span class="num">92%</span><small>Show-up rate</small></div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="k">Members</div><div class="v"><span class="num">186</span></div><div class="d up">▲ 14 joined this month</div><svg class="spark" data-spark="120,131,140,151,160,166,172,186" data-color="#EF8C86"></svg></div>
+      <div class="kpi"><div class="k">Active weekly</div><div class="v"><span class="num">64%</span></div><div class="d up">▲ 5 points</div><svg class="spark" data-spark="51,54,55,58,57,60,59,64" data-color="#3FA27A"></svg></div>
+      <div class="kpi"><div class="k">Games played</div><div class="v"><span class="num">142</span></div><div class="d up">▲ 22%</div><svg class="spark" data-spark="80,86,91,99,104,111,116,142" data-color="#E88F24"></svg></div>
+      <div class="kpi" data-road><div class="k">Filled by call-outs <span class="tag road">Roadmap</span></div><div class="v"><span class="num">87%</span></div><div class="d up">Open spots filled within 2 h</div><svg class="spark" data-spark="60,66,70,74,79,82,85,87" data-color="#56C4C4"></svg></div>
+    </div>
+
+    <div class="grid">
+      <div class="card c8">
+        <div class="head"><div><h3>Growing, and playing</h3><div class="sub">Members, and how many played each week</div></div>
+          <div class="legend"><span><i style="background:var(--teal)"></i>Members</span><span><i style="background:var(--orange)"></i>Played that week</span></div></div>
+        <svg id="chartCm" width="100%" height="250"></svg>
+        <div class="insight"><span class="ico">!</span><div>Growth tracks the <b>Thursday padel nights</b>: 9 of the 14 new members joined through a friend's invite on a Thursday.</div></div>
+      </div>
+      <div class="card c4 next">
+        <h3>Do this next</h3><div class="sub">For you as a leader</div>
+        <div class="act"><span class="n">1</span><div><b>Welcome the 14 who haven't played</b><span>New members who play in their first week stay 3× more often.</span><div class="go">Send a welcome game →</div></div></div>
+        <div class="act"><span class="n">2</span><div><b>Open Court 3 on Thursdays</b><span>Courts 1 and 2 are full by 6pm, with 9 people waiting each week.</span><div class="go">Change court hours →</div></div></div>
+        <div class="act"><span class="n">3</span><div><b>Start a beginners' group</b><span>31% of members are beginners, but only 12% of games are set for their level.</span><div class="go">Start a group →</div></div></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card c6">
+        <div class="head"><div><h3>Courts</h3><div class="sub">Booked share of opening hours · no-shows</div></div></div>
+        <div class="rows" id="courtsCm"></div>
+        <div class="insight"><span class="ico">✓</span><div>The one-booking-a-day house rule cut no-shows from 14% to 6% after it started.</div></div>
+      </div>
+      <div class="card c6">
+        <div class="head"><div><h3>Who plays</h3><div class="sub">Your regulars, and newcomers to bring in</div></div></div>
+        <div class="stack" id="mixCm"></div>
+        <div class="legend" id="mixLegend"></div>
+        <div class="people" id="peopleCm" style="margin-top:8px"></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card c4" data-road>
+        <div class="head"><div><h3>Levels in your tribe</h3><div class="sub">From games and private ratings · never shown per person</div></div><span class="tag road">Roadmap</span></div>
+        <div class="rows" id="levelsCm"></div>
+      </div>
+      <div class="card c4">
+        <h3>Groups</h3><div class="sub">The circles inside your community</div>
+        <table class="t" id="groupsCm"></table>
+      </div>
+      <div class="card c4">
+        <h3>The feed</h3><div class="sub">What people shared</div>
+        <div class="mini">
+          <div><span class="num">96</span><small>Posts</small></div>
+          <div><span class="num">1.4k</span><small>Beasts</small></div>
+          <div><span class="num">310</span><small>Comments</small></div>
+        </div>
+        <div class="insight"><span class="ico">📷</span><div>Game recaps with a photo get <b>3× the beasts</b>. Nudge hosts to post one after each game.</div></div>
+      </div>
+    </div>
+
+    <div class="value">
+      <div><div class="k">What it takes</div><h2>Run by you, set up by us</h2><p>Private, invite-only community with your own courts and house rules.</p></div>
+      <div><div class="k">Games organised</div><span class="num">142</span><p>Without a single group-chat poll.</p></div>
+      <div><div class="k">Court hours booked</div><span class="num">418</span><p>Fair, rule-based, 6% no-shows.</p></div>
+      <div><div class="k">Neighbours who met</div><span class="num">64</span><p>People who played with someone new.</p></div>
+    </div>
+    <div class="privacy"><span class="lock">🔒</span><div>You see activity in your community. Skill ratings stay private: you see the mix, never anyone's score.</div></div>
+  </section>
+</main>
+
+<script>
+const C = { teal:'#023C3C', orange:'#E88F24', aqua:'#56C4C4', coral:'#EF8C86', green:'#3FA27A', ink3:'#82938F', rule:'#E6E2D8', chalk:'#F4F1EA' };
+const svgNS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs = {}, parent) => { const n = document.createElementNS(svgNS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (parent) parent.appendChild(n); return n; };
+const h = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild; };
+
+/* Sparklines */
+function sparks(root = document) {
+  root.querySelectorAll('svg.spark').forEach((s) => {
+    s.innerHTML = '';
+    const v = s.dataset.spark.split(',').map(Number), col = s.dataset.color;
+    const W = 92, H = 34, mn = Math.min(...v), mx = Math.max(...v);
+    const pts = v.map((y, i) => [ (i / (v.length - 1)) * (W - 4) + 2, H - 4 - ((y - mn) / (mx - mn || 1)) * (H - 10) ]);
+    s.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    el('path', { d: `M${pts.map(p => p.join(',')).join(' L')} L${W-2},${H} L2,${H} Z`, fill: col, opacity: .12 }, s);
+    el('path', { d: `M${pts.map(p => p.join(',')).join(' L')}`, fill: 'none', stroke: col, 'stroke-width': 2.2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, s);
+    const l = pts[pts.length - 1]; el('circle', { cx: l[0], cy: l[1], r: 3, fill: col }, s);
+  });
+}
+
+/* Line/area chart */
+function lineChart(id, series, labels, opts = {}) {
+  const s = document.getElementById(id); if (!s) return; s.innerHTML = '';
+  const W = s.clientWidth || 700, H = 250, P = { l: 40, r: 14, t: 14, b: 28 };
+  s.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const all = series.flatMap(x => x.data), mx = opts.max ?? Math.ceil(Math.max(...all) * 1.12), mn = opts.min ?? 0;
+  const x = i => P.l + (i / (labels.length - 1)) * (W - P.l - P.r), y = v => P.t + (1 - (v - mn) / (mx - mn)) * (H - P.t - P.b);
+  for (let g = 0; g <= 4; g++) { const v = mn + (mx - mn) * g / 4, yy = y(v); el('line', { x1: P.l, x2: W - P.r, y1: yy, y2: yy, stroke: C.rule }, s); const t = el('text', { x: P.l - 8, y: yy + 4, 'text-anchor': 'end', 'font-size': 11, fill: C.ink3 }, s); t.textContent = Math.round(v) + (opts.suffix || ''); }
+  labels.forEach((lb, i) => { if (i % (opts.every || 1)) return; const t = el('text', { x: x(i), y: H - 8, 'text-anchor': 'middle', 'font-size': 11, fill: C.ink3 }, s); t.textContent = lb; });
+  series.forEach((se) => {
+    const pts = se.data.map((v, i) => [x(i), y(v)]);
+    const d = 'M' + pts.map(p => p.join(',')).join(' L');
+    if (se.area) {
+      const gid = id + se.color.slice(1); const defs = el('defs', {}, s); const lg = el('linearGradient', { id: gid, x1: 0, x2: 0, y1: 0, y2: 1 }, defs);
+      el('stop', { offset: '0%', 'stop-color': se.color, 'stop-opacity': .28 }, lg); el('stop', { offset: '100%', 'stop-color': se.color, 'stop-opacity': 0 }, lg);
+      el('path', { d: `${d} L${x(se.data.length - 1)},${y(mn)} L${x(0)},${y(mn)} Z`, fill: `url(#${gid})` }, s);
+    }
+    const p = el('path', { d, fill: 'none', stroke: se.color, 'stroke-width': se.width || 3, 'stroke-dasharray': se.dash || '', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, s);
+    if (se.road) p.setAttribute('data-road', '');
+    if (!se.dash) { const lp = pts[pts.length - 1]; el('circle', { cx: lp[0], cy: lp[1], r: 5, fill: '#fff', stroke: se.color, 'stroke-width': 3 }, s); }
+  });
+  (opts.notes || []).forEach((n) => { const xx = x(n.i), g = el('g', {}, s); el('line', { x1: xx, x2: xx, y1: P.t, y2: H - P.b, stroke: C.teal, 'stroke-dasharray': '3 4', opacity: .5 }, g); const r = el('rect', { x: xx + 6, y: P.t, rx: 6, height: 22, width: n.t.length * 6.6 + 14, fill: C.teal }, g); const t = el('text', { x: xx + 13, y: P.t + 15, 'font-size': 11.5, fill: C.chalk, 'font-weight': 600 }, g); t.textContent = n.t; });
+}
+
+/* Stacked bars */
+function stackChart(id, groups, labels, colors) {
+  const s = document.getElementById(id); if (!s) return; s.innerHTML = '';
+  const W = s.clientWidth || 600, H = 250, P = { l: 40, r: 10, t: 10, b: 28 };
+  s.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const tot = labels.map((_, i) => groups.reduce((a, g) => a + g[i], 0)), mx = Math.ceil(Math.max(...tot) / 100) * 100;
+  const bw = (W - P.l - P.r) / labels.length;
+  for (let g = 0; g <= 4; g++) { const v = mx * g / 4, yy = P.t + (1 - v / mx) * (H - P.t - P.b); el('line', { x1: P.l, x2: W - P.r, y1: yy, y2: yy, stroke: C.rule }, s); const t = el('text', { x: P.l - 8, y: yy + 4, 'text-anchor': 'end', 'font-size': 11, fill: C.ink3 }, s); t.textContent = v; }
+  labels.forEach((lb, i) => {
+    let base = H - P.b; const x0 = P.l + i * bw + bw * .18, w = bw * .64;
+    groups.forEach((g, gi) => { const hh = (g[i] / mx) * (H - P.t - P.b); el('rect', { x: x0, y: base - hh, width: w, height: Math.max(0, hh - 2), rx: 4, fill: colors[gi] }, s); base -= hh; });
+    const t = el('text', { x: x0 + w / 2, y: H - 8, 'text-anchor': 'middle', 'font-size': 11, fill: C.ink3 }, s); t.textContent = lb;
+  });
+}
+
+/* Heatmap */
+function heat(id, rows, days, data, color) {
+  const c = document.getElementById(id); if (!c) return; c.innerHTML = '';
+  c.appendChild(h('<div></div>')); days.forEach(d => c.appendChild(h(`<div class="d">${d}</div>`)));
+  const mx = Math.max(...data.flat());
+  rows.forEach((r, ri) => { c.appendChild(h(`<div class="h">${r}</div>`)); data[ri].forEach((v) => { const a = .08 + .92 * (v / mx); c.appendChild(h(`<div class="cell" title="${v}" style="background:${color};opacity:${a.toFixed(2)}"></div>`)); }); });
+}
+
+function rows(id, items, opts = {}) {
+  const c = document.getElementById(id); if (!c) return; c.innerHTML = '';
+  items.forEach((it) => {
+    const over = it.over ? `<span class="over" style="left:${it.v}%;width:${it.over}%"></span>` : '';
+    const mark = opts.mark != null ? `<span class="mark" style="left:${opts.mark}%"></span>` : '';
+    c.appendChild(h(`<div class="row"${it.road ? ' data-road' : ''}><span class="nm">${it.n}</span><span class="track"><span class="fill" style="width:${it.v}%;background:${it.c || opts.color}"></span>${over}${mark}</span><span class="val">${it.label ?? it.v + '%'}${it.small ? `<small class="${it.cls || 'muted'}">${it.small}</small>` : ''}</span></div>`));
+  });
+}
+
+function people(id, list) {
+  const c = document.getElementById(id); if (!c) return; c.innerHTML = '';
+  list.forEach((p) => c.appendChild(h(`<div class="person"><span class="pa" style="background:${p.bg}">${p.i}</span><div><b>${p.n}</b><span>${p.s}</span></div>${p.a ? `<button class="pill ${p.warm ? 'warm' : ''}">${p.a}</button>` : `<span class="muted" style="font-size:12.5px">${p.r || ''}</span>`}</div>`)));
+}
+
+function table(id, head, body) {
+  const t = document.getElementById(id); if (!t) return;
+  t.innerHTML = `<thead><tr>${head.map(x => `<th>${x}</th>`).join('')}</tr></thead><tbody>${body.map(r => `<tr>${r.map(x => `<td>${x}</td>`).join('')}</tr>`).join('')}</tbody>`;
+}
+
+/* ── Data (sample) ─────────────────────────────────────────── */
+const weeks = ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12'];
+const hours = ['6am','9am','12pm','3pm','6pm','9pm'];
+const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function drawCompany() {
+  lineChart('chartCo', [
+    { data: [38,39,41,40,43,44,52,55,57,58,60,62], color: C.orange, area: true },
+    { data: [40,40,41,41,40,41,41,42,41,41,41,41], color: C.ink3, dash: '6 6', width: 2, road: true },
+  ], weeks, { max: 80, suffix: '%', notes: [{ i: 6, t: 'Challenge starts' }] });
+  rows('teamsCo', [
+    { n: 'Operations', v: 81, c: C.green, small: '▲ 12', cls: 'up' },
+    { n: 'Sales', v: 74, c: C.green, small: '▲ 9', cls: 'up' },
+    { n: 'Technology', v: 66, c: C.aqua, small: '▲ 4', cls: 'up' },
+    { n: 'HR & Admin', v: 63, c: C.aqua, small: '▲ 2', cls: 'up' },
+    { n: 'Marketing', v: 52, c: C.orange, small: '▼ 3', cls: 'down' },
+    { n: 'Finance', v: 18, c: C.coral, small: '▼ 11', cls: 'down' },
+    { n: 'Other (small teams)', v: 49, c: '#B9C6C3', small: '—', cls: 'flat' },
+  ], { mark: 62 });
+  heat('heatCo', hours, days, [[1,1,4,1,1,0,1],[2,1,2,1,2,0,1],[4,3,4,3,3,1,1],[2,2,2,2,2,3,2],[9,5,10,6,7,4,3],[7,4,9,5,8,6,4]], C.orange);
+  rows('challengeCo', [
+    { n: 'Operations', v: 100, c: C.orange, label: '11.2k' },
+    { n: 'Sales', v: 91, c: C.orange, label: '10.2k' },
+    { n: 'Technology', v: 78, c: C.aqua, label: '8.7k' },
+    { n: 'HR & Admin', v: 71, c: C.aqua, label: '8.0k' },
+    { n: 'Finance', v: 39, c: C.coral, label: '4.4k' },
+  ]);
+  people('champsCo', [
+    { i: 'SA', n: 'Sara A.', s: 'Hosted 14 · brought 23 people', bg: '#FCE3C4', a: 'Thank' },
+    { i: 'MK', n: 'Majed K.', s: 'Hosted 11 · Tuesday padel', bg: '#D3EFEF', a: 'Thank' },
+    { i: 'NR', n: 'Noura R.', s: "Hosted 9 · Ladies' run club", bg: '#F9D6D3', a: 'Thank' },
+    { i: 'FH', n: 'Faisal H.', s: 'Hosted 7 · 5-a-side', bg: '#E1E8E7', a: 'Thank' },
+  ]);
+}
+
+function drawGym() {
+  stackChart('chartGym', [[520,534,548,560,577,590,604,612],[150,140,135,131,120,121,112,133],[33,30,31,29,27,24,27,41]], ['Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'], [C.green, C.orange, C.coral]);
+  people('callGym', [
+    { i: 'AK', n: 'Abdullah K.', s: 'Member 3 yrs · last came 34 days ago · loved 6pm HIIT', bg: '#F9D6D3', a: 'Call', warm: true },
+    { i: 'LM', n: 'Lama M.', s: "Member 2 yrs · 31 days · Ladies' Spin", bg: '#F9D6D3', a: 'Call', warm: true },
+    { i: 'OT', n: 'Omar T.', s: 'Member 18 mo · 40 days · morning swim', bg: '#F9D6D3', a: 'Call', warm: true },
+    { i: 'RS', n: 'Reem S.', s: 'Member 14 mo · 29 days · Pilates', bg: '#FCE3C4', a: 'Message' },
+    { i: 'YH', n: 'Yousef H.', s: 'Member 11 mo · 33 days · padel', bg: '#FCE3C4', a: 'Message' },
+  ]);
+  rows('classesGym', [
+    { n: '6pm HIIT', v: 76, over: 24, c: C.green, label: '100%', small: '+31 waiting', cls: 'down' },
+    { n: "Ladies' Spin", v: 80, over: 20, c: C.green, label: '100%', small: '+27 waiting', cls: 'down' },
+    { n: 'Hyrox Engine', v: 92, c: C.green, label: '92%' },
+    { n: 'Yoga Flow', v: 81, c: C.aqua, label: '81%' },
+    { n: 'Boxing basics', v: 64, c: C.orange, label: '64%' },
+    { n: '7am Pilates', v: 38, c: C.coral, label: '38%', small: 'move it?', cls: 'muted' },
+  ]);
+  heat('heatGym', hours, days, [[3,2,3,2,2,1,4],[3,3,4,3,3,2,5],[4,4,4,4,4,5,6],[5,5,6,5,6,7,7],[10,9,10,9,10,8,9],[9,8,9,8,10,9,8]], C.aqua);
+  const f = document.getElementById('funnelGym'); f.innerHTML = '';
+  [['Joined', 58, 100], ['First session', 47, 81], ['3 sessions', 27, 46], ['Still active day 30', 41, 71]].forEach(([n, c, w]) => f.appendChild(h(`<div class="fstep"><span>${n}</span><span><span class="fbar" style="width:${w}%">${w}%</span></span><span class="val" style="text-align:right;font-weight:600">${c}</span></div>`)));
+  table('coachesGym', ['Coach', 'Fill', 'Come back'], [['Coach Hadi', '96%', '<span class="up">78%</span>'], ['Coach Dana', '91%', '<span class="up">74%</span>'], ['Coach Rami', '83%', '61%'], ['Coach Mona', '64%', '<span class="down">42%</span>']]);
+}
+
+function drawCommunity() {
+  lineChart('chartCm', [
+    { data: [96,104,112,120,131,140,151,160,166,172,179,186], color: C.teal, area: true },
+    { data: [52,58,61,70,74,80,92,96,101,104,110,119], color: C.orange, area: true },
+  ], weeks, { max: 200 });
+  rows('courtsCm', [
+    { n: 'Padel Court 1', v: 88, c: C.green, label: '88%', small: '4% no-show', cls: 'muted' },
+    { n: 'Padel Court 2', v: 84, c: C.green, label: '84%', small: '5% no-show', cls: 'muted' },
+    { n: 'Padel Court 3', v: 41, c: C.orange, label: '41%', small: 'open Thu?', cls: 'muted' },
+    { n: 'Tennis 1', v: 57, c: C.aqua, label: '57%', small: '7% no-show', cls: 'muted' },
+    { n: 'Multi-use court', v: 49, c: C.aqua, label: '49%', small: 'football Fri', cls: 'muted' },
+    { n: 'Squash 1', v: 33, c: C.coral, label: '33%', small: '9% no-show', cls: 'muted' },
+  ]);
+  const mix = [['Regulars (weekly)', 38, C.teal], ['Sometimes', 33, C.aqua], ['New this month', 8, C.orange], ['Not played yet', 21, C.coral]];
+  document.getElementById('mixCm').innerHTML = mix.map(([, v, c]) => `<span style="width:${v}%;background:${c}"></span>`).join('');
+  document.getElementById('mixLegend').innerHTML = mix.map(([n, v, c]) => `<span><i style="background:${c}"></i>${n} ${v}%</span>`).join('');
+  people('peopleCm', [
+    { i: 'KH', n: 'Khalid H.', s: 'Joined 9 days ago · padel, intermediate', bg: '#FCE3C4', a: 'Invite to a game', warm: true },
+    { i: 'DA', n: 'Dana A.', s: 'Joined 6 days ago · tennis, beginner', bg: '#FCE3C4', a: 'Invite to a game', warm: true },
+    { i: 'TS', n: 'Turki S.', s: 'Regular · 31 games · hosts Thursday padel', bg: '#D3EFEF', r: 'Your captain' },
+  ]);
+  rows('levelsCm', [
+    { n: 'Beginner', v: 31, c: C.aqua, small: '12% of games', cls: 'down' },
+    { n: 'Intermediate', v: 47, c: C.orange, small: '61% of games', cls: 'muted' },
+    { n: 'Advanced', v: 22, c: C.teal, small: '27% of games', cls: 'muted' },
+  ]);
+  table('groupsCm', ['Group', 'People', 'Games'], [['Harka Baraka', '24', '<span class="up">31</span>'], ['Padel guys', '18', '22'], ['Morning runners', '12', '9'], ['Ladies tennis', '9', '<span class="down">2</span>']]);
+}
+
+const VIEWS = {
+  company: { draw: drawCompany, who: '<b>Your Company</b> · Company plan', ava: 'YC' },
+  gym: { draw: drawGym, who: '<b>Your Gym</b> · Gym plan', ava: 'YG' },
+  community: { draw: drawCommunity, who: '<b>Andorra Sports Tribe</b> · Community', ava: 'AS' },
+};
+let current = 'company';
+function show(v) {
+  current = v;
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.view === v));
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === v));
+  document.getElementById('whoName').innerHTML = VIEWS[v].who;
+  document.getElementById('whoAva').textContent = VIEWS[v].ava;
+  requestAnimationFrame(() => { VIEWS[v].draw(); sparks(document.getElementById(v)); });
+}
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => show(t.dataset.view)));
+document.getElementById('liveOnly').addEventListener('change', (e) => { document.body.classList.toggle('hide-road', e.target.checked); VIEWS[current].draw(); });
+document.querySelectorAll('#period button').forEach(b => b.addEventListener('click', () => { document.querySelectorAll('#period button').forEach(x => x.classList.toggle('on', x === b)); }));
+window.addEventListener('resize', () => VIEWS[current].draw());
+show('company');
+</script>
+</body>
+</html>
