@@ -1,0 +1,481 @@
+<title>Beast Tribe Roles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Poppins:wght@400;500;600&display=swap">
+<style>
+/* Layout: one reading column; a sticky role picker; each role is a "you do → app shows" ledger, then the decisions list. */
+:root {
+  --bg: #022B2B; --surface: #053838; --raise: #0A4545; --ink: #EAF4F2; --soft: #A3C2BE; --faint: #6E928D;
+  --rule: rgba(234,244,242,.13); --orange: #E88F24; --aqua: #56C4C4; --fix: #F07A6A; --ok: #7FD39B; --wait: #E8C04A;
+  --display: "Montserrat", "Arial Black", system-ui, sans-serif; --body: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) {
+  --bg: #EFF5F4; --surface: #FFFFFF; --raise: #E2EDEB; --ink: #062A2A; --soft: #3F5F5B; --faint: #6A8783;
+  --rule: rgba(6,42,42,.13); --orange: #B9640F; --aqua: #17807F; --fix: #C2412F; --ok: #2E8B57; --wait: #9A7400; color-scheme: light } }
+:root[data-theme="light"] {
+  --bg: #EFF5F4; --surface: #FFFFFF; --raise: #E2EDEB; --ink: #062A2A; --soft: #3F5F5B; --faint: #6A8783;
+  --rule: rgba(6,42,42,.13); --orange: #B9640F; --aqua: #17807F; --fix: #C2412F; --ok: #2E8B57; --wait: #9A7400; color-scheme: light }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 15px/1.6 var(--body); margin: 0 }
+.wrap { max-width: 1040px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 80px }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -.01em }
+h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 900; text-transform: uppercase; line-height: 1.05 }
+h2 { font-size: clamp(22px, 3.2vw, 30px); font-weight: 800 }
+h3 { font-size: 17px; font-weight: 700 }
+p { margin: 0 }
+.lede { color: var(--soft); max-width: 66ch; margin-top: 12px; font-size: 16px }
+.eyebrow { font: 700 11px/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--orange) }
+a { color: var(--aqua) }
+:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px }
+
+/* three doors */
+.doors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 28px }
+.door { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: 16px; display: grid; gap: 6px; min-width: 0 }
+.door b { font-family: var(--display); font-size: 15px }
+.door span { color: var(--soft); font-size: 13.5px }
+.door code { font-size: 12px; color: var(--aqua); word-break: break-all }
+
+/* picker */
+.picker { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 12px; margin-top: 28px; border-bottom: 1px solid var(--rule) }
+.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px }
+.chips::-webkit-scrollbar { display: none }
+.chip { flex: none; border: 1px solid var(--rule); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 7px 13px; font: 600 13px/1 var(--body); cursor: pointer; text-decoration: none; white-space: nowrap }
+.chip:hover { border-color: var(--aqua) }
+.chip[aria-pressed="true"] { background: var(--orange); border-color: var(--orange); color: #1B1205 }
+
+/* role */
+.role { padding-block: 44px 8px; scroll-margin-top: 70px; border-bottom: 1px solid var(--rule) }
+.role-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 16px }
+.tag { font: 600 12px/1 var(--body); padding: 6px 10px; border-radius: 999px; border: 1px solid var(--rule); color: var(--soft) }
+.tag.pay { color: var(--orange); border-color: color-mix(in srgb, var(--orange) 45%, transparent) }
+.tag.free { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, transparent) }
+.who { color: var(--soft); margin-top: 8px; max-width: 70ch }
+.getin { margin-top: 14px; display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px 16px; font-size: 14px }
+.getin dt { color: var(--faint); font: 700 11px/1.9 var(--display); letter-spacing: .1em; text-transform: uppercase }
+.getin dd { margin: 0 }
+
+.ledger { margin-top: 22px; border: 1px solid var(--rule); border-radius: 14px; overflow: hidden; background: var(--surface) }
+.lrow { display: grid; grid-template-columns: 34px minmax(0, 1fr) 28px minmax(0, 1fr); gap: 0 12px; padding: 14px 16px; border-top: 1px solid var(--rule); align-items: start }
+.lrow:first-child { border-top: 0 }
+.lhead { background: var(--raise); padding-block: 9px; font: 700 11px/1.4 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--soft) }
+.num { font: 800 13px/1.6 var(--display); color: var(--orange); font-variant-numeric: tabular-nums }
+.arrow { color: var(--faint); text-align: center; font-weight: 700 }
+.where { display: inline-block; font: 600 11.5px/1.3 var(--body); color: var(--aqua); background: color-mix(in srgb, var(--aqua) 12%, transparent); border-radius: 6px; padding: 3px 7px; margin-bottom: 5px }
+.where.app { color: var(--orange); background: color-mix(in srgb, var(--orange) 12%, transparent) }
+.where.staff { color: var(--soft); background: var(--raise) }
+.cell p { font-size: 14.5px }
+
+.after { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px }
+.box { border: 1px solid var(--rule); border-radius: 14px; padding: 14px 16px; min-width: 0 }
+.box h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--soft); margin-bottom: 8px }
+.box ul { margin: 0; padding-inline-start: 18px; display: grid; gap: 4px; font-size: 14px }
+.box.recs a { color: var(--ink); text-decoration-color: var(--faint) }
+.box.recs .k { font: 700 11px var(--display); color: var(--faint); margin-inline-end: 6px }
+
+/* proposal */
+.proposal { margin-top: 56px }
+.compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 18px }
+.navcol { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: 16px; min-width: 0 }
+.navcol h3 { margin-bottom: 4px }
+.navcol .sub { color: var(--faint); font-size: 13px; margin-bottom: 12px }
+.navlist { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none }
+.navlist li { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 10px; font-size: 13.5px; padding: 7px 0; border-top: 1px solid var(--rule) }
+.navlist li:first-child { border-top: 0 }
+.navlist b { font-family: var(--display); font-size: 13px }
+.navlist span { color: var(--soft) }
+.old { display: flex; flex-wrap: wrap; gap: 6px }
+.old span { font-size: 12.5px; border: 1px dashed var(--rule); border-radius: 6px; padding: 4px 8px; color: var(--soft) }
+
+/* decisions */
+.decisions { margin-top: 56px; scroll-margin-top: 70px }
+.dbar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; margin-top: 16px }
+.tally { font-size: 13.5px; color: var(--soft); font-variant-numeric: tabular-nums }
+.tally b { color: var(--ink) }
+.store { font-size: 12.5px; color: var(--faint); margin-top: 6px }
+.group { margin-top: 26px }
+.group > h3 { display: flex; gap: 10px; align-items: baseline }
+.group > h3 small { font: 400 13px var(--body); color: var(--faint) }
+.rec { display: grid; grid-template-columns: 6px minmax(0, 1fr) auto; gap: 14px; background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 14px 16px 14px 0; margin-top: 10px; scroll-margin-top: 80px; overflow: hidden }
+.rec .stripe { border-radius: 0 4px 4px 0 }
+.rec.fix .stripe { background: var(--fix) } .rec.simplify .stripe { background: var(--aqua) } .rec.decide .stripe { background: var(--orange) }
+.rec h4 { margin: 0; font: 700 15px/1.35 var(--display) }
+.rec .id { font: 700 11px var(--display); color: var(--faint); margin-inline-end: 6px }
+.rec p { color: var(--soft); font-size: 14px; margin-top: 4px }
+.rec p b { color: var(--ink); font-weight: 600 }
+.rec .for { font-size: 12px; color: var(--faint); margin-top: 6px }
+.vote { display: flex; flex-direction: column; gap: 6px; align-self: center }
+.vote button { border: 1px solid var(--rule); background: transparent; color: var(--soft); border-radius: 8px; padding: 6px 10px; font: 600 12.5px var(--body); cursor: pointer; white-space: nowrap }
+.vote button:hover { border-color: var(--ink); color: var(--ink) }
+.vote button[aria-pressed="true"][data-v="yes"] { background: var(--ok); border-color: var(--ok); color: #06210F }
+.vote button[aria-pressed="true"][data-v="no"] { background: var(--raise); border-color: var(--faint); color: var(--ink) }
+.vote button[aria-pressed="true"][data-v="talk"] { background: var(--wait); border-color: var(--wait); color: #241B00 }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--soft); margin-top: 10px }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-inline-end: 6px; vertical-align: -1px }
+
+footer { margin-top: 60px; color: var(--faint); font-size: 13px }
+
+@media (max-width: 760px) {
+  .doors, .after, .compare { grid-template-columns: minmax(0, 1fr) }
+  .lrow { grid-template-columns: 26px minmax(0, 1fr); gap: 6px 10px }
+  .lrow .arrow { display: none }
+  .lrow .cell.app { grid-column: 2 }
+  .lhead { display: none }
+  .getin { grid-template-columns: minmax(0, 1fr) }
+  .rec { grid-template-columns: 6px minmax(0, 1fr) }
+  .vote { grid-column: 2; flex-direction: row; flex-wrap: wrap }
+  .navlist li { grid-template-columns: 90px minmax(0, 1fr) }
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth } }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Beast Tribe · how it fits together · 8 Oct 2026</p>
+  <h1>Who does what</h1>
+  <p class="lede">Every kind of person who touches Beast Tribe: how they get in, what they do on the dashboard, and what that changes on members' phones. Under each role are the things I'd simplify. At the bottom, mark each recommendation Approve, Not now or Discuss. Your choices are saved and I can read them.</p>
+
+  <div class="doors">
+    <div class="door"><b>The app</b><span>Everyone who trains. Board, Explore, Tribe, You, and the Play button. Members never pay.</span><code>iPhone + Android</code></div>
+    <div class="door"><b>Partner dashboard</b><span>Gyms, companies, schools, venues, coaches and other paying partners. What shows depends on what they run.</span><code>beast-tribe.vercel.app/partner</code></div>
+    <div class="door"><b>Staff dashboard</b><span>The Beast Tribe team: leads, partners, communities, captains, places and safety.</span><code>beast-tribe.vercel.app</code></div>
+  </div>
+
+  <nav class="picker" aria-label="Roles">
+    <div class="chips" id="chips"></div>
+  </nav>
+
+  <main id="roles"></main>
+
+  <section class="proposal" id="proposal">
+    <p class="eyebrow">The big change</p>
+    <h2>Rebuild both dashboards around jobs, not tables</h2>
+    <p class="lede">Today a gym sees 12 menu items and staff see 15, several doing the same job. I'd reorganise both around the five jobs people actually come to do. Nothing in the app has to change for this.</p>
+    <div class="compare">
+      <div class="navcol">
+        <h3>Partner dashboard</h3>
+        <p class="sub">Same five sections for every kind; the words change with what they run.</p>
+        <div class="old" aria-label="Today"><span>Overview</span><span>Club</span><span>Members</span><span>Classes</span><span>Facilities</span><span>Bookings</span><span>Teams</span><span>Challenges</span><span>Report</span><span>Poster</span><span>Plan</span><span>Profile</span></div>
+        <ul class="navlist" style="margin-top:14px">
+          <li><b>Today</b><span>One to-do list: unpaid, attendance to mark, quiet members, nothing scheduled. Numbers for the week.</span></li>
+          <li><b>People</b><span>Members (remove, nudge), and for companies their teams. One list.</span></li>
+          <li><b>Schedule</b><span>Classes, courts and bookings on one week view. Mark paid in one place.</span></li>
+          <li><b>Grow</b><span>Join code, poster, guest classes, the notice members see, ask for a Beast Captain.</span></li>
+          <li><b>Account</b><span>Profile and plan. Renaming the business renames the community too.</span></li>
+          <li><b>Wellness</b><span>Companies and gyms only: challenges and the monthly report.</span></li>
+        </ul>
+      </div>
+      <div class="navcol">
+        <h3>Staff dashboard</h3>
+        <p class="sub">Six sections instead of fifteen; one queue for safety.</p>
+        <div class="old"><span>Dashboard</span><span>Business</span><span>Leads</span><span>Partners</span><span>Communities</span><span>Captains</span><span>Users</span><span>Events</span><span>Locations</span><span>Feed</span><span>Comments</span><span>Moderation</span><span>Workouts</span><span>Payouts</span><span>Security</span></div>
+        <ul class="navlist" style="margin-top:14px">
+          <li><b>Today</b><span>Dashboard + Business merged: one "active member" number, trials ending, money.</span></li>
+          <li><b>Pipeline</b><span>Lead → partner → community in one flow, ending with a sign-in email.</span></li>
+          <li><b>Communities</b><span>Each one holds its leaders, captain, default groups and package.</span></li>
+          <li><b>Safety</b><span>Photos, posts, comments and reports in one queue, each with Resolve.</span></li>
+          <li><b>Places</b><span>Popular spots and staff sessions.</span></li>
+          <li><b>People</b><span>Members and staff roles. Workouts hidden while Train is off.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="decisions" id="decisions">
+    <p class="eyebrow">Your call</p>
+    <h2>Recommendations</h2>
+    <div class="legend"><span><i style="background:var(--fix)"></i>Fix: something is broken or wrong today</span><span><i style="background:var(--aqua)"></i>Simplify: works, but harder than it needs to be</span><span><i style="background:var(--orange)"></i>Decide: a product choice only you can make</span></div>
+    <div class="dbar">
+      <div class="chips" id="filters" role="group" aria-label="Filter"></div>
+      <div class="tally" id="tally"></div>
+    </div>
+    <p class="store" id="store">Loading saved choices…</p>
+    <div id="recs"></div>
+  </section>
+
+  <footer>Mapped from the code on 8 Oct 2026: the app (app/, src/), the partner dashboard (admin/src/app/(partner)) and the staff dashboard (admin/src/app/(admin)). Prices are the proposed ones in plans.ts.</footer>
+</div>
+
+<script>
+const ROLES = [
+  { id: 'member', name: 'Member', tag: ['free', 'Free, always'], who: 'Anyone who trains. Finds sessions near them, joins, hosts their own, books courts.',
+    getin: [['Gets in', 'Downloads the app, creates an account, then three steps: About you, Your sports, Join your community. Everyone is in the open Beast Tribe community.'], ['Uses', 'The app only']],
+    flow: [
+      ['app', 'Board', 'Opens the app.', 'Today\'s sessions in their city, their own sessions first. The city comes from the phone\'s location.'],
+      ['app', 'Board or Explore', 'Taps a session and joins.', 'Gets a spot, or a place on the waiting list when full. The session chat opens; the host is told someone joined.'],
+      ['app', 'Play', 'Picks sport, where it shows, city, place, day, time, spots, level.', 'The session goes on the Board for that community or city, with an Invite button.'],
+      ['app', 'Explore › Book a court', 'Books a free time at a venue.', 'A session is created. Everyone who joins sees their own share of the court price; they pay at the venue and the venue ticks Paid.'],
+      ['app', 'You › Training partners', 'Turns on "open to training partners".', 'Other open members with similar sports see them. Invites always point to a real session, never a private chat.'],
+      ['app', 'Tribe › Communities', 'Asks "Want a community of your own?"', 'A lead lands in the staff dashboard. Members can\'t create communities themselves.'],
+    ],
+    cant: ['Create a community', 'Change a session after posting it (only cancel)', 'See anyone\'s level rating'],
+    recs: ['M1', 'M3', 'M4', 'F10'] },
+
+  { id: 'group', name: 'Group leader', tag: ['free', 'Free, any member'], who: 'A member who starts a group for friends or a crew inside a community.',
+    getin: [['Gets in', 'Tribe › Groups › Start a group, or a community page › Start a group here.'], ['Uses', 'The app only. Staff can set default groups that new community members join automatically.']],
+    flow: [
+      ['app', 'Start a group', 'Picks a badge, name, community, who can find it (open in that community or invite only) and who it\'s for (everyone, women only, men only).', 'The group appears under Tribe › Groups. Invite only is the default.'],
+      ['app', 'Group page', 'Shares the code or invites people by name.', 'They join with the code. Only the leader can invite.'],
+      ['app', 'Play', 'Chooses the group under "Who it\'s for".', 'The session is visible to group members only.'],
+    ],
+    cant: ['Hand leadership to someone else', 'Have more than 20 groups'],
+    recs: ['M5', 'F11', 'M3'] },
+
+  { id: 'leader', name: 'Club leader', tag: ['free', 'Free, one club'], who: 'Someone who already runs a run club or padel group and brings their people. They are the members companies and gyms pay for.',
+    getin: [['Gets in', 'Asks in the app. Staff create the community, add them as leader by email, then verify it.'], ['Uses', 'The app. A "leader" partner account also exists in the dashboard, which can create a second club by mistake.']],
+    flow: [
+      ['staff', 'Staff › Leads', 'Staff see the request and open it.', 'Nothing yet in the app.'],
+      ['staff', 'Staff › Communities', 'Create the community, add the leader by their app email, press Verify.', 'The leader gets a notification. The club shows under Tribe › Communities › Community leaders with one-tap Join.'],
+      ['app', 'Community page', 'Leader taps Edit club: name, about, notice, invite only or anyone can find it.', 'Members see the new notice and description straight away.'],
+      ['app', 'Play', 'Hosts sessions in the club.', 'They show on members\' Boards with "Club leader: name".'],
+    ],
+    cant: ['Create the club themselves', 'Charge for sessions (that moves them to the Coach plan)'],
+    recs: ['D1', 'S3', 'P7'] },
+
+  { id: 'captain', name: 'Beast Captain', tag: ['pay', 'Paid by the community, hourly'], who: 'A coach Beast Tribe places in a community to keep its Board alive: three open sessions a week by default.',
+    getin: [['Gets in', 'Staff › Captains › Assign, using the coach\'s app email.'], ['Paid', 'The community pays an hourly rate for sessions held; the captain gets that rate less Beast Tribe\'s 20%. Members never see rates.']],
+    flow: [
+      ['staff', 'Staff › Captains', 'Assign the captain to a community and set terms.', 'The captain gets a notification that opens Play. They\'re added to the community.'],
+      ['app', 'Board', 'Captain opens the app.', 'A card shows "2 of 3 sessions on the board this week".'],
+      ['app', 'Play', 'Uses "As Beast Captain": open session, once or weekly for 4 or 8 weeks.', 'Members see "Hosted by name · Beast Captain" and "Come if you can". No spot limit, no waiting list.'],
+      ['app', 'Reminders', 'Falls behind on the week.', 'Reminders on Sunday, Tuesday and Thursday.'],
+      ['staff', 'Staff › Captains', 'Open the monthly statement.', 'Hours held, what the community owes, what the captain is paid.'],
+    ],
+    cant: ['See the community\'s rate', 'Assign themselves'],
+    recs: ['S3', 'P7'] },
+
+  { id: 'gym', name: 'Gym or club', tag: ['pay', 'Studio 790 · Club 1,590 SAR a month'], who: 'A gym, studio or sports club with its own members. Gets a private club in the app, classes, courts and a way to win new customers.',
+    getin: [['Gets in', 'Fills the form on /for-gyms. Staff create the account with a 30-day trial.'], ['Uses', 'Partner dashboard: all sections today (Overview, Club, Members, Classes, Facilities, Bookings, Teams, Challenges, Report, Poster, Plan, Profile).']],
+    flow: [
+      ['staff', 'Staff › Leads › Create account', 'Staff type an email and password; type and plan are filled in.', 'Nothing in the app yet. The password is passed on by hand.'],
+      ['partner', 'Club', 'Taps "Create my club".', 'A private community with a join code exists. Nobody sees it yet.'],
+      ['partner', 'Poster or code', 'Prints the QR poster or shares the code.', 'Members enter the code under Tribe › Communities › Have an invite code? and show up in Members.'],
+      ['partner', 'Classes › New', 'Adds a class, weekly for up to 12 weeks. Can open it to guests with a price and spots.', 'Members see it on their Board, free. People outside see "Join as a guest · SAR 60" on their city\'s Board and pay at the front desk.'],
+      ['partner', 'Facilities', 'Adds a court or pool: hours, slot length, price, who can book.', 'It appears under Explore › Book a court and in Play › Place. A booking becomes a session with the price split.'],
+      ['partner', 'Bookings or class page', 'Marks people paid, marks attendance.', '"Paid" shows on each player\'s session.'],
+      ['partner', 'Club › Members to nudge', 'Sees quiet and at-risk members.', 'Can nudge them; the member gets a notification.'],
+    ],
+    cant: ['Remove a member', 'Give logins to their coaches', 'Take payment online (pay at the venue for now)'],
+    recs: ['P1', 'P3', 'P2', 'O1', 'D3', 'D5'] },
+
+  { id: 'company', name: 'Company', tag: ['pay', '10 SAR per seat a month'], who: 'An employer giving staff a private community, team challenges and a wellness report.',
+    getin: [['Gets in', 'Fills the form on /for-companies. Staff create the account.'], ['Uses', 'Partner dashboard: Community, People, Sessions, Teams, Challenges, Report, Poster.']],
+    flow: [
+      ['partner', 'Community', 'Creates the company community.', 'A private community with a code.'],
+      ['partner', 'Poster or code', 'Sends the code to employees.', 'Employees join in the app; the community page shows "From Company" notices.'],
+      ['partner', 'Teams', 'Adds teams (departments, floors).', 'Employees pick their own team in the app.'],
+      ['partner', 'Challenges', 'Starts a challenge: steps, active days, minutes or sessions; by person or team; optional prize.', 'Employees choose to join. Only those who join appear on the ranking.'],
+      ['partner', 'Sessions', 'Adds sessions (yoga at lunch, Thursday padel).', 'They show on employees\' Boards.'],
+      ['partner', 'Report', 'Opens the 30-day report.', 'Totals by team only. Nobody\'s own health data is ever shown.'],
+    ],
+    cant: ['See one person\'s steps or health', 'Add a nutritionist or coach themselves (staff do it)'],
+    recs: ['P2', 'O1', 'M2'] },
+
+  { id: 'school', name: 'School', tag: ['pay', 'Plan to agree'], who: 'A school or university with students, classes and its own courts.',
+    getin: [['Gets in', 'No public form yet; staff create it by hand.'], ['Uses', 'Partner dashboard: Community, Members, Classes, Facilities, Bookings, Poster.']],
+    flow: [
+      ['partner', 'Community + code', 'Creates the community and shares the code.', 'Students join in the app.'],
+      ['partner', 'Classes and Facilities', 'Adds classes and courts; can keep courts for students only.', 'Students see them first; outsiders see only what is opened to guests.'],
+    ],
+    cant: ['Start challenges'],
+    recs: ['F9', 'O2', 'P6'] },
+
+  { id: 'venue', name: 'Venue (courts)', tag: ['pay', '1,000 SAR a month'], who: 'A padel, football or tennis venue that wants its free times filled. Beast Tribe takes nothing from bookings.',
+    getin: [['Gets in', 'The form on /for-gyms ("Restaurant or venue"). Today this creates a restaurant by mistake.'], ['Uses', 'Partner dashboard: Facilities and Bookings.']],
+    flow: [
+      ['partner', 'Facilities', 'Adds each court: hours, booking length, price, who can book (everyone, women only, members only), half-courts, a daily limit.', 'Courts appear under Explore › Book a court and as a Place in Play.'],
+      ['app', 'Member books', 'A member picks a free time.', 'A session is created; the price is split between the players who are in.'],
+      ['partner', 'Bookings', 'Ticks each player paid at the desk.', 'Each player sees "Paid" on their share.'],
+    ],
+    cant: ['Take online payment yet (needs your Moyasar or Tap account)'],
+    recs: ['F1', 'F2', 'P3'] },
+
+  { id: 'coach', name: 'Coach', tag: ['pay', '149 SAR a month'], who: 'A personal trainer or coach with clients.',
+    getin: [['Gets in', 'The form on /for-gyms. Staff create the account and set weekly availability.'], ['Uses', 'Partner dashboard: Sessions (Workouts hidden while Train is off). In the app: You › My trainees.']],
+    flow: [
+      ['staff', 'Staff › Partners', 'Staff set the coach\'s weekly hours.', 'Members can add the coach in Play › More options › Add a coach and see free times.'],
+      ['app', 'Member books', 'A member picks a coach time.', 'The session is booked with the coach. The coach is not told today.'],
+      ['partner', 'Sessions', 'Posts group sessions.', 'They show on the city Board.'],
+      ['app', 'You › My trainees', 'Sends requests, keeps notes and measurements.', 'Trainees choose what they share.'],
+    ],
+    cant: ['Set their own hours (staff do it)', 'Get told about new bookings'],
+    recs: ['F12', 'P3'] },
+
+  { id: 'other', name: 'Restaurant, nutritionist, event company', tag: ['pay', 'Plan to agree'], who: 'Partners that add to a community\'s package or put on events.',
+    getin: [['Gets in', 'Staff create the account; restaurants and venues share one form option.'], ['Uses', 'Partner dashboard: Sessions or Events only.']],
+    flow: [
+      ['staff', 'Staff › Partners', 'Staff set the restaurant\'s offer.', 'It shows under You › Nutrition › Eat well.'],
+      ['staff', 'Staff › Communities › Package', 'Add a nutritionist, coach or kitchen to a company\'s package.', 'Employees see them on the community page with "Start working together".'],
+      ['partner', 'Events', 'An event company posts an event.', 'It shows on the city Board.'],
+    ],
+    cant: ['Edit their own offer', 'See the right plan (the Plan page shows the coach price)'],
+    recs: ['F2', 'O2', 'P7'] },
+
+  { id: 'guest', name: 'Guest', tag: ['free', 'Free (pays the venue)'], who: 'Someone outside a private community: a friend brought along, or a stranger joining a guest class.',
+    getin: [['Gets in', 'A session link from a host who turned on "Guests can join with the link", or a guest class on their city\'s Board.'], ['Uses', 'The app']],
+    flow: [
+      ['app', 'Session link', 'Opens the link.', 'A preview of the session and "Join as a guest". If they don\'t have the app yet, the link is lost after sign-up.'],
+      ['app', 'Board', 'Sees "Guests SAR 60" on a gym class.', 'Joins in one tap; pays at the front desk. When guest spots run out, it says so.'],
+    ],
+    cant: ['See the community\'s other sessions'],
+    recs: ['F3'] },
+
+  { id: 'staff', name: 'Beast Tribe staff', tag: ['', 'Admin or moderator'], who: 'You and your team. Admins see everything; moderators see only Feed, Comments and Moderation.',
+    getin: [['Gets in', 'Staff dashboard login with two-step sign-in.'], ['Daily', 'Moderation queue, new leads, trials ending, captains\' week.']],
+    flow: [
+      ['staff', 'Moderation', 'Approve or reject photos.', 'A rejected photo disappears everywhere at once.'],
+      ['staff', 'Feed, Comments', 'Hide a post or comment.', 'It leaves the Tribe feed. Posts can\'t be brought back today; comments can.'],
+      ['staff', 'Leads → Partners', 'Turn a lead into a partner account.', 'See each partner\'s steps above.'],
+      ['staff', 'Communities', 'Create, set seats and contract end, new code, leaders, default groups, package.', 'Members see the community, its leaders and package in the app.'],
+      ['staff', 'Locations', 'Add a popular spot with a photo.', 'It shows in Play › Place for its city.'],
+      ['staff', 'Users', 'Suspend, reset password.', 'A suspended member can\'t sign in.'],
+    ],
+    cant: ['Close a report (no Resolve button)', 'Invite a leader or captain who hasn\'t signed up yet'],
+    recs: ['S1', 'F4', 'F5', 'F6', 'S2', 'F7'] },
+];
+
+const RECS = [
+  // Fix
+  { id: 'F1', t: 'fix', title: 'Venue leads become restaurants', body: 'A courts venue signing up through the form is created as a Restaurant, so it gets no Facilities page. <b>Map venue to venue.</b>', for: 'Venue' },
+  { id: 'F2', t: 'fix', title: 'Plan page shows the wrong prices', body: 'Club leaders, restaurants, nutritionists and event companies see the 149 SAR coach plan. A free leader is told "free" and shown a price. <b>Show each kind its own plan, and nothing for free leaders.</b>', for: 'Partners' },
+  { id: 'F3', t: 'fix', title: 'Guest links get lost at sign-up', body: 'Someone without the app opens a session link, signs up, and lands on the Board without the session. <b>Keep the link through sign-up and open it at the end.</b>', for: 'Guest' },
+  { id: 'F4', t: 'fix', title: 'Reports can never be closed', body: 'User reports pile up as "pending" in two places. <b>Add Resolve and Dismiss, in one Safety queue.</b>', for: 'Staff' },
+  { id: 'F5', t: 'fix', title: 'Hidden posts can\'t be restored', body: 'Comments have Restore; posts don\'t. <b>Add Restore for posts.</b>', for: 'Staff' },
+  { id: 'F6', t: 'fix', title: 'Train leftovers in the staff dashboard', body: 'Workouts and Payouts still show while Train is off, and "active members" counts only logged workouts. <b>Hide them, and count active as joined, booked or posted.</b>', for: 'Staff' },
+  { id: 'F7', t: 'fix', title: 'Staff session form is behind the app', body: 'No Men only option, different country lists on new and edit, and no way to put a staff session in a community. <b>One shared form.</b>', for: 'Staff' },
+  { id: 'F8', t: 'fix', title: 'Arabic share page calls a group فريق', body: 'The private-session page says team instead of group. <b>Use مجموعة.</b>', for: 'Guest' },
+  { id: 'F9', t: 'fix', title: 'School has no label in the app', body: 'A school community would show a raw key as its type. <b>Add School / مدرسة.</b>', for: 'School' },
+  { id: 'F10', t: 'fix', title: '"Edit" on a session only cancels', body: 'Hosts can\'t fix a wrong time or place; they cancel and start again. <b>Let the host change time, place and spots, and tell the players.</b>', for: 'Member' },
+  { id: 'F11', t: 'fix', title: 'Group page sends you to Play without the group', body: '"Make one group-only" opens Play with nothing selected. <b>Open Play with the group already chosen.</b>', for: 'Group leader' },
+  { id: 'F12', t: 'fix', title: 'Coaches aren\'t told about bookings', body: 'A member books a coach\'s time and the coach gets nothing. <b>Send the coach a notification.</b>', for: 'Coach' },
+  // Simplify: partner
+  { id: 'P1', t: 'simplify', title: 'Merge Overview and Club into "Today"', body: 'Both show members, this week and what to do, each with its own checklist. <b>One page, one to-do list.</b>', for: 'Partner dashboard' },
+  { id: 'P2', t: 'simplify', title: 'One "People" page', body: 'Members is read-only and Teams holds only names. <b>One list where partners can remove members and, for companies, set teams.</b>', for: 'Partner dashboard' },
+  { id: 'P3', t: 'simplify', title: 'One "Schedule" with a week view', body: 'Classes, Facilities and Bookings are three menu items for one job, and paid is marked in two places. <b>One week view of classes, court bookings and who has paid.</b>', for: 'Partner dashboard' },
+  { id: 'P4', t: 'simplify', title: 'One "Grow" page', body: 'Code, poster, guest classes, the notice members see and the captain request live on three pages. <b>Put them together.</b>', for: 'Partner dashboard' },
+  { id: 'P5', t: 'simplify', title: 'Profile renames the community too', body: 'Today the community\'s name and logo are copied once and can\'t be changed. <b>One Account page; changes flow to the app.</b>', for: 'Partner dashboard' },
+  { id: 'P6', t: 'simplify', title: 'Words that match what they run', body: 'Setup screens and the poster always say "club" and "classes", even for companies and schools. <b>Use each kind\'s own words everywhere.</b>', for: 'Partner dashboard' },
+  { id: 'P7', t: 'simplify', title: 'Hide what doesn\'t apply', body: 'The paid Beast Captain offer shows to free leaders; the wellness card shows to schools. <b>Show each kind only what it can use.</b>', for: 'Partner dashboard' },
+  // Simplify: onboarding + staff
+  { id: 'O1', t: 'simplify', title: 'Create partner in one step, with a sign-in email', body: 'Today: lead → account with a typed password → partner creates the club → poster. <b>From the lead, one button creates the account and the community and emails a sign-in link.</b>', for: 'Onboarding' },
+  { id: 'O2', t: 'simplify', title: 'Lead types = partner types', body: 'The form has 4 options for 9 kinds; schools and nutritionists have no way in. <b>One list, the same everywhere.</b>', for: 'Onboarding' },
+  { id: 'S1', t: 'simplify', title: 'Staff dashboard in six sections', body: 'Today, Pipeline, Communities, Safety, Places, People. <b>See the proposal above.</b>', for: 'Staff dashboard' },
+  { id: 'S2', t: 'simplify', title: 'One way to put someone in a community', body: 'The user page sets one community; the community page manages memberships, and they disagree. <b>Manage it only from the community.</b>', for: 'Staff dashboard' },
+  { id: 'S3', t: 'simplify', title: 'Invite leaders and captains by email before they join', body: 'Today it fails if the person hasn\'t signed up. <b>Save the invite and apply it when they create their account.</b>', for: 'Staff dashboard' },
+  // Simplify: app
+  { id: 'M1', t: 'simplify', title: 'One "Have a code?" box', body: 'Community codes and group codes go in different boxes with no hint which is which. <b>One box that works out what the code is.</b>', for: 'App' },
+  { id: 'M2', t: 'simplify', title: 'Four words, four meanings', body: '<b>Community</b> = the organisation. <b>Group</b> = your crew inside it. <b>Team</b> = company teams only. <b>Club</b> = only a label on a community run by a gym or leader.', for: 'App + dashboards' },
+  { id: 'M3', t: 'simplify', title: 'In Play, "Who it\'s for" becomes "Where it shows"', body: 'The same words mean women/men only when starting a group. <b>Rename the Play one.</b>', for: 'App' },
+  { id: 'M4', t: 'simplify', title: 'One level scale', body: 'Dreamer/Seeker/Mover at sign-up, Beginner/Intermediate/Advanced in Play. <b>Use Beginner, Intermediate, Advanced everywhere.</b>', for: 'App' },
+  { id: 'M5', t: 'simplify', title: 'Group invites send a notification', body: 'Invites by name are only visible inside the group page. <b>Notify the person invited.</b>', for: 'App' },
+  // Decide
+  { id: 'D1', t: 'decide', title: 'Club leaders live in the app only', body: 'Free leaders run their club from the app (edit, code, members). <b>Drop the "leader" dashboard account</b> so nobody ends up with two clubs. Recommended.', for: 'Club leader' },
+  { id: 'D2', t: 'decide', title: 'Which communities are open?', body: 'Product notes say every community is private except Beast Tribe; the app lists "Open communities". <b>Open = Beast Tribe and verified clubs only. Companies, gyms and schools always private.</b> Recommended.', for: 'App' },
+  { id: 'D3', t: 'decide', title: 'Gyms don\'t get "Teams"', body: 'Teams is for company teams. <b>Gyms use groups; branches come with the multi-branch plan.</b>', for: 'Gym' },
+  { id: 'D4', t: 'decide', title: 'What happens when a trial ends?', body: 'Today only a banner. <b>Option: after 7 days\' grace, the dashboard goes read-only; members are never affected.</b>', for: 'Partners' },
+  { id: 'D5', t: 'decide', title: 'Staff logins for partners', body: 'The Studio plan promises "5 coaches included" but each partner has one login. <b>Build coach logins, or drop the promise until then.</b>', for: 'Gym' },
+];
+
+const LABEL = { fix: 'Fix', simplify: 'Simplify', decide: 'Decide' };
+const WHERE = { app: 'app', partner: '', staff: 'staff' };
+const WHERE_TXT = { app: 'App · ', partner: 'Partner dashboard · ', staff: 'Staff dashboard · ' };
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const recById = Object.fromEntries(RECS.map((r) => [r.id, r]));
+
+// Role picker + sections
+const chips = document.getElementById('chips');
+chips.innerHTML = ROLES.map((r) => `<a class="chip" href="#${r.id}">${esc(r.name)}</a>`).join('') + '<a class="chip" href="#proposal">The big change</a><a class="chip" href="#decisions">Recommendations</a>';
+
+document.getElementById('roles').innerHTML = ROLES.map((r) => `
+  <section class="role" id="${r.id}">
+    <div class="role-head"><h2>${esc(r.name)}</h2><span class="tag ${r.tag[0]}">${esc(r.tag[1])}</span></div>
+    <p class="who">${esc(r.who)}</p>
+    <dl class="getin">${r.getin.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
+    <div class="ledger" role="table" aria-label="${esc(r.name)} steps">
+      <div class="lrow lhead" role="row"><span></span><span role="columnheader">They do</span><span></span><span role="columnheader">What happens in the app</span></div>
+      ${r.flow.map(([w, place, act, res], i) => `
+      <div class="lrow" role="row">
+        <span class="num">${i + 1}</span>
+        <div class="cell" role="cell"><span class="where ${WHERE[w]}">${esc(WHERE_TXT[w] + place)}</span><p>${esc(act)}</p></div>
+        <span class="arrow" aria-hidden="true">→</span>
+        <div class="cell app" role="cell"><p>${esc(res)}</p></div>
+      </div>`).join('')}
+    </div>
+    <div class="after">
+      <div class="box"><h3>Can't do</h3><ul>${r.cant.map((c) => `<li>${esc(c)}</li>`).join('')}</ul></div>
+      <div class="box recs"><h3>I'd change</h3><ul>${r.recs.map((id) => `<li><span class="k">${id}</span><a href="#rec-${id}">${esc(recById[id].title)}</a></li>`).join('')}</ul></div>
+    </div>
+  </section>`).join('');
+
+// Recommendations with votes
+const choices = {};
+let filter = 'all';
+const GROUPS = [['fix', 'Fix', 'broken or wrong today'], ['simplify', 'Simplify', 'works, but harder than it needs to be'], ['decide', 'Decide', 'your product calls']];
+
+function renderRecs() {
+  document.getElementById('recs').innerHTML = GROUPS.filter(([t]) => filter === 'all' || filter === t).map(([t, name, sub]) => {
+    const list = RECS.filter((r) => r.t === t);
+    return `<div class="group"><h3>${name} <small>${list.length} · ${sub}</small></h3>${list.map((r) => {
+      const c = choices[r.id];
+      return `<article class="rec ${t}" id="rec-${r.id}"><span class="stripe" aria-hidden="true"></span>
+        <div><h4><span class="id">${r.id}</span>${esc(r.title)}</h4><p>${r.body}</p><p class="for">${esc(r.for)}</p></div>
+        <div class="vote" role="group" aria-label="Your choice for ${r.id}">
+          ${[['yes', 'Approve'], ['no', 'Not now'], ['talk', 'Discuss']].map(([v, l]) => `<button type="button" data-id="${r.id}" data-v="${v}" aria-pressed="${c === v}">${l}</button>`).join('')}
+        </div></article>`;
+    }).join('')}</div>`;
+  }).join('');
+  const n = (v) => Object.values(choices).filter((x) => x === v).length;
+  document.getElementById('tally').innerHTML = `<b>${n('yes')}</b> approved · <b>${n('no')}</b> not now · <b>${n('talk')}</b> to discuss · ${RECS.length - n('yes') - n('no') - n('talk')} open`;
+}
+
+const filters = document.getElementById('filters');
+function renderFilters() {
+  filters.innerHTML = [['all', 'All ' + RECS.length], ...GROUPS.map(([t, n]) => [t, n + ' ' + RECS.filter((r) => r.t === t).length])]
+    .map(([v, l]) => `<button type="button" class="chip" data-f="${v}" aria-pressed="${filter === v}">${l}</button>`).join('');
+}
+filters.addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if (!b) return; filter = b.dataset.f; renderFilters(); renderRecs(); });
+renderFilters();
+
+// Saved choices: shared db when available, this browser otherwise.
+let db = null;
+const storeNote = document.getElementById('store');
+function loadLocal() { try { Object.assign(choices, JSON.parse(localStorage.getItem('bt-roles-choices') || '{}')); } catch (_) {} }
+function saveLocal() { try { localStorage.setItem('bt-roles-choices', JSON.stringify(choices)); } catch (_) {} }
+loadLocal();
+renderRecs();
+
+document.getElementById('recs').addEventListener('click', async (e) => {
+  const b = e.target.closest('button[data-v]'); if (!b) return;
+  const { id, v } = b.dataset;
+  const next = choices[id] === v ? null : v;
+  if (next) choices[id] = next; else delete choices[id];
+  renderRecs();
+  saveLocal();
+  if (db) {
+    try {
+      if (next) await db.collection('decisions').doc(id).set({ choice: next, title: recById[id].title, at: new Date().toISOString() });
+      else await db.collection('decisions').doc(id).delete();
+    } catch (err) { storeNote.textContent = 'Couldn\'t save that choice online; it is kept in this browser.'; }
+  }
+});
+
+(async () => {
+  try {
+    db = window.claude && (await window.claude.use('db'));
+  } catch (_) { db = null; }
+  if (!db) { storeNote.textContent = 'Choices are kept in this browser only.'; return; }
+  storeNote.textContent = 'Choices are saved for you and Claude.';
+  db.collection('decisions').onSnapshot((snap) => {
+    for (const k of Object.keys(choices)) delete choices[k];
+    snap.docs.forEach((d) => { const c = d.data()?.choice; if (c) choices[d.id] = c; });
+    renderRecs();
+    saveLocal();
+  }, () => { storeNote.textContent = 'Couldn\'t reach saved choices; using this browser.'; });
+})();
+
+// Highlight the role in view
+const io = 'IntersectionObserver' in window ? new IntersectionObserver((entries) => {
+  entries.forEach((en) => { if (en.isIntersecting) chips.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', c.getAttribute('href') === '#' + en.target.id)); });
+}, { rootMargin: '-40% 0px -55% 0px' }) : null;
+if (io) document.querySelectorAll('.role, #proposal, #decisions').forEach((s) => io.observe(s));
+</script>
