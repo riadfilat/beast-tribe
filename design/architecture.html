@@ -1,0 +1,245 @@
+<title>How Beast Tribe Works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Poppins:wght@400;500;600&display=swap">
+<style>
+/* Layout: a single column of short chapters, each a picture first and a few lines of text after. */
+:root {
+  --bg: #F2F7F6; --card: #FFFFFF; --tint: #E3EEEC; --ink: #062A2A; --soft: #46625F; --line: rgba(6,42,42,.14);
+  --teal: #023C3C; --orange: #C96F14; --aqua: #17807F; --on-teal: #EAF4F2;
+  --display: "Montserrat", "Arial Black", system-ui, sans-serif; --body: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #021F1F; --card: #053434; --tint: #0A4242; --ink: #EAF4F2; --soft: #A3C2BE; --line: rgba(234,244,242,.14);
+  --teal: #0C5656; --orange: #E88F24; --aqua: #56C4C4; --on-teal: #EAF4F2; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #021F1F; --card: #053434; --tint: #0A4242; --ink: #EAF4F2; --soft: #A3C2BE; --line: rgba(234,244,242,.14);
+  --teal: #0C5656; --orange: #E88F24; --aqua: #56C4C4; --on-teal: #EAF4F2; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 15.5px/1.65 var(--body); margin: 0 }
+.wrap { max-width: 900px; margin: 0 auto; padding-inline: 20px; padding-block: 44px 80px }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; letter-spacing: -.01em }
+h1 { font-size: clamp(32px, 6vw, 52px); font-weight: 900; text-transform: uppercase; line-height: 1 }
+h2 { font-size: clamp(21px, 3.4vw, 28px); font-weight: 800 }
+h3 { font-size: 15px; font-weight: 800 }
+p { margin: 0 }
+.eyebrow { font: 800 11px/1 var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--orange) }
+.lede { color: var(--soft); font-size: 17px; max-width: 60ch; margin-top: 14px }
+.chapter { margin-top: 64px; display: grid; gap: 16px }
+.chapter > p { max-width: 64ch; color: var(--soft) }
+.chapter > p b { color: var(--ink); font-weight: 600 }
+svg.i { width: 22px; height: 22px; stroke-width: 2; flex: none }
+
+/* picture frames */
+.pic { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 22px; overflow-x: auto }
+
+/* big picture */
+.doors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px }
+.door { border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 6px; justify-items: start; background: var(--bg); min-width: 0 }
+.door .ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--tint); color: var(--aqua) }
+.door b { font-family: var(--display); font-size: 14.5px }
+.door span { font-size: 13px; color: var(--soft) }
+.pipes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); height: 36px }
+.pipes i { justify-self: center; width: 2px; background: repeating-linear-gradient(var(--aqua) 0 6px, transparent 6px 11px) }
+.brain { background: var(--teal); color: var(--on-teal); border-radius: 16px; padding: 18px; display: flex; gap: 14px; align-items: center }
+.brain .ic { width: 52px; height: 52px; border-radius: 14px; background: rgba(255,255,255,.1); display: grid; place-items: center; color: #FFB25E; flex: none }
+.brain .ic svg.i { width: 28px; height: 28px }
+.brain b { font-family: var(--display); font-size: 17px; display: block }
+.brain span { font-size: 13.5px; opacity: .85 }
+.helpers { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px }
+.helper { display: inline-flex; gap: 7px; align-items: center; font-size: 13px; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px 6px 9px; background: var(--bg) }
+.helper svg.i { width: 16px; height: 16px; color: var(--orange) }
+.helpers-label { font: 700 11px/1 var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--soft); margin-top: 18px }
+
+/* where it lives */
+.places { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px }
+.place { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: grid; gap: 10px; align-content: start; min-width: 0 }
+.place .top { display: flex; gap: 10px; align-items: center; color: var(--aqua) }
+.place .top h3 { color: var(--ink) }
+.place ul { margin: 0; padding-inline-start: 18px; font-size: 13.5px; color: var(--soft); display: grid; gap: 3px }
+.place .made { font-size: 12px; color: var(--soft); border-top: 1px solid var(--line); padding-top: 8px }
+
+/* nesting picture */
+.nest { display: grid; gap: 12px }
+.community { border: 2px solid var(--teal); border-radius: 16px; padding: 14px; display: grid; gap: 10px }
+.label { display: flex; gap: 8px; align-items: center; font: 800 13px var(--display) }
+.label svg.i { width: 18px; height: 18px; color: var(--orange) }
+.label small { font: 400 12.5px var(--body); color: var(--soft) }
+.inside { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px }
+.thing { background: var(--tint); border-radius: 12px; padding: 11px 12px; display: grid; gap: 3px; min-width: 0 }
+.thing .label { font-size: 12.5px }
+.thing p { font-size: 12.5px; color: var(--soft) }
+.owner { display: flex; gap: 10px; flex-wrap: wrap }
+.owner .thing { flex: 1 1 200px; background: var(--card); border: 1px dashed var(--line) }
+
+/* flow */
+.flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; counter-reset: s }
+.step { position: relative; display: grid; gap: 8px; justify-items: center; text-align: center; padding: 6px 8px; min-width: 0 }
+.step .ic { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; background: var(--tint); color: var(--aqua); position: relative; z-index: 1 }
+.step.hot .ic { background: var(--orange); color: #fff }
+.step:not(:last-child)::after { content: ""; position: absolute; top: 33px; inset-inline-start: calc(50% + 30px); width: calc(100% - 60px); height: 2px; background: var(--line) }
+.step b { font: 800 13px var(--display) }
+.step span { font-size: 12.5px; color: var(--soft) }
+.step .who { font: 700 10.5px var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--orange) }
+
+/* release lanes */
+.lanes { display: grid; gap: 10px }
+.lane { display: grid; grid-template-columns: 170px minmax(0, 1fr) 120px; gap: 14px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px }
+.lane .what { display: flex; gap: 10px; align-items: center; font: 800 13.5px var(--display) }
+.lane .what svg.i { color: var(--aqua) }
+.lane p { font-size: 13.5px; color: var(--soft) }
+.lane .time { justify-self: end; font: 800 13px var(--display); color: var(--orange); text-align: end; font-variant-numeric: tabular-nums }
+
+/* promises */
+.promises { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px }
+.promise { display: flex; gap: 12px; align-items: flex-start; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px }
+.promise svg.i { color: var(--aqua); margin-top: 2px }
+.promise b { display: block; font-family: var(--display); font-size: 13.5px }
+.promise span { font-size: 13.5px; color: var(--soft) }
+
+.status { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px }
+.st { border-radius: 14px; padding: 14px 16px; border: 1px solid var(--line); background: var(--card) }
+.st h3 { display: flex; gap: 8px; align-items: center; margin-bottom: 8px }
+.st ul { margin: 0; padding-inline-start: 18px; font-size: 13.5px; color: var(--soft); display: grid; gap: 4px }
+.st.on h3 svg.i { color: #2E9D61 } .st.off h3 svg.i { color: var(--orange) }
+
+footer { margin-top: 64px; font-size: 13px; color: var(--soft); border-top: 1px solid var(--line); padding-top: 16px }
+
+@media (max-width: 720px) {
+  .doors, .places, .promises, .status { grid-template-columns: minmax(0, 1fr) }
+  .pipes { display: none }
+  .doors { margin-bottom: 12px }
+  .flow { grid-template-columns: minmax(0, 1fr); gap: 4px }
+  .step { grid-template-columns: 54px minmax(0, 1fr); justify-items: start; text-align: start; column-gap: 12px }
+  .step .ic { grid-row: span 3 }
+  .step:not(:last-child)::after { top: 60px; inset-inline-start: 34px; width: 2px; height: calc(100% - 50px) }
+  .lane { grid-template-columns: minmax(0, 1fr) }
+  .lane .time { justify-self: start; text-align: start }
+}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Beast Tribe · October 2026</p>
+  <h1>How Beast Tribe works</h1>
+  <p class="lede">Three screens, one shared database, and a few helpers. Everything people do in one place shows up in the others within seconds.</p>
+
+  <section class="chapter">
+    <p class="eyebrow">1 · The big picture</p>
+    <h2>Three doors, one brain</h2>
+    <div class="pic">
+      <div class="doors">
+        <div class="door"><span class="ic"><i data-lucide="smartphone"></i></span><b>The app</b><span>Members on iPhone and Android: find, join and host sessions, groups, courts, feed.</span></div>
+        <div class="door"><span class="ic"><i data-lucide="store"></i></span><b>Partner dashboard</b><span>Gyms, companies, schools, venues, coaches: classes, courts, members, challenges.</span></div>
+        <div class="door"><span class="ic"><i data-lucide="shield-check"></i></span><b>Staff dashboard</b><span>The Beast Tribe team: leads, partners, communities, captains, safety.</span></div>
+      </div>
+      <div class="pipes" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="brain"><span class="ic"><i data-lucide="database"></i></span><div><b>One database (Supabase)</b><span>Accounts, sessions, communities, groups, courts, photos. Its own rules decide who can see each row. Hosted in Mumbai.</span></div></div>
+      <p class="helpers-label">Helpers it talks to</p>
+      <div class="helpers">
+        <span class="helper"><i data-lucide="bell"></i>Push notifications (Expo)</span>
+        <span class="helper"><i data-lucide="sparkles"></i>Ask Beast (Claude)</span>
+        <span class="helper"><i data-lucide="footprints"></i>Apple Health (steps only)</span>
+        <span class="helper"><i data-lucide="map-pin"></i>Phone location (city only)</span>
+        <span class="helper"><i data-lucide="scan-eye"></i>Photo check before it shows</span>
+        <span class="helper"><i data-lucide="clock"></i>Scheduled jobs (reminders)</span>
+      </div>
+    </div>
+    <p>A gym adds a class in its dashboard, the database saves it, and members' Boards show it. <b>Nothing is copied between the three screens;</b> they all read the same database.</p>
+  </section>
+
+  <section class="chapter">
+    <p class="eyebrow">2 · Where each piece lives</p>
+    <h2>Three places in the cloud</h2>
+    <div class="places">
+      <div class="place"><div class="top"><i data-lucide="smartphone"></i><h3>The app</h3></div>
+        <ul><li>One codebase for iPhone and Android</li><li>English and Arabic, right-to-left</li><li>Tabs: Board, Explore, Tribe, You + Play</li></ul>
+        <p class="made">Built with Expo (React Native). Store builds via TestFlight and Google Play.</p></div>
+      <div class="place"><div class="top"><i data-lucide="globe"></i><h3>The website</h3></div>
+        <ul><li>Partner and staff dashboards</li><li>Public pages: for gyms, companies, leaders</li><li>Share links, /get, privacy, terms, support</li><li>Ask Beast and photo checks run here</li></ul>
+        <p class="made">Next.js on Vercel · beast-tribe.vercel.app</p></div>
+      <div class="place"><div class="top"><i data-lucide="database"></i><h3>The database</h3></div>
+        <ul><li>Sign-in and accounts</li><li>All data, plus photos in storage</li><li>Rules on every table and column</li><li>Jobs on a timer: captain nudges, photo reminders, clean-up</li></ul>
+        <p class="made">Supabase (Postgres) · Mumbai region</p></div>
+    </div>
+  </section>
+
+  <section class="chapter">
+    <p class="eyebrow">3 · How things fit inside each other</p>
+    <h2>Communities hold everything</h2>
+    <div class="pic nest">
+      <div class="owner">
+        <div class="thing"><span class="label"><i data-lucide="building-2"></i>Partner <small>gym, company, school, venue, coach</small></span><p>Owns a private community and runs it from the partner dashboard.</p></div>
+        <div class="thing"><span class="label"><i data-lucide="flag"></i>Beast Tribe staff</span><p>Create communities, add leaders and captains, verify clubs.</p></div>
+      </div>
+      <div class="community">
+        <span class="label"><i data-lucide="users-round"></i>Community <small>the organisation · open (Beast Tribe, verified clubs) or private with a code</small></span>
+        <div class="inside">
+          <div class="thing"><span class="label"><i data-lucide="users"></i>Groups</span><p>Members' own crews. Open in the community or invite only.</p></div>
+          <div class="thing"><span class="label"><i data-lucide="calendar-check"></i>Sessions</span><p>Hosted by anyone. People join, wait-list, chat.</p></div>
+          <div class="thing"><span class="label"><i data-lucide="land-plot"></i>Courts</span><p>Bookable times. A booking becomes a session with the price split.</p></div>
+          <div class="thing"><span class="label"><i data-lucide="trophy"></i>Challenges + teams</span><p>Companies and gyms. Opt-in; totals only.</p></div>
+          <div class="thing"><span class="label"><i data-lucide="megaphone"></i>Captain</span><p>Keeps three open sessions a week on the Board.</p></div>
+        </div>
+      </div>
+      <div class="owner">
+        <div class="thing"><span class="label"><i data-lucide="user"></i>Member</span><p>Can be in several communities and groups. Everyone starts in Beast Tribe.</p></div>
+        <div class="thing"><span class="label"><i data-lucide="message-square"></i>Tribe feed</span><p>Posts and "Beast" reactions, checked and reportable.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="chapter">
+    <p class="eyebrow">4 · One session, start to finish</p>
+    <h2>From a dashboard to a phone</h2>
+    <div class="pic">
+      <div class="flow">
+        <div class="step"><span class="ic"><i data-lucide="square-plus"></i></span><span class="who">Gym</span><b>Adds a class</b><span>Partner dashboard › Classes</span></div>
+        <div class="step"><span class="ic"><i data-lucide="database"></i></span><span class="who">Database</span><b>Saves it</b><span>Rules decide who may see it</span></div>
+        <div class="step hot"><span class="ic"><i data-lucide="layout-list"></i></span><span class="who">Member</span><b>Sees it on the Board</b><span>Members free; guests see the guest price</span></div>
+        <div class="step"><span class="ic"><i data-lucide="bell-ring"></i></span><span class="who">Push</span><b>Joins, host is told</b><span>Reminder before it starts</span></div>
+        <div class="step"><span class="ic"><i data-lucide="circle-check"></i></span><span class="who">Gym</span><b>Marks who came</b><span>Paid and attendance show in the app</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="chapter">
+    <p class="eyebrow">5 · How changes reach people</p>
+    <h2>Three speeds of update</h2>
+    <div class="lanes">
+      <div class="lane"><span class="what"><i data-lucide="globe"></i>Dashboards</span><p>Pushed to GitHub, the website rebuilds itself on Vercel.</p><span class="time">about 1 min</span></div>
+      <div class="lane"><span class="what"><i data-lucide="zap"></i>App update</span><p>Most app changes go straight to phones. People close and reopen the app twice.</p><span class="time">minutes</span></div>
+      <div class="lane"><span class="what"><i data-lucide="package"></i>New app build</span><p>Only for new phone features (health, notifications, location). Goes through TestFlight and Google Play.</p><span class="time">hours to a day</span></div>
+    </div>
+    <p>Database changes (new tables, rules) are applied separately and take effect at once, for every screen.</p>
+  </section>
+
+  <section class="chapter">
+    <p class="eyebrow">6 · Safety and privacy</p>
+    <h2>What the system promises</h2>
+    <div class="promises">
+      <div class="promise"><i data-lucide="lock"></i><div><b>Rules on every row</b><span>A private community's sessions, groups and courts are invisible to outsiders, even to a clever app.</span></div></div>
+      <div class="promise"><i data-lucide="scan-eye"></i><div><b>Photos checked</b><span>New photos are checked; a rejected one disappears everywhere at once.</span></div></div>
+      <div class="promise"><i data-lucide="map-pin-off"></i><div><b>Location stays on the phone</b><span>Only the nearest city is saved, never the exact spot.</span></div></div>
+      <div class="promise"><i data-lucide="eye-off"></i><div><b>Levels are never shown</b><span>Players rate each other privately; it only helps matching.</span></div></div>
+      <div class="promise"><i data-lucide="heart-pulse"></i><div><b>Health is steps only</b><span>Companies see team totals, never one person.</span></div></div>
+      <div class="promise"><i data-lucide="key-round"></i><div><b>Two-step sign-in for staff</b><span>The staff dashboard needs it; moderators see only safety pages.</span></div></div>
+    </div>
+  </section>
+
+  <section class="chapter">
+    <p class="eyebrow">7 · Switched on and off</p>
+    <h2>What's live today</h2>
+    <div class="status">
+      <div class="st on"><h3><i data-lucide="circle-check"></i>Live</h3><ul><li>Sessions, groups, communities, feed</li><li>Courts with split prices (pay at the venue)</li><li>Partner and staff dashboards</li><li>Beast Captains, challenges, Ask Beast</li><li>Arabic and English</li></ul></div>
+      <div class="st off"><h3><i data-lucide="circle-pause"></i>Off or waiting</h3><ul><li>Train (workout library) switched off for launch</li><li>Online payments: need a Moyasar or Tap account</li><li>Shop link hidden until the store is live</li><li>Steps on Android (Health Connect)</li><li>Sending email from our own address</li></ul></div>
+    </div>
+  </section>
+
+  <footer>Simplified from the codebase on 8 October 2026. Icons: Lucide (ISC licence).</footer>
+</div>
+
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script>
+try { lucide.createIcons({ attrs: { class: 'i' } }); } catch (_) {}
+</script>
