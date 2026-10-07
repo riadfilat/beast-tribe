@@ -1,9 +1,10 @@
 import React from 'react';
-import { StyleProp, Switch, View, ViewStyle } from 'react-native';
+import { StyleProp, View, ViewStyle } from 'react-native';
 import { useKit } from '../../theme';
 import { Press } from './Press';
 import { Txt } from './Txt';
 import { Icon, IconName } from './Icon';
+import { Toggle } from './Toggle';
 
 /** iOS inset-grouped list for settings-shaped content. */
 export function Group({ children, style, footer }: { children: React.ReactNode; style?: StyleProp<ViewStyle>; footer?: string }) {
@@ -66,13 +67,7 @@ export function GroupRow({
       </View>
       {value ? <Txt v="meta">{value}</Txt> : null}
       {toggle !== undefined ? (
-        <Switch
-          value={toggle}
-          onValueChange={onToggle}
-          trackColor={{ false: p.ruleStrong, true: p.marker }}
-          thumbColor="#FFFFFF"
-          ios_backgroundColor={p.ruleStrong}
-        />
+        <Toggle value={toggle} onValueChange={onToggle} accessibilityLabel={label} />
       ) : onPress && chevron ? (
         <Icon name="chevron" size={14} color={p.inkFaint} weight="bold" />
       ) : null}

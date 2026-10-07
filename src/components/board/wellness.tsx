@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Switch, View } from 'react-native';
+import { View } from 'react-native';
 import { useKit } from '../../theme';
 import { useI18n } from '../../i18n';
 import { useAuth } from '../../providers/AuthProvider';
 import { Challenge, ChallengeMetric, PackagePartner, chooseTeam, connectExpert, joinChallenge, leaveChallenge, useChallengeBoard, useChallenges, useCommunityExtras, useMySteps, usePackagePartners, useTeamBoard, useTeams } from '../../data/wellness';
 import { connectHealth, healthAvailable, healthConnected, syncSteps } from '../../lib/health';
 import { invalidate } from '../../data/query';
+import { Toggle } from './Toggle';
 import { Txt } from './Txt';
 import { Icon, IconName } from './Icon';
 import { Press } from './Press';
@@ -361,13 +362,13 @@ function ConnectSheet({ partner, onClose }: { partner: PackagePartner | null; on
           <Txt v="row" style={{ flex: 1 }}>
             {t('coach.shareNutrition')}
           </Txt>
-          <Switch value={food} onValueChange={setFood} trackColor={{ true: p.aqua, false: p.rule }} />
+          <Toggle value={food} onValueChange={setFood} onColor={p.aqua} />
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <Txt v="row" style={{ flex: 1 }}>
             {t('coach.shareBody')}
           </Txt>
-          <Switch value={body} onValueChange={setBody} trackColor={{ true: p.aqua, false: p.rule }} />
+          <Toggle value={body} onValueChange={setBody} onColor={p.aqua} />
         </View>
         <Txt v="caption">{t('wellness.connectExpertNote')}</Txt>
       </View>
