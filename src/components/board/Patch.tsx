@@ -7,10 +7,10 @@ import { Emblem, glyphId, packInitials, PATCH_PAINT } from '../../lib/emblem';
 
 // The pack patch: a round badge in one of the brand colourways carrying the pack's symbol.
 // The circle is reserved for patches and the orange marker (DESIGN.md › Shapes).
-// Teal and chalk grounds get a hairline edge so they never vanish into a board of the same colour.
+// Teal, chalk and black grounds get a hairline edge so they never vanish into a board of the same colour.
 // Decorative: the pack's name always sits beside it, so screen readers skip the drawing.
 
-const EDGE: Record<string, string> = { '#023C3C': 'rgba(244,241,234,0.32)', '#F4F1EA': 'rgba(2,60,60,0.30)' };
+const EDGE: Record<string, string> = { '#023C3C': 'rgba(244,241,234,0.32)', '#F4F1EA': 'rgba(2,60,60,0.30)', '#0E1212': 'rgba(244,241,234,0.22)' };
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 export function Patch({ emblem, name = '', size, style, stitch }: { emblem: Emblem; name?: string; size: number; style?: StyleProp<ViewStyle>; stitch?: SharedValue<number> }) {

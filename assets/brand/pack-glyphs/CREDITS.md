@@ -39,5 +39,21 @@ From [game-icons.net](https://game-icons.net), licensed [CC BY 3.0](https://crea
 | fist | fist | Lorc |
 | shoe | running-shoe | Delapouite |
 | lift | weight-lifting-up | Delapouite |
+| run | run | Lorc |
+| sprint | sprint | Lorc |
+| walk | walk | Delapouite |
+| hiking | hiking | Delapouite |
+| cycling | cycling | Delapouite |
+| swim | pool-dive | Delapouite |
+| yoga | meditation | Lorc |
+| lotus | lotus | Lorc |
+| riding | horseshoe | Delapouite |
+| jumprope | skipping-rope | Delapouite |
+| cardio | heart-beats | Delapouite |
+| martial | black-belt | Delapouite |
+| badminton | shuttlecock | Delapouite |
+| surf | wave-surfer | Delapouite |
+| goalkeeper | goal-keeper | Delapouite |
+| whistle | whistle | Delapouite |
 
 The Sport family is Operation Beast's own icon set from its brand guidelines (page 44), not part of the CC BY set.

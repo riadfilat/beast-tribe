@@ -12,6 +12,14 @@ export const PATCH_PAINT: Record<string, { ground: string; ink: string }> = {
   chalk: { ground: '#F4F1EA', ink: '#023C3C' },
   blush: { ground: '#023C3C', ink: '#F2A7C3' },
   rose: { ground: '#F2A7C3', ink: '#023C3C' },
+  night: { ground: '#0E1212', ink: '#F4F1EA' },
+  ember: { ground: '#0E1212', ink: '#E88F24' },
+  frost: { ground: '#0E1212', ink: '#56C4C4' },
+  steel: { ground: '#3A4144', ink: '#F4F1EA' },
+  navy: { ground: '#2E3A4E', ink: '#F4F1EA' },
+  sand: { ground: '#C4A882', ink: '#0E1212' },
+  olive: { ground: '#7D8A5C', ink: '#F4F1EA' },
+  coral: { ground: '#E85D4A', ink: '#0E1212' },
 };
 export const PATCH_COLOR_NAMES: Record<string, string> = {
   slate: 'Teal',
@@ -22,6 +30,14 @@ export const PATCH_COLOR_NAMES: Record<string, string> = {
   chalk: 'Chalk',
   blush: 'Teal and pink',
   rose: 'Pink',
+  night: 'Black',
+  ember: 'Black and orange',
+  frost: 'Black and aqua',
+  steel: 'Graphite',
+  navy: 'Navy',
+  sand: 'Sand',
+  olive: 'Olive',
+  coral: 'Coral',
 };
 export const GLYPH_GROUPS = GLYPH_FAMILIES;
 export const GLYPH_IDS = Object.keys(GLYPHS);

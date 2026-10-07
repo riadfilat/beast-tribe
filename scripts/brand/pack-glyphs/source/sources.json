@@ -242,5 +242,69 @@
   "pingpong": {
     "source": "Icon set, Operation Beast Brand Guidelines 2025 (page 44)",
     "author": "Operation Beast"
+  },
+  "run": {
+    "source": "run",
+    "author": "Lorc"
+  },
+  "sprint": {
+    "source": "sprint",
+    "author": "Lorc"
+  },
+  "swim": {
+    "source": "pool-dive",
+    "author": "Delapouite"
+  },
+  "cycling": {
+    "source": "cycling",
+    "author": "Delapouite"
+  },
+  "walk": {
+    "source": "walk",
+    "author": "Delapouite"
+  },
+  "hiking": {
+    "source": "hiking",
+    "author": "Delapouite"
+  },
+  "yoga": {
+    "source": "meditation",
+    "author": "Lorc"
+  },
+  "lotus": {
+    "source": "lotus",
+    "author": "Lorc"
+  },
+  "riding": {
+    "source": "horseshoe",
+    "author": "Delapouite"
+  },
+  "jumprope": {
+    "source": "skipping-rope",
+    "author": "Delapouite"
+  },
+  "surf": {
+    "source": "wave-surfer",
+    "author": "Delapouite"
+  },
+  "martial": {
+    "source": "black-belt",
+    "author": "Delapouite"
+  },
+  "badminton": {
+    "source": "shuttlecock",
+    "author": "Delapouite"
+  },
+  "whistle": {
+    "source": "whistle",
+    "author": "Delapouite"
+  },
+  "cardio": {
+    "source": "heart-beats",
+    "author": "Delapouite"
+  },
+  "goalkeeper": {
+    "source": "goal-keeper",
+    "author": "Delapouite"
   }
 }

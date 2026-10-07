@@ -1,9 +1,10 @@
-// A pack's patch: one symbol on one of six brand colourways.
+// A pack's patch: one symbol on one of the badge colourways.
 // Symbols are glyphs (beasts, myths, marks), any emoji, or the pack's letters.
 import { GLYPHS, GLYPH_FAMILIES, GlyphFamily } from '../components/brand/glyphs';
 
-export type PatchColor = 'slate' | 'dreamer' | 'seeker' | 'aqua' | 'orange' | 'chalk' | 'blush' | 'rose';
-export const PATCH_COLORS: PatchColor[] = ['slate', 'dreamer', 'seeker', 'aqua', 'orange', 'chalk', 'blush', 'rose'];
+export type PatchColor = 'slate' | 'night' | 'ember' | 'frost' | 'dreamer' | 'seeker' | 'steel' | 'navy' | 'aqua' | 'orange' | 'chalk' | 'sand' | 'olive' | 'coral' | 'blush' | 'rose';
+// Black first after teal (asked for by members), then the brand colourways.
+export const PATCH_COLORS: PatchColor[] = ['slate', 'night', 'ember', 'frost', 'dreamer', 'seeker', 'steel', 'navy', 'aqua', 'orange', 'chalk', 'sand', 'olive', 'coral', 'blush', 'rose'];
 
 export type EmblemKind = 'glyph' | 'emoji' | 'letters';
 export interface Emblem {
@@ -26,6 +27,15 @@ export const PATCH_PAINT: Record<PatchColor, { ground: string; ink: string }> = 
   // Pink: on teal (blush) or as the ground (rose).
   blush: { ground: TEAL, ink: '#F2A7C3' },
   rose: { ground: '#F2A7C3', ink: TEAL },
+  // Black and darker grounds; sand, olive and coral from the Operation Beast SS26 colourways.
+  night: { ground: '#0E1212', ink: '#F4F1EA' },
+  ember: { ground: '#0E1212', ink: '#E88F24' },
+  frost: { ground: '#0E1212', ink: '#56C4C4' },
+  steel: { ground: '#3A4144', ink: '#F4F1EA' },
+  navy: { ground: '#2E3A4E', ink: '#F4F1EA' },
+  sand: { ground: '#C4A882', ink: '#0E1212' },
+  olive: { ground: '#7D8A5C', ink: '#F4F1EA' },
+  coral: { ground: '#E85D4A', ink: '#0E1212' },
 };
 
 // Ids from earlier drawings: the eagle became the falcon; leopard, oryx and phoenix were retired.

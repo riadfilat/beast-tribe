@@ -18,11 +18,15 @@ FAMILIES = {
     'beasts': ['wolf', 'falcon', 'horse', 'camel', 'ibex', 'tiger', 'lion', 'rhino', 'bull', 'shark', 'scorpion', 'fox'],
     'myths': ['spartan', 'shield', 'pegasus', 'griffin', 'hydra', 'minotaur', 'centaur', 'trident', 'laurel', 'torch', 'hermes'],
     'marks': ['bolt', 'peak', 'waves', 'flame', 'tally', 'claws', 'chevrons', 'spark', 'trophy', 'fist', 'shoe', 'lift'],
-    # Operation Beast's own sport icons, from the brand guidelines (page 44), in source/brand/.
-    'sport': ['dumbbell', 'kettlebell', 'boxing', 'stopwatch', 'medal', 'cup', 'target', 'football', 'basketball', 'volleyball', 'tennis', 'padel',
+    # Sports first (game-icons.net, in source/), then Operation Beast's own sport icons from the brand
+    # guidelines (page 44), in source/brand/.
+    'sport': ['run', 'sprint', 'walk', 'hiking', 'cycling', 'swim', 'yoga', 'lotus', 'riding', 'jumprope', 'cardio',
+              'martial', 'badminton', 'surf', 'goalkeeper', 'whistle',
+              'dumbbell', 'kettlebell', 'boxing', 'stopwatch', 'medal', 'cup', 'target', 'football', 'basketball', 'volleyball', 'tennis', 'padel',
               'racket', 'pingpong', 'rugby', 'baseball', 'golf', 'hockey', 'bowling', 'skate', 'sailing', 'climbing', 'sneaker', 'bottle', 'watch', 'tactics'],
 }
-BRAND = set(FAMILIES['sport'])
+BRAND = {'dumbbell', 'kettlebell', 'boxing', 'stopwatch', 'medal', 'cup', 'target', 'football', 'basketball', 'volleyball', 'tennis', 'padel',
+         'racket', 'pingpong', 'rugby', 'baseball', 'golf', 'hockey', 'bowling', 'skate', 'sailing', 'climbing', 'sneaker', 'bottle', 'watch', 'tactics'}
 SIZE = 58  # the glyph's longer side in a 100-unit patch
 # Optical corrections: (scale multiplier, dx, dy) in patch units.
 TUNE = {

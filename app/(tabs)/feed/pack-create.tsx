@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { makeStyles, useKit } from '../../../src/theme';
 import { useI18n } from '../../../src/i18n';
 import { useAuth } from '../../../src/providers/AuthProvider';
-import { createPack, PackAudience, PackVisibility, setPackPhoto } from '../../../src/data/packs';
+import { createPack, PackAudience, PackVisibility } from '../../../src/data/packs';
 import { useMyCommunities } from '../../../src/data/communities';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { randomEmblem } from '../../../src/lib/emblem';
@@ -21,7 +20,7 @@ import { toast } from '../../../src/components/board/toast';
 import { haptic } from '../../../src/lib/haptics';
 import { errorKey } from '../../../src/data/errors';
 
-// Start a group: a name and a badge up top (tap the badge to change it or add a cover photo), then
+// Start a group: a name and a badge up top (tap the badge to change it), then
 // the three choices that matter, each a dropdown: which community it lives in, who can find it
 // (open in that community, or invite only: your own circle), and who it's for.
 
@@ -48,13 +47,8 @@ export default function PackCreateScreen() {
   const [visibility, setVisibility] = useState<PackVisibility>('invite');
   const [open, setOpen] = useState<Open>(null);
   const [busy, setBusy] = useState(false);
-  const [photo, setPhoto] = useState<string | null>(null);
   const close = () => setOpen(null);
 
-  async function pickPhoto() {
-    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [16, 9], quality: 0.85 });
-    if (!res.canceled && res.assets?.[0]?.uri) setPhoto(res.assets[0].uri);
-  }
   const shown = name.trim() || t('pack.namePlaceholder').replace(/^e\.g\.\s*|^مثال:\s*/, '');
   const community = home?.name ?? '';
 
@@ -63,8 +57,6 @@ export default function PackCreateScreen() {
     setBusy(true);
     try {
       const pack = await createPack(meId, name, emblem, audience, home?.id ?? null, visibility);
-      // The photo is extra: the group exists even if its upload fails.
-      if (photo) await setPackPhoto(meId, pack.id, photo).catch(() => toast.show(t('pack.photoFailed'), 'error'));
       haptic('success');
       router.replace({ pathname: '/(tabs)/feed/pack', params: { packId: pack.id } });
     } catch (e: any) {
@@ -91,9 +83,8 @@ export default function PackCreateScreen() {
             {t('pack.createSub')}
           </Txt>
 
-          {/* The badge: tap it to pick a symbol, a colour or a cover photo */}
+          {/* The badge: tap it to pick a symbol and a colour */}
           <Press onPress={() => setOpen('badge')} feedback="light" depress={0.97} accessibilityRole="button" accessibilityLabel={t('pack.badgeTitle')} style={s.preview}>
-            {photo ? <Image source={{ uri: photo }} style={s.cover} resizeMode="cover" accessibilityIgnoresInvertColors /> : null}
             <View>
               <PatchPreview emblem={emblem} name={shown} size={132} />
               <View style={s.editDot}>
@@ -136,15 +127,6 @@ export default function PackCreateScreen() {
           <PatchPreview emblem={emblem} name={shown} size={96} />
         </View>
         <PatchPicker value={emblem} onChange={setEmblem} name={shown} />
-        <SectionHeading title={t('pack.cover')} />
-        <Txt v="caption" style={{ marginTop: -8 }}>
-          {t('pack.coverSub')}
-        </Txt>
-        {photo ? <Image source={{ uri: photo }} style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 14 }} resizeMode="cover" accessibilityIgnoresInvertColors /> : null}
-        <View style={{ flexDirection: 'row', marginTop: -8 }}>
-          <TextButton label={photo ? t('pack.changePhoto') : t('pack.addPhoto')} onPress={pickPhoto} />
-          {photo ? <TextButton label={t('pack.removePhoto')} onPress={() => setPhoto(null)} /> : null}
-        </View>
       </Sheet>
 
       <Sheet visible={open === 'community'} title={t('pack.community')} onClose={close}>
@@ -194,7 +176,6 @@ const useStyles = makeStyles(({ p }) => ({
   header: { paddingStart: 4 },
   body: { paddingHorizontal: 20, paddingBottom: 32 },
   preview: { alignItems: 'center', marginVertical: 20 },
-  cover: { position: 'absolute', top: -6, left: 0, right: 0, height: 120, borderRadius: 14, opacity: 0.35 },
   editDot: { position: 'absolute', right: 2, bottom: 2, width: 32, height: 32, borderRadius: 16, backgroundColor: p.ink, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: p.board },
   gap: { marginTop: 18 },
   bar: { paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1, borderTopColor: p.rule, backgroundColor: p.boardDeep },

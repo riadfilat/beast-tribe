@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Image, RefreshControl, ScrollView, Share, View } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import { Alert, RefreshControl, ScrollView, Share, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { makeStyles, useKit } from '../../../src/theme';
 import { useI18n } from '../../../src/i18n';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { useMyPackList } from '../../../src/data/member';
-import { joinPackByCode, leavePack, MAX_PACKS, PackInvite, PackVisibility, respondToInvite, setPackPhoto, updatePackEmblem, updatePackVisibility, usePack, usePackInvites, usePackSessions } from '../../../src/data/packs';
+import { joinPackByCode, leavePack, MAX_PACKS, PackInvite, PackVisibility, respondToInvite, updatePackEmblem, updatePackVisibility, usePack, usePackInvites, usePackSessions } from '../../../src/data/packs';
 import type { Emblem } from '../../../src/lib/emblem';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { Txt } from '../../../src/components/board/Txt';
@@ -41,24 +40,6 @@ export default function PackScreen() {
     if (params.join === '1') setAdding(true);
   }, [params.join]);
   const [restyle, setRestyle] = useState<Emblem | null>(null);
-  const [photoBusy, setPhotoBusy] = useState(false);
-
-  async function pickPhoto(packId: string) {
-    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [16, 9], quality: 0.85 });
-    if (res.canceled || !res.assets?.[0]?.uri) return;
-    await savePhoto(packId, res.assets[0].uri);
-  }
-  async function savePhoto(packId: string, uri: string | null) {
-    if (!meId) return;
-    setPhotoBusy(true);
-    try {
-      await setPackPhoto(meId, packId, uri);
-    } catch {
-      toast.show(t('pack.errors.generic'), 'error');
-    } finally {
-      setPhotoBusy(false);
-    }
-  }
   const [saving, setSaving] = useState(false);
   const [findOpen, setFindOpen] = useState(false);
 
@@ -180,7 +161,6 @@ export default function PackScreen() {
           <JoinPanel meId={meId} hasGroups={packs.length > 0} onJoined={(id) => { setAdding(false); setSelected(id); list.refetch(); }} onCreate={() => router.push('/(tabs)/feed/pack-create')} />
         ) : d ? (
           <View style={{ paddingHorizontal: 16 }}>
-            {d.photoUrl ? <Image source={{ uri: d.photoUrl }} style={s.photo} resizeMode="cover" accessibilityIgnoresInvertColors /> : null}
             <View style={s.hero}>
               <Press onPress={d.canEdit ? () => setRestyle(d.emblem) : undefined} disabled={!d.canEdit} feedback="light" accessibilityRole={d.canEdit ? 'button' : 'image'} accessibilityLabel={d.canEdit ? t('pack.changePatch') : d.name}>
                 <Patch emblem={d.emblem} name={d.name} size={112} />
@@ -198,8 +178,6 @@ export default function PackScreen() {
                 {d.canEdit ? (
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginStart: -8 }}>
                     <TextButton label={t('pack.changePatch')} onPress={() => setRestyle(d.emblem)} color={p.aqua} />
-                    <TextButton label={photoBusy ? t('common.saving') : d.photoUrl ? t('pack.changePhoto') : t('pack.addPhoto')} onPress={() => pickPhoto(d.id)} color={p.aqua} disabled={photoBusy} />
-                    {d.photoUrl ? <TextButton label={t('pack.removePhoto')} onPress={() => savePhoto(d.id, null)} color={p.inkSoft} disabled={photoBusy} /> : null}
                   </View>
                 ) : null}
               </View>
@@ -405,7 +383,6 @@ const useStyles = makeStyles(({ p }) => ({
   patchSm: { width: 64, height: 64, borderRadius: 32, borderWidth: 1.5 },
   addPatch: { backgroundColor: p.wash, alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed', borderColor: p.ruleStrong },
   hero: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 12 },
-  photo: { width: '100%', aspectRatio: 16 / 9, borderRadius: 14, backgroundColor: p.wash, marginTop: 8 },
   code: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 18, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10, borderWidth: 1.5, borderColor: p.ruleStrong, borderStyle: 'dashed' },
   members: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
   invite: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: p.rule },
