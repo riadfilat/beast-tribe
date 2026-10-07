@@ -158,6 +158,11 @@ export default function HostScreen() {
     if (c) setCity(c);
   }, [pos?.lat, pos?.lng]);
 
+  // No position (yet): the city on the member's profile, once it has loaded.
+  useEffect(() => {
+    if (!city && !cityTouched && !picked && profile?.city) setCity(profile.city);
+  }, [profile?.city]);
+
   // A place that doesn't fit a newly picked sport is let go.
   useEffect(() => {
     if (picked && sport && !picked.sports.includes(sport)) setPicked(null);

@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleProp, View, ViewStyle } from 'react-native';
 import { SymbolView } from 'expo-symbols';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useKit } from '../../theme';
 import { sportDef } from '../../lib/sports';
 
@@ -83,12 +83,13 @@ export function Icon({ name, sport, size = 20, color, weight = 'semibold', style
   const { p, isRTL } = useKit();
   const tint = color ?? p.ink;
   let sf: string;
-  let ion: string;
+  let ion = '';
+  let mci = '';
   let dir = false;
   if (sport) {
     const d = sportDef(sport);
     sf = d.sf;
-    ion = d.ion;
+    mci = d.mci;
   } else {
     const d = ICONS[name ?? 'info'] as { sf: string; ion: string; dir?: boolean };
     sf = d.sf;
@@ -105,7 +106,7 @@ export function Icon({ name, sport, size = 20, color, weight = 'semibold', style
         weight={weight}
         type="monochrome"
         resizeMode="scaleAspectFit"
-        fallback={<Ionicons name={ion as any} size={size} color={tint} />}
+        fallback={mci ? <MaterialCommunityIcons name={mci as any} size={size} color={tint} /> : <Ionicons name={ion as any} size={size} color={tint} />}
       />
     </View>
   );

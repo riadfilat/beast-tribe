@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { makeStyles, useKit } from '../../src/theme';
 import { CITIES } from '../../src/lib/cities';
+import { nearestCity, refreshPosition, useMyPosition } from '../../src/lib/location';
 import { useI18n } from '../../src/i18n';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { supabase } from '../../src/lib/supabase';
@@ -42,6 +43,21 @@ export default function AboutYouScreen() {
   const [stage, setStage] = useState<Stage | null>(journeyStage(profile?.experience_level));
   const [dobOpen, setDobOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // No city yet: start from where the phone is (the nearest known city and its country).
+  const pos = useMyPosition();
+  const [placeTouched, setPlaceTouched] = useState(!!profile?.city);
+  useEffect(() => {
+    if (!profile?.city) refreshPosition(true);
+  }, []);
+  useEffect(() => {
+    if (!pos || placeTouched) return;
+    const near = nearestCity(pos);
+    const where = near ? Object.keys(CITIES).find((k) => CITIES[k].some(([en]) => en === near)) : null;
+    if (!near || !where) return;
+    setCountry(where);
+    setCity(near);
+  }, [pos?.lat, pos?.lng]);
 
   const cityLabel = (en: string) => {
     const hit = (CITIES[country] || []).find((c) => c[0] === en);
@@ -139,7 +155,7 @@ export default function AboutYouScreen() {
         </Txt>
         <View style={s.wrap}>
           {COUNTRIES.map((c) => (
-            <Chip key={c} label={t(`onboarding.countries.${c}`)} selected={country === c} onPress={() => { setCountry(c); setCity(''); }} />
+            <Chip key={c} label={t(`onboarding.countries.${c}`)} selected={country === c} onPress={() => { setPlaceTouched(true); setCountry(c); setCity(''); }} />
           ))}
         </View>
 
@@ -148,7 +164,7 @@ export default function AboutYouScreen() {
         </Txt>
         <View style={[s.wrap, { marginBottom: 10 }]}>
           {(CITIES[country] || []).map(([en]) => (
-            <Chip key={en} label={cityLabel(en)} selected={city === en} onPress={() => setCity(en)} />
+            <Chip key={en} label={cityLabel(en)} selected={city === en} onPress={() => { setPlaceTouched(true); setCity(en); }} />
           ))}
         </View>
         <Field value={cityLabel(city)} onChangeText={setCity} placeholder={t('onboarding.cityPlaceholder')} />

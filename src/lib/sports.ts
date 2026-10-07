@@ -1,5 +1,6 @@
 // Sport registry: one id per sport, drawn with SF Symbols on iOS and a matching
-// Ionicons glyph elsewhere. Labels come from i18n (sports.<id> / sportNoun.<id>).
+// Material Community Icons glyph elsewhere (each pair checked by eye: the sport's own figure or gear).
+// Labels come from i18n (sports.<id> / sportNoun.<id>).
 
 export type SportId =
   | 'running' | 'walking' | 'gym' | 'crossfit' | 'hyrox' | 'cycling' | 'swimming'
@@ -10,37 +11,38 @@ export type SportId =
 export interface SportDef {
   id: SportId;
   sf: string;
-  ion: string;
+  /** Material Community Icons glyph (Android and web) */
+  mci: string;
   /** Name in the Supabase `sports` table (user_sports links by this name) */
   dbName?: string;
 }
 
 export const SPORT_LIST: SportDef[] = [
-  { id: 'running', sf: 'figure.run', ion: 'walk', dbName: 'Running' },
-  { id: 'padel', sf: 'figure.racquetball', ion: 'tennisball', dbName: 'Padel' },
-  { id: 'football', sf: 'soccerball', ion: 'football', dbName: 'Football' },
-  { id: 'gym', sf: 'dumbbell.fill', ion: 'barbell', dbName: 'Gym' },
-  { id: 'basketball', sf: 'basketball.fill', ion: 'basketball', dbName: 'Basketball' },
-  { id: 'crossfit', sf: 'figure.cross.training', ion: 'fitness', dbName: 'CrossFit' },
-  { id: 'hyrox', sf: 'figure.highintensity.intervaltraining', ion: 'flash', dbName: 'Hyrox' },
-  { id: 'cycling', sf: 'figure.outdoor.cycle', ion: 'bicycle', dbName: 'Cycling' },
-  { id: 'swimming', sf: 'figure.pool.swim', ion: 'water', dbName: 'Swimming' },
-  { id: 'walking', sf: 'figure.walk', ion: 'footsteps', dbName: 'Walking' },
-  { id: 'yoga', sf: 'figure.yoga', ion: 'body', dbName: 'Yoga' },
-  { id: 'pilates', sf: 'figure.pilates', ion: 'pulse', dbName: 'Pilates' },
-  { id: 'tennis', sf: 'tennis.racket', ion: 'tennisball', dbName: 'Tennis' },
-  { id: 'pickleball', sf: 'figure.racquetball', ion: 'tennisball', dbName: 'Pickleball' },
-  { id: 'badminton', sf: 'figure.badminton', ion: 'tennisball', dbName: 'Badminton' },
-  { id: 'volleyball', sf: 'volleyball.fill', ion: 'basketball', dbName: 'Volleyball' },
-  { id: 'boxing', sf: 'figure.boxing', ion: 'hand-left', dbName: 'Boxing' },
-  { id: 'mma', sf: 'figure.martial.arts', ion: 'shield', dbName: 'MMA' },
-  { id: 'hiking', sf: 'figure.hiking', ion: 'trail-sign', dbName: 'Hiking' },
-  { id: 'climbing', sf: 'figure.climbing', ion: 'trending-up', dbName: 'Climbing' },
-  { id: 'skateboarding', sf: 'figure.skateboarding', ion: 'speedometer', dbName: 'Skate' },
-  { id: 'meditation', sf: 'figure.mind.and.body', ion: 'leaf', dbName: 'Meditation' },
-  { id: 'horse_riding', sf: 'figure.equestrian.sports', ion: 'paw', dbName: 'Horse Riding' },
-  { id: 'squash', sf: 'figure.squash', ion: 'tennisball', dbName: 'Squash' },
-  { id: 'table_tennis', sf: 'figure.table.tennis', ion: 'tennisball-outline', dbName: 'Table Tennis' },
+  { id: 'running', sf: 'figure.run', mci: 'run-fast', dbName: 'Running' },
+  { id: 'padel', sf: 'figure.pickleball', mci: 'racquetball', dbName: 'Padel' },
+  { id: 'football', sf: 'soccerball', mci: 'soccer', dbName: 'Football' },
+  { id: 'gym', sf: 'dumbbell.fill', mci: 'dumbbell', dbName: 'Gym' },
+  { id: 'basketball', sf: 'basketball.fill', mci: 'basketball', dbName: 'Basketball' },
+  { id: 'crossfit', sf: 'figure.cross.training', mci: 'weight-lifter', dbName: 'CrossFit' },
+  { id: 'hyrox', sf: 'figure.strengthtraining.functional', mci: 'kettlebell', dbName: 'Hyrox' },
+  { id: 'cycling', sf: 'figure.outdoor.cycle', mci: 'bike', dbName: 'Cycling' },
+  { id: 'swimming', sf: 'figure.pool.swim', mci: 'swim', dbName: 'Swimming' },
+  { id: 'walking', sf: 'figure.walk', mci: 'walk', dbName: 'Walking' },
+  { id: 'yoga', sf: 'figure.yoga', mci: 'yoga', dbName: 'Yoga' },
+  { id: 'pilates', sf: 'figure.pilates', mci: 'human-handsup', dbName: 'Pilates' },
+  { id: 'tennis', sf: 'tennis.racket', mci: 'tennis', dbName: 'Tennis' },
+  { id: 'pickleball', sf: 'figure.pickleball', mci: 'racquetball', dbName: 'Pickleball' },
+  { id: 'badminton', sf: 'figure.badminton', mci: 'badminton', dbName: 'Badminton' },
+  { id: 'volleyball', sf: 'volleyball.fill', mci: 'volleyball', dbName: 'Volleyball' },
+  { id: 'boxing', sf: 'figure.boxing', mci: 'boxing-glove', dbName: 'Boxing' },
+  { id: 'mma', sf: 'figure.kickboxing', mci: 'karate', dbName: 'MMA' },
+  { id: 'hiking', sf: 'figure.hiking', mci: 'hiking', dbName: 'Hiking' },
+  { id: 'climbing', sf: 'figure.climbing', mci: 'carabiner', dbName: 'Climbing' },
+  { id: 'skateboarding', sf: 'figure.skateboarding', mci: 'skateboarding', dbName: 'Skate' },
+  { id: 'meditation', sf: 'figure.mind.and.body', mci: 'meditation', dbName: 'Meditation' },
+  { id: 'horse_riding', sf: 'figure.equestrian.sports', mci: 'horse-human', dbName: 'Horse Riding' },
+  { id: 'squash', sf: 'figure.squash', mci: 'tennis', dbName: 'Squash' },
+  { id: 'table_tennis', sf: 'figure.table.tennis', mci: 'table-tennis', dbName: 'Table Tennis' },
 ];
 
 /** Most played first (Saudi Arabia): the order of the "all sports" lists. */
@@ -59,8 +61,8 @@ export function sportsByPopularity(): SportDef[] {
 }
 
 const EXTRA: SportDef[] = [
-  { id: 'community', sf: 'person.3.fill', ion: 'people' },
-  { id: 'other', sf: 'person.3.fill', ion: 'people' },
+  { id: 'community', sf: 'person.3.fill', mci: 'account-group' },
+  { id: 'other', sf: 'person.3.fill', mci: 'account-group' },
 ];
 
 const BY_ID: Record<string, SportDef> = {};
