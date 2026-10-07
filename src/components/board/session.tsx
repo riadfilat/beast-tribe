@@ -47,6 +47,7 @@ export function SessionTags({ s, now }: { s: Session; now: number }) {
   if (s.share != null && s.state !== 'cancelled') tags.push(<Tag key="sh" label={t('pay.eachTag', { amount: money(s.share) })} tone="marker" />);
   if (s.guestOpen && s.state !== 'cancelled') tags.push(<Tag key="g" label={s.guestPrice ? t('pay.guestTag', { amount: money(s.guestPrice) }) : t('pay.guestFree')} tone="aqua" />);
   if (s.womenOnly) tags.push(<Tag key="w" label={t('session.womenOnly')} tone="coral" />);
+  if (s.menOnly) tags.push(<Tag key="m" label={t('session.menOnly')} tone="aqua" />);
   if (s.communityPrivate && s.communityName && !s.packOnly) tags.push(<Tag key="cm" icon="shield" label={s.communityName} tone="aqua" />);
   if (s.packOnly) tags.push(<Tag key="p" icon="lock" label={s.packName ? t('session.packOnly', { pack: s.packName }) : t('session.packOnlyGeneric')} tone="aqua" />);
   if (s.difficulty) tags.push(<Tag key="d" label={t(`session.difficulty.${s.difficulty}`)} tone="ghost" />);

@@ -94,6 +94,8 @@ export default function HostScreen() {
   });
   const [waitlist, setWaitlist] = useState<'0' | '1' | '2' | '3'>('3');
   const [womenOnly, setWomenOnly] = useState(false);
+  const [menOnly, setMenOnly] = useState(false);
+  const gender = (profile?.gender || '').toLowerCase();
   const [guests, setGuests] = useState(false);
   const [dropIn, setDropIn] = useState(true);
   const [repeat, setRepeat] = useState<'1' | '4' | '8'>('1');
@@ -119,7 +121,8 @@ export default function HostScreen() {
   useEffect(() => {
     refreshPosition(true);
   }, []);
-  const places = useHostPlaces(sport, lang, pos);
+  // Places follow the chosen city (plus my own community's courts).
+  const places = useHostPlaces(sport, lang, pos, city);
   const [placeOpen, setPlaceOpen] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
   const [cityTouched, setCityTouched] = useState(false);
@@ -244,7 +247,8 @@ export default function HostScreen() {
         waitlistMax: Number(waitlist),
         repeatWeeks: captaincy ? Number(repeat) : 1,
         difficulty: level === 'any' ? null : level,
-        womenOnly,
+        womenOnly: gender === 'female' && womenOnly,
+        menOnly: gender === 'male' && menOnly,
         guestInvite: guestable && guests,
         packId,
         communityId,
@@ -289,7 +293,8 @@ export default function HostScreen() {
         communityId: where?.kind === 'community' ? where.id : null,
         packId,
         difficulty: level === 'any' ? null : level,
-        womenOnly,
+        womenOnly: gender === 'female' && womenOnly,
+        menOnly: gender === 'male' && menOnly,
         guestInvite: guestable && guests,
         coachName: coach?.name ?? null,
         notes,
@@ -414,9 +419,22 @@ export default function HostScreen() {
           </>
         ) : null}
 
-        {/* Where: one dropdown (the member's community courts first, then places for the sport, nearest
-            first when the position is known, or somewhere else), then the city. */}
-        <SectionHeading title={t('host.place')} style={s.gap} />
+        {/* Women only for women, men only for men */}
+        {gender === 'female' || gender === 'male' || PREVIEW ? (
+          <Group style={s.gap}>
+            {gender === 'male' ? (
+              <GroupRow label={t('host.menOnly')} sub={t('host.menOnlySub')} toggle={menOnly} onToggle={setMenOnly} />
+            ) : (
+              <GroupRow label={t('host.womenOnly')} sub={t('host.womenOnlySub')} toggle={womenOnly} onToggle={setWomenOnly} />
+            )}
+          </Group>
+        ) : null}
+
+        {/* Where: the city first (set from the phone's position), then a place in that city: my community's
+            courts first, then places for the sport nearest first, or somewhere else. */}
+        <SectionHeading title={t('host.city')} style={s.gap} />
+        <Dropdown label={cityLabel(city, lang) || t('host.chooseCity')} placeholder={!city} onPress={() => setCityOpen(true)} />
+        <SectionHeading title={t('host.place')} style={{ marginTop: 14 }} />
         <Dropdown
           label={picked ? picked.name : place || t('host.choosePlace')}
           sub={picked ? [picked.facility?.communityName, cityLabel(picked.city, lang)].filter(Boolean).join(' · ') : null}
@@ -429,8 +447,6 @@ export default function HostScreen() {
             {[t('host.courtNote', { min: court.slotMinutes, n: court.maxPlayers }), court.dailyLimit ? t('courts.dailyRule', { n: court.dailyLimit, sport: t(`sports.${court.sport}`) }) : null].filter(Boolean).join(' ')}
           </Txt>
         ) : null}
-        <SectionHeading title={t('host.city')} style={{ marginTop: 14 }} />
-        <Dropdown label={cityLabel(city, lang) || t('host.chooseCity')} placeholder={!city} onPress={() => setCityOpen(true)} />
 
         <Sheet visible={placeOpen} title={t('host.placeSheet')} onClose={() => setPlaceOpen(false)}>
           {places.community.length ? (
@@ -487,6 +503,11 @@ export default function HostScreen() {
                         setCity(en);
                         setCityTouched(true);
                         setCityOpen(false);
+                        if (picked && picked.facility?.reason !== 'community' && cityKey(picked.city) !== cityKey(en)) {
+                          setPicked(null);
+                          setPlace('');
+                          setSlotAt(null);
+                        }
                       }}
                     />
                   ))}
@@ -664,11 +685,6 @@ export default function HostScreen() {
               </ScrollView>
             </View>
 
-            <Group>
-              {profile?.gender === 'female' || PREVIEW ? (
-                <GroupRow label={t('host.womenOnly')} sub={t('host.womenOnlySub')} toggle={womenOnly} onToggle={setWomenOnly} />
-              ) : null}
-            </Group>
 
             {PAYMENTS_ENABLED ? (
               <View style={{ gap: 8 }}>

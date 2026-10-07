@@ -9,7 +9,7 @@ import { useAuth } from '../../../src/providers/AuthProvider';
 import { useBoardSessions, useMySessions, useSessionActions } from '../../../src/data/sessions';
 import { useUnreadCount } from '../../../src/data/inbox';
 import { usePopularSpots } from '../../../src/data/member';
-import { cityLabel } from '../../../src/lib/cities';
+import { cityKeys, cityKey, cityLabel } from '../../../src/lib/cities';
 import { GenderAsk } from '../../../src/components/board/gender';
 import { LocationAsk } from '../../../src/components/board/location';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
@@ -205,7 +205,7 @@ export default function BoardScreen() {
             <TextButton label={t('common.retry')} onPress={board.refetch} />
           </View>
         ) : sessions.length === 0 ? (
-          <EmptyBoard spots={spots.data ?? []} onHost={(spotId) => router.push(spotId ? { pathname: '/host', params: { spot: spotId } } : '/host')} onTrain={TRAIN_ENABLED ? () => router.push('/(tabs)/train') : undefined} />
+          <EmptyBoard spots={(spots.data ?? []).filter((x) => !profile?.city || cityKeys(profile.city).includes(cityKey(x.city)))} onHost={(spotId) => router.push(spotId ? { pathname: '/host', params: { spot: spotId } } : '/host')} onTrain={TRAIN_ENABLED ? () => router.push('/(tabs)/train') : undefined} />
         ) : (
           <View>
             {live.map((x, i) => row(x, i, [...live, ...todayAhead]))}

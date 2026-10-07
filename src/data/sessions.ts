@@ -14,7 +14,7 @@ import { CodedError, codeFrom } from './errors';
 
 export type JoinResult = 'going' | 'waitlist';
 const SESSION_CODES = [
-  'WOMEN_ONLY_HOST', 'GENDER_NEEDED', 'LINK_INVALID', 'GUESTS_OFF', 'WOMEN_ONLY', 'PACK_ONLY', 'COMMUNITY_ONLY',
+  'WOMEN_ONLY_HOST', 'MEN_ONLY_HOST', 'MEN_ONLY', 'GENDER_NEEDED', 'LINK_INVALID', 'GUESTS_OFF', 'WOMEN_ONLY', 'PACK_ONLY', 'COMMUNITY_ONLY',
   'GUESTS_FULL', 'EVENT_OVER', 'EVENT_CANCELLED', 'EVENT_NOT_FOUND', 'NOT_HOST', 'LEVEL', 'FULL',
 ] as const;
 export type SessionErrorCode = (typeof SESSION_CODES)[number] | 'generic';
@@ -57,6 +57,7 @@ async function fetchMyRsvps(meId: string, since: Date): Promise<Map<string, MySt
 /** Who may see a session on the board (the database also enforces joins). */
 function visible(s: Session, gender?: string | null) {
   if (s.womenOnly && gender === 'male' && !s.isMine) return false;
+  if (s.menOnly && gender === 'female' && !s.isMine) return false;
   if (s.state === 'cancelled' && !s.isMine) return false;
   return true;
 }
@@ -228,6 +229,7 @@ export interface HostInput {
   capacity?: number | null;
   difficulty?: 'easy' | 'medium' | 'hard' | null;
   womenOnly?: boolean;
+  menOnly?: boolean;
   /** Let people outside the community join with the session's link. */
   guestInvite?: boolean;
   packId?: string | null;
@@ -280,6 +282,7 @@ export async function hostSession(meId: string, input: HostInput): Promise<{ id:
       max_capacity: input.dropIn ? null : input.capacity ?? null,
       difficulty: input.difficulty ?? null,
       is_women_only: !!input.womenOnly,
+      is_men_only: !input.womenOnly && !!input.menOnly,
       guest_invite: !input.packId && !!input.guestInvite,
       pack_id: input.packId ?? null,
       community_id: input.packId ? null : input.communityId ?? null,
@@ -334,6 +337,7 @@ export async function hostAtCourt(
     packId: string | null;
     difficulty?: 'easy' | 'medium' | 'hard' | null;
     womenOnly?: boolean;
+    menOnly?: boolean;
     guestInvite?: boolean;
     coachName?: string | null;
     notes?: string;
@@ -358,6 +362,7 @@ export async function hostAtCourt(
   const extras: Record<string, any> = {};
   if (input.difficulty) extras.difficulty = input.difficulty;
   if (input.womenOnly) extras.is_women_only = true;
+  else if (input.menOnly) extras.is_men_only = true;
   if (input.guestInvite && !input.packId) extras.guest_invite = true;
   if (input.coachName) extras.coach_name = input.coachName;
   if (input.waitlistMax != null) extras.waitlist_max = Math.min(3, Math.max(0, input.waitlistMax));

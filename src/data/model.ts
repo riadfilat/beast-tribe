@@ -26,6 +26,7 @@ export interface Session {
   spotsLeft: number | null;
   isFull: boolean;
   womenOnly: boolean;
+  menOnly: boolean;
   /** An open session: come if you can, no commitment. */
   dropIn: boolean;
   /** Hosted by the community's Beast Captain. */
@@ -72,7 +73,7 @@ export const PERSON_COLUMNS = 'id, display_name, full_name, avatar_url';
 const SESSION_COLUMNS = `
   id, title, event_type, starts_at, ends_at, location_name, location_city, gym_name,
   location_lat, location_lng, image_url, max_capacity, going_count, created_by,
-  is_women_only, visibility, pack_id, community_id, difficulty, coach_name, cancelled_at, drop_in, captain_hosted,
+  is_women_only, is_men_only, visibility, pack_id, community_id, difficulty, coach_name, cancelled_at, drop_in, captain_hosted,
   guest_open, guest_price_sar, share_sar, court_sar, guest_invite, waitlist_max,
   pack:packs(name),
   community:communities(name, visibility),
@@ -138,6 +139,7 @@ export function toSession(row: any, meId: string | null | undefined, myStatus?: 
     spotsLeft,
     isFull: capacity != null && goingCount >= capacity,
     womenOnly: !!row.is_women_only,
+    menOnly: !!row.is_men_only,
     dropIn: !!row.drop_in,
     captainHosted: !!row.captain_hosted,
     packOnly: row.visibility === 'pack',

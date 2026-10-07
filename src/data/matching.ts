@@ -61,7 +61,7 @@ export interface Partner {
   sharedGoals: PartnerGoal[];
 }
 
-const PARTNER_CODES = ['NOT_OPEN', 'NOT_MEMBER', 'NOT_AVAILABLE', 'EVENT_OVER', 'NOT_THERE', 'ALREADY_INVITED', 'ALREADY', 'WOMEN_ONLY', 'CANT_SEE', 'TOO_MANY'] as const;
+const PARTNER_CODES = ['NOT_OPEN', 'NOT_MEMBER', 'NOT_AVAILABLE', 'EVENT_OVER', 'NOT_THERE', 'ALREADY_INVITED', 'ALREADY', 'WOMEN_ONLY', 'MEN_ONLY', 'CANT_SEE', 'TOO_MANY'] as const;
 export type PartnerErrorCode = (typeof PARTNER_CODES)[number] | 'generic';
 export class PartnerError extends CodedError<PartnerErrorCode> {}
 const toError = (e: any) => new PartnerError(codeFrom(e, PARTNER_CODES));

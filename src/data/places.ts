@@ -27,7 +27,7 @@ export interface Place {
   km: number | null;
 }
 
-export function useHostPlaces(sport: string | null, lang: string, pos: Position | null = null) {
+export function useHostPlaces(sport: string | null, lang: string, pos: Position | null = null, city: string | null = null) {
   const { profile } = useAuth();
   const mySports = useMySports().data ?? [];
   const facilities = useFacilities(lang).data ?? [];
@@ -35,15 +35,19 @@ export function useHostPlaces(sport: string | null, lang: string, pos: Position 
   const sportsKey = mySports.join(',');
 
   return useMemo(() => {
-    const home = new Set(cityKeys(profile?.city));
+    // The chosen city decides what's listed (the member's own city until they pick another).
+    const home = new Set(cityKeys(city || profile?.city));
     const fits = (sports: string[]) => (sport ? sports.includes(sport) : !mySports.length || sports.some((x) => mySports.includes(x as any)));
     const near = (city: string | null) => !!city && home.has(cityKey(city));
     const kmOf = (lat: number | null, lng: number | null) => (pos && lat != null && lng != null ? distanceKm(pos, { lat, lng }) : null);
     // With a position: closer is better (up to 200 points within a few km, nothing past 50 km).
     const closeness = (km: number | null) => (km == null ? 0 : Math.max(0, 200 - km * 4));
 
+    // Only places in that city, and only ones with a photo; my own community's courts always show.
+    const inCity = (c: string | null, lat: number | null, lng: number | null) => (home.size ? near(c) : (kmOf(lat, lng) ?? Infinity) <= 50);
     const courts: (Place & { score: number })[] = facilities
       .filter((f) => fits(f.sports))
+      .filter((f) => f.reason === 'community' || (!!f.imageUrl && inCity(f.city, f.lat, f.lng)))
       .map((f, i) => ({
         key: `f:${f.id}`,
         name: f.name,
@@ -60,6 +64,7 @@ export function useHostPlaces(sport: string | null, lang: string, pos: Position 
       }));
     const publicSpots: (Place & { score: number })[] = spots
       .filter((x) => fits(x.sports))
+      .filter((x) => !!x.imageUrl && inCity(x.city, x.lat, x.lng))
       .map((x, i) => ({
         key: `s:${x.id}`,
         name: x.name,
@@ -77,5 +82,5 @@ export function useHostPlaces(sport: string | null, lang: string, pos: Position 
     const community = courts.filter((x) => x.reason === 'community').sort((a, b) => b.score - a.score);
     const more = [...courts.filter((x) => x.reason !== 'community'), ...publicSpots].sort((a, b) => b.score - a.score).slice(0, 12);
     return { community, more };
-  }, [facilities, spots, sport, sportsKey, profile?.city, pos?.lat, pos?.lng]);
+  }, [facilities, spots, sport, sportsKey, city, profile?.city, pos?.lat, pos?.lng]);
 }
