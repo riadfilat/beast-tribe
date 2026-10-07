@@ -18,7 +18,8 @@ import { CITIES, cityKey, cityLabel } from '../src/lib/cities';
 import { nearestCity, refreshPosition, useMyPosition } from '../src/lib/location';
 import { Sheet } from '../src/components/board/sheet';
 import { PREVIEW, PREVIEW_ME } from '../src/data/preview';
-import { SPORT_LIST, SportId } from '../src/lib/sports';
+import { SPORT_LIST, SportId, sportsByPopularity } from '../src/lib/sports';
+import { SportSearchList } from '../src/components/board/SportPicker';
 import { PAYMENTS_ENABLED, SESSION_LINK_BASE } from '../src/lib/constants';
 import { bookCoach, useCoachSlots } from '../src/data/coaching';
 import { useWorkouts } from '../src/data/workouts';
@@ -75,7 +76,7 @@ export default function HostScreen() {
   const [time, setTime] = useState<string | null>(null);
   const [picked, setPicked] = useState<Place | null>(null);
   const [slotAt, setSlotAt] = useState<number | null>(null);
-  const [allSports, setAllSports] = useState(false);
+  const [sportsOpen, setSportsOpen] = useState(false);
   const [period, setPeriod] = useState<Period>(() => {
     const h = new Date().getHours();
     return h < 11 ? 'morning' : h < 16 ? 'afternoon' : h < 21 ? 'evening' : 'night';
@@ -177,14 +178,13 @@ export default function HostScreen() {
     if (sport && !spotsTouched) setSpotsCount(DEFAULT_SPOTS[sport] ?? null);
   }, [sport]);
 
-  const sportOrder = useMemo(() => {
-    const mine = SPORT_LIST.filter((x) => mySports.includes(x.id));
-    const rest = SPORT_LIST.filter((x) => !mySports.includes(x.id));
-    return [...mine, ...rest];
-  }, [mySports]);
-  // The member's own sports first; the rest one tap away.
-  const shortList = mySports.length > 0 && !allSports;
-  const shownSports = shortList ? sportOrder.filter((x) => mySports.includes(x.id) || x.id === sport) : sportOrder;
+  // My sports as quick picks (the most popular ones for someone who hasn't chosen any); every other
+  // sport is in "More sports": a searchable list, most popular first.
+  const shownSports = useMemo(() => {
+    const quick = mySports.length ? SPORT_LIST.filter((x) => mySports.includes(x.id)) : sportsByPopularity().slice(0, 6);
+    const extra = sport && !quick.some((x) => x.id === sport) ? SPORT_LIST.filter((x) => x.id === sport) : [];
+    return [...quick, ...extra];
+  }, [mySports, sport]);
 
   const autoTitle = sport && time ? t('autoTitle', { period: t(`periods.${periodOf(time)}`), sport: t(`sportNoun.${sport}`) }) : '';
   const example = autoTitle || t('autoTitle', { period: t('periods.evening'), sport: t('sportNoun.padel') });
@@ -393,7 +393,7 @@ export default function HostScreen() {
           {shownSports.map((x) => (
             <Chip key={x.id} sport={x.id} label={t(`sports.${x.id}`)} selected={sport === x.id} onPress={() => setSport(x.id)} />
           ))}
-          {mySports.length ? <Chip label={allSports ? t('host.fewerSports') : t('host.moreSports')} icon={allSports ? 'minus' : 'plus'} onPress={() => setAllSports((v) => !v)} /> : null}
+          <Chip label={t('host.moreSports')} icon="explore" onPress={() => setSportsOpen(true)} />
         </View>
 
         {communities.length + packs.length > 1 && !court?.communityId ? (
@@ -447,6 +447,16 @@ export default function HostScreen() {
             {[t('host.courtNote', { min: court.slotMinutes, n: court.maxPlayers }), court.dailyLimit ? t('courts.dailyRule', { n: court.dailyLimit, sport: t(`sports.${court.sport}`) }) : null].filter(Boolean).join(' ')}
           </Txt>
         ) : null}
+
+        <Sheet visible={sportsOpen} title={t('sportPicker.title')} onClose={() => setSportsOpen(false)}>
+          <SportSearchList
+            selected={sport ? [sport] : []}
+            onPick={(id) => {
+              setSport(id);
+              setSportsOpen(false);
+            }}
+          />
+        </Sheet>
 
         <Sheet visible={placeOpen} title={t('host.placeSheet')} onClose={() => setPlaceOpen(false)}>
           {places.community.length ? (

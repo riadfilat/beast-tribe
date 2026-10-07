@@ -30,6 +30,11 @@ export const ar: Strings = {
     you: 'حسابي',
     train: 'تمرّن',
   },
+  sportPicker: {
+    title: 'كل الرياضات',
+    search: 'ابحث عن رياضة',
+    none: 'لا توجد رياضة بهذا الاسم.',
+  },
   sports: {
     running: 'جري',
     walking: 'مشي',
@@ -275,7 +280,6 @@ export const ar: Strings = {
     errMissing: 'اختر الرياضة والتاريخ والوقت.',
     errPhoto: 'لم تُرفع الصورة، ونُشرت الجلسة بدونها.',
     moreSports: 'رياضات أخرى',
-    fewerSports: 'رياضات أقل',
     placeCommunity: 'في {name}',
     placeMore: 'أماكن أخرى',
     placeFor: 'لـ{sport}',

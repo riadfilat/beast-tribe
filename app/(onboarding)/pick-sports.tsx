@@ -7,11 +7,11 @@ import { useI18n } from '../../src/i18n';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { saveMySports, useMySports } from '../../src/data/member';
 import { PREVIEW, PREVIEW_ME } from '../../src/data/preview';
-import { SPORT_LIST } from '../../src/lib/sports';
+import { sportsByPopularity } from '../../src/lib/sports';
 import { Txt } from '../../src/components/board/Txt';
 import { Icon } from '../../src/components/board/Icon';
 import { Press } from '../../src/components/board/Press';
-import { IconButton, MarkerButton, TextButton } from '../../src/components/board/controls';
+import { Field, IconButton, MarkerButton, TextButton } from '../../src/components/board/controls';
 import { toast } from '../../src/components/board/toast';
 
 export default function PickSportsScreen() {
@@ -54,6 +54,10 @@ export default function PickSportsScreen() {
     }
   }
 
+  const [q, setQ] = useState('');
+  const needle = q.trim().toLowerCase();
+  const shown = sportsByPopularity().filter((sp) => !needle || [t(`sports.${sp.id}`), sp.id.replace('_', ' '), sp.dbName || ''].some((n) => n.toLowerCase().includes(needle)));
+
   return (
     <SafeAreaView style={s.screen} edges={['top']}>
       <View style={s.topRow}>
@@ -70,8 +74,10 @@ export default function PickSportsScreen() {
         <Txt v="body" color={p.inkSoft} style={{ marginTop: 6, marginBottom: 20 }}>
           {t('onboarding.sportsSub')}
         </Txt>
-        <View style={s.grid}>
-          {SPORT_LIST.map((sp) => {
+        {/* Most popular first; type to find any sport */}
+        <Field value={q} onChangeText={setQ} placeholder={t('sportPicker.search')} autoCorrect={false} autoCapitalize="none" returnKeyType="search" accessibilityLabel={t('sportPicker.search')} />
+        <View style={[s.grid, { marginTop: 12 }]}>
+          {shown.map((sp) => {
             const on = picked.includes(sp.id);
             return (
               <Press

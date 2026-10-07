@@ -30,6 +30,11 @@ export const en = {
     you: 'You',
     train: 'Train',
   },
+  sportPicker: {
+    title: 'All sports',
+    search: 'Search sports',
+    none: 'No sport matches that.',
+  },
   sports: {
     running: 'Running',
     walking: 'Walking',
@@ -254,7 +259,6 @@ export const en = {
     errMissing: 'Pick a sport, a day, and a time.',
     errPhoto: "The photo didn't upload; the session was posted without it.",
     moreSports: 'More sports',
-    fewerSports: 'Fewer sports',
     placeCommunity: 'At {name}',
     placeMore: 'More places',
     placeFor: 'For {sport}',

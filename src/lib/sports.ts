@@ -43,6 +43,21 @@ export const SPORT_LIST: SportDef[] = [
   { id: 'table_tennis', sf: 'figure.table.tennis', ion: 'tennisball-outline', dbName: 'Table Tennis' },
 ];
 
+/** Most played first (Saudi Arabia): the order of the "all sports" lists. */
+export const SPORT_POPULARITY: SportId[] = [
+  'football', 'padel', 'running', 'walking', 'gym', 'basketball', 'swimming', 'cycling', 'tennis', 'volleyball',
+  'crossfit', 'hyrox', 'yoga', 'pilates', 'boxing', 'hiking', 'badminton', 'squash', 'table_tennis', 'pickleball',
+  'mma', 'climbing', 'horse_riding', 'skateboarding', 'meditation',
+];
+/** Every sport, most popular first (any sport not ranked goes last). */
+export function sportsByPopularity(): SportDef[] {
+  const rank = (id: string) => {
+    const i = SPORT_POPULARITY.indexOf(id as SportId);
+    return i < 0 ? 999 : i;
+  };
+  return [...SPORT_LIST].sort((a, b) => rank(a.id) - rank(b.id));
+}
+
 const EXTRA: SportDef[] = [
   { id: 'community', sf: 'person.3.fill', ion: 'people' },
   { id: 'other', sf: 'person.3.fill', ion: 'people' },
