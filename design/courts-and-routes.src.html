@@ -1,0 +1,335 @@
+<title>Courts and Routes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Poppins:wght@400;500;600&display=swap">
+<style>
+/* Layout: a reading column of three journeys; each journey is a row of phone screens with the
+   decision written beside them. Phones are the app's own slate board; the page follows the viewer's theme. */
+:root {
+  --bg: #EEF4F3; --card: #FFFFFF; --ink: #062A2A; --soft: #46625F; --line: rgba(6,42,42,.14); --accent: #B9640F; --aqua: #17807F;
+  --display: "Montserrat", "Arial Black", system-ui, sans-serif; --body: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* the app (fixed: these are screenshots of the slate board) */
+  --board: #023C3C; --deep: #013131; --chalk: #F4F1EA; --chalk2: rgba(244,241,234,.74); --chalk3: rgba(244,241,234,.6);
+  --rule: rgba(244,241,234,.13); --rule2: rgba(244,241,234,.32); --wash: rgba(244,241,234,.07); --orange: #E88F24; --aquaApp: #56C4C4; --red: #FF7A70; --green: #7FD39B;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #021B1B; --card: #052E2E; --ink: #EAF4F2; --soft: #A3C2BE; --line: rgba(234,244,242,.14); --accent: #E88F24; --aqua: #56C4C4; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #021B1B; --card: #052E2E; --ink: #EAF4F2; --soft: #A3C2BE; --line: rgba(234,244,242,.14); --accent: #E88F24; --aqua: #56C4C4; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 15.5px/1.65 var(--body); margin: 0 }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 44px 80px }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; letter-spacing: -.01em }
+h1 { font-size: clamp(32px, 6vw, 50px); font-weight: 900; text-transform: uppercase; line-height: 1 }
+h2 { font-size: clamp(22px, 3.4vw, 30px); font-weight: 800 }
+h3 { font-size: 16px; font-weight: 800 }
+p { margin: 0 }
+.eyebrow { font: 800 11px/1 var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--accent) }
+.lede { color: var(--soft); font-size: 17px; max-width: 64ch; margin-top: 14px }
+section.j { margin-top: 70px; display: grid; gap: 18px }
+section.j > p { color: var(--soft); max-width: 70ch }
+section.j > p b { color: var(--ink); font-weight: 600 }
+
+.rules { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px }
+.rule { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; min-width: 0 }
+.rule b { font-family: var(--display); font-size: 14px; display: block; margin-bottom: 4px }
+.rule span { font-size: 14px; color: var(--soft) }
+
+/* phones */
+.phones { display: flex; gap: 22px; overflow-x: auto; padding: 6px 2px 14px; scroll-snap-type: x mandatory }
+.shot { flex: none; width: 300px; display: grid; gap: 10px; scroll-snap-align: start }
+.shot figcaption { font-size: 13.5px; color: var(--soft) }
+.shot figcaption b { color: var(--ink); font-family: var(--display); font-size: 13px; display: block }
+.phone { width: 300px; height: 620px; border-radius: 40px; background: var(--board); color: var(--chalk); border: 8px solid #0b1414; overflow: hidden; position: relative; font-size: 13px; display: flex; flex-direction: column; box-shadow: 0 12px 30px rgba(0,20,20,.25) }
+.status { height: 30px; flex: none; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; font: 600 12px var(--body) }
+.top { display: flex; align-items: center; justify-content: space-between; padding: 4px 14px 10px; border-bottom: 1px solid var(--rule); flex: none }
+.top .t { font: 700 14px var(--display) }
+.top .x { color: var(--chalk2); font-size: 12.5px; min-width: 44px }
+.body { flex: 1; overflow: hidden; padding: 12px 14px; display: grid; align-content: start; gap: 10px }
+.bar { flex: none; padding: 10px 14px 16px; border-top: 1px solid var(--rule); background: var(--deep) }
+.btn { background: var(--orange); color: #1c1205; border-radius: 10px; height: 42px; display: grid; place-items: center; font: 800 12.5px var(--display); letter-spacing: .06em; text-transform: uppercase }
+.h { font: 800 13px var(--display); margin-top: 4px }
+.meta { color: var(--chalk3); font-size: 11.5px }
+.row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--rule) }
+.row:last-child { border-bottom: 0 }
+.row .nm { font: 700 12.5px var(--display) }
+.thumb { width: 46px; height: 46px; border-radius: 9px; flex: none; background: var(--wash); overflow: hidden; position: relative }
+.tag { display: inline-flex; align-items: center; gap: 4px; font: 600 10.5px var(--body); padding: 3px 7px; border-radius: 999px; border: 1px solid var(--rule2); color: var(--chalk2); white-space: nowrap }
+.tag.live { border-color: var(--aquaApp); color: var(--aquaApp) }
+.tag.venue { border-color: var(--orange); color: var(--orange) }
+.tag.ok { border-color: var(--green); color: var(--green) }
+.tag.wait { border-color: #E8C04A; color: #E8C04A }
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--wash); border-radius: 10px; padding: 3px; gap: 3px }
+.seg span { text-align: center; padding: 8px 4px; border-radius: 8px; font: 700 11.5px var(--display); color: var(--chalk2) }
+.seg span.on { background: var(--chalk); color: var(--board) }
+.field { border: 1.5px solid var(--rule2); border-radius: 10px; padding: 9px 11px; display: flex; justify-content: space-between; align-items: center; font-size: 13px }
+.chip { display: inline-block; border: 1px solid var(--rule2); border-radius: 8px; padding: 6px 9px; font: 700 11px var(--display); margin: 0 4px 4px 0 }
+.chip.on { background: var(--chalk); color: var(--board); border-color: var(--chalk) }
+.card { background: var(--wash); border: 1px solid var(--rule); border-radius: 12px; padding: 10px 12px; display: grid; gap: 6px }
+.card.warn { border-color: rgba(232,192,74,.55) }
+.split { display: grid; grid-template-columns: 1fr auto; gap: 3px 8px; font-size: 12px }
+.split .r { text-align: end; font-variant-numeric: tabular-nums }
+.ic { width: 15px; height: 15px; stroke-width: 2.2; vertical-align: -3px }
+.ic.lg { width: 18px; height: 18px }
+.small { font-size: 11.5px; color: var(--chalk2) }
+.link { color: var(--aquaApp); font-weight: 600 }
+.toast { position: absolute; left: 12px; right: 12px; top: 40px; background: var(--chalk); color: var(--board); border-radius: 12px; padding: 10px 12px; font-size: 12px; box-shadow: 0 8px 20px rgba(0,0,0,.35); display: grid; gap: 2px; z-index: 2 }
+.toast b { font-family: var(--display); font-size: 12px }
+
+/* brand map: the OpenStreetMap picture recoloured to the slate board, route in Operation Beast orange */
+.map { position: relative; overflow: hidden; background: #012a2a }
+.map .tiles { position: absolute; inset: 0; background-image: url("data:image/jpeg;base64,__MAP__"); background-size: cover; background-position: center; filter: grayscale(1) invert(1) brightness(.62) sepia(.55) hue-rotate(128deg) saturate(1.6) contrast(1.05) }
+.map svg { position: absolute; inset: 0; width: 100%; height: 100% }
+.map .credit { position: absolute; right: 6px; bottom: 4px; font-size: 8.5px; color: rgba(244,241,234,.7) }
+.route { fill: none; stroke: var(--orange); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round }
+.route-glow { fill: none; stroke: rgba(232,143,36,.28); stroke-width: 14; stroke-linecap: round }
+.drawing { stroke-dasharray: 7 7 }
+
+/* build notes */
+.build { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px }
+.b { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; min-width: 0 }
+.b h3 { display: flex; gap: 8px; align-items: center; margin-bottom: 8px }
+.b ul { margin: 0; padding-inline-start: 18px; display: grid; gap: 4px; font-size: 14px; color: var(--soft) }
+.b ul b { color: var(--ink); font-weight: 600 }
+.q { display: grid; gap: 10px; margin-top: 4px }
+.q div { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-size: 14.5px }
+.q div b { font-family: var(--display); font-size: 13px; color: var(--accent); margin-inline-end: 6px }
+footer { margin-top: 64px; font-size: 13px; color: var(--soft); border-top: 1px solid var(--line); padding-top: 16px }
+
+@media (max-width: 760px) { .rules, .build { grid-template-columns: minmax(0, 1fr) } }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Beast Tribe · design for review · 8 Oct 2026</p>
+  <h1>Courts and routes</h1>
+  <p class="lede">Simple and honest: we show the places, people agree who books and who pays, and they play. Three journeys: a court we can't see into, a run with its route, and picking where to play.</p>
+
+  <!-- 1. COURTS -->
+  <section class="j" id="courts">
+    <p class="eyebrow">1 · Courts</p>
+    <h2>Two kinds of courts, one rule: the host owns the booking</h2>
+    <div class="rules">
+      <div class="rule"><b>Book in the app</b><span>Venues that work with us (Andorra today). Free and taken times are live; booking makes the session. Nothing changes.</span></div>
+      <div class="rule"><b>Book with the venue</b><span>Every other court. We list it with its phone and booking link. The host books it there, then says so in the app.</span></div>
+      <div class="rule"><b>Everyone sees the deal</b><span>"Court booked by Riad · SAR 60 each, pay at the venue" shows before anyone taps I'm in. No surprises at the court.</span></div>
+    </div>
+
+    <div class="phones">
+      <figure class="shot">
+        <div class="phone">
+          <div class="status"><span>6:12</span><span>●●●</span></div>
+          <div class="top"><span class="x">Back</span><span class="t">Where</span><span class="x"></span></div>
+          <div class="body">
+            <div class="h">Book in the app</div>
+            <div class="row"><div class="thumb" style="background:#1d5a52"></div><div style="flex:1"><div class="nm">Andorra · Padel Court 1</div><div class="meta">Your community · 2.1 km</div></div><span class="tag live"><i data-lucide="zap" class="ic"></i>Live times</span></div>
+            <div class="h" style="margin-top:8px">Book with the venue</div>
+            <div class="row"><div class="thumb" style="background:#2b4f6a"></div><div style="flex:1"><div class="nm">Olaya padel venue</div><div class="meta">3.4 km · SAR 240 / 90 min</div></div><span class="tag venue">Venue</span></div>
+            <div class="row"><div class="thumb" style="background:#4b3a5a"></div><div style="flex:1"><div class="nm">Hittin padel venue</div><div class="meta">6.0 km · SAR 220 / 90 min</div></div><span class="tag venue">Venue</span></div>
+            <div class="row"><div class="thumb" style="background:#3b5a2b"></div><div style="flex:1"><div class="nm">Somewhere else</div><div class="meta">Drop a pin or type the place</div></div></div>
+          </div>
+        </div>
+        <figcaption><b>Pick the court</b>Two groups, clearly labelled. "Live times" means we can see the slots; "Venue" means you book it with them.</figcaption>
+      </figure>
+
+      <figure class="shot">
+        <div class="phone">
+          <div class="status"><span>6:13</span><span>●●●</span></div>
+          <div class="top"><span class="x">Cancel</span><span class="t">Play</span><span class="x"></span></div>
+          <div class="body">
+            <div class="card">
+              <div style="display:flex;justify-content:space-between;align-items:center"><span class="nm" style="font:700 12.5px var(--display)">Olaya padel venue</span><span class="tag venue">Venue</span></div>
+              <div class="small">We can't see their free times. Check with them, then book.</div>
+              <div style="display:flex;gap:14px;margin-top:2px"><span class="link"><i data-lucide="phone" class="ic"></i> Call</span><span class="link"><i data-lucide="external-link" class="ic"></i> Their booking page</span></div>
+            </div>
+            <div class="h">The court</div>
+            <div class="seg"><span class="on">I've booked it</span><span>I'll book it</span></div>
+            <div class="h">Court price</div>
+            <div class="field"><span>SAR 240</span><span class="meta">for 90 min</span></div>
+            <div class="card">
+              <div class="split"><span>Split between 4 players</span><span class="r"><b>SAR 60 each</b></span><span class="small">Paid at the venue. Everyone sees this before joining.</span><span></span></div>
+            </div>
+            <div class="h">Day and time</div>
+            <div><span class="chip">Today</span><span class="chip on">Tomorrow</span><span class="chip">Sat</span></div>
+            <div><span class="chip">7:00 PM</span><span class="chip on">8:30 PM</span><span class="chip">9:00 PM</span></div>
+          </div>
+          <div class="bar"><div class="btn">Put it on the board</div></div>
+        </div>
+        <figcaption><b>Host: one switch, one price</b>"I've booked it" or "I'll book it". The price is optional; with it, everyone's share shows.</figcaption>
+      </figure>
+
+      <figure class="shot">
+        <div class="phone">
+          <div class="status"><span>6:20</span><span>●●●</span></div>
+          <div class="top"><span class="x">Back</span><span class="t">Evening Padel</span><span class="x"></span></div>
+          <div class="body">
+            <div class="meta">Tomorrow · 8:30 PM · 90 min · Olaya padel venue</div>
+            <div><span class="tag ok"><i data-lucide="circle-check" class="ic"></i>Court booked by Riad</span></div>
+            <div class="card">
+              <div class="split">
+                <span>Court</span><span class="r">SAR 240</span>
+                <span>4 players</span><span class="r">÷ 4</span>
+                <span><b>Your share</b></span><span class="r"><b>SAR 60</b></span>
+              </div>
+              <div class="small">Pay at the venue when you arrive.</div>
+            </div>
+            <div class="h">Who's in · 3 of 4</div>
+            <div style="display:flex;gap:6px"><span class="thumb" style="width:34px;height:34px;border-radius:50%;background:#6b8c87"></span><span class="thumb" style="width:34px;height:34px;border-radius:50%;background:#8c6b5a"></span><span class="thumb" style="width:34px;height:34px;border-radius:50%;background:#5a6b8c"></span><span class="thumb" style="width:34px;height:34px;border-radius:50%;border:1.5px dashed var(--rule2);background:transparent"></span></div>
+            <div class="small">1 spot left</div>
+          </div>
+          <div class="bar"><div class="btn">I'm in · SAR 60 at the venue</div></div>
+        </div>
+        <figcaption><b>Player: the deal up front</b>Booked or not, the price and who pays are on the button. Joining means agreeing to your share.</figcaption>
+      </figure>
+
+      <figure class="shot">
+        <div class="phone">
+          <div class="status"><span>9:00</span><span>●●●</span></div>
+          <div class="toast"><b>Booked the court yet?</b>Evening Padel is tomorrow at 8:30 PM. 3 people are in.<span class="link" style="color:var(--aqua)">Yes, it's booked</span></div>
+          <div class="top" style="margin-top:62px"><span class="x">Back</span><span class="t">Evening Padel</span><span class="x"></span></div>
+          <div class="body">
+            <div><span class="tag wait"><i data-lucide="clock" class="ic"></i>Court not booked yet</span></div>
+            <div class="small">Riad is booking the court for 8:30 PM. You'll get a message when it's confirmed.</div>
+            <div class="card warn">
+              <div class="small"><b style="color:var(--chalk)">If it isn't booked 3 hours before</b>, everyone in gets a heads-up and can leave without it counting against them.</div>
+            </div>
+          </div>
+        </div>
+        <figcaption><b>"I'll book it": reminders, not policing</b>The host gets a nudge; players see the status; a late "not booked" warns everyone in time.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 2. ROUTES -->
+  <section class="j" id="routes">
+    <p class="eyebrow">2 · Running routes</p>
+    <h2>Every run has a route on a Beast Tribe map</h2>
+    <p>The map is ours: the slate board for streets, Operation Beast orange for the route, aqua for the meeting point. A route is drawn once and reused: <b>popular routes in your city</b> come first, and anyone hosting can draw a new one.</p>
+    <div class="phones">
+      <figure class="shot">
+        <div class="phone">
+          <div class="status"><span>5:01</span><span>●●●</span></div>
+          <div class="top"><span class="x">Back</span><span class="t">Where · Running</span><span class="x"></span></div>
+          <div class="body">
+            <div class="h">Routes in Riyadh</div>
+            <div class="row"><div class="thumb map"><div class="tiles"></div><svg viewBox="0 0 520 520"><circle class="route" cx="226" cy="272" r="88" style="stroke-width:24"/></svg></div><div style="flex:1"><div class="nm">Salam Park loop</div><div class="meta">1.0 km loop · flat · 214 runs</div></div></div>
+            <div class="row"><div class="thumb" style="background:#24504a"></div><div style="flex:1"><div class="nm">Wadi Hanifah path</div><div class="meta">5.2 km out and back · 96 runs</div></div></div>
+            <div class="row"><div class="thumb" style="background:#2c4a5c"></div><div style="flex:1"><div class="nm">Boulevard dawn 3K</div><div class="meta">3.0 km · lit at night · 41 runs</div></div></div>
+            <div class="row" style="color:var(--aquaApp)"><i data-lucide="pen-line" class="ic lg"></i><div style="flex:1"><div class="nm" style="color:var(--aquaApp)">Draw a new route</div><div class="meta">Trace it on the map</div></div></div>
+          </div>
+        </div>
+        <figcaption><b>Pick a route</b>Routes near you, most run first. The thumbnail is the route itself.</figcaption>
+      </figure>
+
+      <figure class="shot">
+        <div class="phone">
+          <div class="status"><span>5:02</span><span>●●●</span></div>
+          <div class="top"><span class="x">Cancel</span><span class="t">Draw your route</span><span class="x" style="text-align:end;color:var(--aquaApp)">Done</span></div>
+          <div class="map" style="flex:1">
+            <div class="tiles"></div>
+            <svg viewBox="0 0 520 520" preserveAspectRatio="xMidYMid slice">
+              <path class="route-glow" d="M168 420 L150 340 C150 300 168 220 226 184 C290 160 314 240 314 272"/>
+              <path class="route" d="M168 420 L150 340 C150 300 168 220 226 184 C290 160 314 240 314 272"/>
+              <path class="route drawing" d="M314 272 C314 330 270 360 226 360"/>
+              <circle cx="168" cy="420" r="11" fill="#56C4C4" stroke="#013131" stroke-width="4"/>
+              <circle cx="314" cy="272" r="9" fill="#F4F1EA" stroke="#E88F24" stroke-width="4"/>
+            </svg>
+            <span class="credit">© OpenStreetMap</span>
+          </div>
+          <div class="bar" style="display:grid;gap:8px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:900 26px var(--display)">0.9 km</span><span class="small"><i data-lucide="undo-2" class="ic"></i> Undo</span></div>
+            <div class="small"><i data-lucide="share-2" class="ic"></i> Others can run this route too</div>
+          </div>
+        </div>
+        <figcaption><b>Draw it with a finger</b>Tap the start, trace the way. Distance counts as you go. Saved routes help the next host.</figcaption>
+      </figure>
+
+      <figure class="shot">
+        <div class="phone">
+          <div class="status"><span>5:20</span><span>●●●</span></div>
+          <div class="map" style="height:250px;flex:none">
+            <div class="tiles"></div>
+            <svg viewBox="0 0 520 520" preserveAspectRatio="xMidYMid slice">
+              <circle class="route-glow" cx="226" cy="272" r="88"/>
+              <circle class="route" cx="226" cy="272" r="88"/>
+              <path class="route" d="M168 420 L150 330"/>
+              <circle cx="168" cy="420" r="13" fill="#56C4C4" stroke="#013131" stroke-width="4"/>
+            </svg>
+            <span class="credit">© OpenStreetMap</span>
+          </div>
+          <div class="body">
+            <div style="font:900 20px var(--display);text-transform:uppercase">Dawn 5K</div>
+            <div class="meta">Tomorrow · 5:30 AM · Salam Park loop</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="tag">5 laps · 5 km</span><span class="tag">Easy · 6:30 /km</span><span class="tag">Flat</span></div>
+            <div class="card"><div class="small"><i data-lucide="map-pin" class="ic" style="color:var(--aquaApp)"></i> <b style="color:var(--chalk)">Meet at the south gate</b> · by the car park</div></div>
+            <div class="small">8 going · No limit</div>
+          </div>
+          <div class="bar"><div class="btn">I'm in</div></div>
+        </div>
+        <figcaption><b>The session shows the run</b>Route, laps, pace and the exact meeting point. Directions open your maps app.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 3. PLACE -->
+  <section class="j" id="place">
+    <p class="eyebrow">3 · Choosing where</p>
+    <h2>Popular for your sport, near you, on one map</h2>
+    <p>Same idea for every sport. Pick the sport, and the Where step opens on a map of your city with <b>the places people actually play it</b>, most used first. Courts show Live times or Venue; parks and tracks show their routes. Nothing fits? Drop a pin.</p>
+    <div class="phones">
+      <figure class="shot">
+        <div class="phone">
+          <div class="status"><span>6:11</span><span>●●●</span></div>
+          <div class="top"><span class="x">Back</span><span class="t">Where · Padel</span><span class="x"></span></div>
+          <div class="map" style="height:300px;flex:none">
+            <div class="tiles"></div>
+            <svg viewBox="0 0 520 520" preserveAspectRatio="xMidYMid slice">
+              <g font-family="Montserrat, sans-serif" font-weight="800" font-size="20">
+                <circle cx="120" cy="140" r="15" fill="#E88F24" stroke="#013131" stroke-width="4"/>
+                <circle cx="380" cy="120" r="15" fill="#E88F24" stroke="#013131" stroke-width="4"/>
+                <circle cx="420" cy="380" r="15" fill="#56C4C4" stroke="#013131" stroke-width="4"/>
+                <circle cx="230" cy="420" r="15" fill="#E88F24" stroke="#013131" stroke-width="4"/>
+                <circle cx="260" cy="260" r="10" fill="#F4F1EA" stroke="#013131" stroke-width="4"/>
+              </g>
+            </svg>
+            <span class="credit">© OpenStreetMap</span>
+          </div>
+          <div class="body">
+            <div class="h">Popular for padel near you</div>
+            <div class="row"><span style="width:12px;height:12px;border-radius:50%;background:#56C4C4"></span><div style="flex:1"><div class="nm">Andorra · 3 courts</div><div class="meta">Your community · Live times</div></div></div>
+            <div class="row"><span style="width:12px;height:12px;border-radius:50%;background:#E88F24"></span><div style="flex:1"><div class="nm">Olaya padel venue</div><div class="meta">Venue · 38 sessions this month</div></div></div>
+            <div class="row" style="color:var(--aquaApp)"><i data-lucide="map-pin-plus" class="ic lg"></i><div class="nm" style="color:var(--aquaApp)">Drop a pin somewhere else</div></div>
+          </div>
+        </div>
+        <figcaption><b>Map first, list under it</b>Aqua pins are your community; orange are popular venues; the white dot is you.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="j" id="build">
+    <p class="eyebrow">What it takes</p>
+    <h2>How we'd build it</h2>
+    <div class="build">
+      <div class="b"><h3><i data-lucide="land-plot" class="ic lg"></i>Courts (no new app build)</h3><ul>
+        <li><b>Places get a "how to book" field:</b> in the app (live) or with the venue, plus phone and booking link. Staff fill it in the dashboard.</li>
+        <li><b>Sessions get:</b> court booked yes/no, court price (optional). The split and "pay at the venue" reuse what Andorra already does.</li>
+        <li><b>Reminders:</b> host nudge the evening before; heads-up to players 3 hours before if still not booked.</li>
+        <li>Ships as a normal update in days.</li></ul></div>
+      <div class="b"><h3><i data-lucide="route" class="ic lg"></i>Routes and maps (one new app build)</h3><ul>
+        <li><b>A real map in the app</b> needs a map component installed, so one new build for iPhone and Android (TestFlight again).</li>
+        <li><b>Brand map style:</b> MapLibre with our own teal and orange style, on OpenStreetMap data. Free to start; a tile host costs a little once usage grows.</li>
+        <li><b>Routes</b> are saved lines with distance, start point and city; popular ones rise to the top.</li>
+        <li>Until the build is out, sessions show the route as a picture, so nothing waits.</li></ul></div>
+    </div>
+    <p class="eyebrow" style="margin-top:22px">Questions for you</p>
+    <div class="q">
+      <div><b>1</b>If a host picked "I'll book it" and still hasn't booked 3 hours before, should the session be cancelled automatically, or only flagged so players decide?</div>
+      <div><b>2</b>Should anyone be able to save a drawn route for others, or only verified leaders and captains (to keep the list clean)?</div>
+      <div><b>3</b>For venues, are you fine with us listing them before they sign up with us (name, phone, booking link from their public page)?</div>
+    </div>
+  </section>
+
+  <footer>Design mock-ups, not the live app. Map: © OpenStreetMap contributors, recoloured. Icons: Lucide (ISC). Venue names other than Andorra are placeholders.</footer>
+</div>
+
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script>try { lucide.createIcons(); } catch (_) {}</script>
