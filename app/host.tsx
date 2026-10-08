@@ -18,7 +18,9 @@ import { CITIES, cityKey, cityLabel } from '../src/lib/cities';
 import { nearestCity, refreshPosition, useMyPosition } from '../src/lib/location';
 import { Sheet } from '../src/components/board/sheet';
 import { PREVIEW, PREVIEW_ME } from '../src/data/preview';
-import { COURT_SPORTS, SPORT_LIST, SportId, sportsByPopularity } from '../src/lib/sports';
+import { COURT_SPORTS, ROUTE_SPORTS, SPORT_LIST, SportId, sportsByPopularity } from '../src/lib/sports';
+import { fmtDistance, Route, useRoutePick, useRoutesNear } from '../src/data/routes';
+import { RouteSketch } from '../src/components/board/route';
 import { SportSearchList } from '../src/components/board/SportPicker';
 import { PAYMENTS_ENABLED, SESSION_LINK_BASE } from '../src/lib/constants';
 import { bookCoach, useCoachSlots } from '../src/data/coaching';
@@ -50,7 +52,7 @@ function periodOf(hhmm: string) {
 export default function HostScreen() {
   const s = useStyles();
   const { p, lang } = useKit();
-  const { t } = useI18n();
+  const { t, tn } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ spot?: string; community?: string; pack?: string; workout?: string; sport?: string }>();
@@ -69,6 +71,9 @@ export default function HostScreen() {
   const [picked, setPicked] = useState<Place | null>(null);
   const [slotAt, setSlotAt] = useState<number | null>(null);
   const [sportsOpen, setSportsOpen] = useState(false);
+  // A run's route: picked from the city's routes or drawn on the map.
+  const [route, setRoute] = useState<Route | null>(null);
+  const [routesOpen, setRoutesOpen] = useState(false);
   const [period, setPeriod] = useState<Period>(() => {
     const h = new Date().getHours();
     return h < 11 ? 'morning' : h < 16 ? 'afternoon' : h < 21 ? 'evening' : 'night';
@@ -119,6 +124,15 @@ export default function HostScreen() {
   }, []);
   // Places follow the chosen city (plus my own community's courts).
   const places = useHostPlaces(sport, lang, pos, city);
+  const routes = useRoutesNear(city || null, sport && ROUTE_SPORTS.includes(sport) ? sport : null);
+  // A route drawn on the map comes back here.
+  const drawn = useRoutePick((st) => st.route);
+  useEffect(() => {
+    if (!drawn) return;
+    setRoute(drawn);
+    if (!place.trim() && !picked) setPlace(drawn.name);
+    useRoutePick.getState().set(null);
+  }, [drawn]);
   const [placeOpen, setPlaceOpen] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
   const [cityTouched, setCityTouched] = useState(false);
@@ -240,8 +254,9 @@ export default function HostScreen() {
         durationMin: duration,
         place,
         city,
-        lat: spot?.lat ?? null,
-        lng: spot?.lng ?? null,
+        lat: spot?.lat ?? (routeFits && route ? route.start[1] : null),
+        lng: spot?.lng ?? (routeFits && route ? route.start[0] : null),
+        routeId: routeFits ? route?.id ?? null : null,
         capacity: open ? null : spotsCount,
         dropIn: open,
         waitlistMax: Number(waitlist),
@@ -375,6 +390,8 @@ export default function HostScreen() {
   const timeRows: { key: string; label: string; times: { v: string; booked?: boolean }[] }[] = coach && dayKey && !court
     ? [{ key: 'coach', label: coach.name, times: coachSlots.map((x) => ({ v: x.start, booked: x.booked })) }]
     : [{ key: period, label: '', times: SLOTS[period].map((v) => ({ v })) }];
+  // Runs, walks, rides and hikes follow a route.
+  const routeFits = !!sport && ROUTE_SPORTS.includes(sport);
   // A court sport somewhere we can't book through the app.
   const venueCourt = !!sport && COURT_SPORTS.includes(sport) && !court && !!(picked || place.trim());
   const courtDay = court && dayKey ? courtSlots.filter((x) => x.startsAt.getTime() > Date.now()) : [];
@@ -451,6 +468,76 @@ export default function HostScreen() {
             {[t('host.courtNote', { min: court.slotMinutes, n: court.maxPlayers }), court.dailyLimit ? t('courts.dailyRule', { n: court.dailyLimit, sport: t(`sports.${court.sport}`) }) : null].filter(Boolean).join(' ')}
           </Txt>
         ) : null}
+
+        {/* A run's route: the city's routes, most run first, or draw a new one. */}
+        {routeFits ? (
+          <View style={{ gap: 8, marginTop: 14 }}>
+            <SectionHeading title={t('route.title')} />
+            {route ? (
+              <Press onPress={() => setRoutesOpen(true)} feedback="selection" style={s.routeCard}>
+                <RouteSketch path={route.path} height={64} style={{ width: 64, borderRadius: 8 }} stroke={3} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Txt v="row" size={15} numberOfLines={1}>
+                    {route.name}
+                  </Txt>
+                  <Txt v="meta">{[fmtDistance(route.distanceM, lang), route.isLoop ? t('route.loop') : null, route.runs ? tn('route.runs', route.runs) : null].filter(Boolean).join(' · ')}</Txt>
+                </View>
+                <Txt v="label" size={13} color={p.aqua}>
+                  {t('route.change')}
+                </Txt>
+              </Press>
+            ) : (
+              <Dropdown label={t('route.pick')} placeholder onPress={() => setRoutesOpen(true)} />
+            )}
+          </View>
+        ) : null}
+
+        <Sheet visible={routesOpen} title={t('route.title')} onClose={() => setRoutesOpen(false)}>
+          <View style={{ gap: 4 }}>
+            <SectionHeading title={city ? t('route.near', { city: cityLabel(city, lang) }) : t('route.nearAny')} />
+            {(routes.data ?? []).length ? (
+              (routes.data ?? []).map((r) => (
+                <Press
+                  key={r.id}
+                  onPress={() => {
+                    setRoute(r);
+                    if (!place.trim() && !picked) setPlace(r.name);
+                    setRoutesOpen(false);
+                  }}
+                  feedback="selection"
+                  style={s.routeRow}
+                >
+                  <RouteSketch path={r.path} height={52} style={{ width: 52, borderRadius: 8 }} stroke={2.5} />
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Txt v="row" size={15} numberOfLines={1}>
+                      {r.name}
+                    </Txt>
+                    <Txt v="meta">{[fmtDistance(r.distanceM, lang), r.isLoop ? t('route.loop') : null, r.runs ? tn('route.runs', r.runs) : null].filter(Boolean).join(' · ')}</Txt>
+                  </View>
+                  {route?.id === r.id ? <Icon name="check" size={16} color={p.aqua} /> : null}
+                </Press>
+              ))
+            ) : routes.loading ? null : (
+              <Txt v="meta" style={{ paddingVertical: 8 }}>
+                {t('route.none')}
+              </Txt>
+            )}
+            <Press
+              onPress={() => {
+                setRoutesOpen(false);
+                router.push({ pathname: '/route-draw', params: { sport: sport ?? 'running', city } } as any);
+              }}
+              feedback="selection"
+              style={s.routeRow}
+            >
+              <Icon name="plus" size={18} color={p.aqua} />
+              <Txt v="row" size={15} color={p.aqua}>
+                {t('route.draw')}
+              </Txt>
+            </Press>
+            {route ? <TextButton label={t('route.remove')} onPress={() => { setRoute(null); setRoutesOpen(false); }} color={p.inkSoft} /> : null}
+          </View>
+        </Sheet>
 
         {/* A court we can't book through: the host books it with the venue and says so here. */}
         {venueCourt ? (
@@ -850,6 +937,8 @@ const useStyles = makeStyles(({ p }) => ({
   rowLabel: { marginTop: 4, marginBottom: 6 },
   stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: p.ruleStrong, borderRadius: 10, padding: 4 },
   stepBtn: { width: 48, height: 44, borderRadius: 8, backgroundColor: p.wash, alignItems: 'center', justifyContent: 'center' },
+  routeCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderRadius: 10, borderWidth: 1.5, borderColor: p.ruleStrong },
+  routeRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: p.rule },
   venueCard: { gap: 6, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: p.rule, backgroundColor: p.wash },
   moreToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 48, marginTop: 14 },
   cover: { width: '100%', height: 180, borderRadius: 10 },

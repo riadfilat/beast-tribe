@@ -132,6 +132,18 @@ const CENTRES: Record<string, Position> = {
   Irbid: { lat: 32.5556, lng: 35.85 },
 };
 
+/** The centre of a known city (English or Arabic name), for opening a map there. */
+export function cityCentre(city?: string | null): Position | null {
+  if (!city) return null;
+  const k = city.trim().toLowerCase();
+  for (const list of Object.values(CITIES)) {
+    for (const pair of list) {
+      if (pair.some((n) => n.toLowerCase() === k)) return CENTRES[pair[0]] ?? null;
+    }
+  }
+  return null;
+}
+
 /** The nearest known city (English name) within 80 km, or null. */
 export function nearestCity(pos: Position): string | null {
   let best: string | null = null;

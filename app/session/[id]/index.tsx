@@ -28,6 +28,8 @@ import { haptic } from '../../../src/lib/haptics';
 import { scheduleEventReminder } from '../../../src/lib/notifications';
 import { GuestJoin } from '../../../src/components/board/guest-join';
 import { errorKey } from '../../../src/data/errors';
+import { fmtDistance, useRoute } from '../../../src/data/routes';
+import { RouteFacts, RouteMap } from '../../../src/components/board/route';
 
 export default function SessionScreen() {
   const { id, g } = useLocalSearchParams<{ id: string; g?: string }>();
@@ -47,6 +49,7 @@ export default function SessionScreen() {
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/home'));
   const x = q.data;
+  const route = useRoute(q.data?.routeId ?? null).data ?? null;
   const guestKey = useGuestToken(x?.id ?? null, !!x?.isHost && !!x?.guestInvite).data ?? null;
 
   if (q.loading && !x) {
@@ -299,6 +302,14 @@ export default function SessionScreen() {
             <Txt v="title" size={18}>
               {t('session.where')}
             </Txt>
+            {/* A run's route on the Beast Tribe map, starting at the aqua dot. */}
+            {route ? (
+              <View style={{ gap: 8 }}>
+                <RouteMap path={route.path} height={220} style={{ borderRadius: 12 }} interactive />
+                <RouteFacts items={[route.name, fmtDistance(route.distanceM, lang), route.isLoop ? t('route.loop') : null].filter(Boolean) as string[]} />
+                <Txt v="caption">{t('route.meetAtStart')}</Txt>
+              </View>
+            ) : null}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <View style={{ flex: 1 }}>
                 {x.place ? <Txt v="headline">{x.place}</Txt> : <Txt v="headline" color={p.inkSoft}>{t('session.placeTbc')}</Txt>}

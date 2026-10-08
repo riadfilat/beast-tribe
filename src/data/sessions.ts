@@ -288,6 +288,8 @@ export interface HostInput {
   courtBooking?: 'booked' | 'pending' | null;
   /** What that court costs, split between everyone in (paid at the venue). */
   courtPrice?: number | null;
+  /** The route a run follows. */
+  routeId?: string | null;
 }
 
 /** Create a session and put the host's own name on it. Returns the new id and whether the photo made it. */
@@ -336,6 +338,7 @@ export async function hostSession(meId: string, input: HostInput): Promise<{ id:
       drop_in: !!input.dropIn,
       waitlist_max: Math.min(3, Math.max(0, input.waitlistMax ?? 3)),
       class_series_id: series,
+      ...(input.routeId ? { route_id: input.routeId } : {}),
   });
   const { data, error } = await supabase.from('events').insert(row(0, null)).select('id').single();
   if (error) {

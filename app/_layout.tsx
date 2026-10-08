@@ -77,6 +77,7 @@ function AuthGate() {
       <Stack.Screen name="workout/[id]/index" />
       <Stack.Screen name="workout/[id]/play" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
       <Stack.Screen name="host" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="route-draw" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
       <Stack.Screen name="inbox" />
       <Stack.Screen name="my-sessions" />
       <Stack.Screen name="moves" />
