@@ -15,6 +15,8 @@ interface Location {
   description?: string;
   image_url?: string;
   address?: string;
+  phone?: string | null;
+  booking_url?: string | null;
   sports?: string[];
   sort_order?: number;
   is_active?: boolean;
@@ -268,6 +270,31 @@ export default function LocationForm({ action, location, communities = [] }: Loc
           placeholder="Street, district, postal code"
           className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-aqua focus:border-brand-aqua outline-none"
         />
+      </div>
+
+      {/* Booking with the venue (courts we can't book through the app) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1.5">Venue phone (for booking)</label>
+          <input
+            type="tel"
+            name="phone"
+            defaultValue={location?.phone || ''}
+            placeholder="+966 5x xxx xxxx"
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-aqua focus:border-brand-aqua outline-none"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1.5">Booking page (link)</label>
+          <input
+            type="url"
+            name="booking_url"
+            defaultValue={location?.booking_url || ''}
+            placeholder="https://"
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-aqua focus:border-brand-aqua outline-none"
+          />
+        </div>
+        <p className="sm:col-span-2 text-xs text-gray-500">Courts we can't book through the app: members see Call and Their booking page, then mark the court booked themselves.</p>
       </div>
 
       {/* Sports */}

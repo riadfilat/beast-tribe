@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, ScrollView, Share, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Linking, Platform, ScrollView, Share, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { sportIdOf } from '../src/lib/sports';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,7 +18,7 @@ import { CITIES, cityKey, cityLabel } from '../src/lib/cities';
 import { nearestCity, refreshPosition, useMyPosition } from '../src/lib/location';
 import { Sheet } from '../src/components/board/sheet';
 import { PREVIEW, PREVIEW_ME } from '../src/data/preview';
-import { SPORT_LIST, SportId, sportsByPopularity } from '../src/lib/sports';
+import { COURT_SPORTS, SPORT_LIST, SportId, sportsByPopularity } from '../src/lib/sports';
 import { SportSearchList } from '../src/components/board/SportPicker';
 import { PAYMENTS_ENABLED, SESSION_LINK_BASE } from '../src/lib/constants';
 import { bookCoach, useCoachSlots } from '../src/data/coaching';
@@ -97,6 +97,9 @@ export default function HostScreen() {
     params.pack ? { kind: 'pack', id: params.pack } : params.community ? { kind: 'community', id: params.community } : null,
   );
   const [price, setPrice] = useState('');
+  // A court booked with the venue (we can't see its times): who has booked it, and what it costs.
+  const [courtBooking, setCourtBooking] = useState<'booked' | 'pending'>('pending');
+  const [courtPrice, setCourtPrice] = useState('');
   const [coachId, setCoachId] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
   const [cover, setCover] = useState<string | null>(null);
@@ -255,6 +258,8 @@ export default function HostScreen() {
         notes,
         cover: cover ?? spot?.imageUrl ?? null,
         country,
+        courtBooking: venueCourt ? courtBooking : null,
+        courtPrice: venueCourt && Number(courtPrice) > 0 ? Number(courtPrice) : null,
       });
       if (coach && coachSlots.some((x) => x.start === time && !x.booked)) {
         // The session is already live; a failed booking shouldn't undo it.
@@ -370,6 +375,8 @@ export default function HostScreen() {
   const timeRows: { key: string; label: string; times: { v: string; booked?: boolean }[] }[] = coach && dayKey && !court
     ? [{ key: 'coach', label: coach.name, times: coachSlots.map((x) => ({ v: x.start, booked: x.booked })) }]
     : [{ key: period, label: '', times: SLOTS[period].map((v) => ({ v })) }];
+  // A court sport somewhere we can't book through the app.
+  const venueCourt = !!sport && COURT_SPORTS.includes(sport) && !court && !!(picked || place.trim());
   const courtDay = court && dayKey ? courtSlots.filter((x) => x.startsAt.getTime() > Date.now()) : [];
   const courtClosed = !!court && !!dayKey && !court.openDays.includes(new Date(`${dayKey}T12:00:00`).getDay());
 
@@ -443,6 +450,38 @@ export default function HostScreen() {
           <Txt v="caption" style={{ marginTop: 6 }}>
             {[t('host.courtNote', { min: court.slotMinutes, n: court.maxPlayers }), court.dailyLimit ? t('courts.dailyRule', { n: court.dailyLimit, sport: t(`sports.${court.sport}`) }) : null].filter(Boolean).join(' ')}
           </Txt>
+        ) : null}
+
+        {/* A court we can't book through: the host books it with the venue and says so here. */}
+        {venueCourt ? (
+          <View style={{ gap: 10, marginTop: 14 }}>
+            {picked?.phone || picked?.bookingUrl ? (
+              <View style={s.venueCard}>
+                <Txt v="caption">{t('host.venueNote')}</Txt>
+                <View style={{ flexDirection: 'row', gap: 18 }}>
+                  {picked.phone ? <TextButton label={t('host.venueCall')} onPress={() => Linking.openURL(`tel:${picked.phone!.replace(/\s+/g, '')}`).catch(() => {})} color={p.aqua} /> : null}
+                  {picked.bookingUrl ? <TextButton label={t('host.venueBook')} onPress={() => Linking.openURL(picked.bookingUrl!).catch(() => {})} color={p.aqua} /> : null}
+                </View>
+              </View>
+            ) : null}
+            <SectionHeading title={t('host.courtTitle')} />
+            <Segmented
+              value={courtBooking}
+              onChange={setCourtBooking}
+              options={[
+                { value: 'booked', label: t('host.courtBooked') },
+                { value: 'pending', label: t('host.courtWillBook') },
+              ]}
+            />
+            {courtBooking === 'pending' ? <Txt v="caption">{t('host.courtPendingNote')}</Txt> : null}
+            <SectionHeading title={t('host.courtPrice')} style={{ marginTop: 4 }} />
+            <Field value={courtPrice} onChangeText={(v) => setCourtPrice(v.replace(/[^0-9.]/g, ''))} placeholder="SAR" keyboardType="decimal-pad" maxLength={6} />
+            {Number(courtPrice) > 0 ? (
+              <Txt v="caption">
+                {spotsCount ? t('host.courtSplit', { n: spotsCount, amount: Math.round((Number(courtPrice) / spotsCount) * 100) / 100 }) : t('host.courtSplitAny')}
+              </Txt>
+            ) : null}
+          </View>
         ) : null}
 
         <Sheet visible={sportsOpen} title={t('sportPicker.title')} onClose={() => setSportsOpen(false)}>
@@ -811,6 +850,7 @@ const useStyles = makeStyles(({ p }) => ({
   rowLabel: { marginTop: 4, marginBottom: 6 },
   stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1.5, borderColor: p.ruleStrong, borderRadius: 10, padding: 4 },
   stepBtn: { width: 48, height: 44, borderRadius: 8, backgroundColor: p.wash, alignItems: 'center', justifyContent: 'center' },
+  venueCard: { gap: 6, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: p.rule, backgroundColor: p.wash },
   moreToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 48, marginTop: 14 },
   cover: { width: '100%', height: 180, borderRadius: 10 },
   bar: { paddingHorizontal: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: p.rule, backgroundColor: p.boardDeep },

@@ -218,6 +218,17 @@ export function useSessionActions() {
   return { join, leave, cancel };
 }
 
+/** The host says whether the venue's court is booked, and what it costs (split between everyone in). */
+export async function setSessionCourt(eventId: string, booking: 'booked' | 'pending' | null, price: number | null) {
+  if (PREVIEW) {
+    await wait(300);
+    return;
+  }
+  const { error } = await supabase.rpc('set_session_court', { p_event: eventId, p_booking: booking, p_price: price });
+  if (error) throw toSessionError(error);
+  invalidate('sessions:');
+}
+
 /** The host changes a session they posted. Everyone in hears about a new time or place. */
 export async function updateSession(
   eventId: string,
@@ -273,6 +284,10 @@ export interface HostInput {
   /** http(s) URL (popular spot photo) or a local file to upload */
   cover?: string | null;
   country: string;
+  /** A court booked with the venue: booked already, or the host will book it. */
+  courtBooking?: 'booked' | 'pending' | null;
+  /** What that court costs, split between everyone in (paid at the venue). */
+  courtPrice?: number | null;
 }
 
 /** Create a session and put the host's own name on it. Returns the new id and whether the photo made it. */
@@ -340,6 +355,10 @@ export async function hostSession(meId: string, input: HostInput): Promise<{ id:
     (more || []).forEach((m: any) => ids.push(m.id));
   }
   await supabase.from('event_rsvps').upsert(ids.map((id) => ({ event_id: id, user_id: meId, status: 'going' })), { onConflict: 'event_id,user_id' });
+  if (input.courtBooking) {
+    // The session is live either way; the court line can be fixed from the session after.
+    await Promise.all(ids.map((id) => setSessionCourt(id, input.courtBooking!, input.courtPrice ?? null).catch(() => {})));
+  }
   invalidate('sessions:');
   return { id: data.id, photoFailed };
 }

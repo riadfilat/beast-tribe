@@ -5,7 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { makeStyles, useKit } from '../../../src/theme';
 import { useI18n } from '../../../src/i18n';
 import { addDays, clockParts, fmtDay, localDateKey, localDateTime, startOfLocalDay } from '../../../src/i18n/format';
-import { updateSession, useSession } from '../../../src/data/sessions';
+import { setSessionCourt, updateSession, useSession } from '../../../src/data/sessions';
+import { COURT_SPORTS } from '../../../src/lib/sports';
 import { DURATIONS, Period, SLOTS, durationLabel, periodFor } from '../../../src/lib/times';
 import { Txt } from '../../../src/components/board/Txt';
 import { Icon } from '../../../src/components/board/Icon';
@@ -39,6 +40,8 @@ export default function EditSessionScreen() {
   const [spots, setSpots] = useState<number | null>(null);
   const [level, setLevel] = useState<Level>('any');
   const [notes, setNotes] = useState('');
+  const [courtBooking, setCourtBooking] = useState<'booked' | 'pending' | 'none'>('none');
+  const [courtPrice, setCourtPrice] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,6 +58,8 @@ export default function EditSessionScreen() {
     setSpots(x.capacity);
     setLevel(x.difficulty ?? 'any');
     setNotes(x.description ?? '');
+    setCourtBooking(x.courtBooking ?? 'none');
+    setCourtPrice(x.court ? String(x.court) : '');
     setReady(true);
   }, [x, ready]);
 
@@ -74,6 +79,7 @@ export default function EditSessionScreen() {
 
   const close = () => (router.canGoBack() ? router.back() : router.replace(`/session/${id}`));
   const fixed = !!x?.atCourt;
+  const showCourt = !!x && !x.atCourt && (!!x.courtBooking || COURT_SPORTS.includes(x.sport));
   const minSpots = Math.max(2, x?.goingCount ?? 0);
   const isPast = (key: string, v: string) => localDateTime(key, v).getTime() < Date.now() + 5 * 60000;
 
@@ -97,6 +103,10 @@ export default function EditSessionScreen() {
         difficulty: level === 'any' ? null : level,
         notes,
       });
+      // A court booked with the venue: its status and price.
+      const wantBooking = courtBooking === 'none' ? null : courtBooking;
+      const wantPrice = wantBooking && Number(courtPrice) > 0 ? Number(courtPrice) : null;
+      if (showCourt && (wantBooking !== x.courtBooking || wantPrice !== (x.court ?? null))) await setSessionCourt(x.id, wantBooking, wantPrice);
       haptic('success');
       toast.show(moved && x.goingCount > 1 ? t('session.editSavedTold') : t('session.editSaved'), 'yours');
       q.refetch();
@@ -192,6 +202,27 @@ export default function EditSessionScreen() {
               {spots != null ? <TextButton label={t('session.noLimit')} onPress={() => setSpots(null)} color={p.aqua} /> : null}
             </>
           )}
+
+          {showCourt ? (
+            <>
+              <SectionHeading title={t('host.courtTitle')} style={s.gap} />
+              <Segmented
+                value={courtBooking}
+                onChange={setCourtBooking}
+                options={[
+                  { value: 'booked', label: t('host.courtBooked') },
+                  { value: 'pending', label: t('host.courtWillBook') },
+                  { value: 'none', label: t('host.courtNone') },
+                ]}
+              />
+              {courtBooking !== 'none' ? (
+                <>
+                  <SectionHeading title={t('host.courtPrice')} style={{ marginTop: 14 }} />
+                  <Field value={courtPrice} onChangeText={(v) => setCourtPrice(v.replace(/[^0-9.]/g, ''))} placeholder="SAR" keyboardType="decimal-pad" maxLength={6} />
+                </>
+              ) : null}
+            </>
+          ) : null}
 
           <SectionHeading title={t('host.level')} style={s.gap} />
           <Segmented

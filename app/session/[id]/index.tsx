@@ -8,7 +8,7 @@ import { useI18n } from '../../../src/i18n';
 import { cityLabel } from '../../../src/lib/cities';
 import { clockParts, dayOffset, fmtClock, fmtDateLong, fmtDay, fmtDuration, fmtIn } from '../../../src/i18n/format';
 import { useAuth } from '../../../src/providers/AuthProvider';
-import { useGuestToken, useSession, useSessionActions } from '../../../src/data/sessions';
+import { setSessionCourt, useGuestToken, useSession, useSessionActions } from '../../../src/data/sessions';
 import { PREVIEW, PREVIEW_ME } from '../../../src/data/preview';
 import { SESSION_LINK_BASE, TRAIN_ENABLED } from '../../../src/lib/constants';
 import { Txt } from '../../../src/components/board/Txt';
@@ -169,6 +169,20 @@ export default function SessionScreen() {
     }
   }
 
+  const hostFirst = (x?.host?.name || '').split(' ')[0] || t('session.theHost');
+
+  async function markBooked() {
+    if (!x) return;
+    try {
+      await setSessionCourt(x.id, 'booked', x.court);
+      haptic('success');
+      q.setData((prev) => (prev ? { ...prev, courtBooking: 'booked' } : prev));
+      toast.show(t('session.courtBookedToast'), 'yours');
+    } catch (e: any) {
+      toast.show(t(errorKey('session', e)), 'error');
+    }
+  }
+
   async function doCancel() {
     if (!x) return;
     setBusy(true);
@@ -292,6 +306,21 @@ export default function SessionScreen() {
               </View>
               {x.place ? <OutlineButton label={t('session.directions')} icon="directions" onPress={directions} style={{ height: 40 }} /> : null}
             </View>
+            {/* A court booked with the venue: is it booked? */}
+            {x.courtBooking && x.state !== 'cancelled' ? (
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 10 }}>
+                <Icon name={x.courtBooking === 'booked' ? 'check' : 'timer'} size={15} color={x.courtBooking === 'booked' ? p.aqua : p.markerText} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Txt v="label" size={14} color={x.courtBooking === 'booked' ? p.aqua : p.markerText}>
+                    {x.courtBooking === 'booked' ? t('session.courtBookedBy', { name: hostFirst }) : t('session.courtNotBooked')}
+                  </Txt>
+                  {x.courtBooking === 'pending' ? <Txt v="caption">{x.isHost ? t('session.courtNotBookedHost') : t('session.courtNotBookedSub', { name: hostFirst })}</Txt> : null}
+                </View>
+                {x.isHost && x.courtBooking === 'pending' && x.state === 'upcoming' ? (
+                  <OutlineButton label={t('session.markCourtBooked')} onPress={markBooked} style={{ height: 36 }} />
+                ) : null}
+              </View>
+            ) : null}
           </View>
 
           {x.share != null || (x.guestOpen && isGuest && x.guestPrice) ? (

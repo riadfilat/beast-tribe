@@ -81,6 +81,7 @@ export async function createLocation(formData: FormData) {
     description,
     image_url,
     address,
+    ...venueContact(formData),
     sports,
     sort_order: isNaN(sort_order) ? 0 : sort_order,
     is_active,
@@ -114,6 +115,7 @@ export async function updateLocation(locationId: string, formData: FormData) {
   updates.country = ((formData.get('country') as string) || 'SA').trim();
   updates.description = ((formData.get('description') as string) || '').trim() || null;
   updates.address = ((formData.get('address') as string) || '').trim() || null;
+  Object.assign(updates, venueContact(formData));
 
   // Image: file upload takes precedence; falls back to URL or existing
   const uploadedUrl = await uploadLocationImage(formData);
@@ -159,4 +161,12 @@ export async function deleteLocation(locationId: string) {
 
   revalidatePath('/locations');
   redirect('/locations');
+}
+
+/** A venue booked outside the app: how members reach it (phone, booking page). */
+function venueContact(formData: FormData) {
+  const phone = ((formData.get('phone') as string) || '').replace(/[^0-9+ ]/g, '').trim() || null;
+  const url = ((formData.get('booking_url') as string) || '').trim();
+  const booking_url = /^https?:\/\//i.test(url) ? url : null;
+  return { phone, booking_url };
 }

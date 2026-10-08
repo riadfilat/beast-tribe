@@ -25,6 +25,9 @@ export interface Place {
   reason: 'community' | 'used' | 'sport' | 'near' | null;
   /** Kilometres from the member, when their position is known. */
   km: number | null;
+  /** A venue booked outside the app: its phone and booking page. */
+  phone?: string | null;
+  bookingUrl?: string | null;
 }
 
 export function useHostPlaces(sport: string | null, lang: string, pos: Position | null = null, city: string | null = null) {
@@ -74,6 +77,8 @@ export function useHostPlaces(sport: string | null, lang: string, pos: Position 
         lat: x.lat,
         lng: x.lng,
         facility: null,
+        phone: x.phone ?? null,
+        bookingUrl: x.bookingUrl ?? null,
         km: kmOf(x.lat, x.lng),
         reason: near(x.city) ? 'near' : 'sport',
         score: (near(x.city) ? 150 : 0) + closeness(kmOf(x.lat, x.lng)) - i,

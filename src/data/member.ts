@@ -94,6 +94,9 @@ export interface Spot {
   imageUrl: string | null;
   lat: number | null;
   lng: number | null;
+  /** A venue we can't book through: how to reach them. */
+  phone?: string | null;
+  bookingUrl?: string | null;
 }
 export function usePopularSpots(country: string, lang: string = 'en') {
   return useQuery<Spot[]>(`spots:${country}:${lang}`, async () => {
@@ -102,7 +105,7 @@ export function usePopularSpots(country: string, lang: string = 'en') {
       : (
           await supabase
             .from('popular_locations')
-            .select('id, name, name_ar, city, country, sports, image_url, latitude, longitude, sort_order')
+            .select('id, name, name_ar, city, country, sports, image_url, latitude, longitude, sort_order, phone, booking_url')
             .eq('is_active', true)
             // A place without a photo isn't shown anywhere.
             .not('image_url', 'is', null)
@@ -119,6 +122,8 @@ export function usePopularSpots(country: string, lang: string = 'en') {
         imageUrl: r.image_url || null,
         lat: r.latitude != null ? Number(r.latitude) : null,
         lng: r.longitude != null ? Number(r.longitude) : null,
+        phone: r.phone ?? null,
+        bookingUrl: r.booking_url ?? null,
       }));
   }, CATALOGUE);
 }

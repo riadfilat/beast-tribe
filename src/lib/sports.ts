@@ -57,6 +57,11 @@ export const SPORT_LIST: SportDef[] = [
   { id: 'diving', sf: 'figure.open.water.swim', mci: 'diving-scuba', dbName: 'Diving' },
 ];
 
+/** Played on a court someone has to book (padel, football pitch…). */
+export const COURT_SPORTS: SportId[] = ['padel', 'tennis', 'pickleball', 'badminton', 'squash', 'table_tennis', 'football', 'basketball', 'volleyball'];
+/** Done along a route (a run, a ride). */
+export const ROUTE_SPORTS: SportId[] = ['running', 'walking', 'hiking', 'cycling'];
+
 /** Most played first (Saudi Arabia): the order of the "all sports" lists. */
 export const SPORT_POPULARITY: SportId[] = [
   'football', 'padel', 'running', 'walking', 'gym', 'basketball', 'swimming', 'cycling', 'tennis', 'volleyball',
