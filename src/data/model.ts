@@ -50,6 +50,8 @@ export interface Session {
   share: number | null;
   /** A paid court's full price. */
   court: number | null;
+  /** Booked at a court: the booking fixes its time and place. */
+  atCourt: boolean;
   /** The plan for the session, when the host attached a workout the viewer can see. */
   workout: { id: string; title: string; titleAr: string | null; minutes: number | null } | null;
   host: Person | null;
@@ -74,7 +76,7 @@ const SESSION_COLUMNS = `
   id, title, event_type, starts_at, ends_at, location_name, location_city, gym_name,
   location_lat, location_lng, image_url, max_capacity, going_count, created_by,
   is_women_only, is_men_only, visibility, pack_id, community_id, difficulty, coach_name, cancelled_at, drop_in, captain_hosted,
-  guest_open, guest_price_sar, share_sar, court_sar, guest_invite, waitlist_max,
+  guest_open, guest_price_sar, share_sar, court_sar, guest_invite, waitlist_max, facility_id,
   pack:packs(name),
   community:communities(name, visibility),
   host:profiles!events_created_by_fkey(${PERSON_COLUMNS}),
@@ -157,6 +159,7 @@ export function toSession(row: any, meId: string | null | undefined, myStatus?: 
     // A free court has nothing to split, so it reads like any other session.
     share: Number(row.share_sar) > 0 ? Number(row.share_sar) : null,
     court: Number(row.court_sar) > 0 ? Number(row.court_sar) : null,
+    atCourt: !!row.facility_id,
     workout: row.workout?.id
       ? { id: row.workout.id, title: row.workout.title || '', titleAr: row.workout.title_ar || null, minutes: row.workout.duration_minutes ?? null }
       : null,

@@ -30,20 +30,12 @@ import { Sun } from '../src/components/board/marks';
 import { Chip, Dropdown, Field, MarkerButton, OutlineButton, Segmented, SectionHeading, TextButton } from '../src/components/board/controls';
 import { Group, GroupRow } from '../src/components/board/list';
 import { haptic } from '../src/lib/haptics';
+import { DURATIONS, Period, SLOTS, durationLabel } from '../src/lib/times';
 import { errorKey } from '../src/data/errors';
 
-// Four parts of the day, one row of times at a time.
-type Period = 'morning' | 'afternoon' | 'evening' | 'night';
-const SLOTS: Record<Period, string[]> = {
-  morning: ['04:30', '05:00', '05:30', '06:00', '06:30', '07:00', '07:30', '08:00', '09:00', '10:00', '11:00'],
-  afternoon: ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00'],
-  evening: ['17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30'],
-  night: ['21:00', '21:30', '22:00', '22:30', '23:00'],
-};
 const DEFAULT_SPOTS: Partial<Record<SportId, number>> = {
   padel: 4, tennis: 4, pickleball: 4, badminton: 4, football: 14, basketball: 10, volleyball: 12,
 };
-const DURATIONS = [30, 45, 60, 90, 120, 180];
 
 function periodOf(hhmm: string) {
   const h = Number(hhmm.split(':')[0]);
@@ -807,20 +799,6 @@ function fmtEnd(hhmm: string, minutes: number) {
   const hh = Math.floor(total / 60) % 24;
   const mm = total % 60;
   return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
-}
-
-function durationLabel(min: number, lang: string) {
-  if (lang === 'ar') {
-    if (min === 30) return '30 دقيقة';
-    if (min === 45) return '45 دقيقة';
-    if (min === 60) return 'ساعة';
-    if (min === 90) return 'ساعة ونصف';
-    if (min === 120) return 'ساعتان';
-    return '3 ساعات';
-  }
-  if (min < 60) return `${min} min`;
-  if (min === 90) return '1.5 h';
-  return `${min / 60} h`;
 }
 
 const useStyles = makeStyles(({ p }) => ({

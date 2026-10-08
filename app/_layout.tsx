@@ -1,7 +1,7 @@
 import { useFonts } from 'expo-font';
-import { Stack, useRouter, useSegments, useGlobalSearchParams } from 'expo-router';
+import { Stack, usePathname, useRouter, useSegments, useGlobalSearchParams } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform, StatusBar, View } from 'react-native';
 import 'react-native-reanimated';
 import { AuthProvider, useAuth } from '../src/providers/AuthProvider';
@@ -10,6 +10,7 @@ import { FONT_FILES } from '../src/theme/type';
 import { bootLanguage } from '../src/i18n';
 import { useOtaUpdates } from '../src/lib/useOtaUpdates';
 import { ToastHost } from '../src/components/board/toast';
+import { isKeepableLink, savePendingLink, takePendingLink } from '../src/lib/pendingLink';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -19,7 +20,9 @@ function AuthGate() {
   const { session, profile, loading, isEmailConfirmed } = useAuth();
   const segments = useSegments();
   const router = useRouter();
-  const globalParams = useGlobalSearchParams<{ edit?: string }>();
+  const globalParams = useGlobalSearchParams<{ edit?: string; g?: string }>();
+  const pathname = usePathname();
+  const entering = useRef(false);
   const { p } = useKit();
 
   useEffect(() => {
@@ -31,15 +34,35 @@ function AuthGate() {
     // Edit mode — the member opened onboarding from Profile to change details
     const isEditMode = globalParams.edit === '1';
 
+    // A session or court link opened before signing up is kept and opened once they're in.
+    const keep = () => {
+      if (isKeepableLink(pathname)) savePendingLink(globalParams.g ? `${pathname}?g=${encodeURIComponent(String(globalParams.g))}` : pathname);
+    };
+    const enter = () => {
+      if (entering.current) return;
+      entering.current = true;
+      takePendingLink()
+        .then((link) => router.replace((link ?? '/(tabs)/home') as any))
+        .finally(() => setTimeout(() => (entering.current = false), 800));
+    };
+
     if (!session) {
-      if (!inAuthGroup) router.replace('/(auth)/welcome');
+      if (!inAuthGroup) {
+        keep();
+        router.replace('/(auth)/welcome');
+      }
     } else if (!isEmailConfirmed) {
-      if (!onVerifyScreen) router.replace('/(auth)/verify-email');
+      if (!onVerifyScreen) {
+        keep();
+        router.replace('/(auth)/verify-email');
+      }
     } else if (!profile?.onboarding_completed) {
-      if (!inOnboarding) router.replace('/(onboarding)/about-you');
+      if (!inOnboarding) {
+        keep();
+        router.replace('/(onboarding)/about-you');
+      }
     } else {
-      if (inAuthGroup) router.replace('/(tabs)/home');
-      if (inOnboarding && !isEditMode) router.replace('/(tabs)/home');
+      if (inAuthGroup || (inOnboarding && !isEditMode)) enter();
     }
   }, [session, profile, loading, isEmailConfirmed, segments]);
 
@@ -50,6 +73,7 @@ function AuthGate() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="session/[id]/index" />
       <Stack.Screen name="session/[id]/chat" />
+      <Stack.Screen name="session/[id]/edit" options={{ presentation: 'modal' }} />
       <Stack.Screen name="workout/[id]/index" />
       <Stack.Screen name="workout/[id]/play" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
       <Stack.Screen name="host" options={{ presentation: 'modal' }} />

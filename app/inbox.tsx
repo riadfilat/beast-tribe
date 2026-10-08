@@ -22,6 +22,7 @@ const TYPE_ICON: Record<string, IconName> = {
   event_full: 'people',
   spot_opened: 'check',
   event_cancelled: 'warning',
+  event_changed: 'timer',
   beast: 'bolt',
   comment: 'chat',
   coach_request: 'coach',

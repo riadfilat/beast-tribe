@@ -185,8 +185,9 @@ export default function SessionScreen() {
 
   function more() {
     if (!x) return;
-    const options: { label: string; run: () => void }[] = [];
+    const options: { label: string; run: () => void; safe?: boolean }[] = [];
     if (x.isHost && x.state === 'upcoming') {
+      options.push({ label: t('session.editSession'), run: () => router.push(`/session/${x.id}/edit`), safe: true });
       options.push({ label: t('session.cancelSession'), run: () => confirm(t('session.cancelTitle'), t('session.cancelBody'), t('session.cancelSession'), doCancel) });
     } else if (x.myStatus === 'going' && (x.state === 'upcoming' || x.state === 'live')) {
       options.push({ label: t('session.leave'), run: () => confirm(t('session.leaveTitle'), t('session.leaveBody'), t('session.leave'), doLeave) });
@@ -198,11 +199,11 @@ export default function SessionScreen() {
     if (!options.length) return;
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
-        { options: [...options.map((o) => o.label), t('common.cancel')], destructiveButtonIndex: 0, cancelButtonIndex: options.length },
+        { options: [...options.map((o) => o.label), t('common.cancel')], destructiveButtonIndex: options.findIndex((o) => !o.safe), cancelButtonIndex: options.length },
         (i) => options[i]?.run(),
       );
     } else {
-      Alert.alert(x.title, undefined, [...options.map((o) => ({ text: o.label, style: 'destructive' as const, onPress: o.run })), { text: t('common.cancel'), style: 'cancel' as const }]);
+      Alert.alert(x.title, undefined, [...options.map((o) => ({ text: o.label, style: o.safe ? ('default' as const) : ('destructive' as const), onPress: o.run })), { text: t('common.cancel'), style: 'cancel' as const }]);
     }
   }
 

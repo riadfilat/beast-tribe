@@ -16,6 +16,7 @@ export type JoinResult = 'going' | 'waitlist';
 const SESSION_CODES = [
   'WOMEN_ONLY_HOST', 'MEN_ONLY_HOST', 'MEN_ONLY', 'GENDER_NEEDED', 'LINK_INVALID', 'GUESTS_OFF', 'WOMEN_ONLY', 'PACK_ONLY', 'COMMUNITY_ONLY',
   'GUESTS_FULL', 'EVENT_OVER', 'EVENT_CANCELLED', 'EVENT_NOT_FOUND', 'NOT_HOST', 'LEVEL', 'FULL',
+  'STARTED', 'TITLE_NEEDED', 'COURT_FIXED', 'PAST_TIME', 'SPOTS_BELOW_GOING',
 ] as const;
 export type SessionErrorCode = (typeof SESSION_CODES)[number] | 'generic';
 export class SessionError extends CodedError<SessionErrorCode> {}
@@ -215,6 +216,29 @@ export function useSessionActions() {
   }
 
   return { join, leave, cancel };
+}
+
+/** The host changes a session they posted. Everyone in hears about a new time or place. */
+export async function updateSession(
+  eventId: string,
+  input: { title: string; startsAt: Date; durationMin: number; place: string | null; capacity: number | null; difficulty: 'easy' | 'medium' | 'hard' | null; notes: string },
+) {
+  if (PREVIEW) {
+    await wait(400);
+    return;
+  }
+  const { error } = await supabase.rpc('update_session', {
+    p_event: eventId,
+    p_title: input.title,
+    p_starts_at: input.startsAt.toISOString(),
+    p_duration_min: input.durationMin,
+    p_place: input.place,
+    p_capacity: input.capacity,
+    p_difficulty: input.difficulty,
+    p_notes: input.notes,
+  });
+  if (error) throw toSessionError(error);
+  invalidate('sessions:');
 }
 
 export interface HostInput {
