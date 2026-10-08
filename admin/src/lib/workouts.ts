@@ -28,12 +28,23 @@ export const SPORT_NAMES: Record<string, { en: string; ar: string }> = {
   horse_riding: { en: 'Horse riding', ar: 'ركوب الخيل' },
   squash: { en: 'Squash', ar: 'إسكواش' },
   table_tennis: { en: 'Table tennis', ar: 'تنس الطاولة' },
+  calisthenics: { en: 'Calisthenics', ar: 'كاليسثينكس' },
+  lagree: { en: 'Lagree', ar: 'لاغري' },
+  spinning: { en: 'Spinning', ar: 'سبينينغ' },
+  bootcamp: { en: 'Bootcamp', ar: 'بوت كامب' },
+  barre: { en: 'Barre', ar: 'بار' },
+  dance: { en: 'Dance', ar: 'رقص' },
+  muay_thai: { en: 'Muay Thai', ar: 'مواي تاي' },
+  jiu_jitsu: { en: 'Jiu-Jitsu', ar: 'جوجيتسو' },
+  golf: { en: 'Golf', ar: 'غولف' },
+  diving: { en: 'Diving', ar: 'غوص' },
 };
 
 /** The sports a workout can be written for (the editor's picker, in its order). */
 export const SPORTS: [string, string][] = [
   'hyrox', 'crossfit', 'gym', 'running', 'walking', 'cycling', 'swimming', 'yoga', 'pilates', 'padel',
   'tennis', 'football', 'basketball', 'boxing', 'mma', 'hiking', 'climbing', 'meditation', 'horse_riding', 'squash', 'table_tennis',
+  'calisthenics', 'lagree', 'spinning', 'bootcamp', 'barre', 'dance', 'muay_thai', 'jiu_jitsu', 'golf', 'diving',
 ].map((id) => [id, SPORT_NAMES[id].en]);
 
 export const FORMATS: [string, string][] = [

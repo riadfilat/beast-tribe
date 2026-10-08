@@ -6,7 +6,9 @@ export type SportId =
   | 'running' | 'walking' | 'gym' | 'crossfit' | 'hyrox' | 'cycling' | 'swimming'
   | 'yoga' | 'pilates' | 'football' | 'basketball' | 'tennis' | 'padel' | 'pickleball'
   | 'badminton' | 'volleyball' | 'boxing' | 'mma' | 'hiking' | 'climbing'
-  | 'skateboarding' | 'meditation' | 'horse_riding' | 'squash' | 'table_tennis' | 'community' | 'other';
+  | 'skateboarding' | 'meditation' | 'horse_riding' | 'squash' | 'table_tennis'
+  | 'calisthenics' | 'lagree' | 'spinning' | 'bootcamp' | 'barre' | 'dance' | 'muay_thai' | 'jiu_jitsu' | 'golf' | 'diving'
+  | 'community' | 'other';
 
 export interface SportDef {
   id: SportId;
@@ -35,7 +37,7 @@ export const SPORT_LIST: SportDef[] = [
   { id: 'badminton', sf: 'figure.badminton', mci: 'badminton', dbName: 'Badminton' },
   { id: 'volleyball', sf: 'volleyball.fill', mci: 'volleyball', dbName: 'Volleyball' },
   { id: 'boxing', sf: 'figure.boxing', mci: 'boxing-glove', dbName: 'Boxing' },
-  { id: 'mma', sf: 'figure.kickboxing', mci: 'karate', dbName: 'MMA' },
+  { id: 'mma', sf: 'figure.martial.arts', mci: 'gymnastics', dbName: 'MMA' },
   { id: 'hiking', sf: 'figure.hiking', mci: 'hiking', dbName: 'Hiking' },
   { id: 'climbing', sf: 'figure.climbing', mci: 'carabiner', dbName: 'Climbing' },
   { id: 'skateboarding', sf: 'figure.skateboarding', mci: 'skateboarding', dbName: 'Skate' },
@@ -43,13 +45,24 @@ export const SPORT_LIST: SportDef[] = [
   { id: 'horse_riding', sf: 'figure.equestrian.sports', mci: 'horse-human', dbName: 'Horse Riding' },
   { id: 'squash', sf: 'figure.squash', mci: 'tennis', dbName: 'Squash' },
   { id: 'table_tennis', sf: 'figure.table.tennis', mci: 'table-tennis', dbName: 'Table Tennis' },
+  { id: 'calisthenics', sf: 'figure.gymnastics', mci: 'arm-flex', dbName: 'Calisthenics' },
+  { id: 'lagree', sf: 'figure.core.training', mci: 'fire', dbName: 'Lagree' },
+  { id: 'spinning', sf: 'figure.indoor.cycle', mci: 'bike-fast', dbName: 'Spinning' },
+  { id: 'bootcamp', sf: 'figure.mixed.cardio', mci: 'timer', dbName: 'Bootcamp' },
+  { id: 'barre', sf: 'figure.barre', mci: 'shoe-ballet', dbName: 'Barre' },
+  { id: 'dance', sf: 'figure.dance', mci: 'dance-ballroom', dbName: 'Dance' },
+  { id: 'muay_thai', sf: 'figure.kickboxing', mci: 'karate', dbName: 'Muay Thai' },
+  { id: 'jiu_jitsu', sf: 'figure.wrestling', mci: 'kabaddi', dbName: 'Jiu-Jitsu' },
+  { id: 'golf', sf: 'figure.golf', mci: 'golf', dbName: 'Golf' },
+  { id: 'diving', sf: 'figure.open.water.swim', mci: 'diving-scuba', dbName: 'Diving' },
 ];
 
 /** Most played first (Saudi Arabia): the order of the "all sports" lists. */
 export const SPORT_POPULARITY: SportId[] = [
   'football', 'padel', 'running', 'walking', 'gym', 'basketball', 'swimming', 'cycling', 'tennis', 'volleyball',
-  'crossfit', 'hyrox', 'yoga', 'pilates', 'boxing', 'hiking', 'badminton', 'squash', 'table_tennis', 'pickleball',
-  'mma', 'climbing', 'horse_riding', 'skateboarding', 'meditation',
+  'crossfit', 'hyrox', 'yoga', 'pilates', 'calisthenics', 'spinning', 'bootcamp', 'boxing', 'lagree', 'hiking',
+  'muay_thai', 'jiu_jitsu', 'badminton', 'squash', 'golf', 'dance', 'barre', 'table_tennis', 'pickleball',
+  'mma', 'climbing', 'diving', 'horse_riding', 'skateboarding', 'meditation',
 ];
 /** Every sport, most popular first (any sport not ranked goes last). */
 export function sportsByPopularity(): SportDef[] {
@@ -70,7 +83,9 @@ const BY_ID: Record<string, SportDef> = {};
 
 const ALIASES: Record<string, SportId> = {
   run: 'running', runs: 'running', jog: 'running',
-  hiit: 'hyrox', 'group fitness': 'gym', fitness: 'gym',
+  hiit: 'bootcamp', 'boot camp': 'bootcamp', 'group fitness': 'gym', fitness: 'gym',
+  spin: 'spinning', 'indoor cycling': 'spinning', zumba: 'dance', 'muay thai': 'muay_thai', muaythai: 'muay_thai', kickboxing: 'muay_thai',
+  bjj: 'jiu_jitsu', jiujitsu: 'jiu_jitsu', 'jiu jitsu': 'jiu_jitsu', 'jiu-jitsu': 'jiu_jitsu', scuba: 'diving', 'street workout': 'calisthenics', megaformer: 'lagree',
   soccer: 'football', skate: 'skateboarding', skating: 'skateboarding',
   'horse riding': 'horse_riding', horseback: 'horse_riding', 'horseback riding': 'horse_riding', equestrian: 'horse_riding', riding: 'horse_riding',
   'table tennis': 'table_tennis', 'ping pong': 'table_tennis', pingpong: 'table_tennis',
