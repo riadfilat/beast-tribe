@@ -2,7 +2,8 @@ import { supabase } from '../lib/supabase';
 import { useQuery, invalidate } from './query';
 import { PREVIEW, PREVIEW_COMPANY, previewCommunities } from './preview';
 import { CodedError, codeFrom } from './errors';
-import { useMeId } from './me';
+import { useHereCity, useMeId } from './me';
+import { cityKey, cityKeys } from '../lib/cities';
 
 // Communities are where Beast Tribe lives. OPEN ones anyone can join from Explore; PRIVATE ones
 // (companies, compounds, clubs) are joined with their invite code. Members can be in several.
@@ -87,15 +88,25 @@ export function useMyCommunities() {
   });
 }
 
-/** Open communities I haven't joined yet. */
+/**
+ * Communities belong where they meet: a member sees the ones in the city they're in now (from the
+ * phone, else their profile), plus any without a city. Unknown city: all of them.
+ */
+function inCity(here: string | null) {
+  const keys = cityKeys(here);
+  return (c: Community) => !keys.length || !c.city || keys.includes(cityKey(c.city));
+}
+
+/** Open communities I haven't joined yet, in the city I'm in. */
 export function useOpenCommunities() {
   const me = useMeId();
-  return useQuery<Community[]>(me ? `communities:open:${me}` : null, async () => {
-    if (PREVIEW) return previewCommunities.filter((c) => c.open && !c.isMember);
+  const here = useHereCity();
+  return useQuery<Community[]>(me ? `communities:open:${me}:${cityKey(here)}` : null, async () => {
+    if (PREVIEW) return previewCommunities.filter((c) => c.open && !c.isMember).filter(inCity(here));
     const ids = await myIds(me!);
     const { data, error } = await supabase.from('communities').select(SELECT).eq('visibility', 'open').eq('is_active', true).order('name');
     if (error) throw error;
-    return (data || []).map((r) => toCommunity(r, ids)).filter((c) => !c.isMember);
+    return (data || []).map((r) => toCommunity(r, ids)).filter((c) => !c.isMember).filter(inCity(here));
   });
 }
 
@@ -125,14 +136,17 @@ export function useCommunity(id?: string | null) {
  */
 export function useLeaderCommunities() {
   const me = useMeId();
-  return useQuery<Community[]>(me ? `communities:leaders:${me}` : null, async () => {
-    if (PREVIEW) return previewCommunities.filter((c) => c.leaderId && c.open);
+  const here = useHereCity();
+  return useQuery<Community[]>(me ? `communities:leaders:${me}:${cityKey(here)}` : null, async () => {
+    if (PREVIEW) return previewCommunities.filter((c) => c.leaderId && c.open).filter(inCity(here));
     const [ids, { data, error }] = await Promise.all([
       myIds(me!),
       supabase.from('communities').select(SELECT).eq('visibility', 'open').eq('is_active', true).not('leader_id', 'is', null).not('verified_at', 'is', null).limit(200),
     ]);
     if (error) throw error;
-    const rows = (data || []).map((r) => toCommunity(r, ids));
+    // Clubs I'm in stay wherever I am; others only in my city.
+    const near = inCity(here);
+    const rows = (data || []).map((r) => toCommunity(r, ids)).filter((c) => c.isMember || near(c));
     const leaderIds = Array.from(new Set(rows.map((c) => c.leaderId!)));
     if (leaderIds.length) {
       const { data: people } = await supabase.from('profiles').select('id, display_name, full_name, avatar_url').in('id', leaderIds);

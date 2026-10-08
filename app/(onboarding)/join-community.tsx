@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,13 +6,17 @@ import { makeStyles, useKit } from '../../src/theme';
 import { useI18n } from '../../src/i18n';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { useMyCommunities, useOpenCommunities } from '../../src/data/communities';
+import { useHereCity } from '../../src/data/me';
+import { cityLabel } from '../../src/lib/cities';
+import { refreshPosition } from '../../src/lib/location';
 import { Txt } from '../../src/components/board/Txt';
 import { IconButton, MarkerButton, SectionHeading, TextButton } from '../../src/components/board/controls';
 import { CommunityRow, JoinCommunityForm } from '../../src/components/board/communities';
 import { toast } from '../../src/components/board/toast';
 
-// Onboarding step 3: get into your community. A company, compound or club code opens its
-// private community; open communities are one tap. Everyone is already in the open Beast Tribe.
+// Onboarding step 3: where you belong. Everyone is already in Beast Tribe; open communities and
+// verified clubs in the city you're in are one tap; a private community (company, gym, club) needs
+// its code, folded away at the end.
 export default function JoinCommunityScreen() {
   const s = useStyles();
   const { p, lang } = useKit();
@@ -23,6 +27,12 @@ export default function JoinCommunityScreen() {
   const mine = useMyCommunities();
   const open = useOpenCommunities();
   const [busy, setBusy] = useState(false);
+  const [codeOpen, setCodeOpen] = useState(false);
+  const city = useHereCity();
+
+  useEffect(() => {
+    refreshPosition(false);
+  }, []);
 
   const refresh = () => {
     mine.refetch();
@@ -58,25 +68,42 @@ export default function JoinCommunityScreen() {
           {t('onboarding.communitySub')}
         </Txt>
 
-        <JoinCommunityForm onJoined={refresh} />
-
+        {/* 1. Where they already are: Beast Tribe (everyone), plus any community they've joined. */}
         {(mine.data ?? []).length ? (
-          <View style={{ marginTop: 22 }}>
-            <SectionHeading title={t('community.mine')} />
+          <View>
+            <SectionHeading title={t('onboarding.communityIn')} />
             {(mine.data ?? []).map((c, i, arr) => (
               <CommunityRow key={c.id} c={c} last={i === arr.length - 1} />
             ))}
           </View>
         ) : null}
 
-        {(open.data ?? []).length ? (
-          <View style={{ marginTop: 22 }}>
-            <SectionHeading title={t('onboarding.communityOpen')} />
-            {(open.data ?? []).map((c, i, arr) => (
-              <CommunityRow key={c.id} c={c} onJoined={refresh} last={i === arr.length - 1} />
-            ))}
-          </View>
-        ) : null}
+        {/* 2. Open communities and verified clubs in the city they're in: one tap. */}
+        <View style={{ marginTop: 22 }}>
+          <SectionHeading title={city ? t('onboarding.communityNear', { city: cityLabel(city, lang) }) : t('onboarding.communityNearAny')} />
+          {(open.data ?? []).length ? (
+            (open.data ?? []).map((c, i, arr) => <CommunityRow key={c.id} c={c} onJoined={refresh} last={i === arr.length - 1} />)
+          ) : open.loading ? null : (
+            <Txt v="meta" style={{ marginTop: 4 }}>
+              {city ? t('onboarding.communityNearNone', { city: cityLabel(city, lang) }) : t('onboarding.communityNearNoneAny')}
+            </Txt>
+          )}
+        </View>
+
+        {/* 3. A private community (company, gym, club) needs its code. */}
+        <View style={{ marginTop: 26 }}>
+          {codeOpen ? (
+            <>
+              <SectionHeading title={t('onboarding.communityCode')} />
+              <Txt v="meta" style={{ marginBottom: 10 }}>
+                {t('onboarding.communityCodeSub')}
+              </Txt>
+              <JoinCommunityForm onJoined={refresh} />
+            </>
+          ) : (
+            <TextButton label={t('onboarding.communityCode')} onPress={() => setCodeOpen(true)} color={p.aqua} />
+          )}
+        </View>
       </ScrollView>
       <View style={[s.bar, { paddingBottom: 12 + insets.bottom }]}>
         <MarkerButton label={t('onboarding.enter')} onPress={enter} loading={busy} />
