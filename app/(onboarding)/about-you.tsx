@@ -40,6 +40,11 @@ export default function AboutYouScreen() {
   const [gender, setGender] = useState<string>(profile?.gender || '');
   // Gender is set once; after that only support changes it (the database enforces this too).
   const genderLocked = !!profile?.gender;
+  // The profile can arrive after the screen opens: show what's saved.
+  useEffect(() => {
+    if (profile?.gender) setGender(profile.gender);
+  }, [profile?.gender]);
+  const savedGender = (profile?.gender || gender).toLowerCase();
   const [stage, setStage] = useState<Stage | null>(journeyStage(profile?.experience_level));
   const [dobOpen, setDobOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -176,7 +181,7 @@ export default function AboutYouScreen() {
           <View style={s.dob}>
             <Icon name="lock" size={15} color={p.inkSoft} />
             <Txt v="body" style={{ flex: 1 }}>
-              {gender === 'female' ? t('onboarding.female') : gender === 'male' ? t('onboarding.male') : gender}
+              {savedGender === 'female' ? t('onboarding.female') : savedGender === 'male' ? t('onboarding.male') : savedGender}
             </Txt>
           </View>
         ) : (
