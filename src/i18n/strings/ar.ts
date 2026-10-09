@@ -269,6 +269,10 @@ export const ar: Strings = {
     clear: 'مسح',
   },
   host: {
+    coachFree: 'متاح مع {name}',
+    coachFreeYes: '{name} متاح في هذا الوقت وسيُحجز مع الجلسة.',
+    coachFreeNo: '{name} غير متاح في هذا الوقت. اختر أحد أوقاته في وقت البدء، أو احتفظ بوقتك دونه.',
+    coachNoneThatDay: 'لا توجد أوقات متاحة لدى {name} في ذلك اليوم. جرّب يومًا آخر.',
     courtTitle: 'الملعب',
     courtBooked: 'حجزته',
     courtWillBook: 'سأحجزه',

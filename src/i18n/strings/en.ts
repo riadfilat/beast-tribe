@@ -248,6 +248,10 @@ export const en = {
     clear: 'Clear',
   },
   host: {
+    coachFree: 'Free with {name}',
+    coachFreeYes: '{name} is free then and will be booked with the session.',
+    coachFreeNo: "{name} isn't free at that time. Pick one of their times under Start time, or keep yours without them.",
+    coachNoneThatDay: '{name} has no free times that day. Try another day.',
     courtTitle: 'The court',
     courtBooked: "I've booked it",
     courtWillBook: "I'll book it",

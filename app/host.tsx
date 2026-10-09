@@ -409,9 +409,12 @@ export default function HostScreen() {
     );
   }
 
-  const timeRows: { key: string; label: string; times: { v: string; booked?: boolean }[] }[] = coach && dayKey && !court
-    ? [{ key: 'coach', label: coach.name, times: coachSlots.map((x) => ({ v: x.start, booked: x.booked })) }]
-    : [{ key: period, label: '', times: SLOTS[period].map((v) => ({ v })) }];
+  // The day's times; with a coach, their free times show above (the time picked stays picked).
+  const timeRows: { key: string; label: string; times: { v: string; booked?: boolean }[] }[] = [
+    ...(coach && dayKey && !court ? [{ key: 'coach', label: t('host.coachFree', { name: coach.name }), times: coachSlots.map((x) => ({ v: x.start, booked: x.booked })) }] : []),
+    { key: period, label: '', times: SLOTS[period].map((v) => ({ v })) },
+  ];
+  const coachFreeAtTime = !!coach && !!time && coachSlots.some((x) => x.start === time && !x.booked);
   // Runs, walks, rides and hikes follow a route.
   const routeFits = !!sport && ROUTE_SPORTS.includes(sport);
   // A court sport somewhere we can't book through the app.
@@ -705,9 +708,7 @@ export default function HostScreen() {
           )
         ) : (
           <>
-            {coach && dayKey ? null : (
-              <Segmented value={period} onChange={setPeriod} options={(Object.keys(SLOTS) as Period[]).map((k) => ({ value: k, label: t(`periods.${k}`) }))} />
-            )}
+            <Segmented value={period} onChange={setPeriod} options={(Object.keys(SLOTS) as Period[]).map((k) => ({ value: k, label: t(`periods.${k}`) }))} />
             <View style={{ gap: 12, marginTop: 10 }}>
               {timeRows.map((r) =>
                 r.times.length ? (
@@ -849,12 +850,22 @@ export default function HostScreen() {
                   {coaches
                     .filter((c) => !sport || !c.sports.length || c.sports.includes(sport))
                     .map((c) => (
-                      <Chip key={c.id} label={c.name} icon="coach" selected={coachId === c.id} onPress={() => { setCoachId(coachId === c.id ? null : c.id); setTime(null); }} />
+                      <Chip key={c.id} label={c.name} icon="coach" selected={coachId === c.id} onPress={() => setCoachId(coachId === c.id ? null : c.id)} />
                     ))}
                 </ScrollView>
               ) : (
                 <Txt v="meta">{t('host.coachEmpty')}</Txt>
               )}
+              {/* Whether the coach can make the time picked; their free times show with the times above. */}
+              {coach && dayKey && time && !court ? (
+                <Txt v="caption" color={coachFreeAtTime ? p.aqua : p.inkSoft}>
+                  {coachFreeAtTime
+                    ? t('host.coachFreeYes', { name: coach.name })
+                    : coachSlots.some((x) => !x.booked)
+                      ? t('host.coachFreeNo', { name: coach.name })
+                      : t('host.coachNoneThatDay', { name: coach.name })}
+                </Txt>
+              ) : null}
             </View>
 
             <View style={{ gap: 8 }}>
