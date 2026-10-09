@@ -225,12 +225,14 @@ export function Segmented<T extends string>({
               flex: 1,
               minHeight: 36,
               borderRadius: 8,
+              paddingHorizontal: 4,
               alignItems: 'center',
               justifyContent: 'center',
               backgroundColor: on ? p.ink : 'transparent',
             }}
           >
-            <Txt v="label" size={14} color={on ? p.board : p.inkSoft}>
+            {/* One line always: a long word (Intermediate, متوسط) shrinks a little instead of breaking. */}
+            <Txt v="label" size={14} color={on ? p.board : p.inkSoft} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
               {o.label}
             </Txt>
           </Press>
