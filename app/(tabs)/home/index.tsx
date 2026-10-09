@@ -205,7 +205,7 @@ export default function BoardScreen() {
             <TextButton label={t('common.retry')} onPress={board.refetch} />
           </View>
         ) : sessions.length === 0 ? (
-          <EmptyBoard spots={(spots.data ?? []).filter((x) => !profile?.city || cityKeys(profile.city).includes(cityKey(x.city)))} onHost={(spotId) => router.push(spotId ? { pathname: '/host', params: { spot: spotId } } : '/host')} onTrain={TRAIN_ENABLED ? () => router.push('/(tabs)/train') : undefined} />
+          <EmptyBoard spots={(spots.data ?? []).filter((x) => !!x.imageUrl).filter((x) => !profile?.city || cityKeys(profile.city).includes(cityKey(x.city)))} onHost={(spotId) => router.push(spotId ? { pathname: '/host', params: { spot: spotId } } : '/host')} onTrain={TRAIN_ENABLED ? () => router.push('/(tabs)/train') : undefined} />
         ) : (
           <View>
             {live.map((x, i) => row(x, i, [...live, ...todayAhead]))}

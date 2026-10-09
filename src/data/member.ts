@@ -107,12 +107,11 @@ export function usePopularSpots(country: string, lang: string = 'en') {
             .from('popular_locations')
             .select('id, name, name_ar, city, country, sports, image_url, latitude, longitude, sort_order, phone, booking_url')
             .eq('is_active', true)
-            // A place without a photo isn't shown anywhere.
-            .not('image_url', 'is', null)
             .order('sort_order', { ascending: true })
         ).data || [];
     return rows
-      .filter((r) => !!r.image_url)
+      // A place shows with a photo, or (for runs and rides) with its spot on the map.
+      .filter((r) => !!r.image_url || (r.latitude != null && r.longitude != null))
       .sort((a, b) => Number(b.country === country) - Number(a.country === country))
       .map((r) => ({
         id: r.id,

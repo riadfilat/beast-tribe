@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Image, KeyboardAvoidingView, Linking, Platform, ScrollView, Share, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { sportIdOf } from '../src/lib/sports';
@@ -19,7 +19,7 @@ import { nearestCity, refreshPosition, useMyPosition } from '../src/lib/location
 import { Sheet } from '../src/components/board/sheet';
 import { PREVIEW, PREVIEW_ME } from '../src/data/preview';
 import { COURT_SPORTS, ROUTE_SPORTS, SPORT_LIST, SportId, sportsByPopularity } from '../src/lib/sports';
-import { fmtDistance, Route, useRoutePick, useRoutesNear } from '../src/data/routes';
+import { fmtDistance, metres, Route, useRoutePick, useRoutesNear } from '../src/data/routes';
 import { RouteSketch } from '../src/components/board/route';
 import { SportSearchList } from '../src/components/board/SportPicker';
 import { PAYMENTS_ENABLED, SESSION_LINK_BASE } from '../src/lib/constants';
@@ -125,6 +125,28 @@ export default function HostScreen() {
   // Places follow the chosen city (plus my own community's courts).
   const places = useHostPlaces(sport, lang, pos, city);
   const routes = useRoutesNear(city || null, sport && ROUTE_SPORTS.includes(sport) ? sport : null);
+  // Tracks start at the place picked (within 2 km); otherwise the city's.
+  const placeAt: [number, number] | null = picked?.lat != null && picked?.lng != null ? [picked.lng, picked.lat] : null;
+  const tracks = useMemo(
+    () => (routes.data ?? []).filter((r) => !placeAt || metres(placeAt, r.start) < 2000),
+    [routes.data, placeAt?.[0], placeAt?.[1]],
+  );
+  // Picking a place picks its most-run track; a place without one asks for a drawing.
+  const autoFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!routeFits || !routes.data) return;
+    const key = picked?.key ?? '';
+    if (autoFor.current === key) return; // once per place, so a drawn track isn't replaced
+    autoFor.current = key;
+    setRoute(placeAt ? tracks[0] ?? null : null);
+  }, [picked?.key, routes.data]);
+  function drawHere() {
+    setRoutesOpen(false);
+    router.push({
+      pathname: '/route-draw',
+      params: { sport: sport ?? 'running', city, ...(placeAt ? { lng: String(placeAt[0]), lat: String(placeAt[1]), place: picked?.name ?? '' } : {}) },
+    } as any);
+  }
   // A route drawn on the map comes back here.
   const drawn = useRoutePick((st) => st.route);
   useEffect(() => {
@@ -469,10 +491,10 @@ export default function HostScreen() {
           </Txt>
         ) : null}
 
-        {/* A run's route: the city's routes, most run first, or draw a new one. */}
-        {routeFits ? (
+        {/* A run's track: the place's most-run track, another one, or draw it around the place. */}
+        {routeFits && (picked || place.trim()) ? (
           <View style={{ gap: 8, marginTop: 14 }}>
-            <SectionHeading title={t('route.title')} />
+            <SectionHeading title={t('route.track')} />
             {route ? (
               <Press onPress={() => setRoutesOpen(true)} feedback="selection" style={s.routeCard}>
                 <RouteSketch path={route.path} height={64} style={{ width: 64, borderRadius: 8 }} stroke={3} />
@@ -487,16 +509,17 @@ export default function HostScreen() {
                 </Txt>
               </Press>
             ) : (
-              <Dropdown label={t('route.pick')} placeholder onPress={() => setRoutesOpen(true)} />
+              <OutlineButton label={placeAt && picked ? t('route.drawAt', { place: picked.name }) : t('route.draw')} icon="plus" onPress={drawHere} />
             )}
+            {!route && placeAt && tracks.length ? <TextButton label={tn('route.pickTrack', tracks.length)} onPress={() => setRoutesOpen(true)} color={p.aqua} /> : null}
           </View>
         ) : null}
 
-        <Sheet visible={routesOpen} title={t('route.title')} onClose={() => setRoutesOpen(false)}>
+        <Sheet visible={routesOpen} title={t('route.track')} onClose={() => setRoutesOpen(false)}>
           <View style={{ gap: 4 }}>
-            <SectionHeading title={city ? t('route.near', { city: cityLabel(city, lang) }) : t('route.nearAny')} />
-            {(routes.data ?? []).length ? (
-              (routes.data ?? []).map((r) => (
+            <SectionHeading title={placeAt && picked ? t('route.tracksAt', { place: picked.name }) : city ? t('route.near', { city: cityLabel(city, lang) }) : t('route.nearAny')} />
+            {tracks.length ? (
+              tracks.map((r) => (
                 <Press
                   key={r.id}
                   onPress={() => {
@@ -522,17 +545,10 @@ export default function HostScreen() {
                 {t('route.none')}
               </Txt>
             )}
-            <Press
-              onPress={() => {
-                setRoutesOpen(false);
-                router.push({ pathname: '/route-draw', params: { sport: sport ?? 'running', city } } as any);
-              }}
-              feedback="selection"
-              style={s.routeRow}
-            >
+            <Press onPress={drawHere} feedback="selection" style={s.routeRow}>
               <Icon name="plus" size={18} color={p.aqua} />
               <Txt v="row" size={15} color={p.aqua}>
-                {t('route.draw')}
+                {placeAt && picked ? t('route.drawAt', { place: picked.name }) : t('route.draw')}
               </Txt>
             </Press>
             {route ? <TextButton label={t('route.remove')} onPress={() => { setRoute(null); setRoutesOpen(false); }} color={p.inkSoft} /> : null}

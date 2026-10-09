@@ -61,21 +61,24 @@ export default function RouteDrawScreen() {
   const { t } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ sport?: string; city?: string }>();
+  const params = useLocalSearchParams<{ sport?: string; city?: string; lat?: string; lng?: string; place?: string }>();
+  // Opened from a place in Play: the map starts there and the track takes its name.
+  const placeAt: LngLat | null = params.lat && params.lng ? [Number(params.lng), Number(params.lat)] : null;
   const pos = useMyPosition();
   const ML = maplibre();
   const mapRef = useRef<any>(null);
   const cameraRef = useRef<any>(null);
   const [points, setPoints] = useState<LngLat[]>([]);
-  const moved = useRef(false);
+  const moved = useRef(!!placeAt);
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<Hit[]>([]);
   const [saving, setSaving] = useState(false);
-  const [name, setName] = useState('');
+  const [name, setName] = useState(params.place ?? '');
   const [shared, setShared] = useState(true);
   const [busy, setBusy] = useState(false);
 
   const start = useMemo<LngLat>(() => {
+    if (placeAt) return placeAt;
     if (pos) return [pos.lng, pos.lat];
     const c = cityCentre(params.city);
     return c ? [c.lng, c.lat] : [46.6753, 24.7136];
@@ -218,7 +221,7 @@ export default function RouteDrawScreen() {
             moved.current = true;
           }}
         >
-          <Camera ref={cameraRef} initialViewState={{ center: start, zoom: 15 }} />
+          <Camera ref={cameraRef} initialViewState={{ center: start, zoom: placeAt ? 15.5 : 15 }} />
           {pos ? (
             <GeoJSONSource id="me" data={pointFeature([pos.lng, pos.lat])}>
               <Layer type="circle" id="me-dot" paint={{ 'circle-radius': 7, 'circle-color': '#FFFFFF', 'circle-stroke-color': START_AQUA, 'circle-stroke-width': 3 }} />
