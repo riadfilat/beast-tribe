@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Keyboard, PanResponder, Platform, ScrollView, TextInput, View } from 'react-native';
+import { Keyboard, Platform, ScrollView, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { makeStyles, useKit } from '../src/theme';
@@ -11,15 +11,15 @@ import { MAP_STYLE_URL, maplibre, pointFeature, ROUTE_ORANGE, routeFeature, STAR
 import { Txt } from '../src/components/board/Txt';
 import { Icon } from '../src/components/board/Icon';
 import { Press } from '../src/components/board/Press';
-import { Field, MarkerButton, Segmented, TextButton } from '../src/components/board/controls';
+import { Field, MarkerButton, OutlineButton, TextButton } from '../src/components/board/controls';
 import { Sheet } from '../src/components/board/sheet';
 import { Toggle } from '../src/components/board/Toggle';
 import { toast } from '../src/components/board/toast';
 import { haptic } from '../src/lib/haptics';
 
-// Draw a route with a finger on the Beast Tribe map. The map fills the screen: search a place or tap
-// "my location" to get there, draw (lift and draw again to carry on), then name it in a sheet, so the
-// keyboard never covers the map while drawing.
+// Plot a route on the Beast Tribe map: the map moves and zooms as usual; each tap drops a point and the
+// orange line joins them. Search a place or tap "my location" to get there; name it in a sheet at the
+// end, so the keyboard never covers the map.
 
 interface Hit {
   key: string;
@@ -66,11 +66,7 @@ export default function RouteDrawScreen() {
   const ML = maplibre();
   const mapRef = useRef<any>(null);
   const cameraRef = useRef<any>(null);
-  const [mode, setMode] = useState<'draw' | 'move'>('draw');
-  // Strokes of points; a point is filled in when the map answers where the finger was.
-  const strokes = useRef<(LngLat | null)[][]>([]);
-  const [version, setVersion] = useState(0);
-  const last = useRef<{ x: number; y: number } | null>(null);
+  const [points, setPoints] = useState<LngLat[]>([]);
   const moved = useRef(false);
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<Hit[]>([]);
@@ -85,7 +81,7 @@ export default function RouteDrawScreen() {
     return c ? [c.lng, c.lat] : [46.6753, 24.7136];
   }, []);
 
-  const path = useMemo(() => strokes.current.flat().filter(Boolean) as LngLat[], [version]);
+  const path = points;
   const distance = pathLength(path);
 
   const close = () => (router.canGoBack() ? router.back() : router.replace('/host'));
@@ -93,7 +89,7 @@ export default function RouteDrawScreen() {
 
   // The phone's position arrives after the map opens: go there unless they've moved the map already.
   useEffect(() => {
-    if (pos && !moved.current && !strokes.current.length) flyTo([pos.lng, pos.lat]);
+    if (pos && !moved.current && !points.length) flyTo([pos.lng, pos.lat]);
   }, [pos?.lat, pos?.lng]);
 
   // Suggestions as they type (a short pause, and only the latest answer counts).
@@ -130,50 +126,26 @@ export default function RouteDrawScreen() {
     } else toast.show(t('route.noLocation'), 'info');
   }
 
-  function addPoint(x: number, y: number) {
-    const stroke = strokes.current[strokes.current.length - 1];
-    if (!stroke || !mapRef.current) return;
-    const i = stroke.length;
-    stroke.push(null);
-    mapRef.current
-      .unproject([x, y])
-      .then((ll: LngLat) => {
-        stroke[i] = ll;
-        setVersion((v) => v + 1);
-      })
-      .catch(() => {});
+  function tap(e: any) {
+    const ll = e?.nativeEvent?.lngLat as LngLat | undefined;
+    if (!ll) return;
+    Keyboard.dismiss();
+    if (hits.length) {
+      setHits([]);
+      return;
+    }
+    haptic('selection');
+    setPoints((p0) => [...p0, ll]);
   }
 
-  const pan = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        onPanResponderGrant: (e) => {
-          Keyboard.dismiss();
-          const { locationX: x, locationY: y } = e.nativeEvent;
-          strokes.current.push([]);
-          last.current = { x, y };
-          addPoint(x, y);
-        },
-        onPanResponderMove: (e) => {
-          const { locationX: x, locationY: y } = e.nativeEvent;
-          const l = last.current;
-          if (l && Math.hypot(x - l.x, y - l.y) < 8) return;
-          last.current = { x, y };
-          addPoint(x, y);
-        },
-        onPanResponderRelease: () => {
-          last.current = null;
-          haptic('selection');
-        },
-      }),
-    [],
-  );
-
   function undo() {
-    strokes.current.pop();
-    setVersion((v) => v + 1);
+    setPoints((p0) => p0.slice(0, -1));
+  }
+
+  function closeLoop() {
+    if (points.length < 3) return;
+    haptic('selection');
+    setPoints((p0) => [...p0, p0[0]]);
   }
 
   function next() {
@@ -239,13 +211,11 @@ export default function RouteDrawScreen() {
           attribution
           attributionPosition={{ bottom: 8, left: 8 }}
           compass={false}
-          dragPan={mode === 'move'}
-          touchZoom={mode === 'move'}
-          doubleTapZoom={mode === 'move'}
           touchRotate={false}
           touchPitch={false}
+          onPress={tap}
           onRegionWillChange={() => {
-            if (mode === 'move') moved.current = true;
+            moved.current = true;
           }}
         >
           <Camera ref={cameraRef} initialViewState={{ center: start, zoom: 15 }} />
@@ -261,14 +231,17 @@ export default function RouteDrawScreen() {
             </GeoJSONSource>
           ) : null}
           {path.length ? (
+            <GeoJSONSource id="draw-points" data={{ type: 'FeatureCollection', features: path.map((pt) => pointFeature(pt)) }}>
+              <Layer type="circle" id="draw-point-dots" paint={{ 'circle-radius': 4, 'circle-color': '#F4F1EA', 'circle-stroke-color': ROUTE_ORANGE, 'circle-stroke-width': 2 }} />
+            </GeoJSONSource>
+          ) : null}
+          {path.length ? (
             <GeoJSONSource id="draw-start" data={pointFeature(path[0])}>
               <Layer type="circle" id="draw-start-dot" paint={{ 'circle-radius': 8, 'circle-color': START_AQUA, 'circle-stroke-color': '#013131', 'circle-stroke-width': 3 }} />
             </GeoJSONSource>
           ) : null}
         </Map>
 
-        {/* Drawing: the finger traces the route; the map stays still. */}
-        {mode === 'draw' ? <View style={s.fill} {...pan.panHandlers} /> : null}
 
         {/* Search a place, with suggestions under it. */}
         <View style={s.searchWrap}>
@@ -322,26 +295,17 @@ export default function RouteDrawScreen() {
 
         <View style={s.hint} pointerEvents="none">
           <Txt v="label" size={12} color={p.ink}>
-            {mode === 'draw' ? (path.length ? t('route.hintMore') : t('route.hintStart')) : t('route.hintMove')}
+            {path.length ? t('route.tapMore') : t('route.tapStart')}
           </Txt>
         </View>
       </View>
 
       <View style={[s.bar, { paddingBottom: 12 + insets.bottom }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Txt v="stencil" size={28} style={{ minWidth: 96 }}>
+          <Txt v="stencil" size={28} style={{ flex: 1 }}>
             {fmtDistance(distance, lang)}
           </Txt>
-          <View style={{ flex: 1 }}>
-            <Segmented
-              value={mode}
-              onChange={setMode}
-              options={[
-                { value: 'draw', label: t('route.modeDraw') },
-                { value: 'move', label: t('route.modeMove') },
-              ]}
-            />
-          </View>
+          {points.length >= 3 ? <OutlineButton label={t('route.backToStart')} onPress={closeLoop} style={{ height: 38 }} /> : null}
         </View>
         <MarkerButton label={t('route.next')} onPress={next} />
       </View>
@@ -366,7 +330,6 @@ export default function RouteDrawScreen() {
 const useStyles = makeStyles(({ p }) => ({
   screen: { flex: 1, backgroundColor: p.board },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: p.rule },
-  fill: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   searchWrap: { position: 'absolute', top: 10, left: 12, right: 12, gap: 6 },
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 44, paddingHorizontal: 12, borderRadius: 12, backgroundColor: p.boardDeep, borderWidth: 1, borderColor: p.ruleStrong },
   searchInput: { flex: 1, color: p.ink, fontSize: 15, paddingVertical: 0 },
