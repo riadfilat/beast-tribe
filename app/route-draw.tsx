@@ -1,20 +1,60 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { KeyboardAvoidingView, PanResponder, Platform, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Keyboard, PanResponder, Platform, ScrollView, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { makeStyles, useKit } from '../src/theme';
 import { useI18n } from '../src/i18n';
-import { cityCentre, useMyPosition } from '../src/lib/location';
+import { CITIES } from '../src/lib/cities';
+import { cityCentre, refreshPosition, useMyPosition } from '../src/lib/location';
 import { fmtDistance, LngLat, pathLength, saveRoute, useRoutePick } from '../src/data/routes';
 import { MAP_STYLE_URL, maplibre, pointFeature, ROUTE_ORANGE, routeFeature, START_AQUA } from '../src/components/board/route';
 import { Txt } from '../src/components/board/Txt';
+import { Icon } from '../src/components/board/Icon';
+import { Press } from '../src/components/board/Press';
 import { Field, MarkerButton, Segmented, TextButton } from '../src/components/board/controls';
+import { Sheet } from '../src/components/board/sheet';
 import { Toggle } from '../src/components/board/Toggle';
 import { toast } from '../src/components/board/toast';
 import { haptic } from '../src/lib/haptics';
 
-// Draw a route with a finger on the Beast Tribe map. Lift and draw again to carry on; Undo takes back
-// the last stroke; "Move map" pans and zooms. Saved routes are shared with the city unless kept private.
+// Draw a route with a finger on the Beast Tribe map. The map fills the screen: search a place or tap
+// "my location" to get there, draw (lift and draw again to carry on), then name it in a sheet, so the
+// keyboard never covers the map while drawing.
+
+interface Hit {
+  key: string;
+  title: string;
+  sub: string;
+  at: LngLat;
+}
+
+/** Places as you type: known cities first, then streets and landmarks (OpenStreetMap, via Photon). */
+async function searchPlaces(q: string, near: LngLat, lang: string, signal: AbortSignal): Promise<Hit[]> {
+  const needle = q.trim().toLowerCase();
+  const local: Hit[] = [];
+  for (const list of Object.values(CITIES)) {
+    for (const [en, ar] of list) {
+      if (en.toLowerCase().startsWith(needle) || ar.startsWith(q.trim())) {
+        const c = cityCentre(en);
+        if (c) local.push({ key: `city:${en}`, title: lang === 'ar' ? ar : en, sub: '', at: [c.lng, c.lat] });
+      }
+    }
+  }
+  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q.trim())}&lat=${near[1]}&lon=${near[0]}&limit=6${lang === 'ar' ? '' : '&lang=en'}`;
+  const res = await fetch(url, { signal });
+  const json = await res.json();
+  const remote: Hit[] = (json?.features || []).map((f: any, i: number) => {
+    const pr = f.properties || {};
+    return {
+      key: `p:${pr.osm_type}${pr.osm_id}:${i}`,
+      title: pr.name || pr.street || pr.city || '',
+      sub: [pr.district, pr.city, pr.country].filter(Boolean).join(' · '),
+      at: f.geometry?.coordinates as LngLat,
+    };
+  }).filter((h: Hit) => h.title && Array.isArray(h.at));
+  return [...local.slice(0, 2), ...remote];
+}
+
 export default function RouteDrawScreen() {
   const s = useStyles();
   const { p, lang } = useKit();
@@ -25,16 +65,21 @@ export default function RouteDrawScreen() {
   const pos = useMyPosition();
   const ML = maplibre();
   const mapRef = useRef<any>(null);
+  const cameraRef = useRef<any>(null);
   const [mode, setMode] = useState<'draw' | 'move'>('draw');
   // Strokes of points; a point is filled in when the map answers where the finger was.
   const strokes = useRef<(LngLat | null)[][]>([]);
   const [version, setVersion] = useState(0);
   const last = useRef<{ x: number; y: number } | null>(null);
+  const moved = useRef(false);
+  const [query, setQuery] = useState('');
+  const [hits, setHits] = useState<Hit[]>([]);
+  const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
   const [shared, setShared] = useState(true);
   const [busy, setBusy] = useState(false);
 
-  const centre = useMemo<LngLat>(() => {
+  const start = useMemo<LngLat>(() => {
     if (pos) return [pos.lng, pos.lat];
     const c = cityCentre(params.city);
     return c ? [c.lng, c.lat] : [46.6753, 24.7136];
@@ -44,6 +89,46 @@ export default function RouteDrawScreen() {
   const distance = pathLength(path);
 
   const close = () => (router.canGoBack() ? router.back() : router.replace('/host'));
+  const flyTo = (at: LngLat, zoom = 15.5) => cameraRef.current?.easeTo?.({ center: at, zoom, duration: 700 });
+
+  // The phone's position arrives after the map opens: go there unless they've moved the map already.
+  useEffect(() => {
+    if (pos && !moved.current && !strokes.current.length) flyTo([pos.lng, pos.lat]);
+  }, [pos?.lat, pos?.lng]);
+
+  // Suggestions as they type (a short pause, and only the latest answer counts).
+  useEffect(() => {
+    if (query.trim().length < 2) {
+      setHits([]);
+      return;
+    }
+    const ctl = new AbortController();
+    const id = setTimeout(() => {
+      const near: LngLat = pos ? [pos.lng, pos.lat] : start;
+      searchPlaces(query, near, lang, ctl.signal).then(setHits).catch(() => {});
+    }, 280);
+    return () => {
+      clearTimeout(id);
+      ctl.abort();
+    };
+  }, [query]);
+
+  function pick(h: Hit) {
+    moved.current = true;
+    Keyboard.dismiss();
+    setQuery('');
+    setHits([]);
+    flyTo(h.at);
+  }
+
+  async function locate() {
+    haptic('selection');
+    const here = pos ?? (await refreshPosition(true));
+    if (here) {
+      moved.current = true;
+      flyTo([here.lng, here.lat], 16);
+    } else toast.show(t('route.noLocation'), 'info');
+  }
 
   function addPoint(x: number, y: number) {
     const stroke = strokes.current[strokes.current.length - 1];
@@ -65,6 +150,7 @@ export default function RouteDrawScreen() {
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: () => true,
         onPanResponderGrant: (e) => {
+          Keyboard.dismiss();
           const { locationX: x, locationY: y } = e.nativeEvent;
           strokes.current.push([]);
           last.current = { x, y };
@@ -90,16 +176,21 @@ export default function RouteDrawScreen() {
     setVersion((v) => v + 1);
   }
 
-  async function save() {
+  function next() {
     if (path.length < 2 || distance < 50) {
       toast.show(t('route.tooShort'), 'error');
       return;
     }
+    setSaving(true);
+  }
+
+  async function save() {
     setBusy(true);
     try {
       const route = await saveRoute({ name: name.trim() || t('route.defaultName'), city: params.city || null, sport: params.sport || 'running', path, isPublic: shared });
       useRoutePick.getState().set(route);
       haptic('success');
+      setSaving(false);
       close();
     } catch {
       haptic('error');
@@ -137,7 +228,7 @@ export default function RouteDrawScreen() {
 
   const { Map, Camera, GeoJSONSource, Layer } = ML;
   return (
-    <KeyboardAvoidingView style={s.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <View style={s.screen}>
       {header}
       <View style={{ flex: 1 }}>
         <Map
@@ -146,14 +237,23 @@ export default function RouteDrawScreen() {
           mapStyle={MAP_STYLE_URL}
           logo={false}
           attribution
+          attributionPosition={{ bottom: 8, left: 8 }}
           compass={false}
           dragPan={mode === 'move'}
           touchZoom={mode === 'move'}
           doubleTapZoom={mode === 'move'}
           touchRotate={false}
           touchPitch={false}
+          onRegionWillChange={() => {
+            if (mode === 'move') moved.current = true;
+          }}
         >
-          <Camera initialViewState={{ center: centre, zoom: 15 }} />
+          <Camera ref={cameraRef} initialViewState={{ center: start, zoom: 15 }} />
+          {pos ? (
+            <GeoJSONSource id="me" data={pointFeature([pos.lng, pos.lat])}>
+              <Layer type="circle" id="me-dot" paint={{ 'circle-radius': 7, 'circle-color': '#FFFFFF', 'circle-stroke-color': START_AQUA, 'circle-stroke-width': 3 }} />
+            </GeoJSONSource>
+          ) : null}
           {path.length > 1 ? (
             <GeoJSONSource id="draw" data={routeFeature(path)}>
               <Layer type="line" id="draw-glow" paint={{ 'line-color': ROUTE_ORANGE, 'line-opacity': 0.28, 'line-width': 14 }} layout={{ 'line-cap': 'round', 'line-join': 'round' }} />
@@ -166,45 +266,114 @@ export default function RouteDrawScreen() {
             </GeoJSONSource>
           ) : null}
         </Map>
+
         {/* Drawing: the finger traces the route; the map stays still. */}
-        {mode === 'draw' ? <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} {...pan.panHandlers} /> : null}
+        {mode === 'draw' ? <View style={s.fill} {...pan.panHandlers} /> : null}
+
+        {/* Search a place, with suggestions under it. */}
+        <View style={s.searchWrap}>
+          <View style={s.search}>
+            <Icon name="explore" size={16} color={p.inkSoft} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder={t('route.searchPlaceholder')}
+              placeholderTextColor={p.inkFaint}
+              style={[s.searchInput, { textAlign: lang === 'ar' ? 'right' : 'left' }]}
+              returnKeyType="search"
+              autoCorrect={false}
+            />
+            {query ? (
+              <Press onPress={() => { setQuery(''); setHits([]); }} accessibilityLabel={t('common.close')} feedback="selection">
+                <Icon name="close" size={14} color={p.inkSoft} />
+              </Press>
+            ) : null}
+          </View>
+          {hits.length ? (
+            <ScrollView style={s.hits} keyboardShouldPersistTaps="handled">
+              {hits.map((h, i) => (
+                <Press key={h.key} onPress={() => pick(h)} feedback="selection" style={[s.hit, i === hits.length - 1 ? { borderBottomWidth: 0 } : null]}>
+                  <Icon name="pin" size={15} color={p.aqua} />
+                  <View style={{ flex: 1 }}>
+                    <Txt v="row" size={14} numberOfLines={1}>
+                      {h.title}
+                    </Txt>
+                    {h.sub ? (
+                      <Txt v="meta" numberOfLines={1}>
+                        {h.sub}
+                      </Txt>
+                    ) : null}
+                  </View>
+                </Press>
+              ))}
+            </ScrollView>
+          ) : null}
+        </View>
+
+        {/* My location and undo, on the map's edge. */}
+        <View style={s.tools}>
+          <Press onPress={locate} feedback="selection" accessibilityLabel={t('route.myLocation')} style={s.tool}>
+            <Icon name="locate" size={18} color={p.aqua} />
+          </Press>
+          <Press onPress={undo} feedback="selection" accessibilityLabel={t('route.undo')} style={[s.tool, { opacity: path.length ? 1 : 0.45 }]}>
+            <Icon name="undo" size={18} color={p.ink} />
+          </Press>
+        </View>
+
         <View style={s.hint} pointerEvents="none">
           <Txt v="label" size={12} color={p.ink}>
             {mode === 'draw' ? (path.length ? t('route.hintMore') : t('route.hintStart')) : t('route.hintMove')}
           </Txt>
         </View>
       </View>
+
       <View style={[s.bar, { paddingBottom: 12 + insets.bottom }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Txt v="stencil" size={30}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Txt v="stencil" size={28} style={{ minWidth: 96 }}>
             {fmtDistance(distance, lang)}
           </Txt>
-          <TextButton label={t('route.undo')} onPress={undo} color={path.length ? p.aqua : p.inkFaint} />
+          <View style={{ flex: 1 }}>
+            <Segmented
+              value={mode}
+              onChange={setMode}
+              options={[
+                { value: 'draw', label: t('route.modeDraw') },
+                { value: 'move', label: t('route.modeMove') },
+              ]}
+            />
+          </View>
         </View>
-        <Segmented
-          value={mode}
-          onChange={setMode}
-          options={[
-            { value: 'draw', label: t('route.modeDraw') },
-            { value: 'move', label: t('route.modeMove') },
-          ]}
-        />
-        <Field value={name} onChangeText={setName} placeholder={t('route.namePlaceholder')} maxLength={60} />
+        <MarkerButton label={t('route.next')} onPress={next} />
+      </View>
+
+      {/* Naming happens here, after drawing: the keyboard never covers the map. */}
+      <Sheet visible={saving} title={t('route.nameTitle')} onClose={() => setSaving(false)} footer={<View style={{ padding: 16, paddingBottom: 16 + insets.bottom }}><MarkerButton label={busy ? t('route.saving') : t('route.save')} onPress={save} loading={busy} /></View>}>
+        <Txt v="stencil" size={26}>
+          {fmtDistance(distance, lang)}
+        </Txt>
+        <Field value={name} onChangeText={setName} placeholder={t('route.namePlaceholder')} maxLength={60} autoFocus />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <Txt v="body" size={14} style={{ flex: 1 }}>
             {t('route.shared')}
           </Txt>
           <Toggle value={shared} onValueChange={setShared} accessibilityLabel={t('route.shared')} />
         </View>
-        <MarkerButton label={busy ? t('route.saving') : t('route.save')} onPress={save} loading={busy} />
-      </View>
-    </KeyboardAvoidingView>
+      </Sheet>
+    </View>
   );
 }
 
 const useStyles = makeStyles(({ p }) => ({
   screen: { flex: 1, backgroundColor: p.board },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: p.rule },
-  hint: { position: 'absolute', top: 12, alignSelf: 'center', backgroundColor: 'rgba(1,49,49,0.85)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+  fill: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  searchWrap: { position: 'absolute', top: 10, left: 12, right: 12, gap: 6 },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 44, paddingHorizontal: 12, borderRadius: 12, backgroundColor: p.boardDeep, borderWidth: 1, borderColor: p.ruleStrong },
+  searchInput: { flex: 1, color: p.ink, fontSize: 15, paddingVertical: 0 },
+  hits: { maxHeight: 260, borderRadius: 12, backgroundColor: p.boardDeep, borderWidth: 1, borderColor: p.rule },
+  hit: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: p.rule },
+  tools: { position: 'absolute', right: 12, bottom: 56, gap: 10 },
+  tool: { width: 44, height: 44, borderRadius: 22, backgroundColor: p.boardDeep, borderWidth: 1, borderColor: p.ruleStrong, alignItems: 'center', justifyContent: 'center' },
+  hint: { position: 'absolute', bottom: 14, alignSelf: 'center', backgroundColor: 'rgba(1,49,49,0.85)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
   bar: { paddingHorizontal: 16, paddingTop: 12, gap: 10, borderTopWidth: 1, borderTopColor: p.rule, backgroundColor: p.boardDeep },
 }));

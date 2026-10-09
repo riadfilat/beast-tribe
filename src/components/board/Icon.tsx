@@ -18,6 +18,8 @@ const ICONS = {
   back: { sf: 'chevron.left', ion: 'chevron-back', dir: true },
   close: { sf: 'xmark', ion: 'close' },
   pin: { sf: 'mappin.and.ellipse', ion: 'location' },
+  locate: { sf: 'location.fill', ion: 'locate' },
+  undo: { sf: 'arrow.uturn.backward', ion: 'arrow-undo', dir: true },
   clock: { sf: 'clock.fill', ion: 'time' },
   directions: { sf: 'arrow.triangle.turn.up.right.diamond.fill', ion: 'navigate' },
   chat: { sf: 'bubble.left.and.bubble.right.fill', ion: 'chatbubbles' },
