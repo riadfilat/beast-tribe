@@ -78,7 +78,7 @@ Everything to copy into the Play Console. Files in this folder:
 |---|---|
 | Privacy policy | https://beast-tribe.vercel.app/legal/privacy |
 | Ads | No, the app has no ads |
-| App access | Some features need an account. Provide the review login: appreview@operationbeast.com with its password (in CLAUDE.md) |
+| App access | Some features need an account. Provide the review login: appreview@operationbeast.com with its password (from the password manager, never written in the repo) |
 | Content rating | Fill the questionnaire: category "Social / communication". Users can chat and share photos (moderated, with report and block). No violence, no gambling, no adult content |
 | Target audience | 18 and over (13+ is possible, but adults only keeps it simple) |
 | News app | No |

@@ -1,0 +1,97 @@
+# Beast Tribe — Decision Log
+
+Major technical decisions: **what** was decided, **why**, and **what was rejected**. Newest first.
+Add an entry whenever a choice would surprise a new engineer (CLAUDE.md, rule 9).
+
+---
+
+### 2026-10-09 · Place search never sends the member's position
+- **What:** route-drawing search goes to Photon (OpenStreetMap search) with the typed words and the city or place, not the phone's position.
+- **Why:** privacy, and so the Google Play data-safety form can honestly say no location is shared.
+- **Rejected:** biasing by the exact position (slightly better results, but leaks location); Google Places (paid, needs a key, sends more data).
+
+### 2026-10-08 · Maps: MapLibre + OpenFreeMap with our own style
+- **What:** a native map component (MapLibre) showing OpenStreetMap data from OpenFreeMap, recoloured to the brand (`admin/public/map/beast.json`). Builds without the map draw routes as a sketch.
+- **Why:** free, no API key, fully brand-styled, works on both platforms.
+- **Rejected:** Google Maps (key + billing, Android-only styling limits); Apple Maps via react-native-maps (iPhone only, can't be branded); Mapbox (paid at scale).
+- **Cost:** needed a new store build (iOS 14 / Android 5–6).
+
+### 2026-10-09 · Routes: tap points, tied to a place
+- **What:** a track is drawn by tapping points around a chosen place; saved tracks belong to that area and the most-run one is offered first.
+- **Why:** freehand drawing was unreliable on phones; most runs happen in a handful of known parks.
+- **Rejected:** freehand finger drawing (tried, removed); GPS-recorded routes (needs background location, a much bigger privacy ask).
+
+### 2026-10-08 · Courts without an integration: the host owns the booking
+- **What:** for venues not connected to us, the host marks *booked* or *I'll book it*, can add a price, and everyone sees their share before joining; reminders nudge the host.
+- **Why:** keeps the journey simple without integrations; makes responsibility clear.
+- **Rejected:** scraping or integrating each venue's booking system (slow, fragile); auto-cancelling unbooked sessions (too harsh; we warn instead).
+
+### 2026-10-04 · Court price split equally between players who are in
+- **What:** `share = court price ÷ players in`, recalculated on every join or leave (`bt_court_resplit`).
+- **Why:** fair, and nobody ends up paying for empty spots.
+- **Rejected:** the organiser covering empty spots (felt unfair); fixed price per spot (wrong when the court isn't full).
+
+### 2026-10-03 · Payments staged: pay at the venue
+- **What:** the app shows each person's share; the venue ticks *paid*. Online payment is behind `PAYMENTS_ENABLED=false`.
+- **Why:** online payment needs a merchant account (Moyasar or Tap) in the owner's name; the split had to be clear now.
+- **Rejected:** collecting money through Beast Tribe now (licensing, refunds, merchant setup).
+
+### 2026-10-03 · Revenue: flat B2B subscriptions, 0% commission, members free
+- **What:** companies, gyms, venues and coaches pay a flat monthly plan; members never pay; no cut of guest fees or bookings.
+- **Why:** partners never have a reason to take members off the app; pricing stays simple.
+- **Rejected:** commission on bookings; a member premium tier; ads.
+
+### 2026-10-03 · One partner dashboard for every business type
+- **What:** one dashboard where `admin/src/lib/capabilities.ts` decides which sections each partner type sees.
+- **Why:** one codebase to maintain; partners that do several things (a gym with courts) get both.
+- **Rejected:** a separate portal per partner type.
+
+### 2026-10-04 · Communities are created by Beast Tribe; groups live inside communities
+- **What:** members request a community; staff create it. Groups (friends, crews) always belong to a community.
+- **Why:** communities are the paid product for companies and gyms; this ended the overlap between "community" and "group".
+- **Rejected:** member-created communities and clubs (removed, migration 072).
+
+### 2026-10-04 · Security in the database, with column-level permissions
+- **What:** row-level security on every table, triggers that block forbidden changes, and per-column write permissions (migration 073).
+- **Why:** the app can be modified by anyone; only the database can be trusted.
+- **Cost:** every new column needs an explicit permission (a known trap; see CLAUDE.md).
+- **Rejected:** checking rules only in the app or only in server code.
+
+### 2026-10-04 · Train (workouts) switched off for launch
+- **What:** `TRAIN_ENABLED=false`. The code and content stay, hidden.
+- **Why:** focus the launch on finding and joining sessions; Train wasn't finished.
+- **Rejected:** deleting it (the content took real work and will come back).
+
+### 2026-10-04 · "Group" instead of "pack" for members
+- **What:** the screens say Group / مجموعة; the code and database still say `packs`.
+- **Why:** simpler word; "team / فريق" is reserved for company teams.
+- **Rejected:** renaming the database (risky for little gain).
+
+### 2026-10-04 · Level ratings are private
+- **What:** teammates rate each other's level after a session; nobody can read the ratings. They only guide matching and call-outs.
+- **Why:** avoid judgement and gamification while still matching similar levels.
+- **Rejected:** visible levels, scores or leaderboards.
+
+### 2026-06 · No gamification
+- **What:** XP, tiers, badges, streaks and leaderboards were removed.
+- **Why:** the owner wanted a simpler app about showing up, not points.
+- **Rejected:** keeping a lighter points system.
+
+### 2026-04 · Updates over the air, store builds only for native changes
+- **What:** most changes ship through EAS Update (`scripts/release/ship-update.sh`) to both platforms. The "runtime" fingerprint decides which installed builds can take an update.
+- **Why:** minutes instead of a store review for every fix.
+- **Rule that follows:** adding a native package changes the fingerprint and needs new builds for both platforms.
+
+### 2026-04 · Stack: Expo (React Native) + Supabase + Next.js on Vercel
+- **What:** one TypeScript codebase for iPhone and Android, Supabase for the database, sign-in and storage, a Next.js website for the dashboards.
+- **Why:** small team, one language, managed hosting, strong database rules.
+- **Rejected:** separate native apps (Swift/Kotlin); Firebase (weaker for relational data and rules).
+
+### 2026-09 · English and Arabic from day one
+- **What:** every word lives in `src/i18n/strings/en.ts` and `ar.ts`; the layout mirrors for Arabic.
+- **Why:** launch market is Saudi Arabia and the Gulf.
+- **Rejected:** adding Arabic later.
+
+### Open decisions (recorded so they aren't forgotten)
+- **Database migrations are applied by hand** with `scripts/run-migration.js`, not the Supabase CLI, because the CLI token kept expiring. Downside: nothing records which files ran (docs/AUDIT.md, problem 4).
+- **No automated tests yet.** Rules were tested by hand in throwaway transactions. To change (CLAUDE.md, rule 7).

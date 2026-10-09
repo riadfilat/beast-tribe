@@ -131,7 +131,7 @@ Sign in with the demo account (email and password in the fields above).
 - Moderation: any post can be reported and its author blocked from the ••• menu.
 There are no purchases in the app.
 ```
-Demo account: `appreview@operationbeast.com` (password in CLAUDE.md › reviewer account — paste it into App Store Connect, never into the listing).
+Demo account: `appreview@operationbeast.com` (password from the password manager — paste it into App Store Connect, never into the listing or the repo).
 
 ## Google Play Console
 
