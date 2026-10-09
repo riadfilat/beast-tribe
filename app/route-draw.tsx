@@ -103,7 +103,9 @@ export default function RouteDrawScreen() {
     }
     const ctl = new AbortController();
     const id = setTimeout(() => {
-      const near: LngLat = pos ? [pos.lng, pos.lat] : start;
+      // Search around the place or city, never the member's own position (it stays on the phone).
+      const c = cityCentre(params.city);
+      const near: LngLat = placeAt ?? (c ? [c.lng, c.lat] : [46.6753, 24.7136]);
       searchPlaces(query, near, lang, ctl.signal).then(setHits).catch(() => {});
     }, 280);
     return () => {

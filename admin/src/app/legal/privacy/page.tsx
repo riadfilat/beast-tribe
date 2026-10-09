@@ -125,6 +125,12 @@ export default function PrivacyPolicyPage() {
               profile, so the app can show what is happening there. You can turn location off at any time in
               your phone&rsquo;s settings and choose your city yourself.
             </p>
+            <p>
+              Maps in the app use OpenStreetMap data served by OpenFreeMap. When you search for a place while
+              drawing a route, the words you type are sent to Photon (a public OpenStreetMap search) together
+              with the city you are looking in, never your own position. Routes you save keep the line you drew
+              and, if you choose to share it, others in your city can run it too.
+            </p>
           </section>
 
           <section className="space-y-3">
