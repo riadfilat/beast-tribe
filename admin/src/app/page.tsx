@@ -4,8 +4,7 @@ import { getAccessType } from '@/lib/auth';
 export default async function RootPage() {
   const access = await getAccessType();
 
-  if (access === 'admin') redirect('/dashboard');
+  if (access === 'admin') redirect('/hq');
   if (access === 'leader') redirect('/leader');
-  if (access === 'partner') redirect('/partner/dashboard');
-  redirect('/login');
+  redirect('/login?error=no_community');
 }

@@ -65,7 +65,7 @@ coach booking. *Fix: one database function that does the whole thing at once.*
 ### Medium: worth doing, not urgent
 
 **9. Two different time checks:** Play allows a start 5 minutes in the past, Edit requires 5 minutes in the future.
-**10. The dashboard uses the "master key"** (service role) on many partner pages and checks ownership in code; one missed check would show one partner another's data. Moving those reads behind database rules is safer.
+**10. The dashboard uses the "master key"** (service role) on many partner pages and checks ownership in code; one missed check would show one partner another's data. Moving those reads behind database rules is safer. *(10 October: the leader dashboard and HQ command center check permissions in tested database functions; the classic staff pages still use the master key.)*
 **11. Words differ between screens, code and database:** Group / pack, Play / host, Session / event, Community / club, and three meanings of "partner". A glossary helps; renames can come later.
 **12. Switched-off features still ship:** about 3,400 lines of Train (workouts) code, plus Nutrition and coach screens. They add size, and Play still loads 500 workouts it never shows.
 **13. Hardcoded values:** plan prices, limits (50 km, 80 km, 12 weeks, waiting list of 3), the website address, Riyadh as the fallback city, and Andorra photos used as the default picture for some sports.

@@ -3,36 +3,14 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { createAdminClient } from './supabase-server';
 import { redirect } from 'next/navigation';
-import { can, type Cap } from './capabilities';
 
 export type AdminRole = 'super_admin' | 'admin' | 'moderator';
-export type PartnerType = 'coach' | 'gym' | 'event_company' | 'company' | 'nutritionist' | 'venue' | 'school' | 'leader' | 'nutrition';
-
-/** Gyms, companies, schools and club leaders run a community of their own from the dashboard. */
-export const ownsCommunity = (t: string) => t === 'gym' || t === 'company' || t === 'school' || t === 'leader';
 
 export interface AdminUser {
   id: string;
   email: string;
   full_name: string;
   role: AdminRole;
-}
-
-export interface PartnerUser {
-  id: string;
-  email: string;
-  full_name: string;
-  partner_id: string;
-  partner_type: PartnerType;
-  business_name: string;
-  is_verified: boolean;
-  /** A gym's own club community. */
-  community_id: string | null;
-  plan: string | null;
-  plan_status: string;
-  billing_cycle: string;
-  trial_ends_at: string | null;
-  plan_renews_at: string | null;
 }
 
 /**
@@ -122,73 +100,21 @@ export async function requireRole(min: AdminRole): Promise<AdminUser> {
 }
 
 /**
- * Require partner access — cached per-request, redirects if not a partner.
+ * Where the signed-in person goes after login: HQ (staff), the leader dashboard, or nowhere.
  */
-export const requirePartner = cache(async (): Promise<PartnerUser> => {
-  const user = await getSessionUser();
-  if (!user) redirect('/login');
-  await requireCodeIfEnrolled();
-
-  const db = createAdminClient();
-
-  const [profileResult, partnerResult] = await Promise.all([
-    db.from('profiles').select('full_name').eq('id', user.id).single(),
-    db
-      .from('partners')
-      .select('id, partner_type, business_name, is_verified, community_id, plan, plan_status, billing_cycle, trial_ends_at, plan_renews_at')
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .single(),
-  ]);
-
-  if (!partnerResult.data) redirect('/login?error=not_partner');
-
-  return {
-    id: user.id,
-    email: user.email || '',
-    full_name: profileResult.data?.full_name || 'Partner',
-    partner_id: partnerResult.data.id,
-    partner_type: partnerResult.data.partner_type as PartnerType,
-    business_name: partnerResult.data.business_name,
-    is_verified: partnerResult.data.is_verified,
-    community_id: partnerResult.data.community_id ?? null,
-    plan: partnerResult.data.plan ?? null,
-    plan_status: partnerResult.data.plan_status || 'trial',
-    billing_cycle: partnerResult.data.billing_cycle || 'monthly',
-    trial_ends_at: partnerResult.data.trial_ends_at ?? null,
-    plan_renews_at: partnerResult.data.plan_renews_at ?? null,
-  };
-});
-
-/**
- * Require a partner whose kind runs this part of the dashboard: the same rule the sidebar uses
- * (navFor), so a page opens by URL exactly when its menu item shows. Others go to the overview.
- */
-export const requireCap = cache(async (cap: Cap): Promise<PartnerUser> => {
-  const partner = await requirePartner();
-  if (!can(partner.partner_type, cap)) redirect('/partner/dashboard');
-  return partner;
-});
-
-/**
- * Check if current user is admin OR partner.
- * Used for routing on the root page after login.
- */
-export async function getAccessType(): Promise<'admin' | 'leader' | 'partner' | null> {
+export async function getAccessType(): Promise<'admin' | 'leader' | null> {
   const user = await getSessionUser();
   if (!user) return null;
 
   const db = createAdminClient();
 
-  const [adminResult, teamResult, partnerResult] = await Promise.all([
+  const [adminResult, teamResult] = await Promise.all([
     db.from('admin_roles').select('role').eq('user_id', user.id).maybeSingle(),
     // Leaders and supporters of a community (migration 092) use the leader dashboard.
     db.from('community_members').select('community_id').eq('user_id', user.id).in('role', ['admin', 'supporter']).limit(1),
-    db.from('partners').select('id').eq('user_id', user.id).eq('is_active', true).limit(1),
   ]);
 
   if (adminResult.data) return 'admin';
   if (teamResult.data?.length) return 'leader';
-  if (partnerResult.data?.length) return 'partner';
   return null;
 }

@@ -72,3 +72,29 @@ test('a free session has nothing to pay', () => inRollback(async (db) => {
   await db.query('UPDATE events SET price_sar = NULL WHERE id = $1', [w.e]);
   assert.match(await errorOf(() => as(db, w.leader, () => db.query('SELECT set_player_paid($1, $2, $3)', [w.e, w.p1, true]))), /FREE_SESSION/);
 }));
+
+test("a booking on the venue's court made from another community: the venue leader ticks it and sees the money", () => inRollback(async (db) => {
+  const w = await world(db);
+  const booker = await makeAccount(db, testEmail('booker'));
+  const otherLeader = await makeAccount(db, testEmail('other-leader'));
+  const { rows: [biz] } = await db.query(
+    `INSERT INTO partners (name, business_name, slug, type, partner_type, status, is_active, community_id) VALUES ('Venue', 'Venue', 'test-venue-' || gen_random_uuid(), 'other', 'leader', 'active', true, $1) RETURNING id`, [w.c]);
+  const { rows: [court] } = await db.query(
+    `INSERT INTO facilities (partner_id, name, kind, sport, price_sar, slot_minutes, max_players, hours, audience) VALUES ($1, 'Court 1', 'court', 'padel', 200, 60, 4, '{}'::jsonb, 'everyone') RETURNING id`, [biz.id]);
+  const { rows: [other] } = await db.query(`INSERT INTO communities (name, slug) VALUES ('Other club', 'test-' || gen_random_uuid()) RETURNING id`);
+  await db.query(`INSERT INTO community_members (community_id, user_id, role) VALUES ($1, $2, 'member'), ($1, $3, 'admin')`, [other.id, booker, otherLeader]);
+  await db.query(`SET LOCAL session_replication_role = replica`);
+  const { rows: [e] } = await db.query(
+    `INSERT INTO events (title, event_type, starts_at, ends_at, created_by, visibility, community_id, max_capacity, facility_id, share_sar)
+     VALUES ('Court booking', 'padel', now() - interval '2 hours', now() - interval '1 hour', $1, 'community', $2, 4, $3, 200) RETURNING id`, [booker, other.id, court.id]);
+  await db.query(`INSERT INTO event_rsvps (event_id, user_id, status) VALUES ($1, $2, 'going')`, [e.id, booker]);
+  await db.query(`INSERT INTO session_dues (event_id, user_id, kind, amount_sar) VALUES ($1, $2, 'share', 200)`, [e.id, booker]);
+  await db.query(`SET LOCAL session_replication_role = origin`);
+
+  await as(db, w.leader, () => db.query('SELECT set_player_paid($1, $2, true)', [e.id, booker]));
+  const o = await overview(db, w.leader, w.c);
+  assert.equal(Number(o.money.expected), 120 + 200, 'the paid session plus the court booking');
+  assert.equal(Number(o.money.paid), 200);
+  // A supporter of the venue still can't tick money.
+  assert.match(await errorOf(() => as(db, w.supporter, () => db.query('SELECT set_player_paid($1, $2, false)', [e.id, booker]))), /NOT_LEADER/);
+}));

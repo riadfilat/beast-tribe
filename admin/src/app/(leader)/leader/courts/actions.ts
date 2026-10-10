@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createAdminClient } from '@/lib/supabase-server';
+import { userSupabase } from '@/lib/auth';
 import { requireLeader } from '@/lib/leader/context';
 import { ensureBusiness } from '@/lib/leader/business';
 import { readCourt } from '@/lib/leader/courts';
@@ -42,4 +43,13 @@ export async function setCourtActive(courtId: string, active: boolean) {
   const { businessId } = await courtsCtx();
   await createAdminClient().from('facilities').update({ is_active: active }).eq('id', courtId).eq('partner_id', businessId);
   revalidatePath('/leader/courts');
+}
+
+/** Tick that a player paid their court share at the venue (the database allows the court's leaders). */
+export async function tickCourtPaid(eventId: string, userId: string, paid: boolean) {
+  await courtsCtx();
+  const { error } = await (await userSupabase()).rpc('set_player_paid', { p_event: eventId, p_user: userId, p_paid: paid });
+  if (error) throw new Error('Could not change the payment.');
+  revalidatePath('/leader/courts');
+  revalidatePath('/leader');
 }

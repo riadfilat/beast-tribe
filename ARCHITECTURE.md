@@ -12,17 +12,17 @@ flowchart TB
     D --> L["Shared helpers<br/>src/lib/"]
   end
   subgraph Web["Website — admin/ (Vercel)"]
-    SD["HQ (staff) dashboard<br/>admin/src/app/(admin)"]
+    HQ["HQ command center<br/>admin/src/app/(hq)"]
+    SD["Classic staff pages<br/>admin/src/app/(admin)"]
     LD["Leader dashboard<br/>admin/src/app/(leader)"]
-    PD["Old partner dashboard<br/>admin/src/app/(partner), retiring"]
     PUB["Public pages<br/>for-gyms, /get, /s/ share links, legal"]
     API["Server helpers<br/>/api/assistant (Claude), /api/moderate (photo check)"]
   end
   DB[("Supabase database<br/>tables + rules + scheduled jobs<br/>supabase/migrations/")]
   D -- "reads/writes as the member" --> DB
+  HQ -- "HQ admins, the database checks" --> DB
   SD -- "staff, checked by role" --> DB
   LD -- "leader or supporter, the database checks" --> DB
-  PD -- "partner, checked by ownership" --> DB
   DB -- "push messages" --> EXPO["Expo push"]
   DB -- "new photo" --> API
   D -. "maps / place search" .-> MAP["OpenFreeMap tiles · Photon search"]
@@ -43,7 +43,7 @@ are the real gatekeeper, so even a tampered app can't see a private community or
 | `src/i18n/` | All words, in English (`en.ts`) and Arabic (`ar.ts`). No text is written directly in screens. |
 | `src/theme/` | Colours, type and spacing. |
 | `src/providers/` | Sign-in state (`AuthProvider`). |
-| `admin/` | The website (Next.js): staff dashboard, partner dashboard, public pages, two server helpers. |
+| `admin/` | The website (Next.js): HQ command center, leader dashboard, classic staff pages, public pages, two server helpers. |
 | `supabase/migrations/` | Every database change, numbered in order. The database is only changed through these. |
 | `scripts/` | Release (`release/ship-update.sh`), applying migrations (`run-migration.js`), content builders (workout library), brand assets, a load test. |
 | `store/` | App Store and Google Play listing text and images. |
@@ -64,7 +64,7 @@ are the real gatekeeper, so even a tampered app can't see a private community or
 
 | Who | Where | How the role is stored |
 |---|---|---|
-| **Super admin** (the owner) and **admins** | HQ dashboard: `/dashboard` (command center coming in step 3) | `admin_roles` (`super_admin`, `admin`, `moderator`). Only the super admin changes it: `set_admin_role()` |
+| **Super admin** (the owner) and **admins** | HQ: `/hq` (command center, leaders & communities, admins); classic staff pages still at `/dashboard`, `/leads`, `/locations`, `/moderation` | `admin_roles` (`super_admin`, `admin`, `moderator`). Only the super admin changes it: `set_admin_role()` |
 | **Community leader** (coach, gym, trainer, company HR, activation lead) | Leader dashboard: `/leader` | `community_members.role = 'admin'` (shown as "Leader"). HQ adds leaders: `invite_to_team()` |
 | **Community supporter** | Leader dashboard, fewer buttons, never sees money | `community_members.role = 'supporter'`. Leaders add them: `invite_to_team()` |
 | **Member** | The app only | `community_members.role = 'member'` |
@@ -73,6 +73,12 @@ are the real gatekeeper, so even a tampered app can't see a private community or
 - **Features** a community switched on live in `community_features` (courts, guests, coaching, nutrition, teams); each one with a page adds it to the leader menu (`admin/src/lib/leader/features.ts`).
 - **Business record:** courts, coaching times and the plan hang off a `partners` row linked to the community, made when first needed (`admin/src/lib/leader/business.ts`).
 - **Sign-in:** email + password, or "Email me a sign-in link" (`/login/link`) for people who joined the app with Apple or Google.
+
+### The HQ command center (`admin/src/app/(hq)/hq/`)
+- **Activity:** active today and this week, sessions and players today, the next 7 days, a map of members by city (MapLibre with the app's brand style, `components/board/CityMap.tsx`), today's sessions by hour, needs attention, every community's health, sports, phones and language, new members per week. Filter by city and day.
+- **Growth:** leads funnel (`partner_leads` steps), lead sources, revenue by plan (`business_overview()`), sign-ups and first sessions, and "not connected yet" cards for social, website visits and installs until those accounts are connected.
+- **Data:** database functions `hq_live`, `hq_days`, `hq_day_sessions`, `hq_cities`, `hq_communities`, `hq_attention`, `hq_mix` (096) and `hq_growth` (097), all refusing anyone who isn't an HQ admin (`bt_require_hq`). Loaders in `admin/src/lib/hq/data.ts`.
+- **Leaders & communities** (`/hq/communities`): add a leader by email (with a new or existing community), switch features, remove people. **Admins** (`/hq/admins`, super admin only).
 
 ### The leader dashboard (`admin/src/app/(leader)/leader/`)
 - **Pages:** Home (numbers, players by day, insights, coming up), Sessions (post with a live app preview, players, check-in, who paid, cancel), Courts, Coaching, Nutrition, Teams (only when switched on), People, Features, Profile.
@@ -101,7 +107,7 @@ are the real gatekeeper, so even a tampered app can't see a private community or
   - `facility_bookings`: a booked time. The database refuses two bookings that overlap.
 - **Members-only visibility:** a court tied to a community is only visible to its members (database rules).
 - **App:** `src/data/facilities.ts`, `app/courts.tsx` (list), `app/court/[id].tsx` (pick a time and book).
-- **Dashboard:** venues manage courts in `admin/src/app/(partner)/partner/facilities` and see bookings in `partner/bookings`.
+- **Dashboard:** leaders with Courts & booking switched on manage courts and see bookings (with paid ticks) at `/leader/courts`. Bookings made from any community on their courts count for them (`bt_court_leader`, migration 098).
 
 ### Booking
 - **In-app courts** (e.g. Andorra): `book_facility()` in the database checks the slot is free, the house rule (one a day) and the community, then creates the session. Players split the price equally (`bt_court_resplit`); they pay at the venue and the venue ticks *paid* (`session_dues`).

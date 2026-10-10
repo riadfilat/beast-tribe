@@ -5,6 +5,16 @@ Add an entry whenever a choice would surprise a new engineer (CLAUDE.md, rule 9)
 
 ---
 
+### 2026-10-10 · The command center counts in the database, and shows only real numbers
+- **What:** every number on the HQ command center comes from a tested database function that only HQ admins can call. Growth shows leads, revenue, sign-ups and first sessions from our own data; social, website visits and app installs say "not connected yet" until each account is connected with its business login.
+- **Why:** the owner wants to see everything, but a number we can't back up is worse than none.
+- **Rejected:** placeholder or estimated social numbers; giving the website the social passwords.
+
+### 2026-10-10 · The old partner dashboard is retired
+- **What:** `admin/src/app/(partner)` and its helpers (`capabilities.ts`, `club.ts`, `wellness.ts`) were removed; leaders and supporters use `/leader`, staff use `/hq`. People with only an old partner login see "ask your community leader or Beast Tribe to add you".
+- **Why:** no live partner used it (Andorra has no login; the other was a test account), and two dashboards for the same job confuse everyone.
+- **Not yet moved:** company step challenges and the printable join poster; they come back in the leader dashboard if leaders ask for them.
+
 ### 2026-10-10 · One kind of community leader who switches features on
 - **What:** the dashboard is for community leaders (and the supporters they add). A leader can be a coach, gym, trainer, company HR or activation lead, or several at once, and switches on what they run: courts and booking, guest passes, 1:1 coaching, nutrition, company teams.
 - **Why:** the owner found the dashboard unclear; fixed partner types decided the pages, and real leaders are often several kinds at once.

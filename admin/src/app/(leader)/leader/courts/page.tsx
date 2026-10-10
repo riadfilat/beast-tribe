@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation';
 import { Plus } from '@phosphor-icons/react/dist/ssr';
 import { requireLeader } from '@/lib/leader/context';
 import { courtHeat, loadCourts } from '@/lib/leader/courts';
-import { hoursLine } from '@/lib/venue';
+import { hoursLine, loadBookings } from '@/lib/venue';
+import { Bookings } from './Bookings';
 import { sar } from '@/lib/leader/sessions';
 import { Box, Empty, Notice, PageTop, Pill } from '@/components/board/ui';
 import { Heat } from '@/components/board/charts';
@@ -16,7 +17,11 @@ export default async function Courts({ searchParams }: { searchParams: Promise<{
   const ctx = await requireLeader();
   if (!ctx.features.has('courts')) redirect('/leader/features');
   const courts = await loadCourts(ctx.businessId);
-  const [{ cells, total }, q] = await Promise.all([courtHeat(courts.map((c) => c.id)), searchParams]);
+  const [{ cells, total }, q, bookings] = await Promise.all([
+    courtHeat(courts.map((c) => c.id)),
+    searchParams,
+    ctx.businessId ? loadBookings(ctx.businessId, new Date(Date.now() - 86400000)) : Promise.resolve([]),
+  ]);
   const morning = cells.reduce((t, d) => t + d.slice(6, 14).reduce((a, b) => a + b, 0), 0);
 
   return (
@@ -59,6 +64,9 @@ export default async function Courts({ searchParams }: { searchParams: Promise<{
           ) : null}
         </Box>
       </div>
+      <Box title="Bookings" icon="sessions" sub="From yesterday on. Players pay their share at the venue; tick who paid. Beast Tribe takes 0%.">
+        <Bookings bookings={bookings.slice(0, 60)} />
+      </Box>
     </>
   );
 }

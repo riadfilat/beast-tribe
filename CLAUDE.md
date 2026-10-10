@@ -40,7 +40,14 @@ The owner is not an engineer. Keep everything understandable to them and to any 
 - **Tests:** `scripts/test.sh` (app logic) and `scripts/test.sh db` (database rules; needs `PG_URL`). Run both before saying a task is done.
 - **Database:** add a migration file, test it inside a transaction that is rolled back, then apply it with `PG_URL=… node scripts/run-migration.js <file>`. The connection string lives in local memory only.
 
+**The two dashboards (website)**
+- `/hq`: the command center and leaders & communities, for the super admin and admins.
+- `/leader`: for community leaders and the supporters they add (supporters never see money).
+- Permissions for both live in tested database functions (`bt_team_role`, `bt_is_hq`, `hq_*`, `community_overview`); never decide them only in page code.
+- To check pages locally: `node scripts/qa/make-qa-leader.js` (a test leader and private club), and remove it afterwards with `--remove`.
+
 **Traps that have bitten before**
+- **SQL null checks:** `bt_team_role()` is null for people with no role; compare with `IS NOT DISTINCT FROM`, never `=`, or `IF NOT (... = 'leader')` lets them through.
 - **Column-level permissions (since migration 073):** a new column on `profiles`, `events`, `event_rsvps`, `feed_posts`, `feed_comments` or `pack_members` is invisible to the app until you `GRANT` it to `authenticated`.
 - **Don't edit `eas.json`, `app.json` or package.json's `scripts` without planning new builds:** they change the runtime fingerprint. Plain-JavaScript packages are fine; check with `npx expo-updates fingerprint:generate --platform ios`.
 - **Other Claude sessions push to `main` too.** `git fetch` and check `origin/main` before building.

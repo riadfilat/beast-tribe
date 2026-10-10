@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase-browser';
 import { Lockup } from '@/components/brand/Logo';
 import { Icon, type IconName } from '@/components/ui/Icon';
-import { navFor } from '@/lib/capabilities';
+import { TRAIN_ENABLED } from '@/lib/features';
 
 interface NavItem {
   label: string;
@@ -16,6 +16,8 @@ interface NavItem {
 }
 
 const ADMIN_NAV: NavItem[] = [
+  // The new HQ (command center, leaders & communities, admins) lives at /hq.
+  { label: 'Command center', href: '/hq', icon: 'business' },
   { label: 'Dashboard', href: '/dashboard', icon: 'dashboard' },
   { label: 'Business', href: '/business', icon: 'business' },
   { label: 'Leads', href: '/leads', icon: 'leads' },
@@ -27,28 +29,23 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Feed', href: '/feed', icon: 'feed' },
   { label: 'Moderation', href: '/moderation', icon: 'moderation' },
   { label: 'Partners', href: '/partners', icon: 'partners' },
-  { label: 'Workouts', href: '/workouts', icon: 'workouts' },
+  // Train is off for launch: no workout pages in the menu (they come back with TRAIN_ENABLED).
+  ...(TRAIN_ENABLED ? [{ label: 'Workouts', href: '/workouts', icon: 'workouts' as IconName }] : []),
   { label: 'Security', href: '/security', icon: 'key' },
 ];
 
 interface SidebarProps {
-  type: 'admin' | 'partner';
-  partnerType?: string;
+  type: 'admin';
   userName: string;
   roleBadge: string;
   pendingModeration?: number;
 }
 
-export default function Sidebar({ type, partnerType, userName, roleBadge, pendingModeration }: SidebarProps) {
+export default function Sidebar({ userName, roleBadge, pendingModeration }: SidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   // Moderators only look after the feed and photos (the pages check the role too).
-  const nav: NavItem[] =
-    type === 'admin'
-      ? roleBadge === 'moderator'
-        ? ADMIN_NAV.filter((i) => ['/feed', '/moderation', '/security'].includes(i.href))
-        : ADMIN_NAV
-      : (navFor(partnerType || '') as NavItem[]);
+  const nav: NavItem[] = roleBadge === 'moderator' ? ADMIN_NAV.filter((i) => ['/feed', '/moderation', '/security'].includes(i.href)) : ADMIN_NAV;
 
   // Inject moderation badge
   const navWithBadges = nav.map((item) => {
@@ -60,7 +57,7 @@ export default function Sidebar({ type, partnerType, userName, roleBadge, pendin
 
   function isActive(href: string) {
     // Exact match for dashboard to avoid matching all /d* paths
-    if (href === '/dashboard' || href === '/partner/dashboard' || href === '/partner/club') {
+    if (href === '/dashboard') {
       return pathname === href;
     }
     return pathname === href || pathname.startsWith(href + '/');
@@ -103,7 +100,7 @@ export default function Sidebar({ type, partnerType, userName, roleBadge, pendin
           <div className="flex flex-col gap-2">
             <Lockup height={20} ink="#F4F1EA" id="bt-sidebar" />
             <p className="text-xs text-white/60 leading-tight">
-              {type === 'admin' ? 'Admin Dashboard' : 'Partner Dashboard'}
+              Classic dashboard
             </p>
           </div>
         </div>

@@ -1,8 +1,6 @@
 import Link from 'next/link';
-import type { MemberStatus } from '@/lib/club';
-import { STATUS_LABEL } from '@/lib/club';
 
-// Building blocks for the gym's Club Portal.
+// Building blocks for the classic staff pages.
 
 export const card = 'bg-white rounded-xl border border-gray-100 shadow-sm';
 export const btnPrimary =
@@ -28,17 +26,6 @@ export function Stat({ label, value, hint, tone = 'teal', href }: { label: strin
   ) : (
     <div className={`${card} p-5`}>{body}</div>
   );
-}
-
-const STATUS_STYLE: Record<MemberStatus, string> = {
-  new: 'bg-[#E6F6F6] text-[#0F5A5A]',
-  active: 'bg-[#E8F5EE] text-[#25704F]',
-  quiet: 'bg-[#FDF2E3] text-[#8A4F0B]',
-  at_risk: 'bg-[#FCEBEA] text-[#9E3A33]',
-};
-
-export function StatusChip({ status }: { status: MemberStatus }) {
-  return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_STYLE[status]}`}>{STATUS_LABEL[status]}</span>;
 }
 
 export function Avatar({ name, src, size = 32 }: { name: string; src: string | null; size?: number }) {

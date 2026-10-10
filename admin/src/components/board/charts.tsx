@@ -92,13 +92,13 @@ export function HBar({ label, value, max, text }: { label: React.ReactNode; valu
 }
 
 /** A tiny trend line with its last point in orange. */
-export function Spark({ values, width = 70, height = 20 }: { values: number[]; width?: number; height?: number }) {
+export function Spark({ values, width = 70, height = 20, fluid = false }: { values: number[]; width?: number; height?: number; fluid?: boolean }) {
   if (!values.length) return null;
   const m = Math.max(1, ...values);
   const step = values.length > 1 ? (width - 4) / (values.length - 1) : 0;
   const pts = values.map((v, i) => [2 + i * step, height - 2 - (v / m) * (height - 5)]);
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} width={width} height={height} aria-hidden>
+    <svg viewBox={`0 0 ${width} ${height}`} width={fluid ? '100%' : width} height={height} preserveAspectRatio={fluid ? 'none' : undefined} aria-hidden className="block">
       <polyline points={pts.map((p) => p.join(',')).join(' ')} fill="none" stroke={AQUA} strokeWidth="1.6" />
       <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="2.5" fill={ORANGE} />
     </svg>
