@@ -8,6 +8,7 @@ import { initials } from '@/components/board/Shell';
 import { PackPatch } from '@/components/brand/PackPatch';
 import { nameOf, regionName, shortDate, since } from '../shared';
 import { MemberActions } from './MemberActions';
+import { DeleteAccount } from './DeleteAccount';
 import { CommunityPicker } from './CommunityPicker';
 import { SessionList, summarise } from './SessionList';
 
@@ -16,7 +17,7 @@ export const revalidate = 0;
 const ROLE: Record<string, string> = { admin: 'Leader', supporter: 'Supporter', member: 'Member' };
 
 export default async function HqPerson(props: { params: Promise<{ id: string }> }) {
-  await requireRole('admin');
+  const me = await requireRole('admin');
   const { id } = await props.params;
   const db = createAdminClient();
 
@@ -46,6 +47,9 @@ export default async function HqPerson(props: { params: Promise<{ id: string }> 
   if (!profile) notFound();
 
   const p = profile as any;
+  // Who can't be deleted from here: HQ staff and community leaders (the database checks it again).
+  const isStaff = !!(await db.from('admin_roles').select('user_id').eq('user_id', id).maybeSingle()).data;
+  const leads = ((memberships || []) as any[]).filter((m) => m.role === 'admin' && m.community).map((m) => m.community.name as string);
   // "Last in the app": the newest day the app recorded (member_days), else the old field.
   const { data: seen } = await db.from('member_days').select('day').eq('user_id', id).order('day', { ascending: false }).limit(1);
   p.last_active_date = (seen as any[])?.[0]?.day ?? p.last_active_date ?? null;
@@ -123,6 +127,17 @@ export default async function HqPerson(props: { params: Promise<{ id: string }> 
           )}
         </Box>
       </div>
+      {me.role === 'super_admin' && me.id !== id ? (
+        <Box title="Delete account" icon="safety" sub="Only you can see this. Use it when someone asks for their data to be removed.">
+          {isStaff ? (
+            <p className="text-[13px]" style={{ color: 'var(--ink-soft)' }}>This person is on the HQ team. Remove their admin role first (Admins).</p>
+          ) : leads.length ? (
+            <p className="text-[13px]" style={{ color: 'var(--ink-soft)' }}>This person leads {leads.join(', ')}. Hand it over or remove them from its team first (Leaders &amp; communities).</p>
+          ) : (
+            <DeleteAccount userId={id} name={(p.full_name || name).trim()} />
+          )}
+        </Box>
+      ) : null}
     </>
   );
 }

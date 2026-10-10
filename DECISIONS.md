@@ -5,6 +5,11 @@ Add an entry whenever a choice would surprise a new engineer (CLAUDE.md, rule 9)
 
 ---
 
+### 2026-10-10 · The super admin can delete a member's account
+- **What:** a "Delete account" box on a person's page in People, for the super admin only, after typing their full name. The database function `delete_member()` refuses yourself, HQ staff and community leaders, logs the deletion (full name only) and deletes the account the same way "Delete account" in the app does.
+- **Why:** the owner asked for it; members can ask for their data to be removed (Saudi PDPL). Suspend stays the reversible choice for problem accounts.
+- **Found on the way:** links in the database blocked ANY account deletion, including members deleting themselves in the app, once they had reported a post, booked a coach or created a business (an App Store requirement). Migration 099 lets go: what is theirs goes with them; what they did for others stays without their name.
+
 ### 2026-10-10 · One dashboard look: the classic staff pages moved into HQ
 - **What:** every staff page now lives in HQ in the board look, with a shorter menu: Dashboard and Business became the command center and Growth; Communities and Partners became Leaders & communities and Businesses; Feed and Moderation became one Safety page. Old addresses forward. Only the workout library stays in the classic area while Train is off.
 - **Why:** the owner wanted the whole dashboard as simple and consistent as the new HQ and leader dashboard.

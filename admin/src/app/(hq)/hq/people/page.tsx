@@ -3,7 +3,7 @@ import { MagnifyingGlass } from '@phosphor-icons/react/dist/ssr';
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireRole } from '@/lib/auth';
 import { searchTerm } from '@/lib/search';
-import { Box, Empty, Kpi, PageTop } from '@/components/board/ui';
+import { Notice, Box, Empty, Kpi, PageTop } from '@/components/board/ui';
 import { MemberRow } from './MemberRow';
 import { REGIONS, SHOWS, daysAgo, type Show } from './shared';
 
@@ -11,7 +11,7 @@ export const revalidate = 0;
 
 const PER_PAGE = 25;
 
-type Params = { q?: string; region?: string; show?: string; page?: string };
+type Params = { q?: string; region?: string; show?: string; page?: string; deleted?: string };
 
 export default async function HqPeople(props: { searchParams: Promise<Params> }) {
   await requireRole('admin');
@@ -70,6 +70,7 @@ export default async function HqPeople(props: { searchParams: Promise<Params> })
   return (
     <>
       <PageTop title="People" sub="Everyone who has signed up to Beast Tribe. Open a person to change their community, send a password reset, or suspend them." />
+      {sp.deleted ? <Notice tone="good">{sp.deleted}’s account was deleted. The staff log records it.</Notice> : null}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Kpi label="Members" value={(total.count || 0).toLocaleString()} note="signed up in total" />
