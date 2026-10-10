@@ -23,11 +23,15 @@ export function birthdayLabel(iso: string, lang: 'en' | 'ar'): string {
 function Wheel({ items, value, onChange, label, flex = 1 }: { items: number[]; value: number; onChange: (v: number) => void; label: (v: number) => string; flex?: number }) {
   const { p } = useKit();
   const ref = useRef<ScrollView>(null);
+  const shown = useRef(false);
+  // Keep the wheel on the value, also when it changes from outside (a 30th becoming a 29th).
   useEffect(() => {
     const i = Math.max(0, items.indexOf(value));
-    const id = setTimeout(() => ref.current?.scrollTo({ y: i * ITEM, animated: false }), 60);
+    const animated = shown.current;
+    const id = setTimeout(() => ref.current?.scrollTo({ y: i * ITEM, animated }), animated ? 0 : 60);
+    shown.current = true;
     return () => clearTimeout(id);
-  }, []);
+  }, [value, items.length]);
   const settle = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       const i = Math.max(0, Math.min(items.length - 1, Math.round(e.nativeEvent.contentOffset.y / ITEM)));
@@ -87,7 +91,9 @@ export function DobSheet({ visible, value, onClose, onDone }: { visible: boolean
   const iso = toIso(cal, ymd);
   const other: CalendarKind = cal === 'gregorian' ? 'hijri' : 'gregorian';
   const years = birthYears(cal, YOUNGEST, SPAN);
-  const days = Array.from({ length: cal === 'hijri' ? 30 : 31 }, (_, i) => i + 1);
+  const days = Array.from({ length: daysInMonth(cal, y, m) }, (_, i) => i + 1);
+  // A day the new month doesn't have becomes its last day (30 Ramadan in a 29-day year → 29).
+  const pick = (ny: number, nm: number, nd: number) => setYmd([ny, nm, Math.min(nd, daysInMonth(cal, ny, nm))]);
   const months = MONTHS[cal][lang === 'ar' ? 'ar' : 'en'];
 
   // Switching calendars keeps the same birthday, shown the other way.
@@ -118,9 +124,9 @@ export function DobSheet({ visible, value, onClose, onDone }: { visible: boolean
         />
         {/* Remounted on a calendar switch so each wheel scrolls to its new value. */}
         <View key={cal} style={s.wheels}>
-          <Wheel items={days} value={Math.min(d, daysInMonth(cal, y, m))} onChange={(v) => setYmd([y, m, v])} label={String} />
-          <Wheel items={MONTH_NUMBERS} value={m} onChange={(v) => setYmd([y, v, d])} label={(v) => months[v - 1]} flex={1.5} />
-          <Wheel items={years} value={y} onChange={(v) => setYmd([v, m, d])} label={String} />
+          <Wheel items={days} value={d} onChange={(v) => pick(y, m, v)} label={String} />
+          <Wheel items={MONTH_NUMBERS} value={m} onChange={(v) => pick(y, v, d)} label={(v) => months[v - 1]} flex={1.5} />
+          <Wheel items={years} value={y} onChange={(v) => pick(v, m, d)} label={String} />
         </View>
         <Txt v="body" color={p.inkSoft} align="center" style={s.other}>
           {formatDate(other, iso, lang === 'ar' ? 'ar' : 'en')}
