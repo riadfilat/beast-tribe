@@ -5,6 +5,11 @@ Add an entry whenever a choice would surprise a new engineer (CLAUDE.md, rule 9)
 
 ---
 
+### 2026-10-10 · One dashboard look: the classic staff pages moved into HQ
+- **What:** every staff page now lives in HQ in the board look, with a shorter menu: Dashboard and Business became the command center and Growth; Communities and Partners became Leaders & communities and Businesses; Feed and Moderation became one Safety page. Old addresses forward. Only the workout library stays in the classic area while Train is off.
+- **Why:** the owner wanted the whole dashboard as simple and consistent as the new HQ and leader dashboard.
+- **Fixed on the way:** reports can be resolved or dismissed and hidden posts restored (F4, F5); one staff session form with men-only and a community picker (F7); session times were saved as UTC (an 18:00 session showed at 9 pm); hiding a place never worked; saving a school community turned it into a club; the business and comment pages joined people through a link that doesn't exist and showed no names; People's "active" used a field the app never writes (now `member_days`).
+
 ### 2026-10-10 · The command center counts in the database, and shows only real numbers
 - **What:** every number on the HQ command center comes from a tested database function that only HQ admins can call. Growth shows leads, revenue, sign-ups and first sessions from our own data; social, website visits and app installs say "not connected yet" until each account is connected with its business login.
 - **Why:** the owner wants to see everything, but a number we can't back up is worse than none.

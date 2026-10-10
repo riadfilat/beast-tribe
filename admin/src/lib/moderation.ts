@@ -3,7 +3,7 @@ import { createAdminClient } from './supabase-server';
 
 // Photo checks. The database queues every photo our members upload and calls /api/moderate.
 // Claude looks at the photo and returns allow / review / block. Blocked photos come down at once
-// (bt_take_down_image); "review" waits for an admin in Moderation. Without ANTHROPIC_API_KEY every
+// (bt_take_down_image); "review" waits for a person in HQ → Safety. Without ANTHROPIC_API_KEY every
 // photo waits for an admin.
 
 const MODEL = process.env.MODERATION_MODEL || 'claude-haiku-4-5-20251001';

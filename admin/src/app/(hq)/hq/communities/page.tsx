@@ -1,3 +1,4 @@
+import { requireRole } from '@/lib/auth';
 import Link from 'next/link';
 import { health, loadCommunities } from '@/lib/hq/data';
 import { FEATURES } from '@/lib/leader/features';
@@ -5,11 +6,19 @@ import { Box, Empty, PageTop, Pill } from '@/components/board/ui';
 import { AddLeader } from './AddLeader';
 
 export default async function HqCommunities() {
+  await requireRole('admin');
   const comms = await loadCommunities(null);
   const noLeader = comms.filter((c) => !c.leaders.length).length;
   return (
     <>
-      <PageTop title="Leaders & communities" sub={`${comms.length} communit${comms.length === 1 ? 'y' : 'ies'}${noLeader ? ` · ${noLeader} without a leader` : ''}`} action={<Link href="/leads" className="btn ghost small">Requests and leads</Link>} />
+      <PageTop title="Leaders & communities" sub={`${comms.length} communit${comms.length === 1 ? 'y' : 'ies'}${noLeader ? ` · ${noLeader} without a leader` : ''}`} action={
+          <span className="flex flex-wrap gap-2">
+            <Link href="/hq/leads" className="btn ghost small">Requests and leads</Link>
+            <Link href="/hq/businesses" className="btn ghost small">Businesses</Link>
+            <Link href="/hq/communities/new" className="btn small">New community</Link>
+          </span>
+        }
+      />
       <Box title="Add a leader" icon="people" sub="A coach, gym, trainer, company HR or activation lead. They run their community from the leader dashboard and add their own supporters.">
         <AddLeader communities={comms.map((c) => ({ id: c.id, name: c.name }))} />
       </Box>

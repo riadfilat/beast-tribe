@@ -1,12 +1,34 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Partner events and classes became one tool (Classes / Sessions / Events) on 2026-10-04.
+  // October 2026: the classic staff pages and the partner dashboard moved into HQ (/hq) and the
+  // leader dashboard (/leader). Old addresses keep working.
   async redirects() {
-    return [
-      { source: '/partner/events', destination: '/partner/classes', permanent: true },
-      { source: '/partner/events/new', destination: '/partner/classes/new', permanent: true },
-      { source: '/partner/events/:id', destination: '/partner/classes/:id', permanent: true },
+    const moved = [
+      ['/dashboard', '/hq'],
+      ['/business', '/hq?view=growth'],
+      ['/leads', '/hq/leads'],
+      ['/captains', '/hq/captains'],
+      ['/users', '/hq/people'],
+      ['/users/:id', '/hq/people/:id'],
+      ['/communities', '/hq/communities'],
+      ['/communities/new', '/hq/communities/new'],
+      ['/communities/:id', '/hq/communities/:id'],
+      ['/events', '/hq/sessions?when=all'],
+      ['/events/new', '/hq/sessions/new'],
+      ['/events/:id', '/hq/sessions/:id'],
+      ['/locations', '/hq/places'],
+      ['/locations/new', '/hq/places/new'],
+      ['/locations/:id', '/hq/places/:id'],
+      ['/feed', '/hq/safety?tab=posts'],
+      ['/feed/comments', '/hq/safety?tab=comments'],
+      ['/moderation', '/hq/safety'],
+      ['/partners', '/hq/businesses'],
+      ['/partners/new', '/hq/businesses/new'],
+      ['/partners/:id', '/hq/businesses/:id'],
+      ['/partner/:path*', '/leader'],
+      ['/partner', '/leader'],
     ];
+    return moved.map(([source, destination]) => ({ source, destination, permanent: false }));
   },
   // Only our own Supabase project's images go through the optimizer.
   images: {

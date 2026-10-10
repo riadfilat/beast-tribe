@@ -1,66 +1,82 @@
+import { requireRole } from '@/lib/auth';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, ToggleLeft, ToggleRight } from '@phosphor-icons/react/dist/ssr';
-import { createAdminClient } from '@/lib/supabase-server';
-import { loadPeople } from '@/lib/leader/people';
-import { FEATURES } from '@/lib/leader/features';
+import { ArrowLeft, MapPin, Trash } from '@phosphor-icons/react/dist/ssr';
 import { Box, PageTop, Pill } from '@/components/board/ui';
-import { NavIcon } from '@/components/board/icons';
-import { initials } from '@/components/board/Shell';
-import { hqCancelInvite, hqRemoveFromTeam, hqToggleFeature } from '../actions';
+import { ConfirmButton } from '@/components/ConfirmSubmit';
+import { deleteCommunity, updateCommunity } from '../admin-actions';
+import { CommunityFields } from '../CommunityFields';
+import { loadCommunityPage } from './load';
+import { FeaturesBox, TeamBox } from './TeamFeatures';
+import { JoinBox } from './JoinBox';
+import { GroupsBox } from './GroupsBox';
+import { PerksBox } from './PerksBox';
+import { MembersBox } from './MembersBox';
+
+export const revalidate = 0;
+
+const KIND: Record<string, string> = { club: 'Club', gym: 'Gym', company: 'Company', school: 'School', compound: 'Compound', city: 'City', brand: 'Beast Tribe' };
 
 export default async function HqCommunity({ params }: { params: Promise<{ id: string }> }) {
+  await requireRole('admin');
   const { id } = await params;
-  const db = createAdminClient();
-  const [{ data: c }, { data: fs }, people] = await Promise.all([
-    db.from('communities').select('id, name, city, kind, visibility, join_code, created_at').eq('id', id).maybeSingle(),
-    db.from('community_features').select('feature').eq('community_id', id),
-    loadPeople(id),
-  ]);
-  if (!c) notFound();
-  const on = new Set(((fs || []) as any[]).map((f) => f.feature));
-  const community = c as any;
+  const data = await loadCommunityPage(id);
+  if (!data) notFound();
+  const { c } = data;
 
   return (
     <>
       <Link href="/hq/communities" className="link text-[13px] inline-flex items-center gap-1"><ArrowLeft size={14} /> Leaders & communities</Link>
-      <PageTop title={community.name} sub={[community.kind, community.city, community.visibility === 'open' ? 'open to its city' : 'private', `code ${community.join_code || '—'}`].filter(Boolean).join(' · ')} />
+      <PageTop
+        title={c.name}
+        sub={[KIND[c.kind] ?? c.kind, c.city, c.visibility === 'open' ? 'open to everyone' : 'private'].filter(Boolean).join(' · ')}
+        action={
+          <span className="flex flex-wrap gap-1.5">
+            {c.is_active === false ? <Pill tone="mute">Hidden</Pill> : <Pill tone="good">Live</Pill>}
+            {c.verified_at ? <Pill tone="info">Verified</Pill> : null}
+          </span>
+        }
+      />
+
       <div className="grid lg:grid-cols-2 gap-4 items-start">
-        <Box title="Team" icon="people" sub={`${people.members.length} member${people.members.length === 1 ? '' : 's'}`}>
-          <div className="grid">
-            {people.team.map((t) => (
-              <div key={t.id} className="flex items-center gap-3 py-2.5 rule-top first:border-t-0">
-                <span className="w-9 h-9 rounded-full grid place-items-center text-[12px] font-bold flex-none" style={{ background: t.role === 'leader' ? 'var(--marker)' : 'var(--aqua)', color: 'var(--board)' }}>{initials(t.name)}</span>
-                <span className="flex-1 min-w-0"><b className="block truncate text-[14px]" style={{ fontFamily: 'var(--bt-head)' }}>{t.name}</b><span className="hint">{t.role === 'leader' ? 'Leader' : 'Supporter'}</span></span>
-                <form action={hqRemoveFromTeam.bind(null, id, t.id)}><button className="btn ghost small">Remove</button></form>
-              </div>
-            ))}
-            {people.invites.map((i) => (
-              <div key={i.id} className="flex items-center gap-3 py-2.5 rule-top">
-                <span className="w-9 h-9 rounded-full flex-none" style={{ border: '1.5px dashed var(--rule-strong)' }} />
-                <span className="flex-1 min-w-0"><b className="block truncate text-[14px]" style={{ fontFamily: 'var(--bt-head)' }}>{i.email}</b><span className="hint">Invited as {i.role} · waiting to sign in</span></span>
-                <form action={hqCancelInvite.bind(null, id, i.id)}><button className="btn ghost small">Cancel</button></form>
-              </div>
-            ))}
-            {!people.team.length && !people.invites.length ? <p className="hint">No leader yet. Add one from Leaders & communities.</p> : null}
-          </div>
-        </Box>
-        <Box title="Features" icon="features" sub="Leaders switch these themselves; you can too.">
-          <div className="grid gap-2">
-            {FEATURES.map((f) => (
-              <div key={f.key} className="flex items-center gap-3">
-                <span style={{ color: 'var(--aqua)' }}><NavIcon name={f.key} size={18} active /></span>
-                <span className="flex-1 text-[14px]">{f.title}</span>
-                {on.has(f.key) ? <Pill tone="good">On</Pill> : null}
-                <form action={hqToggleFeature.bind(null, id, f.key, !on.has(f.key))}>
-                  <button className={`chip ${on.has(f.key) ? 'on' : ''}`}>{on.has(f.key) ? <ToggleRight size={16} weight="fill" /> : <ToggleLeft size={16} />} {on.has(f.key) ? 'Switch off' : 'Switch on'}</button>
-                </form>
-              </div>
-            ))}
-          </div>
-        </Box>
+        <div className="grid gap-4">
+          <TeamBox id={id} people={data.people} />
+          <JoinBox c={c} memberCount={data.memberCount} leaderName={data.leaderName} />
+          <GroupsBox communityId={id} groups={data.groups} existing={data.looseGroups} />
+        </div>
+        <div className="grid gap-4">
+          <FeaturesBox id={id} on={data.featuresOn} />
+          <Box title="Details" icon="profile">
+            <CommunityFields action={updateCommunity.bind(null, id)} community={c} />
+          </Box>
+        </div>
       </div>
-      <p className="hint">Edit the community’s details in the <Link href={`/communities/${id}`} className="link">classic page</Link>.</p>
+
+      <div className="grid lg:grid-cols-2 gap-4 items-start">
+        <MembersBox communityId={id} communityName={c.name} members={data.members} total={data.memberCount} />
+        <div className="grid gap-4">
+          <PerksBox communityId={id} included={data.included} candidates={data.candidates} />
+          <Box title="Places" icon="places" sub="Spots that belong to this community." action={<Link href="/hq/places" className="btn ghost small">Places & courts</Link>}>
+            {data.locations.length ? (
+              <div className="flex flex-wrap gap-1.5">
+                {data.locations.map((l) => (
+                  <span key={l.id} className="chip"><MapPin size={14} style={{ color: 'var(--aqua)' }} /> {l.name}{l.city ? <span className="hint">· {l.city}</span> : null}</span>
+                ))}
+              </div>
+            ) : (
+              <p className="hint">No places of its own yet.</p>
+            )}
+          </Box>
+        </div>
+      </div>
+
+      <Box title="Delete this community" sub="It goes for good. Members are taken out of it, and its own groups and places are deleted with it.">
+        <form action={deleteCommunity.bind(null, id)}>
+          <ConfirmButton confirmMessage={`Delete “${c.name}”? This can’t be undone.`} className="btn danger small">
+            <Trash size={14} weight="bold" /> Delete community
+          </ConfirmButton>
+        </form>
+      </Box>
     </>
   );
 }

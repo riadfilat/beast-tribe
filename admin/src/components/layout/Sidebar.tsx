@@ -6,7 +6,6 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase-browser';
 import { Lockup } from '@/components/brand/Logo';
 import { Icon, type IconName } from '@/components/ui/Icon';
-import { TRAIN_ENABLED } from '@/lib/features';
 
 interface NavItem {
   label: string;
@@ -15,23 +14,12 @@ interface NavItem {
   badge?: number;
 }
 
+// Everything moved to HQ (/hq) in October 2026. Only the workout library stays here, for when
+// Train comes back (TRAIN_ENABLED); it is reached by address, not from the HQ menu.
 const ADMIN_NAV: NavItem[] = [
-  // The new HQ (command center, leaders & communities, admins) lives at /hq.
-  { label: 'Command center', href: '/hq', icon: 'business' },
-  { label: 'Dashboard', href: '/dashboard', icon: 'dashboard' },
-  { label: 'Business', href: '/business', icon: 'business' },
-  { label: 'Leads', href: '/leads', icon: 'leads' },
-  { label: 'Captains', href: '/captains', icon: 'captain' },
-  { label: 'Users', href: '/users', icon: 'users' },
-  { label: 'Communities', href: '/communities', icon: 'communities' },
-  { label: 'Events', href: '/events', icon: 'events' },
-  { label: 'Locations', href: '/locations', icon: 'locations' },
-  { label: 'Feed', href: '/feed', icon: 'feed' },
-  { label: 'Moderation', href: '/moderation', icon: 'moderation' },
-  { label: 'Partners', href: '/partners', icon: 'partners' },
-  // Train is off for launch: no workout pages in the menu (they come back with TRAIN_ENABLED).
-  ...(TRAIN_ENABLED ? [{ label: 'Workouts', href: '/workouts', icon: 'workouts' as IconName }] : []),
-  { label: 'Security', href: '/security', icon: 'key' },
+  { label: 'Back to HQ', href: '/hq', icon: 'business' },
+  { label: 'Workouts', href: '/workouts', icon: 'workouts' },
+  { label: 'Coach payouts', href: '/workouts/payouts', icon: 'payouts' },
 ];
 
 interface SidebarProps {
@@ -45,7 +33,7 @@ export default function Sidebar({ userName, roleBadge, pendingModeration }: Side
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   // Moderators only look after the feed and photos (the pages check the role too).
-  const nav: NavItem[] = roleBadge === 'moderator' ? ADMIN_NAV.filter((i) => ['/feed', '/moderation', '/security'].includes(i.href)) : ADMIN_NAV;
+  const nav: NavItem[] = ADMIN_NAV;
 
   // Inject moderation badge
   const navWithBadges = nav.map((item) => {

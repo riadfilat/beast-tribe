@@ -117,3 +117,17 @@ export function Notice({ tone = 'info', children }: { tone?: 'info' | 'good' | '
     </div>
   );
 }
+
+/** Tabs as links (the page reads the choice from the address, so it can be shared and reloaded). */
+export function Tabs({ items, current }: { items: { href: string; label: string; count?: number; key: string }[]; current: string }) {
+  return (
+    <nav className="flex flex-wrap gap-1.5" aria-label="Sections">
+      {items.map((t) => (
+        <Link key={t.key} href={t.href} aria-current={t.key === current ? 'page' : undefined} className={`chip ${t.key === current ? 'on' : ''}`}>
+          {t.label}
+          {t.count ? <span className="pill bad num ms-1">{t.count > 99 ? '99+' : t.count}</span> : null}
+        </Link>
+      ))}
+    </nav>
+  );
+}

@@ -95,7 +95,7 @@ const RANK: Record<AdminRole, number> = { moderator: 1, admin: 2, super_admin: 3
 export const isAtLeast = (role: AdminRole, min: AdminRole) => RANK[role] >= RANK[min];
 export async function requireRole(min: AdminRole): Promise<AdminUser> {
   const admin = await requireAdmin();
-  if (!isAtLeast(admin.role, min)) redirect('/moderation');
+  if (!isAtLeast(admin.role, min)) redirect('/hq/safety');
   return admin;
 }
 

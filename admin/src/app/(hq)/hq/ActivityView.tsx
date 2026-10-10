@@ -63,9 +63,9 @@ export async function ActivityView({ city, day, link }: { city: string | null; d
           <div className="grid gap-2">
             {attention.courts_unbooked.map((e) => <Alert key={e.id} tone="bad" title="Court not booked yet" body={`${e.title} · ${time(e.starts_at)}${e.community ? ` · ${e.community}` : ''}`} />)}
             {attention.empty_soon.map((e) => <Alert key={e.id} tone="warn" title="No players yet, starts soon" body={`${e.title} · ${time(e.starts_at)}${e.community ? ` · ${e.community}` : ''}`} />)}
-            {attention.requests ? <Alert tone="warn" title={`${attention.requests} community request${attention.requests === 1 ? '' : 's'} waiting`} body="People asking for a community of their own" href="/leads" action="Review" /> : null}
-            {attention.reports ? <Alert tone="bad" title={`${attention.reports} report${attention.reports === 1 ? '' : 's'} to review`} body="Posts or people reported by members" href="/moderation" action="Open" /> : null}
-            {attention.photos ? <Alert tone="warn" title={`${attention.photos} photo${attention.photos === 1 ? '' : 's'} to check`} body="Waiting in the photo queue" href="/moderation" action="Open" /> : null}
+            {attention.requests ? <Alert tone="warn" title={`${attention.requests} community request${attention.requests === 1 ? '' : 's'} waiting`} body="People asking for a community of their own" href="/hq/leads" action="Review" /> : null}
+            {attention.reports ? <Alert tone="bad" title={`${attention.reports} report${attention.reports === 1 ? '' : 's'} to review`} body="Posts or people reported by members" href="/hq/safety?tab=reports" action="Open" /> : null}
+            {attention.photos ? <Alert tone="warn" title={`${attention.photos} photo${attention.photos === 1 ? '' : 's'} to check`} body="Waiting in the photo queue" href="/hq/safety?tab=photos" action="Open" /> : null}
             {attention.slowing.map((c) => <Alert key={c.id} tone="info" title={`${c.name} is slowing down`} body={`${c.recent} sessions in the last 2 weeks, ${c.before} the 2 before`} href="/hq/communities" action="See" />)}
             {!attentionCount ? <p className="hint">Nothing needs you right now.</p> : null}
           </div>

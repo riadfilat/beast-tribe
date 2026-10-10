@@ -1,3 +1,4 @@
+import { requireRole } from '@/lib/auth';
 import Link from 'next/link';
 import { X } from '@phosphor-icons/react/dist/ssr';
 import { cityPlace } from '@/lib/cities';
@@ -9,6 +10,7 @@ import { GrowthView } from './GrowthView';
 type Q = { view?: string; day?: string; city?: string; range?: string; stage?: string };
 
 export default async function CommandCenter({ searchParams }: { searchParams: Promise<Q> }) {
+  await requireRole('admin');
   const q = await searchParams;
   const view = q.view === 'growth' ? 'growth' : 'activity';
   const city = q.city && q.city.length <= 80 ? q.city.toLowerCase() : null;

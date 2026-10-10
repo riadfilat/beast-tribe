@@ -50,7 +50,7 @@ export async function GrowthView({ range, stage, link }: { range?: string; stage
       </div>
 
       <div className="grid lg:grid-cols-[1.5fr_1fr] gap-4 items-start">
-        <Box title="Leads funnel" icon="growth" sub="From the first message to a paying leader. Tap a step to see who is there." action={<Link href="/leads" className="link text-[13px]">Work the leads</Link>}>
+        <Box title="Leads funnel" icon="growth" sub="From the first message to a paying leader. Tap a step to see who is there." action={<Link href="/hq/leads" className="link text-[13px]">Work the leads</Link>}>
           <div className="grid gap-1.5">
             {STAGES.map(([k, label], i) => {
               const n = f[k] ?? 0;

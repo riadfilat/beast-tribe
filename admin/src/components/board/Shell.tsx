@@ -38,7 +38,7 @@ export function Shell({
   return (
     <div className={`bt ${boardFonts} md:flex`}>
       <NavigationProgress />
-      <aside className="md:w-[232px] md:min-h-screen md:sticky md:top-0 md:self-start flex flex-col gap-4 p-3 md:p-4 md:py-5" style={{ background: 'var(--deep)', borderRight: '1px solid var(--rule)' }}>
+      <aside className="print:hidden md:w-[232px] md:min-h-screen md:sticky md:top-0 md:self-start flex flex-col gap-4 p-3 md:p-4 md:py-5" style={{ background: 'var(--deep)', borderRight: '1px solid var(--rule)' }}>
         <div className="display text-[22px] leading-none px-2 hidden md:block">{brand}</div>
         <div className="flex items-center gap-2.5 rounded-xl p-2.5" style={{ background: 'var(--wash)' }}>
           {identity.avatar ? (

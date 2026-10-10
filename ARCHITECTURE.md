@@ -13,7 +13,7 @@ flowchart TB
   end
   subgraph Web["Website — admin/ (Vercel)"]
     HQ["HQ command center<br/>admin/src/app/(hq)"]
-    SD["Classic staff pages<br/>admin/src/app/(admin)"]
+    SD["Workout library (Train off)<br/>admin/src/app/(admin)"]
     LD["Leader dashboard<br/>admin/src/app/(leader)"]
     PUB["Public pages<br/>for-gyms, /get, /s/ share links, legal"]
     API["Server helpers<br/>/api/assistant (Claude), /api/moderate (photo check)"]
@@ -64,7 +64,7 @@ are the real gatekeeper, so even a tampered app can't see a private community or
 
 | Who | Where | How the role is stored |
 |---|---|---|
-| **Super admin** (the owner) and **admins** | HQ: `/hq` (command center, leaders & communities, admins); classic staff pages still at `/dashboard`, `/leads`, `/locations`, `/moderation` | `admin_roles` (`super_admin`, `admin`, `moderator`). Only the super admin changes it: `set_admin_role()` |
+| **Super admin** (the owner) and **admins** | HQ: `/hq`: Command center, Leaders & communities (+ Businesses), People, Sessions, Places & courts, Leads, Safety, Captains, Admins (super admin), Account. Old addresses (`/users`, `/events`, `/locations`, `/leads`, `/moderation`, `/partners`…) forward there (`admin/next.config.js`). | `admin_roles` (`super_admin`, `admin`, `moderator`). Only the super admin changes it: `set_admin_role()` |
 | **Community leader** (coach, gym, trainer, company HR, activation lead) | Leader dashboard: `/leader` | `community_members.role = 'admin'` (shown as "Leader"). HQ adds leaders: `invite_to_team()` |
 | **Community supporter** | Leader dashboard, fewer buttons, never sees money | `community_members.role = 'supporter'`. Leaders add them: `invite_to_team()` |
 | **Member** | The app only | `community_members.role = 'member'` |
@@ -77,6 +77,7 @@ are the real gatekeeper, so even a tampered app can't see a private community or
 ### The HQ command center (`admin/src/app/(hq)/hq/`)
 - **Activity:** active today and this week, sessions and players today, the next 7 days, a map of members by city (MapLibre with the app's brand style, `components/board/CityMap.tsx`), today's sessions by hour, needs attention, every community's health, sports, phones and language, new members per week. Filter by city and day.
 - **Growth:** leads funnel (`partner_leads` steps), lead sources, revenue by plan (`business_overview()`), sign-ups and first sessions, and "not connected yet" cards for social, website visits and installs until those accounts are connected.
+- **Other HQ pages:** `admin/src/app/(hq)/hq/` `people`, `sessions`, `places`, `leads` (pipeline board), `safety` (reports, photos, posts, comments; moderators see only this and Account), `captains`, `businesses` (business records: coaches' free times, venues, restaurants' offers, plans), `communities/[id]` (details, join code, verify, starter groups, members, businesses, delete), `account` (two-step sign-in, shared with `/security`).
 - **Data:** database functions `hq_live`, `hq_days`, `hq_day_sessions`, `hq_cities`, `hq_communities`, `hq_attention`, `hq_mix` (096) and `hq_growth` (097), all refusing anyone who isn't an HQ admin (`bt_require_hq`). Loaders in `admin/src/lib/hq/data.ts`.
 - **Leaders & communities** (`/hq/communities`): add a leader by email (with a new or existing community), switch features, remove people. **Admins** (`/hq/admins`, super admin only).
 
