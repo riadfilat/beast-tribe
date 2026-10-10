@@ -11,14 +11,14 @@ migrations and the scripts. Nothing was changed while auditing. Problems are ran
 | Phone app (`app/` screens + `src/` logic) | ~25,600 lines of TypeScript |
 | Website: staff dashboard, partner dashboard, public pages (`admin/`) | ~16,300 lines |
 | Database changes (`supabase/migrations/`) | 90 files, ~10,700 lines of SQL |
-| Automated tests | **none** |
+| Automated tests | none at audit time; first ones added 10 October (`tests/`) |
 | Files over 300 lines | 25 in the app, 8 on the website |
 
 ## Ranked problems
 
 ### Critical: fix first
 
-**1. Some sports never trigger "looking for players" (confirmed bug).**
+**1. Some sports never trigger "looking for players" (confirmed bug). FIXED 10 October (migration 091, with a test).**
 The database writes "Table Tennis" as `table tennis`, but the app saves sessions as `table_tennis`.
 They never match, so Table Tennis, Horse Riding, Muay Thai and Jiu-Jitsu sessions never call
 anyone, and partner matching skips those sports. *Fix: one small database change; about 30 minutes.*
@@ -29,7 +29,7 @@ and an old Supabase access token sits in the git history. Anyone with the repo c
 *Fix: change the reviewer password, keep it in a password manager, revoke the old token, and
 optionally clean the history.*
 
-**3. No automated tests.**
+**3. No automated tests.** *(Started 10 October: `tests/` with `scripts/test.sh`; sport names and the Hijri calendar are covered. Booking, members-only and permissions are next.)*
 Booking clashes, members-only courts, women-only sessions and the price split are all
 checked only by hand. Every change risks breaking one of them silently.
 *Fix: a test suite for the database rules (they're the source of truth), run before every release.*

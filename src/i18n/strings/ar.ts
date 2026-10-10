@@ -796,6 +796,8 @@ export const ar: Strings = {
     cityPlaceholder: 'مدينتك',
     dob: 'تاريخ الميلاد',
     dobPlaceholder: 'اختر التاريخ',
+    gregorian: 'ميلادي',
+    hijri: 'هجري',
     gender: 'الجنس',
     needGender: 'اختر أنثى أو ذكر أولًا.',
     genderAskTitle: 'سؤال سريع',

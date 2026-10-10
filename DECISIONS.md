@@ -5,6 +5,17 @@ Add an entry whenever a choice would surprise a new engineer (CLAUDE.md, rule 9)
 
 ---
 
+### 2026-10-10 · Hijri birthdays: a way to pick, not a way to store
+- **What:** the date-of-birth picker has a Gregorian | Hijri switch (Umm al-Qura, the official Saudi calendar). The profile still stores a Gregorian date; the field shows both.
+- **Why:** many Saudi members know their birthday in Hijri; storing one calendar keeps ages, sorting and the database simple.
+- **How:** `hijri-converter` (MIT, small, pure JavaScript, so it ships as a normal update).
+- **Rejected:** storing Hijri dates (two formats everywhere); the phone's built-in Hijri calendar (support differs between iPhone and Android and can't convert Hijri back to Gregorian); writing our own converter.
+
+### 2026-10-10 · Tests run from `scripts/test.sh`, not package.json
+- **What:** `scripts/test.sh` (app logic) and `scripts/test.sh db` (database rules, each test rolled back).
+- **Why:** the "scripts" section of package.json is part of the app's runtime fingerprint: adding `npm test` there would have forced new store builds.
+- **Rejected:** a test framework such as Jest (Node's built-in test runner is enough for now and adds nothing to the app).
+
 ### 2026-10-09 · Place search never sends the member's position
 - **What:** route-drawing search goes to Photon (OpenStreetMap search) with the typed words and the city or place, not the phone's position.
 - **Why:** privacy, and so the Google Play data-safety form can honestly say no location is shared.
@@ -94,4 +105,4 @@ Add an entry whenever a choice would surprise a new engineer (CLAUDE.md, rule 9)
 
 ### Open decisions (recorded so they aren't forgotten)
 - **Database migrations are applied by hand** with `scripts/run-migration.js`, not the Supabase CLI, because the CLI token kept expiring. Downside: nothing records which files ran (docs/AUDIT.md, problem 4).
-- **No automated tests yet.** Rules were tested by hand in throwaway transactions. To change (CLAUDE.md, rule 7).
+- **Few automated tests so far** (sport names, Hijri calendar). Booking, members-only access and permissions are next (CLAUDE.md, rule 7).

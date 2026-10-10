@@ -37,11 +37,12 @@ The owner is not an engineer. Keep everything understandable to them and to any 
 - **App update** (most changes): `scripts/release/ship-update.sh "message"`. It reaches iPhone AND Android; the Expo token comes from the local memory file, never the repo.
 - **Native change** (new package, permission, icon) changes the "runtime" fingerprint. It needs new store builds for both platforms (`eas build`); updates only reach builds with the same runtime.
 - **Website:** push the branch to GitHub `main`; Vercel deploys in about 2 minutes.
+- **Tests:** `scripts/test.sh` (app logic) and `scripts/test.sh db` (database rules; needs `PG_URL`). Run both before saying a task is done.
 - **Database:** add a migration file, test it inside a transaction that is rolled back, then apply it with `PG_URL=… node scripts/run-migration.js <file>`. The connection string lives in local memory only.
 
 **Traps that have bitten before**
 - **Column-level permissions (since migration 073):** a new column on `profiles`, `events`, `event_rsvps`, `feed_posts`, `feed_comments` or `pack_members` is invisible to the app until you `GRANT` it to `authenticated`.
-- **Don't edit `eas.json` or `app.json` without planning new builds:** they change the runtime fingerprint.
+- **Don't edit `eas.json`, `app.json` or package.json's `scripts` without planning new builds:** they change the runtime fingerprint. Plain-JavaScript packages are fine; check with `npx expo-updates fingerprint:generate --platform ios`.
 - **Other Claude sessions push to `main` too.** `git fetch` and check `origin/main` before building.
 - **Train is off** (`TRAIN_ENABLED=false` in the app and website): add no workout entry points until the owner says so.
 - **Members see "Group", the code says `pack`.** "Team" means company teams only.

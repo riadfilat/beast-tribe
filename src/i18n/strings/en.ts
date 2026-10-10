@@ -754,6 +754,8 @@ export const en = {
     cityPlaceholder: 'Your city',
     dob: 'Date of birth',
     dobPlaceholder: 'Select date',
+    gregorian: 'Gregorian',
+    hijri: 'Hijri',
     gender: 'Gender',
     needGender: 'Choose female or male first.',
     genderAskTitle: 'One quick question',

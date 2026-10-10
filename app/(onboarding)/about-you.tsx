@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Modal, NativeScrollEvent, NativeSyntheticEvent, ScrollView, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { makeStyles, useKit } from '../../src/theme';
@@ -14,15 +14,10 @@ import { Icon } from '../../src/components/board/Icon';
 import { Press } from '../../src/components/board/Press';
 import { Chip, Field, IconButton, MarkerButton, Segmented, TextButton } from '../../src/components/board/controls';
 import { toast } from '../../src/components/board/toast';
+import { birthdayLabel, DobSheet } from '../../src/components/board/date-of-birth';
 
 const COUNTRIES = ['SA', 'AE', 'BH', 'KW', 'QA', 'OM', 'EG', 'JO'] as const;
 const STAGES: Stage[] = ['dreamer', 'seeker', 'mover'];
-const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const MONTHS_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-const THIS_YEAR = new Date().getFullYear();
-const YEARS = Array.from({ length: 71 }, (_, i) => THIS_YEAR - 10 - i);
-const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
-const ITEM = 48;
 
 export default function AboutYouScreen() {
   const s = useStyles();
@@ -68,13 +63,7 @@ export default function AboutYouScreen() {
     const hit = (CITIES[country] || []).find((c) => c[0] === en);
     return hit ? (lang === 'ar' ? hit[1] : hit[0]) : en;
   };
-  const months = lang === 'ar' ? MONTHS_AR : MONTHS_EN;
-  const dobLabel = dob
-    ? (() => {
-        const [y, m, d] = dob.split('-').map(Number);
-        return `${d} ${months[(m || 1) - 1]} ${y}`;
-      })()
-    : t('onboarding.dobPlaceholder');
+  const dobLabel = birthdayLabel(dob, lang === 'ar' ? 'ar' : 'en') || t('onboarding.dobPlaceholder');
 
   async function save() {
     if (!gender) {
@@ -212,89 +201,8 @@ export default function AboutYouScreen() {
         <MarkerButton label={saving ? t('common.saving') : editing ? t('common.save') : t('common.continue')} onPress={save} loading={saving} />
       </View>
 
-      <DobSheet visible={dobOpen} value={dob} months={months} onClose={() => setDobOpen(false)} onDone={(v) => { setDob(v); setDobOpen(false); }} />
+      <DobSheet visible={dobOpen} value={dob} onClose={() => setDobOpen(false)} onDone={(v) => { setDob(v); setDobOpen(false); }} />
     </SafeAreaView>
-  );
-}
-
-// ─── Date of birth: three snapping wheels ───────────────────────────────────
-function Wheel<T extends string | number>({ items, value, onChange, label }: { items: T[]; value: T; onChange: (v: T) => void; label: (v: T) => string }) {
-  const { p } = useKit();
-  const ref = useRef<ScrollView>(null);
-  useEffect(() => {
-    const i = Math.max(0, items.indexOf(value));
-    const id = setTimeout(() => ref.current?.scrollTo({ y: i * ITEM, animated: false }), 60);
-    return () => clearTimeout(id);
-  }, []);
-  const settle = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const i = Math.max(0, Math.min(items.length - 1, Math.round(e.nativeEvent.contentOffset.y / ITEM)));
-      onChange(items[i]);
-    },
-    [items, onChange],
-  );
-  return (
-    <View style={{ flex: 1, height: ITEM * 5 }}>
-      <View pointerEvents="none" style={{ position: 'absolute', top: ITEM * 2, start: 4, end: 4, height: ITEM, borderRadius: 8, backgroundColor: p.wash, borderWidth: 1.5, borderColor: p.ruleStrong }} />
-      <ScrollView
-        ref={ref}
-        snapToInterval={ITEM}
-        decelerationRate="fast"
-        showsVerticalScrollIndicator={false}
-        onMomentumScrollEnd={settle}
-        onScrollEndDrag={settle}
-        contentContainerStyle={{ paddingVertical: ITEM * 2 }}
-      >
-        {items.map((it, i) => (
-          <Press
-            key={String(it)}
-            feedback="selection"
-            depress={1}
-            accessibilityRole="button"
-            accessibilityState={{ selected: it === value }}
-            onPress={() => {
-              // Tapping a value picks it, as well as scrolling the wheel to it.
-              ref.current?.scrollTo({ y: i * ITEM, animated: true });
-              onChange(it);
-            }}
-            style={{ height: ITEM, alignItems: 'center', justifyContent: 'center' }}
-          >
-            <Txt v={it === value ? 'time' : 'body'} size={it === value ? 20 : 16} color={it === value ? p.ink : p.inkFaint}>
-              {label(it)}
-            </Txt>
-          </Press>
-        ))}
-      </ScrollView>
-    </View>
-  );
-}
-
-function DobSheet({ visible, value, months, onClose, onDone }: { visible: boolean; value: string; months: string[]; onClose: () => void; onDone: (v: string) => void }) {
-  const s = useStyles();
-  const { p } = useKit();
-  const { t } = useI18n();
-  const parts = value ? value.split('-').map(Number) : [THIS_YEAR - 25, 1, 1];
-  const [y, setY] = useState(YEARS.includes(parts[0]) ? parts[0] : THIS_YEAR - 25);
-  const [m, setM] = useState(parts[1] || 1);
-  const [d, setD] = useState(parts[2] || 1);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return (
-    <Modal visible={visible} animationType="slide" presentationStyle="formSheet" onRequestClose={onClose}>
-      <View style={s.sheet}>
-        <View style={s.sheetHeader}>
-          <TextButton label={t('common.cancel')} onPress={onClose} color={p.inkSoft} />
-          <Txt v="headline" style={{ flex: 1 }} align="center">
-            {t('onboarding.dob')}
-          </Txt>
-          <TextButton label={t('common.done')} onPress={() => onDone(`${y}-${pad(m)}-${pad(Math.min(d, new Date(y, m, 0).getDate()))}`)} />
-        </View>
-        <View style={{ flexDirection: 'row', paddingHorizontal: 12, marginTop: 12 }}>
-          <Wheel items={DAYS} value={d} onChange={setD} label={(v) => String(v)} />
-          <Wheel items={Array.from({ length: 12 }, (_, i) => i + 1)} value={m} onChange={setM} label={(v) => months[v - 1]} />
-          <Wheel items={YEARS} value={y} onChange={setY} label={(v) => String(v)} />
-        </View>
-      </View>
-    </Modal>
   );
 }
 
@@ -307,6 +215,4 @@ const useStyles = makeStyles(({ p }) => ({
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   dob: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 52, paddingHorizontal: 14, borderRadius: 10, borderWidth: 1.5, borderColor: p.ruleStrong, backgroundColor: p.wash },
   bar: { paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1, borderTopColor: p.rule, backgroundColor: p.boardDeep },
-  sheet: { flex: 1, backgroundColor: p.board },
-  sheetHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: p.rule },
 }));

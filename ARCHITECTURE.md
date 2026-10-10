@@ -1,6 +1,6 @@
 # Beast Tribe — How the app is organised
 
-Last updated: 9 October 2026. Keep this file current after every task (see CLAUDE.md, rule 9).
+Last updated: 10 October 2026. Keep this file current after every task (see CLAUDE.md, rule 9).
 
 ## In one picture
 
@@ -47,6 +47,7 @@ are the real gatekeeper, so even a tampered app can't see a private community or
 | `store/` | App Store and Google Play listing text and images. |
 | `design/` | Design mock-ups and explainer pages (not part of the app). |
 | `docs/` | The audit, the session history. |
+| `tests/` | Automated tests: app logic (`*.test.mjs`) and database rules (`tests/db/`, each run in a transaction that is rolled back). Run with `scripts/test.sh` and `scripts/test.sh db`. |
 
 ## How a typical action flows: "join a session"
 
@@ -61,7 +62,7 @@ are the real gatekeeper, so even a tampered app can't see a private community or
 ### Sports
 - **List and icons:** `src/lib/sports.ts`, with one entry per sport: id, iPhone icon, Android icon, database name. It also holds the popularity order and which sports use a court (`COURT_SPORTS`) or a route (`ROUTE_SPORTS`).
 - **Names:** `src/i18n/strings/en.ts` and `ar.ts` (`sports.*`, `sportNoun.*`); dashboard copy in `admin/src/lib/workouts.ts`.
-- **Database:** the `sports` table (members' chosen sports link by name).
+- **Database:** the `sports` table (members' chosen sports link by name). `bt_sport_slug()` turns a database name into the app's id ("Table Tennis" → `table_tennis`); `tests/db/sport-names.test.js` checks every sport still matches.
 - **Default photos:** `src/lib/sportPhotos.ts`.
 - **Known gap:** adding a sport touches 6–9 files. The target is one file per sport (see docs/AUDIT.md, problem 7).
 
@@ -109,6 +110,7 @@ Stables and arenas would be added as places or as courts (facilities) like any v
 | Beast Captains | `src/components/board/captain.tsx` | `community_captains` |
 | Company wellness | `src/components/board/wellness.tsx` | `challenges`, `community_teams`, `daily_activity` |
 | Ask Beast (AI) | `app/assistant.tsx` | `admin/src/app/api/assistant` |
+| Date of birth (Gregorian or Hijri) | `src/components/board/date-of-birth.tsx`, `src/lib/calendar.ts` | `profiles.date_of_birth` (always Gregorian) |
 
 ## Scheduled jobs (inside the database)
 | Job | When | Does |
