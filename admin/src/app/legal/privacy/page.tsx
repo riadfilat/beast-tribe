@@ -126,6 +126,12 @@ export default function PrivacyPolicyPage() {
               your phone&rsquo;s settings and choose your city yourself.
             </p>
             <p>
+              Once a day, when you open the app, we note that you used it, the city you are in (or your
+              profile city), whether your phone is an iPhone or Android and the app&rsquo;s language. We use
+              this only to count how many people use Beast Tribe and where, and delete it after about 13
+              months. It never includes your exact position.
+            </p>
+            <p>
               Maps in the app use OpenStreetMap data served by OpenFreeMap. When you search for a place while
               drawing a route, the words you type are sent to Photon (a public OpenStreetMap search) together
               with the city you are looking in, never your own position. Routes you save keep the line you drew

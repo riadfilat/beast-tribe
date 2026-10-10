@@ -1,0 +1,872 @@
+<title>Beast Tribe HQ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Poppins:wght@400;500;600&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..24,400..600,0..1,0&display=swap">
+<style>
+@font-face { font-family: 'SlamDunk'; src: url(data:font/ttf;base64,__SLAM__) format('truetype'); font-display: swap; }
+
+/* Layout: one brand world (the app's deep-teal "slate" board), tabs for Plan · Who's who · Leader dashboard · Command center.
+   Committed single dark theme on purpose: it is the app's own ground. */
+:root {
+  --board: #023C3C;      /* brand teal, the app's board */
+  --deep: #012A2A;       /* sidebars, wells */
+  --sheet: #034E4E;      /* raised panels */
+  --ink: #F4F1EA;        /* chalk */
+  --ink-soft: rgba(244,241,234,.74);
+  --ink-faint: rgba(244,241,234,.58);
+  --rule: rgba(244,241,234,.13);
+  --rule-strong: rgba(244,241,234,.30);
+  --wash: rgba(244,241,234,.06);
+  --marker: #E88F24;     /* brand orange: actions */
+  --aqua: #56C4C4;       /* brand aqua: data */
+  --good: #7BD88F;
+  --warn: #F2C14E;
+  --bad: #FF7A70;
+  --display: 'SlamDunk', 'Montserrat', system-ui, sans-serif;
+  --head: 'Montserrat', system-ui, sans-serif;
+  --body: 'Poppins', system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--board); color: var(--ink); font: 400 14px/1.55 var(--body); padding-inline: 16px; padding-block: 0 64px; }
+.wrap { max-width: 1240px; margin-inline: auto; }
+h1, h2, h3, h4 { font-family: var(--head); margin: 0; text-wrap: balance; }
+p { margin: 0; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--marker); outline-offset: 2px; }
+.ms { font-family: 'Material Symbols Rounded'; font-weight: 400; font-style: normal; font-size: 20px; line-height: 1; display: inline-block; vertical-align: middle; font-variation-settings: 'FILL' 0, 'wght' 450, 'opsz' 20; -webkit-font-feature-settings: 'liga'; }
+.ms.fill { font-variation-settings: 'FILL' 1, 'wght' 500, 'opsz' 20; }
+.num { font-variant-numeric: tabular-nums; }
+.eyebrow { font: 600 11px/1.2 var(--head); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+.sample { display: inline-flex; align-items: center; gap: 6px; font: 600 11px var(--head); letter-spacing: .06em; text-transform: uppercase; color: var(--warn); border: 1px dashed rgba(242,193,78,.5); border-radius: 999px; padding: 3px 10px; }
+
+/* ── Masthead ── */
+.mast { padding-block: 28px 18px; display: grid; gap: 18px; }
+.brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.brand .word { font: 400 40px/1 var(--display); letter-spacing: .02em; }
+.brand .word b { color: var(--marker); font-weight: 400; }
+.lede { max-width: 70ch; color: var(--ink-soft); font-size: 15px; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--board); padding-block: 10px; border-bottom: 1px solid var(--rule); }
+.tab { border: 1.5px solid var(--rule-strong); background: none; border-radius: 999px; padding: 8px 16px; font: 600 13px var(--head); display: inline-flex; gap: 8px; align-items: center; }
+.tab[aria-selected="true"] { background: var(--ink); color: var(--board); border-color: var(--ink); }
+.panel { padding-top: 24px; }
+
+/* ── Plan ── */
+.plan { display: grid; gap: 28px; max-width: 920px; }
+.plan h2 { font-size: 22px; }
+.plan h3 { font-size: 16px; margin-bottom: 8px; }
+.plan .block { display: grid; gap: 12px; }
+.plan ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; color: var(--ink-soft); }
+.plan ul b { color: var(--ink); font-weight: 600; }
+.heard { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+.heard div { border: 1px solid var(--rule); border-radius: 12px; padding: 14px; display: grid; gap: 6px; }
+.heard .ms { color: var(--aqua); }
+.heard p { color: var(--ink-soft); font-size: 13px; }
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 12px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th { font: 600 11px var(--head); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+td { padding: 10px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; color: var(--ink-soft); }
+td:first-child { color: var(--ink); font-weight: 500; }
+tr:last-child td { border-bottom: 0; }
+.phase { display: grid; grid-template-columns: 44px 1fr; gap: 14px; padding: 16px 0; border-top: 1px solid var(--rule); }
+.phase .n { font: 400 30px/1 var(--display); color: var(--marker); }
+.phase p { color: var(--ink-soft); }
+.push { border-left: 3px solid var(--marker); background: var(--wash); padding: 14px 16px; border-radius: 0 12px 12px 0; display: grid; gap: 4px; }
+.push p { color: var(--ink-soft); }
+
+/* ── Who's who ── */
+.tree { display: grid; gap: 14px; }
+.tier { display: grid; grid-template-columns: 200px 1fr; gap: 16px; align-items: start; }
+.tier > .label { padding-top: 14px; display: grid; gap: 4px; }
+.tier > .label h3 { font-size: 15px; }
+.tier > .label p { color: var(--ink-faint); font-size: 12px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.role { border: 1.5px solid var(--rule-strong); border-radius: 14px; padding: 16px; display: grid; gap: 10px; background: var(--deep); }
+.role.hq { border-color: var(--marker); }
+.role header { display: flex; gap: 10px; align-items: center; }
+.role .badge { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--wash); color: var(--aqua); flex: none; }
+.role.hq .badge { color: var(--marker); }
+.role h4 { font-size: 15px; }
+.role .who { color: var(--ink-faint); font-size: 12px; }
+.role ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 5px; font-size: 13px; color: var(--ink-soft); }
+.role li { display: flex; gap: 8px; }
+.role li .ms { font-size: 16px; color: var(--good); margin-top: 2px; }
+.role li.no .ms { color: var(--ink-faint); }
+.kinds { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--rule-strong); border-radius: 999px; padding: 4px 10px; font-size: 12px; display: inline-flex; gap: 6px; align-items: center; background: none; }
+.chip .ms { font-size: 16px; }
+.down { display: grid; place-items: center; color: var(--ink-faint); }
+
+/* ── Dashboard frame (shared by leader + command) ── */
+.viewas { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+.viewas .chip[aria-pressed="true"] { background: var(--aqua); color: var(--board); border-color: var(--aqua); font-weight: 600; }
+.frame { border: 1.5px solid var(--rule-strong); border-radius: 18px; overflow: hidden; background: var(--deep); display: grid; grid-template-columns: 220px 1fr; min-height: 720px; }
+.side { background: var(--deep); border-right: 1px solid var(--rule); padding: 18px 12px; display: flex; flex-direction: column; gap: 18px; }
+.side .logo { font: 400 22px/1 var(--display); padding: 0 8px; }
+.side .logo b { color: var(--marker); font-weight: 400; }
+.me { display: flex; gap: 10px; align-items: center; padding: 10px 8px; border-radius: 12px; background: var(--wash); }
+.avatar { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font: 700 13px var(--head); background: var(--marker); color: var(--board); flex: none; }
+.me .t { min-width: 0; }
+.me .t b { display: block; font: 600 13px var(--head); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.me .t span { font-size: 11px; color: var(--ink-faint); }
+.nav { display: grid; gap: 2px; }
+.nav button { display: flex; gap: 12px; align-items: center; background: none; border: 0; border-radius: 10px; padding: 10px; text-align: left; font: 500 14px var(--body); color: var(--ink-soft); }
+.nav button[aria-current="page"] { background: var(--sheet); color: var(--ink); }
+.nav button[aria-current="page"] .ms { color: var(--marker); font-variation-settings: 'FILL' 1, 'wght' 500, 'opsz' 20; }
+.side .foot { margin-top: auto; font-size: 12px; color: var(--ink-faint); padding: 0 8px; display: flex; gap: 6px; align-items: center; }
+.main { background: var(--board); padding: 22px 24px; min-width: 0; display: grid; gap: 18px; align-content: start; }
+.top { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.top h2 { font-size: 24px; }
+.top p { color: var(--ink-faint); font-size: 13px; }
+.btn { border: 0; border-radius: 999px; padding: 11px 20px; font: 700 13px var(--head); letter-spacing: .04em; text-transform: uppercase; background: var(--marker); color: var(--board); display: inline-flex; gap: 8px; align-items: center; }
+.btn.ghost { background: none; color: var(--ink); border: 1.5px solid var(--rule-strong); }
+.btn .ms { font-size: 18px; }
+.box { background: var(--sheet); border-radius: 16px; padding: 18px; display: grid; gap: 14px; min-width: 0; }
+.box h3 { font-size: 15px; display: flex; gap: 8px; align-items: center; }
+.box .sub { color: var(--ink-faint); font-size: 12px; }
+.row { display: grid; gap: 14px; }
+.r2 { grid-template-columns: 1.6fr 1fr; }
+.r2b { grid-template-columns: 1fr 1fr; }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.kpi { border: 1px solid var(--rule); border-radius: 14px; padding: 14px 16px; display: grid; gap: 4px; background: var(--wash); }
+.kpi .v { font: 800 28px/1.1 var(--head); font-variant-numeric: tabular-nums; }
+.kpi .v small { font: 600 13px var(--head); color: var(--ink-faint); margin-left: 4px; }
+.kpi .d { font-size: 12px; color: var(--ink-faint); display: flex; gap: 4px; align-items: center; }
+.up { color: var(--good) !important; }
+.dn { color: var(--bad) !important; }
+.insights { display: grid; gap: 10px; }
+.insight { display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: start; padding: 12px; border-radius: 12px; background: var(--deep); }
+.insight .ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: rgba(86,196,196,.14); color: var(--aqua); }
+.insight.o .ic { background: rgba(232,143,36,.16); color: var(--marker); }
+.insight b { font: 600 14px var(--head); display: block; }
+.insight p { color: var(--ink-soft); font-size: 13px; }
+.insight .act { margin-top: 6px; background: none; border: 0; padding: 0; color: var(--marker); font: 600 12px var(--head); display: inline-flex; gap: 4px; align-items: center; }
+.list { display: grid; }
+.item { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--rule); }
+.item:first-child { border-top: 0; }
+.sport { width: 44px; height: 44px; border-radius: 12px; background: var(--deep); display: grid; place-items: center; color: var(--aqua); }
+.item .t b { font: 600 14px var(--head); display: block; }
+.item .t span { font-size: 12px; color: var(--ink-faint); }
+.fill { display: grid; gap: 4px; justify-items: end; min-width: 110px; }
+.bar { width: 110px; height: 6px; border-radius: 6px; background: var(--wash); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 6px; background: var(--aqua); }
+.pill { font: 600 11px var(--head); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+.pill.good { background: rgba(123,216,143,.16); color: var(--good); }
+.pill.warn { background: rgba(242,193,78,.16); color: var(--warn); }
+.pill.bad { background: rgba(255,122,112,.16); color: var(--bad); }
+.pill.info { background: rgba(86,196,196,.16); color: var(--aqua); }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart text { fill: var(--ink-faint); font: 500 10px var(--body); }
+
+/* Form */
+.form { display: grid; gap: 14px; }
+.field { display: grid; gap: 6px; }
+.field > label, .field > .lab { font: 600 12px var(--head); color: var(--ink-soft); }
+.input, select.input { background: var(--deep); border: 1.5px solid var(--rule-strong); border-radius: 10px; padding: 10px 12px; color: var(--ink); font: 400 14px var(--body); width: 100%; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button { border: 1.5px solid var(--rule-strong); background: none; border-radius: 999px; padding: 7px 12px; font: 500 13px var(--body); display: inline-flex; gap: 6px; align-items: center; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--board); border-color: var(--ink); }
+.seg button .ms { font-size: 17px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.hint { font-size: 12px; color: var(--ink-faint); }
+.phone { width: 280px; justify-self: center; border: 8px solid #000; border-radius: 36px; background: var(--board); padding: 18px 12px; display: grid; gap: 10px; align-content: start; min-height: 420px; }
+.phone .bar0 { font: 600 10px var(--head); color: var(--ink-faint); display: flex; justify-content: space-between; padding: 0 6px; }
+.pcard { border-radius: 16px; overflow: hidden; background: var(--sheet); }
+.pcard .img { height: 92px; background: linear-gradient(135deg, #034E4E, #023C3C 60%, #012A2A); display: grid; place-items: center; color: var(--aqua); position: relative; }
+.pcard .img .ms { font-size: 44px; }
+.pcard .img .tag { position: absolute; top: 8px; left: 8px; }
+.pcard .bd { padding: 10px 12px; display: grid; gap: 4px; }
+.pcard .bd b { font: 700 14px var(--head); }
+.pcard .bd span { font-size: 11px; color: var(--ink-soft); }
+.pcard .ft { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px 12px; }
+.pcard .join { background: var(--marker); color: var(--board); border-radius: 999px; padding: 6px 14px; font: 700 11px var(--head); text-transform: uppercase; }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); background: var(--ink); color: var(--board); border-radius: 14px; padding: 10px 18px; font: 600 13px var(--head); display: flex; gap: 8px; align-items: center; z-index: 50; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+
+/* Courts heatmap */
+.heat { display: grid; grid-template-columns: 40px repeat(7, minmax(0, 1fr)); gap: 3px; font-size: 10px; color: var(--ink-faint); }
+.heat .c { height: 18px; border-radius: 4px; background: var(--wash); }
+.heat .h { text-align: right; padding-right: 4px; line-height: 18px; }
+.heat .d { text-align: center; font: 600 10px var(--head); }
+.court { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 12px; border-radius: 12px; background: var(--deep); }
+.court b { font: 600 14px var(--head); }
+.court span { font-size: 12px; color: var(--ink-faint); }
+.court .price { text-align: right; }
+.court .price b { color: var(--marker); }
+
+/* ── Command center ── */
+.cc .main { gap: 14px; }
+.live { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.live .kpi .v { font-size: 30px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); display: inline-block; box-shadow: 0 0 0 0 rgba(123,216,143,.6); animation: pulse 2s infinite; }
+@keyframes pulse { 70% { box-shadow: 0 0 0 8px rgba(123,216,143,0); } 100% { box-shadow: 0 0 0 0 rgba(123,216,143,0); } }
+.days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.day { border: 1.5px solid var(--rule); background: none; border-radius: 12px; padding: 8px 6px; display: grid; gap: 4px; justify-items: center; }
+.day[aria-pressed="true"] { border-color: var(--marker); background: rgba(232,143,36,.10); }
+.day .w { font: 600 11px var(--head); color: var(--ink-faint); text-transform: uppercase; letter-spacing: .06em; }
+.day .n { font: 800 18px var(--head); font-variant-numeric: tabular-nums; }
+.day .sp { width: 100%; height: 22px; display: flex; align-items: flex-end; gap: 2px; }
+.day .sp i { flex: 1; background: var(--aqua); border-radius: 2px; opacity: .8; }
+.map svg { width: 100%; height: auto; display: block; }
+.map .city { cursor: pointer; }
+.map text { fill: var(--ink-soft); font: 500 11px var(--body); }
+.map .grid { stroke: var(--rule); stroke-width: 1; }
+.map .deg { fill: var(--ink-faint); font: 500 9px var(--body); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-faint); }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.sw { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.filter { display: inline-flex; gap: 6px; align-items: center; }
+.timeline svg { width: 100%; height: auto; display: block; }
+.timeline text { fill: var(--ink-faint); font: 500 10px var(--body); }
+.tline-wrap { overflow-x: auto; }
+.tline-wrap svg { min-width: 640px; }
+.att { display: grid; gap: 8px; }
+.att .a { display: grid; grid-template-columns: 4px 1fr auto; gap: 12px; align-items: center; background: var(--deep); border-radius: 10px; padding: 10px 12px 10px 0; overflow: hidden; }
+.att .a i { align-self: stretch; }
+.att .a b { font: 600 13px var(--head); display: block; }
+.att .a span { font-size: 12px; color: var(--ink-faint); }
+.att .a button { background: none; border: 1.5px solid var(--rule-strong); border-radius: 999px; padding: 5px 12px; font: 600 12px var(--head); }
+.hbar { display: grid; grid-template-columns: 110px 1fr 40px; gap: 10px; align-items: center; font-size: 12px; }
+.hbar .tr { height: 10px; background: var(--wash); border-radius: 6px; overflow: hidden; }
+.hbar .tr i { display: block; height: 100%; background: var(--aqua); border-radius: 6px; }
+.hbar .val { text-align: right; color: var(--ink-soft); }
+th.sort { cursor: pointer; }
+th.sort:hover { color: var(--ink); }
+.split { display: flex; height: 12px; border-radius: 8px; overflow: hidden; }
+.split i { display: block; }
+
+.views { display: inline-flex; border: 1.5px solid var(--rule-strong); border-radius: 999px; padding: 3px; gap: 2px; }
+.views button { border: 0; background: none; border-radius: 999px; padding: 7px 14px; font: 600 13px var(--head); display: inline-flex; gap: 6px; align-items: center; color: var(--ink-soft); }
+.views button[aria-pressed="true"] { background: var(--ink); color: var(--board); }
+.src { font-size: 11px; color: var(--ink-faint); display: flex; gap: 6px; align-items: center; }
+.src .ms { font-size: 14px; }
+.src.need { color: var(--warn); }
+.funnel { display: grid; gap: 6px; }
+.stage { display: grid; grid-template-columns: 130px 1fr 64px; gap: 10px; align-items: center; background: none; border: 0; padding: 0; text-align: left; }
+.stage .lbl { font: 600 13px var(--head); }
+.stage .track { height: 30px; display: flex; align-items: center; }
+.stage .track i { height: 100%; border-radius: 8px; background: var(--aqua); opacity: .85; display: flex; align-items: center; padding-left: 10px; font: 700 13px var(--head); color: var(--board); min-width: 36px; font-style: normal; }
+.stage[aria-pressed="true"] .track i { background: var(--marker); opacity: 1; }
+.stage .conv { font-size: 12px; color: var(--ink-faint); text-align: right; }
+.socials { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.social { background: var(--deep); border-radius: 14px; padding: 14px; display: grid; gap: 8px; }
+.social header { display: flex; justify-content: space-between; align-items: center; }
+.social header b { font: 700 14px var(--head); display: flex; gap: 8px; align-items: center; }
+.social .v { font: 800 24px var(--head); font-variant-numeric: tabular-nums; }
+.social .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 12px; color: var(--ink-faint); }
+.social .meta b { color: var(--ink); font-weight: 600; display: block; font-size: 13px; }
+.social .best { font-size: 12px; color: var(--ink-soft); border-top: 1px solid var(--rule); padding-top: 8px; }
+.dashed { border: 1.5px dashed var(--rule-strong); background: none; }
+
+@media (max-width: 980px) {
+  .frame { grid-template-columns: 1fr; }
+  .side { border-right: 0; border-bottom: 1px solid var(--rule); flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px; }
+  .side .logo, .side .foot { display: none; }
+  .nav { display: flex; flex-wrap: wrap; gap: 4px; }
+  .nav button { padding: 8px 10px; font-size: 13px; }
+  .me { flex: 1 1 100%; }
+  .r2, .r2b { grid-template-columns: 1fr; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .live { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .live .kpi:last-child:nth-child(odd) { grid-column: span 2; }
+  .tier { grid-template-columns: 1fr; }
+  .tier > .label { padding-top: 0; }
+}
+@media (max-width: 520px) {
+  .stage { grid-template-columns: 96px 1fr 52px; }
+  .main { padding: 16px 14px; }
+  .brand .word { font-size: 30px; }
+  .two, .three { grid-template-columns: 1fr; }
+  .days { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .item { grid-template-columns: 40px 1fr; }
+  .item .fill { grid-column: 2; justify-items: start; }
+  .phone { width: 100%; max-width: 280px; }
+}
+@media (prefers-reduced-motion: reduce) { .dot { animation: none; } }
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div class="brand"><span class="word">BEAST TRIBE <b>HQ</b></span><span class="sample"><span class="ms" style="font-size:15px">science</span>Proposal · example numbers</span></div>
+    <p class="lede">A simpler dashboard with two jobs. <b>Community leaders</b> set up their community, add their supporters and post sessions that go straight to the app. <b>You and your admins</b> get a command center that shows what is happening across every community, today and this week. The app stays the same.</p>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" data-tab="plan"><span class="ms">checklist</span>Plan</button>
+      <button class="tab" role="tab" data-tab="roles"><span class="ms">account_tree</span>Who's who</button>
+      <button class="tab" role="tab" data-tab="leader"><span class="ms">storefront</span>Leader dashboard</button>
+      <button class="tab" role="tab" data-tab="command"><span class="ms">radar</span>Command center</button>
+    </nav>
+  </header>
+
+  <section class="panel" id="p-plan" hidden></section>
+  <section class="panel" id="p-roles" hidden></section>
+  <section class="panel" id="p-leader" hidden></section>
+  <section class="panel" id="p-command" hidden></section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const icon = (n, cls = '') => `<span class="ms ${cls}">${n}</span>`;
+let toastT;
+function toast(msg) { const t = $('#toast'); t.innerHTML = icon('check_circle', 'fill') + esc(msg); t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (t.hidden = true), 2600); }
+
+/* Sport icons: Material Symbols (a professional set). */
+const SPORTS = {
+  padel: ['Padel', 'sports_tennis'], football: ['Football', 'sports_soccer'], running: ['Running', 'directions_run'],
+  gym: ['Gym', 'fitness_center'], yoga: ['Yoga', 'self_improvement'], cycling: ['Cycling', 'directions_bike'],
+  basketball: ['Basketball', 'sports_basketball'], swimming: ['Swimming', 'pool'], boxing: ['Boxing', 'sports_mma'],
+  pilates: ['Pilates', 'accessibility_new'], walking: ['Walking', 'directions_walk'], hiking: ['Hiking', 'hiking'],
+};
+const sp = (k) => SPORTS[k] || ['Other', 'groups'];
+
+/* Features a leader switches on for what they run. Each one with a page adds it to the menu. */
+const FEATURES = [
+  ['courts', 'sports_tennis', 'Courts & booking', 'You own a space or a gym: list courts, prices and opening hours. Members book in the app and split the price.', 'Courts'],
+  ['guests', 'confirmation_number', 'Guest passes', 'People outside your community can join the sessions you choose, for a fee you set.', null],
+  ['coaching', 'sports', '1:1 coaching', 'Members book your free times for private sessions.', 'Coaching'],
+  ['nutrition', 'nutrition', 'Nutrition', 'You have an in-house nutritionist: members book a consult with them in the app.', 'Nutrition'],
+  ['teams', 'groups_3', 'Company teams', 'Split employees into teams and run team challenges between them.', 'Teams'],
+];
+
+/* ═════════════ PLAN ═════════════ */
+$('#p-plan').innerHTML = `
+<div class="plan">
+  <div class="block">
+    <h2>What I heard</h2>
+    <div class="heard">
+      <div>${icon('groups')}<b>Leaders are the users</b><p>The dashboard is mainly for community leaders: coaches, gyms, personal trainers, company HR and the employee running the activation.</p></div>
+      <div>${icon('shield_person')}<b>HQ adds leaders</b><p>You (super admin) and your admins add community leaders. Leaders add their own supporters.</p></div>
+      <div>${icon('bolt')}<b>Post straight to the app</b><p>Free or paid sessions, private to the community or public, using the same rules as the app. Gyms also add courts and prices.</p></div>
+      <div>${icon('insights')}<b>Clear numbers, fun insights</b><p>Visual, easy, and it helps leaders understand their community as a business.</p></div>
+      <div>${icon('radar')}<b>A command center for you</b><p>Communities, active members, where they are, players and sessions today and the days ahead.</p></div>
+      <div>${icon('trending_up')}<b>Beyond the app</b><p>The command center also sees the leads funnel, marketing and social, the website and revenue: everything.</p></div>
+    </div>
+  </div>
+
+  <div class="block">
+    <h2>What changes</h2>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Today</th><th>After</th></tr></thead>
+      <tbody id="changes"></tbody>
+    </table></div>
+  </div>
+
+  <div class="block">
+    <h2>Where I'd push back</h2>
+    <div class="push"><b>Call them "sessions", like the app</b><p>Your message says "plays". The app calls them sessions (جلسة) and the tab where you start one is Play. One word per thing keeps leaders and members on the same page, so the dashboard says <b>Sessions</b> and its button says <b>Post a session</b>.</p></div>
+    <div class="push"><b>"Where they access from" means city, never exact location</b><p>The app already knows each member's nearest city. It would also save the city and phone type (iPhone or Android) when the app opens. That matches what we declared to Apple and Google ("approximate location") and needs only a normal app update.</p></div>
+    <div class="push"><b>Paid sessions show money expected, not collected</b><p>Players still pay at the venue until you have a payment account (Moyasar or Tap), so the dashboard says "expected" and lets the leader tick who paid. Beast Tribe takes 0%, as decided.</p></div>
+    <div class="push"><b>Insights about the community, never ranking members</b><p>No leaderboards or scores (your no-gamification rule). Insights say things like "Thursday 7 pm fills fastest" or "12 members haven't played in 3 weeks", never "top players".</p></div>
+    <div class="push"><b>Small numbers today</b><p>The app has a handful of members right now. Every chart has a friendly empty state, and the command center becomes rich as communities join.</p></div>
+  </div>
+
+  <div class="block" id="plan-build">
+    <h2>How I'd build it</h2>
+    <div id="phases"></div>
+  </div>
+
+  <div class="block">
+    <h2>Database changes, in plain words</h2>
+    <ul id="schema"></ul>
+  </div>
+
+  <div class="block">
+    <h2>Risks</h2>
+    <ul id="risks"></ul>
+  </div>
+</div>`;
+
+$('#changes').innerHTML = [
+  ['Partner dashboard: 15 pages (Overview, Club, Members, Classes, Facilities, Bookings, Teams, Challenges, Report, Poster, Workouts, Plan, Profile…)', '<b>Leader dashboard: 5 pages</b>. Home, Sessions, Courts (gyms only), People, Profile (with plan, code and poster inside).'],
+  ['9 fixed partner types, and the type decides the pages (a gym gets courts, a coach doesn\'t)', '<b>One kind of user: community leader</b>, who can be a coach, gym, trainer, company HR or activation lead, or several. <b>They switch on features</b> for what they run: courts and booking, guest passes, 1:1 coaching, nutrition, company teams.'],
+  ['Community admins exist only inside the app, with no dashboard', '<b>Supporters</b> sign in to the same dashboard with fewer buttons. Leaders add them by email, even before they have the app.'],
+  ['Staff dashboard: 13 menu items, Train leftovers, numbers based on workouts', '<b>Command center</b> plus four simple lists: Leaders & communities (with requests), Places & courts, Safety, Admins.'],
+  ['Admins are added by hand in the database', 'The super admin <b>adds and removes admins</b> from the dashboard.'],
+  ['Dashboard sessions are always community-only, no men-only, no paid price', 'Same choices as the app: <b>free or paid, my community or everyone in the city, women or men only, repeat weekly</b>.'],
+  ['"Active" means logged a workout (Train is off, so almost nobody)', '<b>Active = opened the app, joined, hosted or posted</b>, counted per day with the city and phone type.'],
+].map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
+$('#phases').innerHTML = [
+  ['Roles, admins and the first activity data', 'Leaders, supporters and admins in one clear model, plus email invites. The app starts saving "seen today, in which city, on which phone" (city only), so the command center has data by the time it is built. Tests: a leader sees only their community; a supporter can\'t change prices; nobody else sees the dashboard.', 'About 1–2 days · database + app update'],
+  ['Leader dashboard', 'Home with numbers and insights, Post a session (with a live preview of the app card), Courts with the busy-hours grid, People, Profile. The old partner pages send people to the new ones, so no links break.', 'About 3–4 days · website only'],
+  ['Command center: activity', 'What members are doing in the app: live numbers, day picker for the next 7 days, map of cities (our own brand map, the same style as the app), sessions by hour, community health, Needs attention, sports and phones.', 'About 3 days · database + website'],
+  ['Command center: growth', 'Leads funnel (from first message to paying), revenue, website visits and installs first, because we already have that data. Then social: you connect Instagram and TikTok once with your business logins (I never see the passwords), and followers, posts and reach flow in. "From post to player" joins it all up.', 'About 3 days, plus your account connections · website + database'],
+  ['Clean-up', 'Remove the retired pages and Train leftovers from the dashboard, update the docs, and run all tests.', 'About 1 day'],
+].map(([t, p, m], i) => `<div class="phase"><span class="n">${i + 1}</span><div><h3>${t}</h3><p>${p}</p><p class="hint" style="margin-top:6px">${m}. You see it before the next step starts.</p></div></div>`).join('');
+$('#schema').innerHTML = [
+  '<b>Who runs a community:</b> the existing community member list gets two new roles, <b>leader</b> and <b>supporter</b> (today it only has "admin"). The dashboard opens for anyone who is a leader or supporter somewhere.',
+  '<b>Features:</b> a list of which features each community has switched on (courts, guests, coaching, nutrition, teams). It replaces the fixed partner types. Leaders switch them in the dashboard; HQ can too.',
+  '<b>Invites:</b> a small list of email invites (community, role, email) that turn into the role when that person signs up.',
+  '<b>Admins:</b> the existing admin list (super admin, admin, moderator) stays; only the super admin can change it.',
+  '<b>Activity:</b> one row per member per day: the day, the city, iPhone or Android, and the app language. No exact location and no IP address are kept.',
+  '<b>Sessions:</b> no new table. The dashboard writes the same fields the app uses (price, women or men only, open to the city).',
+  '<b>Leads:</b> each lead gets a clear step (new, contacted, demo done, trial, paying, lost) and where it came from, so the funnel counts itself.',
+  '<b>Numbers:</b> three database functions that do the counting (for a community, for the command center, for "needs attention"), each checking who is asking.',
+].map((s) => `<li>${s}</li>`).join('');
+$('#risks').innerHTML = [
+  '<b>Existing partners</b> (the few accounts today) become leaders with the features their type has today (a gym keeps courts); I list them for you before switching.',
+  '<b>Nutrition is new:</b> today a nutritionist can only post sessions. The consult booking needs its own short design once the dashboard is in; until then it books like 1:1 coaching.',
+  '<b>Prices per feature</b> are your call later (part of a plan, or free). Switching works the same either way.',
+  '<b>Beast Captains</b> (paid hosts you assign) stay an HQ tool; they are not the same as supporters.',
+  '<b>Plans and billing</b> keep working; they move into the Profile page instead of their own page.',
+  '<b>Activity data</b> only starts from the app update, so the command center shows history from that day on.',
+  '<b>Social accounts</b> must be business or creator accounts. Instagram (Meta) and TikTok check our connection request, which can take a few days to a few weeks. The rest of Growth doesn\'t wait for them.',
+  '<b>App installs</b> come from App Store Connect (already connected for builds) and Google Play (after your Play account is verified).',
+].map((s) => `<li>${s}</li>`).join('');
+
+/* ═════════════ WHO'S WHO ═════════════ */
+const KINDS = [['sports', 'Coach'], ['fitness_center', 'Gym'], ['person', 'Personal trainer'], ['apartment', 'Company HR'], ['campaign', 'Activation lead']];
+$('#p-roles').innerHTML = `
+<div class="tree">
+  <div class="tier">
+    <div class="label"><span class="eyebrow">Beast Tribe HQ</span><h3>Runs the platform</h3><p>Signs in to the Command center</p></div>
+    <div class="cards">
+      ${role('hq', 'workspace_premium', 'Super admin', 'You', ['Everything admins can do', 'Adds and removes admins', 'Sees money, plans and every setting'], [])}
+      ${role('hq', 'shield_person', 'Admin', 'Your team', ['Command center', 'Adds community leaders and creates their community', 'Handles reports, places and requests'], ['Adds other admins'])}
+    </div>
+  </div>
+  <div class="down">${icon('south')}</div>
+  <div class="tier">
+    <div class="label"><span class="eyebrow">Added by HQ</span><h3>Community leader</h3><p>Signs in to the Leader dashboard</p></div>
+    <div class="cards">
+      <div class="role">
+        <header><div class="badge">${icon('flag', 'fill')}</div><div><h4>Community leader</h4><div class="who">One kind of user. Can be any of these, or several at once</div></div></header>
+        <div class="kinds">${KINDS.map(([i, k]) => `<span class="chip">${icon(i)}${k}</span>`).join('')}</div>
+        <span class="eyebrow">Switches on what they run</span>
+        <div class="kinds">${FEATURES.map(([, i, t]) => `<span class="chip">${icon(i)}${t}</span>`).join('')}</div>
+        <ul>
+          <li>${icon('check')}Sets up the community profile (name, logo, city, sports)</li>
+          <li>${icon('check')}Posts free or paid sessions, private or public</li>
+          <li>${icon('check')}Adds supporters and sees members</li>
+          <li>${icon('check')}Switches on features: courts and booking if they own a space, nutrition if they have a nutritionist</li>
+          <li>${icon('check')}Sees the community's numbers and insights</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="down">${icon('south')}</div>
+  <div class="tier">
+    <div class="label"><span class="eyebrow">Added by the leader</span><h3>Community supporter</h3><p>Same dashboard, fewer buttons</p></div>
+    <div class="cards">
+      ${role('', 'volunteer_activism', 'Supporter', 'An assistant coach, a front-desk person, a team captain at a company', ['Posts and edits sessions', 'Checks players in', 'Sees members and this week'], ['See money: prices, income or payments', 'Change courts, features or the profile', 'Add other supporters'])}
+    </div>
+  </div>
+  <div class="down">${icon('south')}</div>
+  <div class="tier">
+    <div class="label"><span class="eyebrow">In the app only</span><h3>Members</h3><p>Nothing changes for them</p></div>
+    <div class="cards">
+      ${role('', 'directions_run', 'Member', 'Anyone with the app', ['Joins sessions and books courts', 'Hosts their own sessions in Play', 'Starts groups inside their communities'], ['Sees the dashboard'])}
+    </div>
+  </div>
+</div>`;
+function role(cls, ic, name, who, can, cant) {
+  return `<div class="role ${cls}"><header><div class="badge">${icon(ic, 'fill')}</div><div><h4>${name}</h4><div class="who">${who}</div></div></header>
+  <ul>${can.map((c) => `<li>${icon('check')}${c}</li>`).join('')}${cant.map((c) => `<li class="no">${icon('block')}Can't: ${c.charAt(0).toLowerCase() + c.slice(1)}</li>`).join('')}</ul></div>`;
+}
+
+/* ═════════════ LEADER DASHBOARD ═════════════ */
+const LEADERS = {
+  gym: { kind: 'Gym', name: 'Falcon Padel Club', person: 'Khalid', init: 'FP', city: 'Riyadh', members: 186, money: true, on: { courts: true, guests: true },
+    kpi: [['Players this week', 128, '+18%', 1], ['Sessions', 14, '+3', 1], ['Spots filled', '86%', '+6 pts', 1], ['Expected at the venue', '3,240', 'SAR', 0]],
+    week: [14, 18, 9, 22, 31, 21, 13],
+    insights: [['schedule', 'Thursday 7 pm fills fastest', 'Your Thursday evening padel filled in 2 hours on average. Add a second court that night?', 'Post a Thursday session', 'o'],
+      ['person_search', '12 members haven\'t played in 3 weeks', 'Most of them used to come on weekends.', 'Invite them back', ''],
+      ['sell', 'Court 2 is empty 6–9 am', 'Mornings are your quietest hours. A lower morning price could fill them.', 'Change morning prices', '']],
+    up: [['padel', 'Men\'s intermediate padel', 'Today · 7:00 pm · Court 1', 4, 4, 'Full', 'good'], ['padel', 'Ladies padel social', 'Today · 8:30 pm · Court 2', 3, 4, '1 spot left', 'warn'], ['football', '5-a-side', 'Tomorrow · 9:00 pm · Pitch A', 6, 10, '4 spots left', 'info'], ['padel', 'Beginners clinic with Coach Omar', 'Sat · 10:00 am · Court 1', 2, 4, 'Paid · 120 SAR', 'info']] },
+  coach: { kind: 'Coach', name: 'Run with Noura', person: 'Noura', init: 'RN', city: 'Jeddah', members: 74, money: true, on: { coaching: true },
+    kpi: [['Players this week', 46, '+9%', 1], ['Sessions', 6, 'same', 0], ['Spots filled', '92%', '+4 pts', 1], ['Expected (paid sessions)', '1,150', 'SAR', 0]],
+    week: [0, 12, 0, 10, 0, 18, 6],
+    insights: [['wb_twilight', 'Your dawn runs fill twice as fast', 'Corniche runs at 5:30 am fill in a day; evening ones take three.', 'Post another dawn run', 'o'],
+      ['diversity_3', '9 new members this month came with a friend', 'Invite links bring more people than the code.', 'Share your invite link', ''],
+      ['trending_up', 'Paid strength class is growing', 'Up from 4 to 9 players in four weeks.', 'Add a second class', '']],
+    up: [['running', 'Corniche dawn run · 8 km', 'Tomorrow · 5:30 am · North Corniche', 14, 20, '6 spots left', 'info'], ['gym', 'Strength for runners', 'Wed · 7:00 pm · Studio 3', 9, 10, 'Paid · 60 SAR', 'warn'], ['running', 'Long run · 15 km', 'Fri · 5:15 am · Prince Faisal St', 11, 25, '14 spots left', 'info']] },
+  hr: { kind: 'Company HR', name: 'Nakheel Holdings Wellness', person: 'Sara', init: 'NH', city: 'Riyadh', members: 240, money: false, on: { teams: true },
+    kpi: [['Employees active this month', '62', 'of 240', 0], ['Sessions this week', 5, '+2', 1], ['Spots filled', '78%', '+11 pts', 1], ['Teams taking part', '4', 'of 6', 0]],
+    week: [8, 15, 12, 19, 7, 0, 0],
+    insights: [['work_history', 'Lunchtime walks bring new people', '7 of the 11 employees who joined this month started with a lunch walk.', 'Post a lunch walk', 'o'],
+      ['groups', 'Finance hasn\'t joined anything yet', 'Two of six teams have no one active this month.', 'Invite the Finance team', ''],
+      ['favorite', '26% of employees are active', 'Companies like yours usually reach 30–35% by month three.', 'See ideas', '']],
+    up: [['walking', 'Lunch walk around the campus', 'Today · 12:30 pm · Gate 2', 12, 20, '8 spots left', 'info'], ['football', 'Inter-team football', 'Wed · 8:00 pm · Al Nakheel pitch', 14, 14, 'Full', 'good'], ['yoga', 'Desk-break yoga', 'Thu · 1:00 pm · Floor 7', 5, 15, '10 spots left', 'info']] },
+};
+let leader = 'gym', lpage = 'home';
+const NAV = () => { const on = LEADERS[leader].on; return [['home', 'space_dashboard', 'Home'], ['sessions', 'event', 'Sessions'], ...FEATURES.filter((x) => on[x[0]] && x[4]).map(([k, i, , , p]) => [k, i, p]), ['people', 'group', 'People'], ['features', 'extension', 'Features'], ['profile', 'storefront', 'Profile']]; };
+
+function renderLeader() {
+  const L = LEADERS[leader];
+  if (!NAV().some(([k]) => k === lpage)) lpage = 'home';
+  $('#p-leader').innerHTML = `
+  <div class="viewas"><span class="eyebrow">Example leaders</span>
+    ${[['gym', 'fitness_center', 'A gym'], ['coach', 'sports', 'A coach'], ['hr', 'apartment', 'Company HR']].map(([k, i, t]) => `<button class="chip" data-leader="${k}" aria-pressed="${k === leader}">${icon(i)}${t}</button>`).join('')}
+  </div>
+  <div class="frame">
+    <aside class="side">
+      <div class="logo">BEAST <b>TRIBE</b></div>
+      <div class="me"><div class="avatar">${L.init}</div><div class="t"><b>${esc(L.name)}</b><span>${L.kind} · ${L.city}</span></div></div>
+      <nav class="nav">${NAV().map(([k, i, t]) => `<button data-lpage="${k}" ${k === lpage ? 'aria-current="page"' : ''}>${icon(i)}${t}</button>`).join('')}</nav>
+      <div class="foot">${icon('phone_iphone')}Everything here shows in the app</div>
+    </aside>
+    <div class="main" id="lmain"></div>
+  </div>`;
+  $('#lmain').innerHTML = ({ home: lHome, sessions: lSessions, courts: lCourts, coaching: lCoaching, nutrition: lNutrition, teams: lTeams, people: lPeople, features: lFeatures, profile: lProfile })[lpage](L);
+  if (lpage === 'sessions') wireForm(L);
+}
+
+function weekChart(vals, labels, h = 150) {
+  const W = 520, H = h, pad = 26, max = Math.max(...vals, 1), top = Math.ceil(max / 10) * 10, bw = (W - pad - 10) / vals.length;
+  const y = (v) => H - 22 - (v / top) * (H - 40);
+  let g = '';
+  [0, top / 2, top].forEach((t) => { g += `<line x1="${pad}" x2="${W}" y1="${y(t)}" y2="${y(t)}" stroke="rgba(244,241,234,.10)"/><text x="${pad - 6}" y="${y(t) + 3}" text-anchor="end">${t}</text>`; });
+  vals.forEach((v, i) => {
+    const x = pad + 6 + i * bw, best = v === max;
+    g += `<rect x="${x}" y="${y(v)}" width="${bw - 12}" height="${Math.max(0, H - 22 - y(v))}" rx="5" fill="${best ? '#E88F24' : '#56C4C4'}" opacity="${best ? 1 : .75}"><title>${labels[i]}: ${v} players</title></rect>`;
+    g += `<text x="${x + (bw - 12) / 2}" y="${H - 6}" text-anchor="middle">${labels[i]}</text>`;
+    if (v) g += `<text x="${x + (bw - 12) / 2}" y="${y(v) - 5}" text-anchor="middle" style="fill:#F4F1EA;font-weight:600">${v}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Players per day">${g}</svg>`;
+}
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function sessionItem([s, t, w, n, of, label, tone]) {
+  return `<div class="item"><div class="sport">${icon(sp(s)[1])}</div><div class="t"><b>${esc(t)}</b><span>${esc(w)}</span></div>
+  <div class="fill"><span class="pill ${tone}">${esc(label)}</span><div class="bar"><i style="width:${Math.round((n / of) * 100)}%"></i></div><span class="hint num">${n} of ${of} players</span></div></div>`;
+}
+
+function lHome(L) {
+  return `
+  <div class="top"><div><h2>Good evening, ${L.person}</h2><p>${L.members} members in ${esc(L.name)} · this week</p></div>
+    <button class="btn" data-go="sessions">${icon('add')}Post a session</button></div>
+  <div class="kpis">${L.kpi.map(([l, v, d, good]) => `<div class="kpi"><span class="eyebrow">${l}</span><span class="v num">${v}${/SAR|of/.test(d) ? `<small>${d}</small>` : ''}</span>${/SAR|of/.test(d) ? `<span class="d">${L.money && /SAR/.test(d) ? 'Paid at the venue · 0% to Beast Tribe' : 'this month'}</span>` : `<span class="d ${good ? 'up' : ''}">${good ? icon('arrow_upward') : ''}${d} vs last week</span>`}</div>`).join('')}</div>
+  <div class="row r2">
+    <div class="box chart"><h3>${icon('bar_chart')}Players by day</h3>${weekChart(L.week, DAYS)}<p class="sub">Orange = your busiest day.</p></div>
+    <div class="box"><h3>${icon('lightbulb')}Worth knowing</h3><div class="insights">${L.insights.map(([i, t, p, a, o]) => `<div class="insight ${o}"><div class="ic">${icon(i)}</div><div><b>${t}</b><p>${p}</p><button class="act" data-toast="${esc(a)}">${a}${icon('arrow_forward')}</button></div></div>`).join('')}</div></div>
+  </div>
+  <div class="box"><h3>${icon('event_upcoming')}Coming up</h3><div class="list">${L.up.map(sessionItem).join('')}</div></div>`;
+}
+
+let form = { sport: 'padel', price: 'free', who: 'community', gender: 'all', level: 'Intermediate', spots: 4, fee: 60, title: '', time: '19:00', day: 'Thu 16 Oct', repeat: false };
+function lSessions(L) {
+  if (!L.on.courts && form.sport === 'padel') form.sport = leader === 'coach' ? 'running' : 'walking';
+  return `
+  <div class="top"><div><h2>Post a session</h2><p>It appears in the app the moment you post it.</p></div></div>
+  <div class="row r2">
+    <form class="box form" id="sform" onsubmit="return false">
+      <div class="field"><span class="lab">Sport</span><div class="seg" id="f-sport">${Object.keys(SPORTS).slice(0, 8).map((k) => `<button type="button" data-v="${k}" aria-pressed="${form.sport === k}">${icon(sp(k)[1])}${sp(k)[0]}</button>`).join('')}</div></div>
+      <div class="field"><label for="f-title">Name</label><input class="input" id="f-title" placeholder="${sp(form.sport)[0]} with ${esc(L.person)}" value="${esc(form.title)}"></div>
+      <div class="three">
+        <div class="field"><label for="f-day">Day</label><select class="input" id="f-day">${['Thu 16 Oct', 'Fri 17 Oct', 'Sat 18 Oct', 'Sun 19 Oct'].map((d) => `<option ${d === form.day ? 'selected' : ''}>${d}</option>`).join('')}</select></div>
+        <div class="field"><label for="f-time">Time</label><input class="input" id="f-time" type="time" value="${form.time}"></div>
+        <div class="field"><label for="f-spots">Spots</label><input class="input num" id="f-spots" type="number" min="2" max="60" value="${form.spots}"></div>
+      </div>
+      <div class="field"><label for="f-place">${L.on.courts ? 'Court' : 'Place'}</label><select class="input" id="f-place">${(L.on.courts ? ['Court 1 · Padel (indoor)', 'Court 2 · Padel (outdoor)', 'Pitch A · Football 5-a-side'] : leader === 'coach' ? ['North Corniche', 'Studio 3, Al Rawdah', 'Prince Faisal St'] : ['Gate 2, Nakheel campus', 'Floor 7 terrace', 'Al Nakheel pitch']).map((p) => `<option>${p}</option>`).join('')}</select></div>
+      <div class="field"><span class="lab">Level</span><div class="seg" id="f-level">${['All levels', 'Beginner', 'Intermediate', 'Advanced'].map((v) => `<button type="button" data-v="${v}" aria-pressed="${form.level === v}">${v}</button>`).join('')}</div></div>
+      <div class="two">
+        <div class="field"><span class="lab">Price</span><div class="seg" id="f-price"><button type="button" data-v="free" aria-pressed="${form.price === 'free'}">Free</button><button type="button" data-v="paid" aria-pressed="${form.price === 'paid'}">Paid</button></div>
+          <div id="feewrap" ${form.price === 'paid' ? '' : 'hidden'} style="margin-top:6px"><input class="input num" id="f-fee" type="number" min="5" step="5" value="${form.fee}" aria-label="Price per player in SAR"><p class="hint">SAR per player, paid at the venue. Beast Tribe takes 0%.</p></div></div>
+        <div class="field"><span class="lab">Who sees it</span><div class="seg" id="f-who"><button type="button" data-v="community" aria-pressed="${form.who === 'community'}">${icon('lock')}My community</button><button type="button" data-v="public" aria-pressed="${form.who === 'public'}">${icon('public')}Everyone in ${L.city}</button></div></div>
+      </div>
+      <div class="field"><span class="lab">Open to</span><div class="seg" id="f-gender"><button type="button" data-v="all" aria-pressed="${form.gender === 'all'}">Everyone</button><button type="button" data-v="women" aria-pressed="${form.gender === 'women'}">Women only</button><button type="button" data-v="men" aria-pressed="${form.gender === 'men'}">Men only</button></div></div>
+      <div class="seg"><button type="button" id="f-repeat" aria-pressed="${form.repeat}">${icon('repeat')}Repeat every week</button>${L.on.guests ? `<button type="button" id="f-guests" aria-pressed="${!!form.guests}">${icon('confirmation_number')}Open 2 spots to guests · 80 SAR</button>` : ''}</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" type="button" id="publish">${icon('send')}Post session</button><button class="btn ghost" type="button" data-toast="Saved as a draft">Save draft</button></div>
+    </form>
+    <div class="box" style="align-content:start"><h3>${icon('phone_iphone')}How members see it</h3><div class="phone" id="preview"></div></div>
+  </div>
+  <div class="box"><h3>${icon('event')}Your sessions this week</h3><div class="list">${L.up.map(sessionItem).join('')}</div></div>`;
+}
+function previewCard(L) {
+  const s = sp(form.sport), title = form.title || `${s[0]} with ${L.person}`;
+  const [h, m] = form.time.split(':').map(Number), t12 = `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`;
+  const tag = form.who === 'community' ? `<span class="pill info tag">${icon('lock')} ${esc(L.name)}</span>` : `<span class="pill good tag">Open to all</span>`;
+  return `<div class="bar0"><span>9:41</span><span>Board</span></div>
+  <div class="pcard"><div class="img">${icon(s[1])}${tag}</div>
+    <div class="bd"><b>${esc(title)}</b><span>${form.day} · ${t12} · ${esc($('#f-place')?.value || '')}</span><span>${form.level}${form.gender !== 'all' ? ' · ' + (form.gender === 'women' ? 'Women only' : 'Men only') : ''}${form.repeat ? ' · Every week' : ''}${form.guests && L.on.guests ? ' · 2 guest spots' : ''}</span></div>
+    <div class="ft"><span class="hint">${form.price === 'paid' ? `<b style="color:var(--ink)">${form.fee} SAR</b> at the venue` : 'Free'} · 0 of ${form.spots}</span><span class="join">I'm in</span></div></div>
+  <p class="hint" style="text-align:center">${form.who === 'community' ? `Only ${esc(L.name)} members see this` : `Shows on the Board for everyone in ${L.city}`}</p>`;
+}
+function wireForm(L) {
+  const up = () => ($('#preview').innerHTML = previewCard(L));
+  const seg = (id, key) => $(id).addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; form[key] = b.dataset.v; $(id).querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', x === b)); if (key === 'price') $('#feewrap').hidden = form.price !== 'paid'; if (key === 'sport') $('#f-title').placeholder = `${sp(form.sport)[0]} with ${L.person}`; up(); });
+  seg('#f-sport', 'sport'); seg('#f-level', 'level'); seg('#f-price', 'price'); seg('#f-who', 'who'); seg('#f-gender', 'gender');
+  [['#f-title', 'title'], ['#f-time', 'time'], ['#f-day', 'day'], ['#f-spots', 'spots'], ['#f-fee', 'fee']].forEach(([id, k]) => $(id).addEventListener('input', (e) => { form[k] = e.target.value; up(); }));
+  $('#f-place').addEventListener('change', up);
+  $('#f-repeat').addEventListener('click', (e) => { form.repeat = !form.repeat; e.currentTarget.setAttribute('aria-pressed', form.repeat); up(); });
+  $('#f-guests')?.addEventListener('click', (e) => { form.guests = !form.guests; e.currentTarget.setAttribute('aria-pressed', form.guests); up(); });
+  $('#publish').addEventListener('click', () => toast(form.who === 'community' ? `Posted. ${L.name} members can join now.` : `Posted. It's on the Board in ${L.city}.`));
+  up();
+}
+
+function lCourts() {
+  const hours = ['6 am', '8 am', '10 am', '12 pm', '2 pm', '4 pm', '6 pm', '8 pm', '10 pm'];
+  const load = [[0, 0, 1, 0, 0, 2, 2], [0, 1, 0, 0, 1, 2, 1], [1, 0, 0, 1, 0, 1, 2], [0, 0, 1, 0, 0, 0, 1], [0, 1, 0, 1, 0, 0, 1], [1, 1, 2, 1, 2, 1, 2], [2, 3, 3, 3, 4, 3, 3], [3, 4, 4, 4, 4, 4, 3], [2, 3, 2, 3, 4, 3, 2]];
+  const col = (v) => ['rgba(244,241,234,.06)', 'rgba(86,196,196,.25)', 'rgba(86,196,196,.45)', 'rgba(86,196,196,.7)', '#E88F24'][v];
+  return `
+  <div class="top"><div><h2>Courts</h2><p>Members book these in the app. The price is split between the players who join.</p></div><button class="btn" data-toast="New court form opens here">${icon('add')}Add a court</button></div>
+  <div class="row r2b">
+    <div class="box"><h3>${icon('sports_tennis')}Your courts</h3>
+      ${[['Court 1 · Padel', 'Indoor · 90 min · 6 am – 12 am', '320', '80 each for 4'], ['Court 2 · Padel', 'Outdoor · 90 min · 6 am – 12 am', '280', '70 each for 4'], ['Pitch A · Football', '5-a-side · 60 min · 4 pm – 1 am', '450', '45 each for 10']].map(([n, d, p, s]) => `<div class="court"><div><b>${n}</b><br><span>${d}</span></div><div class="price"><b class="num">${p} SAR</b><br><span>${s}</span></div></div>`).join('')}
+      <p class="hint">Who can book: everyone, or members of your community only. Half-court and one-a-day rules stay as they are today.</p></div>
+    <div class="box"><h3>${icon('grid_on')}When courts are busy</h3><p class="sub">Bookings in the last 4 weeks, all courts. Orange = always full.</p>
+      <div class="heat"><span></span>${DAYS.map((d) => `<span class="d">${d}</span>`).join('')}
+      ${hours.map((h, r) => `<span class="h">${h}</span>${load[r].map((v, c) => `<span class="c" style="background:${col(v)}" title="${DAYS[c]} ${h}: ${['empty', 'quiet', 'some bookings', 'busy', 'full'][v]}"></span>`).join('')}`).join('')}</div>
+      <div class="insight o"><div class="ic">${icon('sell')}</div><div><b>Mornings are 80% empty</b><p>A morning price (e.g. 200 SAR before 2 pm) is the quickest way to fill them.</p></div></div></div>
+  </div>`;
+}
+
+function lFeatures(L) {
+  return `
+  <div class="top"><div><h2>Features</h2><p>Switch on what you run. It appears in your menu and in the app straight away.</p></div></div>
+  <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">${FEATURES.map(([k, i, t, d, p]) => `
+    <div class="role" style="${L.on[k] ? 'border-color:var(--aqua)' : ''}"><header><div class="badge">${icon(i, 'fill')}</div><div style="min-width:0"><h4>${t}</h4><div class="who">${p ? `Adds a ${p} page` : 'Adds an option when you post a session'}</div></div></header>
+      <p style="color:var(--ink-soft);font-size:13px">${d}</p>
+      <div><button class="chip" data-feature="${k}" aria-pressed="${!!L.on[k]}" style="${L.on[k] ? 'background:var(--aqua);color:var(--board);border-color:var(--aqua);font-weight:600' : ''}">${L.on[k] ? icon('toggle_on', 'fill') + 'On' : icon('toggle_off') + 'Switch on'}</button></div></div>`).join('')}</div>
+  <p class="hint">Supporters see which features are on but can't switch them. HQ can switch features on for you.</p>`;
+}
+
+function lCoaching(L) {
+  return `
+  <div class="top"><div><h2>1:1 coaching</h2><p>Members book these times in the app; you get a notification.</p></div><button class="btn" data-toast="Free times saved">${icon('add')}Add free times</button></div>
+  <div class="row r2b"><div class="box"><h3>${icon('event_available')}Your free times this week</h3><div class="list">${[['Sun', '6:00 – 8:00 am', 'Booked by Huda'], ['Tue', '6:00 – 8:00 am', 'Free'], ['Thu', '7:00 – 9:00 pm', 'Booked by Majed'], ['Sat', '7:00 – 9:00 am', 'Free']].map(([d, t, b]) => `<div class="item" style="grid-template-columns:44px 1fr auto"><div class="sport" style="font:600 12px var(--head)">${d}</div><div class="t"><b>${t}</b><span>Private session · 60 min</span></div><span class="pill ${/Free/.test(b) ? 'info' : 'good'}">${b}</span></div>`).join('')}</div></div>
+  <div class="box"><h3>${icon('lightbulb')}Worth knowing</h3><div class="insight o"><div class="ic">${icon('wb_twilight')}</div><div><b>Mornings book first</b><p>Your early slots are taken within a day; evenings wait longer.</p></div></div></div></div>`;
+}
+
+function lNutrition(L) {
+  return `
+  <div class="top"><div><h2>Nutrition</h2><p>Your nutritionist's consult times. Members book them in the app.</p></div><button class="btn" data-toast="Nutritionist added">${icon('person_add')}Add your nutritionist</button></div>
+  <div class="box"><h3>${icon('nutrition')}Consults this week</h3><div class="list">${[['Mon', '5:00 – 7:00 pm', '3 booked of 4'], ['Wed', '5:00 – 7:00 pm', '1 booked of 4']].map(([d, t, b]) => `<div class="item" style="grid-template-columns:44px 1fr auto"><div class="sport" style="font:600 12px var(--head)">${d}</div><div class="t"><b>${t}</b><span>With Dr. Lina · 30 min each</span></div><span class="pill info">${b}</span></div>`).join('')}</div>
+  <p class="hint">New feature: its exact design comes after the dashboard (see the Plan).</p></div>`;
+}
+
+function lTeams(L) {
+  const t = [['Engineering', 21, 60], ['Marketing', 14, 22], ['Operations', 12, 48], ['Sales', 9, 35], ['Finance', 0, 30], ['Legal', 0, 12]];
+  return `
+  <div class="top"><div><h2>Company teams</h2><p>Employees pick their team when they join.</p></div><button class="btn" data-toast="Team challenge drafted">${icon('flag')}Start a team challenge</button></div>
+  <div class="box"><h3>${icon('groups_3')}Active this month, by team</h3>${t.map(([n, a, of]) => `<div class="hbar"><span>${n}</span><span class="tr"><i style="width:${(a / of) * 100}%"></i></span><span class="val num">${a}/${of}</span></div>`).join('')}
+  <p class="hint">Shows teams, never individual people.</p></div>`;
+}
+
+function lPeople(L) {
+  const sup = leader === 'hr' ? [['AM', 'Ahmed M.', 'Team captain, Engineering'], ['LB', 'Lama B.', 'Team captain, Marketing']] : leader === 'coach' ? [['FA', 'Faisal A.', 'Pacer']] : [['OS', 'Coach Omar', 'Head coach'], ['RM', 'Reem', 'Front desk']];
+  const mem = [['Active this week', 58, 'good'], ['Played this month', 41, 'info'], ['Quiet for 3+ weeks', 12, 'warn'], ['New this month', 17, 'good']];
+  return `
+  <div class="top"><div><h2>People</h2><p>${L.members} members · ${sup.length} supporters</p></div><button class="btn" data-toast="Invite sent by email">${icon('person_add')}Add a supporter</button></div>
+  <div class="row r2b">
+    <div class="box"><h3>${icon('volunteer_activism')}Supporters</h3><p class="sub">They post sessions and check players in. They never see money, and can't change courts, features or this profile.</p>
+      <div class="list">${sup.map(([i, n, r]) => `<div class="item" style="grid-template-columns:44px 1fr auto"><div class="avatar" style="background:var(--aqua)">${i}</div><div class="t"><b>${n}</b><span>${r}</span></div><button class="chip" data-toast="Removed ${n}">Remove</button></div>`).join('')}</div></div>
+    <div class="box"><h3>${icon('group')}Members</h3>
+      <div class="kpis" style="grid-template-columns:1fr 1fr">${mem.map(([l, v, t]) => `<div class="kpi"><span class="eyebrow">${l}</span><span class="v num">${v}</span></div>`).join('')}</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn ghost" data-toast="Invite link copied">${icon('link')}Copy invite link</button><button class="btn ghost" data-toast="Message sent to 12 quiet members">${icon('mail')}Invite quiet members back</button></div></div>
+  </div>`;
+}
+
+function lProfile(L) {
+  return `
+  <div class="top"><div><h2>Profile</h2><p>Changes show in the app straight away.</p></div><button class="btn" data-toast="Saved. The app shows the new profile.">${icon('save')}Save</button></div>
+  <div class="row r2b"><div class="box form">
+    <div class="field"><label for="pn">Community name</label><input class="input" id="pn" value="${esc(L.name)}"></div>
+    <div class="two"><div class="field"><label for="pc">City</label><select class="input" id="pc"><option>${L.city}</option><option>Jeddah</option><option>Dammam</option></select></div><div class="field"><label for="pk">Kind</label><select class="input" id="pk"><option>${L.kind}</option></select></div></div>
+    <div class="field"><label for="pa">About</label><textarea class="input" id="pa" rows="3">${leader === 'gym' ? 'Six courts in north Riyadh. Social games every evening.' : leader === 'coach' ? 'Dawn runs on the Corniche, all paces welcome.' : 'Moving together at Nakheel: walks, football and yoga for every team.'}</textarea></div>
+    <div class="field"><span class="lab">Who can join</span><div class="seg"><button type="button" aria-pressed="true">${icon('key')}With our code or invite</button><button type="button" aria-pressed="false" ${leader === 'hr' ? 'disabled title="Company communities are always private"' : ''}>${icon('public')}Anyone in ${L.city}</button></div>${leader === 'hr' ? '<p class="hint">Company communities are always private.</p>' : ''}</div>
+  </div>
+  <div class="box"><h3>${icon('qr_code_2')}Grow</h3><p class="sub">Your code, link and poster in one place.</p>
+    <div class="kpi"><span class="eyebrow">Community code</span><span class="v" style="font-family:var(--display);letter-spacing:.08em">${leader === 'gym' ? 'FALCON' : leader === 'coach' ? 'NOURA' : 'NAKHEEL'}</span></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn ghost" data-toast="Link copied">${icon('link')}Copy link</button><button class="btn ghost" data-toast="Poster ready">${icon('print')}Poster</button></div></div></div>`;
+}
+
+/* ═════════════ COMMAND CENTER ═════════════ */
+const CITIES = [
+  ['Riyadh', 24.71, 46.68, 1480, 21], ['Jeddah', 21.54, 39.17, 860, 11], ['Dammam', 26.43, 50.10, 310, 4], ['Khobar', 26.22, 50.20, 290, 3],
+  ['Mecca', 21.39, 39.86, 120, 1], ['Medina', 24.47, 39.61, 95, 1], ['Abha', 18.22, 42.50, 40, 0], ['Tabuk', 28.38, 36.57, 35, 0],
+  ['Dubai', 25.20, 55.27, 210, 2], ['Abu Dhabi', 24.45, 54.38, 80, 1], ['Doha', 25.29, 51.53, 60, 1], ['Manama', 26.23, 50.59, 45, 0], ['Kuwait City', 29.37, 47.98, 70, 1],
+];
+const COMMS = [
+  ['Falcon Padel Club', 'Gym', 'Riyadh', 186, 14, 86, [8, 9, 11, 10, 12, 13, 14]], ['Nakheel Holdings Wellness', 'Company', 'Riyadh', 240, 5, 78, [2, 2, 3, 3, 4, 4, 5]],
+  ['Run with Noura', 'Coach', 'Jeddah', 74, 6, 92, [4, 5, 5, 6, 5, 6, 6]], ['Corniche Cyclists', 'Coach', 'Jeddah', 132, 4, 61, [6, 6, 5, 5, 4, 4, 4]],
+  ['Eastern Province Runners', 'Personal trainer', 'Khobar', 58, 3, 70, [1, 2, 2, 3, 2, 3, 3]], ['Aramco Park Football', 'Activation', 'Dammam', 96, 2, 44, [5, 4, 4, 3, 3, 2, 2]],
+  ['Studio Lumen Pilates', 'Gym', 'Riyadh', 88, 9, 95, [5, 6, 7, 7, 8, 9, 9]], ['Desert Hikers', 'Coach', 'Riyadh', 210, 2, 83, [1, 1, 2, 2, 1, 2, 2]],
+];
+const WEEK = [{ w: 'Today', n: 37, p: 268, h: [1, 3, 2, 1, 2, 4, 6, 8, 6, 4] }, { w: 'Fri', n: 29, p: 214, h: [3, 4, 2, 1, 1, 2, 4, 6, 5, 3] }, { w: 'Sat', n: 33, p: 240, h: [2, 3, 3, 2, 2, 3, 5, 7, 6, 3] },
+  { w: 'Sun', n: 31, p: 221, h: [2, 2, 2, 2, 1, 3, 5, 7, 5, 2] }, { w: 'Mon', n: 35, p: 256, h: [2, 3, 2, 2, 2, 3, 6, 7, 6, 3] }, { w: 'Tue', n: 30, p: 207, h: [1, 2, 2, 2, 2, 3, 5, 6, 5, 2] }, { w: 'Wed', n: 41, p: 302, h: [2, 3, 3, 2, 2, 4, 7, 9, 7, 4] }];
+let cday = 0, ccity = null, csort = ['plays', -1], cview = 'app', crange = 30, cstage = 2;
+
+function renderCommand() {
+  const d = WEEK[cday], f = ccity ? CITIES.find((c) => c[0] === ccity) : null;
+  const share = f ? f[3] / CITIES.reduce((a, c) => a + c[3], 0) : 1;
+  const k = (n) => Math.max(0, Math.round(n * share));
+  $('#p-command').innerHTML = `
+  <div class="frame cc">
+    <aside class="side">
+      <div class="logo">BEAST <b>HQ</b></div>
+      <div class="me"><div class="avatar">RA</div><div class="t"><b>Riad</b><span>Super admin</span></div></div>
+      <nav class="nav">${[['radar', 'Command center', 1], ['flag', 'Leaders & communities'], ['place', 'Places & courts'], ['report', 'Safety'], ['shield_person', 'Admins']].map(([i, t, on]) => `<button ${on ? 'aria-current="page"' : ''} ${on ? '' : `data-toast="${t} opens here"`}>${icon(i)}${t}</button>`).join('')}</nav>
+      <div class="foot">${icon('schedule')}Updated a minute ago</div>
+    </aside>
+    <div class="main">
+      <div class="top"><div><h2>Command center</h2><p><span class="dot"></span>&nbsp; Live · Thursday 16 October${cview === 'app' ? (f ? ` · <b>${f[0]}</b>` : ' · all cities') : ''}</p></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${cview === 'app' && f ? `<button class="chip" id="clearcity">${icon('close')}Show all cities</button>` : ''}
+        <div class="views" role="group" aria-label="View">${[['app', 'monitoring', 'Activity'], ['growth', 'trending_up', 'Growth']].map(([k, i, t]) => `<button data-cview="${k}" aria-pressed="${cview === k}">${icon(i)}${t}</button>`).join('')}</div></div></div>
+      ${cview === 'growth' ? growthView() : `
+      <div class="live">
+        ${[['Members active today', k(1840), '+12%'], ['Sessions ' + (cday ? d.w : 'today'), k(d.n), cday ? '' : '12 on now'], ['Players booked', k(d.p), ''], ['New members this week', k(312), '+24%'], ['Communities', f ? COMMS.filter((c) => c[2] === f[0]).length : 18, '3 waiting']].map(([l, v, s], i) => `<div class="kpi"><span class="eyebrow">${l}</span><span class="v num">${v.toLocaleString('en')}</span><span class="d ${/\+/.test(s) ? 'up' : ''}">${s || '&nbsp;'}</span></div>`).join('')}
+      </div>
+      <div class="days" role="group" aria-label="Pick a day">${WEEK.map((x, i) => `<button class="day" data-day="${i}" aria-pressed="${i === cday}"><span class="w">${x.w}</span><span class="n num">${k(x.n)}</span><span class="sp">${x.h.map((v) => `<i style="height:${(v / 9) * 100}%"></i>`).join('')}</span></button>`).join('')}</div>
+      <div class="row r2">
+        <div class="box map"><h3>${icon('public')}Where members are</h3><p class="sub">Active members by city (the city the phone was in, never the exact place). Tap a city to filter everything.</p>${mapSvg()}
+          <div class="legend"><span><i class="sw" style="background:#56C4C4"></i>Active members</span><span><i class="sw" style="background:#E88F24"></i>Sessions on now</span></div></div>
+        <div class="box"><h3>${icon('notification_important')}Needs attention</h3><div class="att">
+          ${[['bad', 'Court not booked, starts in 3 h', 'Ladies padel social · Falcon Padel Club', 'Remind host'], ['warn', '4 sessions have no players yet', 'Starting before 9 pm today', 'See them'], ['warn', '3 community requests waiting', 'A gym in Khobar, a company in Jeddah, a run club', 'Review'], ['bad', '1 report to review', 'A comment in Corniche Cyclists', 'Open'], ['info', 'Aramco Park Football is slowing down', 'Fewer sessions four weeks in a row', 'Call the leader']].map(([t, a, b, c]) => `<div class="a"><i style="background:var(--${t === 'info' ? 'aqua' : t})"></i><div><b>${a}</b><span>${b}</span></div><button data-toast="${c}">${c}</button></div>`).join('')}
+        </div></div>
+      </div>
+      <div class="box timeline"><h3>${icon('view_timeline')}${cday ? d.w + "'s" : "Today's"} sessions by hour</h3><p class="sub">Each block is a session; the colour shows how full it is.</p><div class="tline-wrap">${timeline(d, k)}</div>
+        <div class="legend"><span><i class="sw" style="background:#7BD88F"></i>Full</span><span><i class="sw" style="background:#56C4C4"></i>Filling</span><span><i class="sw" style="background:#F2C14E"></i>Under half</span><span><i class="sw" style="background:#FF7A70"></i>No players yet</span></div></div>
+      <div class="box"><h3>${icon('flag')}Communities</h3><p class="sub">Tap a column to sort. Health compares the last four weeks.</p><div class="tbl-wrap">${commTable(f)}</div></div>
+      <div class="row r2b">
+        <div class="box"><h3>${icon('sports')}What people play</h3>${[['padel', 34], ['football', 22], ['running', 18], ['gym', 9], ['yoga', 6], ['cycling', 5], ['walking', 4]].map(([s, v]) => `<div class="hbar"><span>${icon(sp(s)[1])} ${sp(s)[0]}</span><span class="tr"><i style="width:${(v / 34) * 100}%"></i></span><span class="val num">${v}%</span></div>`).join('')}</div>
+        <div class="box"><h3>${icon('devices')}How they use the app</h3>
+          <div class="hbar" style="grid-template-columns:110px 1fr"><span>Phones</span><span class="split"><i style="width:68%;background:#56C4C4"></i><i style="width:32%;background:#E88F24"></i></span></div>
+          <div class="legend"><span><i class="sw" style="background:#56C4C4"></i>iPhone 68%</span><span><i class="sw" style="background:#E88F24"></i>Android 32%</span></div>
+          <div class="hbar" style="grid-template-columns:110px 1fr"><span>Language</span><span class="split"><i style="width:57%;background:#56C4C4"></i><i style="width:43%;background:#E88F24"></i></span></div>
+          <div class="legend"><span><i class="sw" style="background:#56C4C4"></i>Arabic 57%</span><span><i class="sw" style="background:#E88F24"></i>English 43%</span></div>
+          <h3 style="margin-top:6px">${icon('trending_up')}New members per week</h3>${growth()}</div>
+      </div>
+      `}
+    </div>
+  </div>`;
+}
+const RANGE = { 7: .25, 30: 1, 90: 2.7 };
+const STAGES = [['New leads', 41, 'inbox'], ['Contacted', 33, 'call'], ['Demo done', 19, 'co_present'], ['Trial', 11, 'hourglass_top'], ['Paying', 6, 'paid']];
+const LEADS = [
+  ['Gym', 'Iron District', 'Khobar', 'Instagram', 'Demo Sun 4 pm'], ['Company', 'A logistics firm, 600 staff', 'Jeddah', 'Website form', 'Demo booked'],
+  ['Run club', 'Al Khobar Striders', 'Khobar', 'App: "Want a community?"', 'Demo done, waiting'], ['School', 'An international school', 'Riyadh', 'Referral', 'Demo Tue 10 am'],
+];
+const SOCIAL = [
+  ['Instagram', 'photo_camera', 31200, 4.1, 12, 186000, 'Ramadan night run reel · 64k views'],
+  ['TikTok', 'music_note', 11800, 9.6, 9, 205000, '"Padel at 2 am in Riyadh" · 112k views'],
+  ['Snapchat', 'chat_bubble', 3900, 2.2, 15, 21000, 'Session stories from Corniche run'],
+  ['LinkedIn', 'work', 1300, 6.8, 3, 9000, '"Why Nakheel moved its wellness to Beast Tribe"'],
+];
+const scale = (n) => Math.round(n * RANGE[crange]);
+const fmtK = (n) => (n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'k' : String(n));
+const src = (t, need) => `<span class="src ${need ? 'need' : ''}">${icon(need ? 'link' : 'database')}${t}</span>`;
+
+function growthView() {
+  const st = STAGES.map(([n, v, i]) => [n, Math.max(1, scale(v)), i]);
+  const top = st[0][1];
+  const p2p = [['Seen our posts', 421000], ['Tapped a link', 6100], ['Visited the website', 4800], ['Installed the app', 1240], ['Signed up', 860], ['Joined a first session', 410]].map(([n, v]) => [n, scale(v)]);
+  return `
+  <div class="viewas" style="margin:0"><span class="eyebrow">Period</span>${[7, 30, 90].map((d) => `<button class="chip" data-range="${d}" aria-pressed="${crange === d}">Last ${d} days</button>`).join('')}</div>
+  <div class="live">
+    ${[['Monthly revenue', '18,400', 'SAR · +12%', 1], ['Paying leaders', '23', '+3 this month', 1], ['In trial', '9', '4 end this week', 0], ['New leads', String(st[0][1]), 'last ' + crange + ' days', 0], ['Followers, all platforms', fmtK(SOCIAL.reduce((a, x) => a + x[2], 0)), '+5.8%', 1]].map(([l, v, d, up]) => `<div class="kpi"><span class="eyebrow">${l}</span><span class="v num">${v}</span><span class="d ${up ? 'up' : ''}">${d}</span></div>`).join('')}
+  </div>
+  <div class="row r2">
+    <div class="box"><h3>${icon('filter_alt')}Leads funnel</h3><p class="sub">From the first message to a paying leader. Tap a step to see who is there.</p>
+      <div class="funnel">${st.map(([n, v, i], k) => `<button class="stage" data-stage="${k}" aria-pressed="${k === cstage}"><span class="lbl">${icon(i)} ${n}</span><span class="track"><i style="width:${Math.max(8, (v / top) * 100)}%">${v}</i></span><span class="conv">${k ? Math.round((v / st[k - 1][1]) * 100) + '% next' : ''}</span></button>`).join('')}</div>
+      <div class="list" style="margin-top:4px">${LEADS.map(([k, n, c, from, next]) => `<div class="item" style="grid-template-columns:44px 1fr auto"><div class="sport">${icon(k === 'Company' ? 'apartment' : k === 'School' ? 'school' : k === 'Run club' ? 'directions_run' : 'fitness_center')}</div><div class="t"><b>${n}</b><span>${k} · ${c} · from ${from}</span></div><span class="pill info">${next}</span></div>`).join('')}</div>
+      ${src('From leads and plans in our database')}</div>
+    <div class="box"><h3>${icon('call_split')}Where leads come from</h3>
+      ${[['Instagram', 38], ['Website form', 24], ['App: "Want a community?"', 18], ['Referral', 12], ['Events and activations', 8]].map(([n, v]) => `<div class="hbar" style="grid-template-columns:150px 1fr 40px"><span>${n}</span><span class="tr"><i style="width:${(v / 38) * 100}%"></i></span><span class="val num">${v}%</span></div>`).join('')}
+      <div class="insight o"><div class="ic">${icon('lightbulb')}</div><div><b>Companies close 2× faster after a demo</b><p>Gyms take longer: most ask for a trial first.</p></div></div>
+      ${src('From leads in our database')}</div>
+  </div>
+  <div class="box"><h3>${icon('campaign')}Marketing and social</h3><p class="sub">Followers, posts and reach for the last ${crange} days.</p>
+    <div class="socials">${SOCIAL.map(([n, i, fol, ch, posts, reach, best]) => `<div class="social"><header><b>${icon(i)}${n}</b><span class="pill good">+${ch}%</span></header><span class="v">${fmtK(fol)}</span>
+      <div class="meta"><span><b class="num">${Math.max(1, scale(posts))}</b>posts</span><span><b class="num">${fmtK(scale(reach))}</b>reach</span></div><div class="best">Best: ${best}</div></div>`).join('')}
+      <div class="social dashed"><header><b>${icon('storefront')}Operation Beast store</b></header><p class="hint">Sales and visitors appear here once the shop is live.</p></div></div>
+    ${src('Needs each account connected once by you (Instagram and TikTok business logins)', 1)}</div>
+  <div class="row r2">
+    <div class="box"><h3>${icon('route')}From post to player</h3><p class="sub">Does marketing turn into people showing up?</p>
+      <div class="funnel">${p2p.map(([n, v], k) => `<div class="stage" style="cursor:default"><span class="lbl">${n}</span><span class="track"><i style="width:${Math.max(8, Math.sqrt(v / p2p[0][1]) * 100)}%">${fmtK(v)}</i></span><span class="conv">${k ? (v / p2p[k - 1][1] * 100).toFixed(k === 1 ? 1 : 0) + '%' : ''}</span></div>`).join('')}</div>
+      <p class="hint">Bar lengths use a square-root scale so the small steps stay visible.</p>
+      ${src('Social accounts, website visits, App Store and Google Play, and the app')}</div>
+    <div class="box"><h3>${icon('language')}Website</h3>
+      ${[['/get (download page)', 2900], ['/for-gyms', 760], ['/for-companies', 540], ['Session share links', 1900], ['/for-leaders', 310]].map(([n, v]) => `<div class="hbar" style="grid-template-columns:150px 1fr 48px"><span>${n}</span><span class="tr"><i style="width:${(v / 2900) * 100}%"></i></span><span class="val num">${fmtK(scale(v))}</span></div>`).join('')}
+      <h3 style="margin-top:6px">${icon('payments')}Revenue by month</h3>${revenue()}
+      ${src('Website visits (Vercel) and plans in our database')}</div>
+  </div>`;
+}
+function revenue() {
+  const v = [3.2, 5.1, 7.4, 10.9, 16.4, 18.4], m = ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'], W = 300, H = 110, bw = (W - 20) / 6;
+  return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Monthly revenue, thousands of SAR">${v.map((n, i) => { const h = (n / 20) * (H - 34), x = 10 + i * bw; return `<rect x="${x + 4}" y="${H - 18 - h}" width="${bw - 8}" height="${h}" rx="4" fill="${i === 5 ? '#E88F24' : '#56C4C4'}" opacity="${i === 5 ? 1 : .75}"/><text x="${x + bw / 2}" y="${H - 4}" text-anchor="middle">${m[i]}</text><text x="${x + bw / 2}" y="${H - 22 - h}" text-anchor="middle" style="fill:#F4F1EA;font-weight:600">${n}k</text>`; }).join('')}</svg></div>`;
+}
+function mapSvg() {
+  const W = 520, H = 330, x = (lng) => ((lng - 35) / 25) * (W - 40) + 20, y = (lat) => ((31.5 - lat) / 15.5) * (H - 30) + 10;
+  const max = Math.max(...CITIES.map((c) => c[3]));
+  let g = '';
+  for (let lat = 18; lat <= 30; lat += 4) g += `<line class="grid" x1="20" x2="${W - 20}" y1="${y(lat)}" y2="${y(lat)}"/><text class="deg" x="22" y="${y(lat) - 3}">${lat}°N</text>`;
+  for (let lng = 40; lng <= 55; lng += 5) g += `<line class="grid" y1="10" y2="${H - 20}" x1="${x(lng)}" x2="${x(lng)}"/><text class="deg" x="${x(lng) + 3}" y="${H - 8}">${lng}°E</text>`;
+  CITIES.slice().sort((a, b) => b[3] - a[3]).forEach(([n, lat, lng, a, live]) => {
+    const r = 5 + Math.sqrt(a / max) * 28, on = ccity === n, dim = ccity && !on;
+    g += `<g class="city" data-city="${n}" tabindex="0" role="button" aria-label="${n}: ${a} active members, ${live} sessions on now" opacity="${dim ? .35 : 1}">
+      <circle cx="${x(lng)}" cy="${y(lat)}" r="${r}" fill="#56C4C4" fill-opacity="${on ? .55 : .28}" stroke="#56C4C4" stroke-width="${on ? 2.5 : 1.2}"/>
+      ${live ? `<circle cx="${x(lng)}" cy="${y(lat)}" r="${3 + Math.min(live, 20) / 3}" fill="#E88F24"/>` : ''}
+      <text x="${x(lng) + r + 4}" y="${y(lat) + 4}">${n} <tspan style="fill:#F4F1EA;font-weight:600">${a.toLocaleString('en')}</tspan></text></g>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Map of active members by city">${g}</svg>`;
+}
+function timeline(d, k) {
+  const W = 760, H = 150, x = (h) => 30 + ((h - 5) / 19) * (W - 50);
+  const sports = ['padel', 'football', 'running', 'gym', 'yoga'];
+  let g = '';
+  for (let h = 6; h <= 24; h += 3) g += `<line x1="${x(h)}" x2="${x(h)}" y1="0" y2="${H - 18}" stroke="rgba(244,241,234,.10)"/><text x="${x(h)}" y="${H - 4}" text-anchor="middle">${h === 24 ? '12 am' : h > 12 ? h - 12 + ' pm' : h === 12 ? '12 pm' : h + ' am'}</text>`;
+  sports.forEach((s, i) => (g += `<text x="0" y="${14 + i * 26}" style="font-size:9px">${sp(s)[0]}</text>`));
+  let seed = cday * 7 + 3;
+  const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
+  const n = k(d.n);
+  for (let i = 0; i < n; i++) {
+    const hourW = rnd(), h = hourW < .12 ? 5.5 + rnd() * 2 : hourW < .3 ? 11 + rnd() * 3 : 16 + rnd() * 7, lane = Math.floor(rnd() * 5), fill = rnd();
+    const col = fill > .85 ? '#7BD88F' : fill > .5 ? '#56C4C4' : fill > .12 ? '#F2C14E' : '#FF7A70';
+    g += `<rect x="${x(h)}" y="${4 + lane * 26}" width="${(W - 50) / 19 * 1.3}" height="18" rx="5" fill="${col}" fill-opacity=".85"><title>${sp(sports[lane])[0]} at ${Math.floor(h)}:${rnd() > .5 ? '30' : '00'} · ${Math.round(fill * 100)}% full</title></rect>`;
+  }
+  if (!cday) g += `<line x1="${x(18.6)}" x2="${x(18.6)}" y1="0" y2="${H - 18}" stroke="#E88F24" stroke-width="2"/><text x="${x(18.6) + 4}" y="${H - 22}" style="fill:#E88F24;font-weight:600">now</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Sessions by hour">${g}</svg>`;
+}
+function commTable(f) {
+  const rows = COMMS.filter((c) => !f || c[2] === f[0]).map((c) => ({ c, health: c[6][6] - c[6][2] }));
+  const key = { name: (r) => r.c[0], members: (r) => r.c[3], plays: (r) => r.c[4], fill: (r) => r.c[5], health: (r) => r.health }[csort[0]];
+  rows.sort((a, b) => (key(a) > key(b) ? 1 : -1) * csort[1]);
+  const spark = (v) => { const m = Math.max(...v); return `<svg viewBox="0 0 70 20" width="70" height="20"><polyline points="${v.map((n, i) => `${i * 11 + 2},${18 - (n / m) * 15}`).join(' ')}" fill="none" stroke="#56C4C4" stroke-width="1.6"/><circle cx="${6 * 11 + 2}" cy="${18 - (v[6] / m) * 15}" r="2.5" fill="#E88F24"/></svg>`; };
+  const pill = (h) => (h >= 2 ? '<span class="pill good">Growing</span>' : h >= 0 ? '<span class="pill info">Steady</span>' : '<span class="pill bad">Needs help</span>');
+  const th = (k, t) => `<th class="sort" data-sort="${k}">${t}${csort[0] === k ? (csort[1] > 0 ? ' ↑' : ' ↓') : ''}</th>`;
+  return `<table><thead><tr>${th('name', 'Community')}<th>Leader</th><th>City</th>${th('members', 'Members')}${th('plays', 'Sessions / wk')}${th('fill', 'Spots filled')}<th>7 weeks</th>${th('health', 'Health')}</tr></thead>
+  <tbody>${rows.length ? rows.map(({ c, health }) => `<tr><td>${c[0]}</td><td>${c[1]}</td><td>${c[2]}</td><td class="num">${c[3]}</td><td class="num">${c[4]}</td><td class="num">${c[5]}%</td><td>${spark(c[6])}</td><td>${pill(health)}</td></tr>`).join('') : `<tr><td colspan="8" style="text-align:center;color:var(--ink-faint);font-weight:400">No communities in this city yet. Requests from here show under Needs attention.</td></tr>`}</tbody></table>`;
+}
+function growth() {
+  const v = [42, 55, 61, 58, 80, 96, 133, 154], W = 300, H = 90, m = 160;
+  const pts = v.map((n, i) => [10 + i * ((W - 20) / 7), H - 14 - (n / m) * (H - 24)]);
+  return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="New members per week, last 8 weeks">
+    <polygon points="${pts.map((p) => p.join(',')).join(' ')} ${pts[7][0]},${H - 14} ${pts[0][0]},${H - 14}" fill="#56C4C4" fill-opacity=".15"/>
+    <polyline points="${pts.map((p) => p.join(',')).join(' ')}" fill="none" stroke="#56C4C4" stroke-width="2"/>
+    <circle cx="${pts[7][0]}" cy="${pts[7][1]}" r="4" fill="#E88F24"/><text x="${pts[7][0] - 6}" y="${pts[7][1] - 8}" text-anchor="end" style="fill:#F4F1EA;font-weight:600">154</text>
+    <text x="10" y="${H - 2}">8 weeks ago</text><text x="${W - 10}" y="${H - 2}" text-anchor="end">this week</text></svg></div>`;
+}
+
+/* ═════════════ Tabs + events ═════════════ */
+const TABS = ['plan', 'roles', 'leader', 'command'];
+function show(t) {
+  if (!TABS.includes(t)) t = 'leader';
+  TABS.forEach((k) => { $('#p-' + k).hidden = k !== t; document.querySelector(`[data-tab="${k}"]`).setAttribute('aria-selected', k === t); });
+  if (t === 'leader') renderLeader();
+  if (t === 'command') renderCommand();
+  try { localStorage.setItem('hq-tab', t); } catch (e) {}
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-tab],[data-leader],[data-lpage],[data-feature],[data-cview],[data-range],[data-stage],[data-go],[data-toast],[data-day],[data-city],[data-sort],#clearcity');
+  if (!b) return;
+  if (b.dataset.tab) { show(b.dataset.tab); history.replaceState(null, '', '#' + b.dataset.tab); }
+  else if (b.dataset.leader) { leader = b.dataset.leader; renderLeader(); }
+  else if (b.dataset.lpage) { lpage = b.dataset.lpage; renderLeader(); }
+  else if (b.dataset.feature) { const on = LEADERS[leader].on, k = b.dataset.feature, ft = FEATURES.find((x) => x[0] === k); on[k] = !on[k]; renderLeader(); toast(on[k] ? `${ft[2]} is on.${ft[4] ? ' It\'s in your menu now.' : ' Find it when you post a session.'}` : `${ft[2]} is off.`); }
+  else if (b.dataset.go) { lpage = b.dataset.go; renderLeader(); }
+  else if (b.dataset.cview) { cview = b.dataset.cview; renderCommand(); }
+  else if (b.dataset.range) { crange = +b.dataset.range; renderCommand(); }
+  else if (b.dataset.stage) { cstage = +b.dataset.stage; renderCommand(); }
+  else if (b.dataset.day) { cday = +b.dataset.day; renderCommand(); }
+  else if (b.dataset.city) { ccity = ccity === b.dataset.city ? null : b.dataset.city; renderCommand(); }
+  else if (b.dataset.sort) { csort = [b.dataset.sort, csort[0] === b.dataset.sort ? -csort[1] : -1]; renderCommand(); }
+  else if (b.id === 'clearcity') { ccity = null; renderCommand(); }
+  else if (b.dataset.toast) toast(b.dataset.toast);
+});
+document.addEventListener('keydown', (e) => { const g = e.target.closest?.('[data-city]'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); g.dispatchEvent(new MouseEvent('click', { bubbles: true })); } });
+let first = (location.hash || '').slice(1);
+if (!TABS.includes(first)) { try { first = localStorage.getItem('hq-tab') || 'leader'; } catch (e) { first = 'leader'; } }
+show(first);
+</script>
