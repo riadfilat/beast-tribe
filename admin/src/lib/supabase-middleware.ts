@@ -37,6 +37,8 @@ export async function updateSession(request: NextRequest) {
   const isPublicPage =
     request.nextUrl.pathname.startsWith('/legal') ||
     request.nextUrl.pathname.startsWith('/support') ||
+    // The emailed sign-in link lands here before there is a session
+    request.nextUrl.pathname === '/login/link' ||
     // Password reset has to work while signed out
     request.nextUrl.pathname.startsWith('/forgot-password') ||
     request.nextUrl.pathname.startsWith('/reset-password') ||

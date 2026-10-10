@@ -7,8 +7,10 @@ import { Lockup } from '@/components/brand/Logo';
 import { Icon } from '@/components/ui/Icon';
 
 const ERROR_MESSAGES: Record<string, string> = {
-  unauthorized: 'Your account does not have admin or partner access.',
+  unauthorized: 'Your account does not have dashboard access.',
   not_partner: 'Your account is not registered as a partner.',
+  no_community: 'Your account isn’t a leader or supporter of a community yet. Ask your community leader or Beast Tribe to add your email.',
+  link: 'That sign-in link has expired or was already used. Send yourself a new one.',
 };
 
 function ErrorFromParams({ onError }: { onError: (msg: string) => void }) {
@@ -28,10 +30,34 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [linkSent, setLinkSent] = useState(false);
+
+  /** No password (signed up with Apple or Google, or invited): a one-time link by email. */
+  async function sendLink() {
+    setError('');
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      setError('Enter your email first.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error: linkError } = await createClient().auth.signInWithOtp({ email, options: { emailRedirectTo: `${window.location.origin}/login/link` } });
+      if (linkError) setError(linkError.message);
+      else setLinkSent(true);
+    } catch {
+      setError('Connection error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    if (!password) {
+      setError('Enter your password, or use “Email me a sign-in link”.');
+      return;
+    }
     setLoading(true);
 
     try {
@@ -83,7 +109,7 @@ export default function LoginPage() {
           <div className="text-center mb-8">
             <h1 className="sr-only">Beast Tribe</h1>
             <Lockup height={30} id="bt-login" className="mx-auto" />
-            <p className="text-sm text-gray-500 mt-3">Admin & Partner Portal</p>
+            <p className="text-sm text-gray-500 mt-3">Community leaders &amp; Beast Tribe HQ</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
@@ -118,7 +144,6 @@ export default function LoginPage() {
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-aqua focus:border-transparent outline-none transition"
                 placeholder="••••••••"
                 autoComplete="current-password"
-                required
               />
             </div>
 
@@ -170,10 +195,21 @@ export default function LoginPage() {
                 'Sign In'
               )}
             </button>
+            <button
+              type="button"
+              onClick={sendLink}
+              disabled={loading}
+              className="w-full py-3 border border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition disabled:opacity-50"
+            >
+              Email me a sign-in link
+            </button>
+            {linkSent ? (
+              <p className="text-sm text-[#25704F] bg-[#E8F5EE] px-4 py-3 rounded-xl">Check your email for a sign-in link. It works once, on this device.</p>
+            ) : null}
           </form>
 
           <p className="text-xs text-gray-400 text-center mt-6">
-            Only authorized admin and partner accounts can access this portal.
+            No password? Use the sign-in link with the email you use in the Beast Tribe app.
           </p>
         </div>
       </div>

@@ -49,6 +49,7 @@ const ICONS = {
   shield: { sf: 'checkmark.shield.fill', ion: 'shield-checkmark' },
   help: { sf: 'questionmark.circle.fill', ion: 'help-circle' },
   bag: { sf: 'bag.fill', ion: 'bag' },
+  tag: { sf: 'tag.fill', ion: 'pricetag' },
   people: { sf: 'person.2.fill', ion: 'people' },
   eye: { sf: 'eye.fill', ion: 'eye' },
   eyeOff: { sf: 'eye.slash.fill', ion: 'eye-off' },

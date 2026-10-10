@@ -1276,6 +1276,8 @@ export const ar: Strings = {
   },
   pay: {
     eachTag: '{amount} ريال للشخص',
+    priceTag: '{amount} ريال في المكان',
+    priceLine: '{amount} ريال للشخص، يُدفع في المكان',
     guestTag: 'الضيوف {amount} ريال',
     guestFree: 'الضيوف مرحّب بهم',
     splitTitle: 'تقسيم المبلغ',

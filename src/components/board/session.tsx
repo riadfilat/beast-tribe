@@ -45,7 +45,9 @@ export function SessionTags({ s, now }: { s: Session; now: number }) {
   if (s.state !== 'cancelled' && s.isFull) tags.push(<Tag key="f" label={t('session.seatsFilled')} tone="ink" />);
   if (s.dropIn && s.state !== 'cancelled') tags.push(<Tag key="o" label={t('session.dropIn')} tone="marker" />);
   if (s.share != null && s.state !== 'cancelled') tags.push(<Tag key="sh" label={t('pay.eachTag', { amount: money(s.share) })} tone="marker" />);
-  if (s.guestOpen && s.state !== 'cancelled') tags.push(<Tag key="g" label={s.guestPrice ? t('pay.guestTag', { amount: money(s.guestPrice) }) : t('pay.guestFree')} tone="aqua" />);
+  if (s.price != null && s.share == null && s.state !== 'cancelled') tags.push(<Tag key="pr" label={t('pay.priceTag', { amount: money(s.price) })} tone="marker" />);
+  // Open to everyone at the same price: the price tag already says it.
+  if (s.guestOpen && s.state !== 'cancelled' && !(s.price != null && s.guestPrice === s.price)) tags.push(<Tag key="g" label={s.guestPrice ? t('pay.guestTag', { amount: money(s.guestPrice) }) : t('pay.guestFree')} tone="aqua" />);
   if (s.womenOnly) tags.push(<Tag key="w" label={t('session.womenOnly')} tone="coral" />);
   if (s.menOnly) tags.push(<Tag key="m" label={t('session.menOnly')} tone="aqua" />);
   if (s.communityPrivate && s.communityName && !s.packOnly) tags.push(<Tag key="cm" icon="shield" label={s.communityName} tone="aqua" />);

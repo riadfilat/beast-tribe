@@ -1227,6 +1227,8 @@ export const en = {
   },
   pay: {
     eachTag: 'SAR {amount} each',
+    priceTag: 'SAR {amount} at the venue',
+    priceLine: 'SAR {amount} per player, paid at the venue',
     guestTag: 'Guests SAR {amount}',
     guestFree: 'Guests welcome',
     splitTitle: 'The split',

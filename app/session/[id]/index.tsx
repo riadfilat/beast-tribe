@@ -317,6 +317,15 @@ export default function SessionScreen() {
               </View>
               {x.place ? <OutlineButton label={t('session.directions')} icon="directions" onPress={directions} style={{ height: 40 }} /> : null}
             </View>
+            {/* A set price per player, paid at the venue. */}
+            {x.price != null && x.share == null && x.state !== 'cancelled' ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }}>
+                <Icon name="tag" size={15} color={p.markerText} />
+                <Txt v="label" size={14} color={p.markerText} style={{ flex: 1 }}>
+                  {t('pay.priceLine', { amount: money(x.price) })}
+                </Txt>
+              </View>
+            ) : null}
             {/* A court booked with the venue: is it booked? */}
             {x.courtBooking && x.state !== 'cancelled' ? (
               <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 10 }}>

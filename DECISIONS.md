@@ -5,6 +5,25 @@ Add an entry whenever a choice would surprise a new engineer (CLAUDE.md, rule 9)
 
 ---
 
+### 2026-10-10 · One kind of community leader who switches features on
+- **What:** the dashboard is for community leaders (and the supporters they add). A leader can be a coach, gym, trainer, company HR or activation lead, or several at once, and switches on what they run: courts and booking, guest passes, 1:1 coaching, nutrition, company teams.
+- **Why:** the owner found the dashboard unclear; fixed partner types decided the pages, and real leaders are often several kinds at once.
+- **Rejected:** keeping 9 fixed partner types (the old `PARTNER_KINDS`); separate portals per kind.
+
+### 2026-10-10 · The database decides who may do what in the leader dashboard
+- **What:** leader actions that need permission (features, supporters, who paid, the Home numbers) call database functions with the person's own sign-in token; the functions check the role. Supporters never get money back from them.
+- **Why:** the audit found the old dashboard checked ownership only in website code (problem 10). Database checks are tested (`tests/db/team.test.js`, `overview.test.js`) and can't be skipped by a bug in a page.
+- **Found by the tests:** a "no role" check that let anyone through (fixed before going live with `IS NOT DISTINCT FROM`).
+
+### 2026-10-10 · Supporters never see money
+- **What:** supporters post sessions and check players in, but see no prices, income or payments, and can't change courts, features or the profile.
+- **Why:** the owner's decision.
+
+### 2026-10-10 · "Where members are" = city and phone type, once a day
+- **What:** the app records one row per member per day (`member_days`): the city, iPhone or Android, the app language. No exact location, no IP address; deleted after 400 days.
+- **Why:** the command center needs active members and cities; this matches the "approximate location" declared to Apple and Google. The privacy policy says so.
+- **Rejected:** storing positions or IP addresses (more than we need).
+
 ### 2026-10-10 · Hijri birthdays: a way to pick, not a way to store
 - **What:** the date-of-birth picker has a Gregorian | Hijri switch (Umm al-Qura, the official Saudi calendar). The profile still stores a Gregorian date; the field shows both.
 - **Why:** many Saudi members know their birthday in Hijri; storing one calendar keeps ages, sorting and the database simple.

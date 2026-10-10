@@ -54,7 +54,13 @@ const getServerSupabase = cache(async () => {
   });
 });
 
-const getSessionUser = cache(async () => {
+/**
+ * The database as the signed-in person (their own token): the database's rules and checks apply,
+ * so leader and HQ functions decide for themselves who may do what.
+ */
+export const userSupabase = getServerSupabase;
+
+export const getSessionUser = cache(async () => {
   const {
     data: { user },
   } = await (await getServerSupabase()).auth.getUser();
@@ -168,18 +174,21 @@ export const requireCap = cache(async (cap: Cap): Promise<PartnerUser> => {
  * Check if current user is admin OR partner.
  * Used for routing on the root page after login.
  */
-export async function getAccessType(): Promise<'admin' | 'partner' | null> {
+export async function getAccessType(): Promise<'admin' | 'leader' | 'partner' | null> {
   const user = await getSessionUser();
   if (!user) return null;
 
   const db = createAdminClient();
 
-  const [adminResult, partnerResult] = await Promise.all([
-    db.from('admin_roles').select('role').eq('user_id', user.id).single(),
-    db.from('partners').select('id').eq('user_id', user.id).eq('is_active', true).single(),
+  const [adminResult, teamResult, partnerResult] = await Promise.all([
+    db.from('admin_roles').select('role').eq('user_id', user.id).maybeSingle(),
+    // Leaders and supporters of a community (migration 092) use the leader dashboard.
+    db.from('community_members').select('community_id').eq('user_id', user.id).in('role', ['admin', 'supporter']).limit(1),
+    db.from('partners').select('id').eq('user_id', user.id).eq('is_active', true).limit(1),
   ]);
 
   if (adminResult.data) return 'admin';
-  if (partnerResult.data) return 'partner';
+  if (teamResult.data?.length) return 'leader';
+  if (partnerResult.data?.length) return 'partner';
   return null;
 }

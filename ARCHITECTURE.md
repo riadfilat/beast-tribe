@@ -12,14 +12,16 @@ flowchart TB
     D --> L["Shared helpers<br/>src/lib/"]
   end
   subgraph Web["Website — admin/ (Vercel)"]
-    SD["Staff dashboard<br/>admin/src/app/(admin)"]
-    PD["Partner dashboard<br/>admin/src/app/(partner)"]
+    SD["HQ (staff) dashboard<br/>admin/src/app/(admin)"]
+    LD["Leader dashboard<br/>admin/src/app/(leader)"]
+    PD["Old partner dashboard<br/>admin/src/app/(partner), retiring"]
     PUB["Public pages<br/>for-gyms, /get, /s/ share links, legal"]
     API["Server helpers<br/>/api/assistant (Claude), /api/moderate (photo check)"]
   end
   DB[("Supabase database<br/>tables + rules + scheduled jobs<br/>supabase/migrations/")]
   D -- "reads/writes as the member" --> DB
   SD -- "staff, checked by role" --> DB
+  LD -- "leader or supporter, the database checks" --> DB
   PD -- "partner, checked by ownership" --> DB
   DB -- "push messages" --> EXPO["Expo push"]
   DB -- "new photo" --> API
@@ -47,6 +49,7 @@ are the real gatekeeper, so even a tampered app can't see a private community or
 | `store/` | App Store and Google Play listing text and images. |
 | `design/` | Design mock-ups and explainer pages (not part of the app). |
 | `docs/` | The audit, the session history. |
+| `admin/src/app/(leader)` | The leader dashboard for community leaders and supporters (see "Who uses what"). |
 | `tests/` | Automated tests: app logic (`*.test.mjs`) and database rules (`tests/db/`, each run in a transaction that is rolled back). Run with `scripts/test.sh` and `scripts/test.sh db`. |
 
 ## How a typical action flows: "join a session"
@@ -56,6 +59,26 @@ are the real gatekeeper, so even a tampered app can't see a private community or
 3. **Database** checks in `bt_rsvp_before`: is the session full (→ waiting list), women/men only, members only, the court's one-a-day rule. Then `bt_rsvp_after` updates the count, re-splits the court price and notifies the host.
 4. **Push**: the host's phone gets "X joined your session" via Expo push.
 5. **Screen** refreshes from the data layer's cache.
+
+## Who uses what (the new dashboard, October 2026)
+
+| Who | Where | How the role is stored |
+|---|---|---|
+| **Super admin** (the owner) and **admins** | HQ dashboard: `/dashboard` (command center coming in step 3) | `admin_roles` (`super_admin`, `admin`, `moderator`). Only the super admin changes it: `set_admin_role()` |
+| **Community leader** (coach, gym, trainer, company HR, activation lead) | Leader dashboard: `/leader` | `community_members.role = 'admin'` (shown as "Leader"). HQ adds leaders: `invite_to_team()` |
+| **Community supporter** | Leader dashboard, fewer buttons, never sees money | `community_members.role = 'supporter'`. Leaders add them: `invite_to_team()` |
+| **Member** | The app only | `community_members.role = 'member'` |
+
+- **Invites** wait in `community_invites` until the person verifies their email (trigger `bt_on_auth_user_invites`).
+- **Features** a community switched on live in `community_features` (courts, guests, coaching, nutrition, teams); each one with a page adds it to the leader menu (`admin/src/lib/leader/features.ts`).
+- **Business record:** courts, coaching times and the plan hang off a `partners` row linked to the community, made when first needed (`admin/src/lib/leader/business.ts`).
+- **Sign-in:** email + password, or "Email me a sign-in link" (`/login/link`) for people who joined the app with Apple or Google.
+
+### The leader dashboard (`admin/src/app/(leader)/leader/`)
+- **Pages:** Home (numbers, players by day, insights, coming up), Sessions (post with a live app preview, players, check-in, who paid, cancel), Courts, Coaching, Nutrition, Teams (only when switched on), People, Features, Profile.
+- **Data:** `admin/src/lib/leader/` (context, overview, sessions, people, courts, coaching, business). Home numbers come from the database function `community_overview()`, which refuses outsiders and returns money only to leaders and HQ. Ticking who paid goes through `set_player_paid()` (leaders only).
+- **Look:** the app's deep-teal board (`admin/src/components/board/`: Shell, ui, charts, fonts).
+- **Activity:** the app calls `bt_seen()` once a day (`src/data/activity.ts`) with the city, phone type and language, stored in `member_days` (kept 400 days).
 
 ## Where each feature lives
 

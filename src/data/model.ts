@@ -48,6 +48,8 @@ export interface Session {
   waitlistMax: number;
   /** A paid court: what each player in owes right now (the court price ÷ players in). Null when free. */
   share: number | null;
+  /** A set price per player, paid at the venue (posted from the leader dashboard). Null when free. */
+  price: number | null;
   /** A paid court's full price. */
   court: number | null;
   /** Booked at a court: the booking fixes its time and place. */
@@ -80,7 +82,7 @@ const SESSION_COLUMNS = `
   id, title, event_type, starts_at, ends_at, location_name, location_city, gym_name,
   location_lat, location_lng, image_url, max_capacity, going_count, created_by,
   is_women_only, is_men_only, visibility, pack_id, community_id, difficulty, coach_name, cancelled_at, drop_in, captain_hosted,
-  guest_open, guest_price_sar, share_sar, court_sar, guest_invite, waitlist_max, facility_id, court_booking, route_id,
+  guest_open, guest_price_sar, share_sar, court_sar, price_sar, guest_invite, waitlist_max, facility_id, court_booking, route_id,
   pack:packs(name),
   community:communities(name, visibility),
   host:profiles!events_created_by_fkey(${PERSON_COLUMNS}),
@@ -163,6 +165,7 @@ export function toSession(row: any, meId: string | null | undefined, myStatus?: 
     // A free court has nothing to split, so it reads like any other session.
     share: Number(row.share_sar) > 0 ? Number(row.share_sar) : null,
     court: Number(row.court_sar) > 0 ? Number(row.court_sar) : null,
+    price: Number(row.price_sar) > 0 ? Number(row.price_sar) : null,
     atCourt: !!row.facility_id,
     routeId: row.route_id ?? null,
     courtBooking: row.court_booking === 'booked' ? 'booked' : row.court_booking === 'pending' ? 'pending' : null,
