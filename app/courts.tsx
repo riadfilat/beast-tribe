@@ -1,6 +1,7 @@
+import { COURT_BOOKING_ENABLED } from '../src/lib/constants';
 import React, { useMemo, useState } from 'react';
 import { Image, RefreshControl, ScrollView, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { makeStyles, useKit } from '../src/theme';
 import { useI18n } from '../src/i18n';
@@ -13,7 +14,7 @@ import { Press } from '../src/components/board/Press';
 import { Chip, IconButton, SectionHeading } from '../src/components/board/controls';
 
 // Book a court: courts, pitches, halls and school facilities listed by venues.
-export default function CourtsScreen() {
+function CourtsScreenInner() {
   const s = useStyles();
   const { p, lang } = useKit();
   const { t } = useI18n();
@@ -149,3 +150,9 @@ const useStyles = makeStyles(({ p }) => ({
   card: { borderRadius: 12, borderWidth: 1.5, borderColor: p.rule, overflow: 'hidden', backgroundColor: p.boardDeep },
   img: { width: '100%', height: 150, backgroundColor: p.wash },
 }));
+
+// No in-app court booking at launch (COURT_BOOKING_ENABLED): old links and notifications land on the Board.
+export default function CourtsScreen() {
+  if (!COURT_BOOKING_ENABLED) return <Redirect href="/(tabs)/home" />;
+  return <CourtsScreenInner />;
+}

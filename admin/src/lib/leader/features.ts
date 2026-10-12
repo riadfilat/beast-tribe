@@ -1,3 +1,5 @@
+import { COURT_BOOKING_ENABLED } from '../features';
+
 // What a community can switch on (migration 092, community_features). Each feature with a page
 // adds it to the leader dashboard's menu. Labels live here so the menu, the Features page and the
 // command center say the same thing.
@@ -15,13 +17,16 @@ export interface FeatureInfo {
   leadersOnly?: boolean;
 }
 
-export const FEATURES: FeatureInfo[] = [
+const ALL_FEATURES: FeatureInfo[] = [
   { key: 'courts', title: 'Courts & booking', about: 'You own a space or a gym: list courts, prices and opening hours. Members book them in the app and split the price.', page: { href: '/leader/courts', label: 'Courts' }, leadersOnly: true },
   { key: 'guests', title: 'Guest passes', about: 'People outside your community can join the sessions you choose, for a guest fee you set.', page: null },
   { key: 'coaching', title: '1:1 coaching', about: 'Members book your coaches’ free times for private sessions in the app.', page: { href: '/leader/coaching', label: 'Coaching' } },
   { key: 'nutrition', title: 'Nutrition', about: 'You have an in-house nutritionist. Members will book a consult with them in the app.', page: { href: '/leader/nutrition', label: 'Nutrition' } },
   { key: 'teams', title: 'Company teams', about: 'Split employees into teams and run team challenges between them.', page: { href: '/leader/teams', label: 'Teams' } },
 ];
+
+/** What leaders can switch on now: no "Courts & booking" while in-app court booking is off. */
+export const FEATURES: FeatureInfo[] = ALL_FEATURES.filter((f) => f.key !== 'courts' || COURT_BOOKING_ENABLED);
 
 export interface NavItem {
   href: string;

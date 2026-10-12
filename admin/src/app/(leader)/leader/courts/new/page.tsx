@@ -1,3 +1,4 @@
+import { COURT_BOOKING_ENABLED } from '@/lib/features';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ArrowLeft } from '@phosphor-icons/react/dist/ssr';
@@ -8,7 +9,8 @@ import { CourtForm } from '../CourtForm';
 
 export default async function NewCourt() {
   const ctx = await requireLeader();
-  if (!ctx.features.has('courts')) redirect('/leader/features');
+  // In-app court booking is off for launch (COURT_BOOKING_ENABLED).
+  if (!COURT_BOOKING_ENABLED || !ctx.features.has('courts')) redirect('/leader/features');
   const sports = await loadSports();
   return (
     <>

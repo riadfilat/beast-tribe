@@ -1,3 +1,4 @@
+import { COURT_BOOKING_ENABLED } from '@/lib/features';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Plus } from '@phosphor-icons/react/dist/ssr';
@@ -15,7 +16,8 @@ const HOURS = [6, 8, 10, 12, 14, 16, 18, 19, 20, 21, 22, 23];
 
 export default async function Courts({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
   const ctx = await requireLeader();
-  if (!ctx.features.has('courts')) redirect('/leader/features');
+  // In-app court booking is off for launch (COURT_BOOKING_ENABLED).
+  if (!COURT_BOOKING_ENABLED || !ctx.features.has('courts')) redirect('/leader/features');
   const courts = await loadCourts(ctx.businessId);
   const [{ cells, total }, q, bookings] = await Promise.all([
     courtHeat(courts.map((c) => c.id)),

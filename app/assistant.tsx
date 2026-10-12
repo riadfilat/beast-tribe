@@ -1,3 +1,4 @@
+import { COURT_BOOKING_ENABLED } from '../src/lib/constants';
 import React, { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -53,7 +54,7 @@ export default function AssistantScreen() {
     if (c.type === 'session') router.push({ pathname: '/session/[id]', params: { id: c.id } });
     else if (c.type === 'workout') router.push({ pathname: '/workout/[id]', params: { id: c.id } });
     else if (c.type === 'club') router.push({ pathname: '/(tabs)/feed/community', params: { id: c.id } });
-    else if (c.type === 'court') router.push({ pathname: '/court/[id]', params: { id: c.id } });
+    else if (c.type === 'court' && COURT_BOOKING_ENABLED) router.push({ pathname: '/court/[id]', params: { id: c.id } });
     else if (c.type === 'partner') router.push('/partners');
     else if (c.type === 'action') router.push(c.action === 'partners' ? '/partners' : c.action === 'host' ? '/host' : { pathname: '/(tabs)/feed', params: { tab: 'communities' } });
   }

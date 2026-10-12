@@ -5,6 +5,11 @@ Add an entry whenever a choice would surprise a new engineer (CLAUDE.md, rule 9)
 
 ---
 
+### 2026-10-12 · No in-app court booking at launch
+- **What:** `COURT_BOOKING_ENABLED = false` in the app (`src/lib/constants.ts`) and website (`admin/src/lib/features.ts`). Every court session asks the host "I've booked it / I'll book it" with the venue, plus the court price and split; reminders nudge until it's booked. The Courts screens, the Explore tile, Ask Beast's court search and the leaders' "Courts & booking" feature are hidden. Courts, bookings and code stay, so switching it back on later is one change.
+- **Why:** the owner: no court integrations for go-live, so the host must say whether the court is booked.
+- **Rejected:** keeping Andorra's in-app booking as a special case (two booking flows at launch).
+
 ### 2026-10-10 · The super admin can delete a member's account
 - **What:** a "Delete account" box on a person's page in People, for the super admin only, after typing their full name. The database function `delete_member()` refuses yourself, HQ staff and community leaders, logs the deletion (full name only) and deletes the account the same way "Delete account" in the app does.
 - **Why:** the owner asked for it; members can ask for their data to be removed (Saudi PDPL). Suspend stays the reversible choice for problem accounts.

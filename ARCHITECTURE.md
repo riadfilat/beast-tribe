@@ -111,6 +111,7 @@ are the real gatekeeper, so even a tampered app can't see a private community or
 - **Dashboard:** leaders with Courts & booking switched on manage courts and see bookings (with paid ticks) at `/leader/courts`. Bookings made from any community on their courts count for them (`bt_court_leader`, migration 098).
 
 ### Booking
+- **At launch in-app court booking is off** (`COURT_BOOKING_ENABLED`): every court session uses the "booked outside the app" flow below.
 - **In-app courts** (e.g. Andorra): `book_facility()` in the database checks the slot is free, the house rule (one a day) and the community, then creates the session. Players split the price equally (`bt_court_resplit`); they pay at the venue and the venue ticks *paid* (`session_dues`).
 - **Courts booked outside the app:**
   - The host says *I've booked it* or *I'll book it* and can add a price (`set_session_court()`).

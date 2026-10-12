@@ -5,6 +5,7 @@ import { Facility, useFacilities } from './facilities';
 import { distanceKm, type Position } from '../lib/location';
 import { useMySports, usePopularSpots } from './member';
 import { ROUTE_SPORTS } from '../lib/sports';
+import { COURT_BOOKING_ENABLED } from '../lib/constants';
 
 // Where to host: courts and places ranked for this member and the sport they picked.
 // 1. Courts of their own communities (only members can see these), e.g. their compound's padel courts.
@@ -34,7 +35,9 @@ export interface Place {
 export function useHostPlaces(sport: string | null, lang: string, pos: Position | null = null, city: string | null = null) {
   const { profile } = useAuth();
   const mySports = useMySports().data ?? [];
-  const facilities = useFacilities(lang).data ?? [];
+  const allFacilities = useFacilities(lang).data ?? [];
+  // No in-app court booking at launch: courts aren't offered, so every court sport uses the venue flow.
+  const facilities = COURT_BOOKING_ENABLED ? allFacilities : [];
   const spots = usePopularSpots(profile?.region || 'SA', lang).data ?? [];
   const sportsKey = mySports.join(',');
 

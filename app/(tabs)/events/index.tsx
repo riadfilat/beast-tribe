@@ -1,3 +1,4 @@
+import { COURT_BOOKING_ENABLED } from '../../../src/lib/constants';
 import React, { useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -93,11 +94,13 @@ export default function ExploreScreen() {
           <IconButton name="plus" label={t('board.hostA11y')} onPress={() => router.push('/host')} />
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tiles}>
-          <Press onPress={() => router.push('/courts')} feedback="light" accessibilityRole="button" style={s.tile}>
-            <Icon name="calendar" size={20} color={p.marker} />
-            <Txt v="row" size={14}>{t('courts.title')}</Txt>
-            <Txt v="caption" numberOfLines={2}>{t('courts.tileSub')}</Txt>
-          </Press>
+          {COURT_BOOKING_ENABLED ? (
+            <Press onPress={() => router.push('/courts')} feedback="light" accessibilityRole="button" style={s.tile}>
+              <Icon name="calendar" size={20} color={p.marker} />
+              <Txt v="row" size={14}>{t('courts.title')}</Txt>
+              <Txt v="caption" numberOfLines={2}>{t('courts.tileSub')}</Txt>
+            </Press>
+          ) : null}
           <Press onPress={() => router.push('/partners')} feedback="light" accessibilityRole="button" style={s.tile}>
             <Icon name="people" size={20} color={p.aqua} />
             <Txt v="row" size={14}>{t('partners.title')}</Txt>

@@ -1,6 +1,7 @@
+import { COURT_BOOKING_ENABLED } from '../../src/lib/constants';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { makeStyles, useKit } from '../../src/theme';
 import { useI18n } from '../../src/i18n';
@@ -20,7 +21,7 @@ import { errorKey } from '../../src/data/errors';
 type Audience = { kind: 'community' | 'pack'; id: string; name: string };
 
 // One court: pick a day, a free time and how many are playing. The price is split per player.
-export default function CourtScreen() {
+function CourtScreenInner() {
   const s = useStyles();
   const { p, lang } = useKit();
   const { t, tn } = useI18n();
@@ -301,3 +302,9 @@ const useStyles = makeStyles(({ p }) => ({
   split: { flexDirection: 'row', alignItems: 'flex-end', gap: 14, marginTop: 16, padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: p.marker },
   bar: { paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1, borderTopColor: p.rule, backgroundColor: p.boardDeep },
 }));
+
+// No in-app court booking at launch (COURT_BOOKING_ENABLED): old links and notifications land on the Board.
+export default function CourtScreen() {
+  if (!COURT_BOOKING_ENABLED) return <Redirect href="/(tabs)/home" />;
+  return <CourtScreenInner />;
+}

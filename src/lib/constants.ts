@@ -26,3 +26,12 @@ export const PAYMENTS_ENABLED = false;
  * with this off the tab and every way into it are hidden, and old links land on the Board.
  */
 export const TRAIN_ENABLED = false;
+
+/**
+ * Booking courts inside the app (venues' courts with free times, booked in one tap). Off for go-live
+ * (2026-10-12, the user's call: no court integrations at launch). With it off, every court session
+ * asks the host "Booked / I'll book it" with the venue, plus the price split; the Courts screens and
+ * every way into them are hidden. Courts, bookings and code stay; keep in step with
+ * COURT_BOOKING_ENABLED in admin/src/lib/features.ts.
+ */
+export const COURT_BOOKING_ENABLED = false;
