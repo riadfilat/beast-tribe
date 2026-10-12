@@ -4,8 +4,8 @@ import { cityKey, cityKeys } from '../lib/cities';
 import { Facility, useFacilities } from './facilities';
 import { distanceKm, type Position } from '../lib/location';
 import { useMySports, usePopularSpots } from './member';
-import { ROUTE_SPORTS } from '../lib/sports';
 import { COURT_BOOKING_ENABLED } from '../lib/constants';
+import { placePicture } from '../lib/sportPhotos';
 
 // Where to host: courts and places ranked for this member and the sport they picked.
 // 1. Courts of their own communities (only members can see these), e.g. their compound's padel courts.
@@ -41,7 +41,6 @@ export function useHostPlaces(sport: string | null, lang: string, pos: Position 
   const spots = usePopularSpots(profile?.region || 'SA', lang).data ?? [];
   const sportsKey = mySports.join(',');
 
-  const routeSport = !!sport && (ROUTE_SPORTS as string[]).includes(sport);
   return useMemo(() => {
     // The chosen city decides what's listed (the member's own city until they pick another).
     const home = new Set(cityKeys(city || profile?.city));
@@ -72,13 +71,13 @@ export function useHostPlaces(sport: string | null, lang: string, pos: Position 
       }));
     const publicSpots: (Place & { score: number })[] = spots
       .filter((x) => fits(x.sports))
-      // A photo, or for runs and rides a spot on the map (the track is drawn there).
-      .filter((x) => (!!x.imageUrl || (routeSport && x.lat != null)) && inCity(x.city, x.lat, x.lng))
+      // A photo of its own or a spot on the map; without its own photo it shows its sport's photo.
+      .filter((x) => (!!x.imageUrl || x.lat != null) && inCity(x.city, x.lat, x.lng))
       .map((x, i) => ({
         key: `s:${x.id}`,
         name: x.name,
         city: x.city,
-        imageUrl: x.imageUrl,
+        imageUrl: placePicture(x.imageUrl, x.sports, sport),
         sports: x.sports,
         lat: x.lat,
         lng: x.lng,

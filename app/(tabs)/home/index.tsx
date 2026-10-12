@@ -1,3 +1,4 @@
+import { placePicture } from '../../../src/lib/sportPhotos';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Image, RefreshControl, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -205,7 +206,7 @@ export default function BoardScreen() {
             <TextButton label={t('common.retry')} onPress={board.refetch} />
           </View>
         ) : sessions.length === 0 ? (
-          <EmptyBoard spots={(spots.data ?? []).filter((x) => !!x.imageUrl).filter((x) => !profile?.city || cityKeys(profile.city).includes(cityKey(x.city)))} onHost={(spotId) => router.push(spotId ? { pathname: '/host', params: { spot: spotId } } : '/host')} onTrain={TRAIN_ENABLED ? () => router.push('/(tabs)/train') : undefined} />
+          <EmptyBoard spots={(spots.data ?? []).filter((x) => !profile?.city || cityKeys(profile.city).includes(cityKey(x.city))).map((x) => ({ ...x, imageUrl: placePicture(x.imageUrl, x.sports) })).filter((x) => !!x.imageUrl)} onHost={(spotId) => router.push(spotId ? { pathname: '/host', params: { spot: spotId } } : '/host')} onTrain={TRAIN_ENABLED ? () => router.push('/(tabs)/train') : undefined} />
         ) : (
           <View>
             {live.map((x, i) => row(x, i, [...live, ...todayAhead]))}

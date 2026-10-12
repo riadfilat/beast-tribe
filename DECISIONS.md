@@ -5,6 +5,11 @@ Add an entry whenever a choice would surprise a new engineer (CLAUDE.md, rule 9)
 
 ---
 
+### 2026-10-12 · Places show their sport's photo until they have their own
+- **What:** a place without its own photo shows the photo of the sport being hosted there (`placePicture` in `src/lib/sportPhotos.ts`); places need only a photo OR a map position to be listed.
+- **Why:** the owner asked for many more Riyadh places, each with a picture. Free, legal photos of specific Riyadh venues mostly don't exist (Google's photos belong to their authors; Wikimedia had almost nothing usable). Sport photos are real, good and already licensed; venues can send their own and HQ swaps it in with one upload.
+- **Rejected:** stock photos labelled as the venue (misleading); copying venues' Google or Instagram photos (not ours to use).
+
 ### 2026-10-12 · No in-app court booking at launch
 - **What:** `COURT_BOOKING_ENABLED = false` in the app (`src/lib/constants.ts`) and website (`admin/src/lib/features.ts`). Every court session asks the host "I've booked it / I'll book it" with the venue, plus the court price and split; reminders nudge until it's booked. The Courts screens, the Explore tile, Ask Beast's court search and the leaders' "Courts & booking" feature are hidden. Courts, bookings and code stay, so switching it back on later is one change.
 - **Why:** the owner: no court integrations for go-live, so the host must say whether the court is booked.
