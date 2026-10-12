@@ -14,6 +14,7 @@ import { Txt } from '../../src/components/board/Txt';
 import { Icon } from '../../src/components/board/Icon';
 import { Chip, Field, IconButton, MarkerButton, SectionHeading } from '../../src/components/board/controls';
 import { toast } from '../../src/components/board/toast';
+import { SlotGrid } from '../../src/components/board/slots';
 import { haptic } from '../../src/lib/haptics';
 import { errorKey } from '../../src/data/errors';
 
@@ -215,11 +216,7 @@ export default function CourtScreen() {
         <View style={s.body}>
           <SectionHeading title={t('courts.time')} style={{ marginTop: 10 }} />
           {slotsQ.loading ? null : slots.length ? (
-            <View style={s.wrap}>
-              {slots.map((x) => (
-                <Chip key={x.startsAt.getTime()} label={fmtClock(x.startsAt, lang)} selected={pick === x.startsAt.getTime()} disabled={!x.free} onPress={() => setPick(x.startsAt.getTime())} />
-              ))}
-            </View>
+            <SlotGrid slots={slots} noticeHours={f.noticeHours} selected={pick} onPick={setPick} />
           ) : (
             <Txt v="meta">{t(all.length ? 'courts.doneToday' : 'courts.closed')}</Txt>
           )}

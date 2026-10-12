@@ -1296,6 +1296,13 @@ export const ar: Strings = {
     joinShare: 'حاضر · {amount} ريال',
   },
   courts: {
+    freeCount: '{n} من {total} أوقات متاحة',
+    slotFree: 'متاح',
+    slotBooked: 'محجوز',
+    slotSoon: 'قريب جدًا',
+    slotPicked: 'اختيارك',
+    slotBookedToast: 'هذا الوقت محجوز مسبقًا. اختر وقتًا متاحًا.',
+    slotSoonToast: 'الحجز في هذا المكان قبل {h} ساعة على الأقل. اختر وقتًا لاحقًا.',
     title: 'احجز ملعبًا',
     tileSub: 'اختر الوقت وقسّموا المبلغ',
     yourCommunity: 'مجتمعك',

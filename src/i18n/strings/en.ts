@@ -1247,6 +1247,13 @@ export const en = {
     joinShare: "I'm in · SAR {amount}",
   },
   courts: {
+    freeCount: '{n} of {total} times free',
+    slotFree: 'Free',
+    slotBooked: 'Booked',
+    slotSoon: 'Too soon',
+    slotPicked: 'Your pick',
+    slotBookedToast: 'Someone has already booked this time. Pick a free one.',
+    slotSoonToast: 'Book at least {h} h ahead at this venue. Pick a later time.',
     title: 'Book a court',
     tileSub: 'Pick a time, split the price',
     yourCommunity: 'Your community',

@@ -11,6 +11,7 @@ import { useAuth } from '../src/providers/AuthProvider';
 import { hostAtCourt, hostSession } from '../src/data/sessions';
 import { useHostPlaces, type Place } from '../src/data/places';
 import { BookError, useFacilitySlots } from '../src/data/facilities';
+import { SlotGrid } from '../src/components/board/slots';
 import { useCoaches, useMyPackList, useMySports } from '../src/data/member';
 import { useMyCommunities } from '../src/data/communities';
 import { useMyCaptaincies } from '../src/data/captains';
@@ -695,16 +696,17 @@ export default function HostScreen() {
             <Txt v="meta">{t('host.pickDay')}</Txt>
           ) : courtClosed ? (
             <Txt v="meta">{t('courts.closed')}</Txt>
-          ) : courtDay.some((x) => x.free) ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.row}>
-              {courtDay.map((x) => {
-                const { time: c, suffix } = clockParts(x.startsAt, lang);
-                const at = x.startsAt.getTime();
-                return <Chip key={at} label={`${c} ${suffix}`} selected={slotAt === at} disabled={!x.free} struck={!x.free} onPress={() => setSlotAt(at)} />;
-              })}
-            </ScrollView>
+          ) : courtDay.length ? (
+            <>
+              <SlotGrid slots={courtDay} noticeHours={court.noticeHours} selected={slotAt} onPick={setSlotAt} />
+              {!courtDay.some((x) => x.free) ? (
+                <Txt v="caption" style={{ marginTop: 8 }}>
+                  {t('courts.fullDay')}
+                </Txt>
+              ) : null}
+            </>
           ) : (
-            <Txt v="meta">{dayKey === localDateKey(now) ? t('courts.doneToday') : t('courts.fullDay')}</Txt>
+            <Txt v="meta">{dayKey === localDateKey(now) ? t('courts.doneToday') : t('courts.closed')}</Txt>
           )
         ) : (
           <>

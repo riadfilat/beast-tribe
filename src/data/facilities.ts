@@ -26,6 +26,8 @@ export interface Facility {
   audience: 'everyone' | 'women' | 'community';
   communityId: string | null;
   cancelHours: number;
+  /** Hours ahead a booking must be made; later times show as "too soon". */
+  noticeHours: number;
   isSchool: boolean;
   venue: string;
   lat: number | null;
@@ -51,12 +53,19 @@ export interface Slot {
   free: boolean;
 }
 
+export type SlotState = 'free' | 'booked' | 'soon';
+/** Why a time can't be booked: someone has it, or it's inside the venue's booking notice. */
+export function slotState(x: Slot, noticeHours: number, now = Date.now()): SlotState {
+  if (x.free) return 'free';
+  return x.startsAt.getTime() < now + noticeHours * 3600000 ? 'soon' : 'booked';
+}
+
 const BOOK_CODES = ['DAILY_LIMIT', 'TAKEN', 'TOO_MANY', 'WOMEN_ONLY', 'COMMUNITY_ONLY', 'PACK_ONLY', 'NOT_FOUND'] as const;
 export type BookErrorCode = (typeof BOOK_CODES)[number] | 'generic';
 export class BookError extends CodedError<BookErrorCode> {}
 
 const SELECT =
-  'id, name, name_ar, kind, sport, city, address, image_url, description, description_ar, price_sar, slot_minutes, max_players, audience, community_id, cancel_hours, is_school, latitude, longitude, hours, sports, parent_id, bookable, daily_limit, sort, partner:partners(business_name, name), community:communities(name)';
+  'id, name, name_ar, kind, sport, city, address, image_url, description, description_ar, price_sar, slot_minutes, max_players, audience, community_id, cancel_hours, notice_hours, is_school, latitude, longitude, hours, sports, parent_id, bookable, daily_limit, sort, partner:partners(business_name, name), community:communities(name)';
 
 function toFacility(r: any, lang: string): Facility {
   return {
@@ -74,6 +83,7 @@ function toFacility(r: any, lang: string): Facility {
     audience: r.audience,
     communityId: r.community_id ?? null,
     cancelHours: r.cancel_hours,
+    noticeHours: Number(r.notice_hours ?? 1),
     isSchool: !!r.is_school,
     venue: r.partner?.business_name || r.partner?.name || '',
     lat: r.latitude != null ? Number(r.latitude) : null,
@@ -127,7 +137,8 @@ export function useFacilities(lang: string) {
 
 export function useFacility(id: string | undefined, lang: string) {
   const { user } = useAuth();
-  return useQuery<Facility | null>(!PREVIEW && user && id ? `facilities:one:${id}:${lang}` : null, async () => {
+  return useQuery<Facility | null>(user && id ? `facilities:one:${id}:${lang}` : null, async () => {
+    if (PREVIEW) return id === previewCourt.id ? { ...previewCourt, name: lang === 'ar' ? 'بادل ١' : previewCourt.name } : null;
     const { data, error } = await supabase.from('facilities').select(SELECT).eq('id', id!).maybeSingle();
     if (error) throw error;
     return data ? toFacility(data, lang) : null;
@@ -139,7 +150,8 @@ export const dayKey = localDateKey;
 
 export function useFacilitySlots(id: string | undefined, day: string) {
   const { user } = useAuth();
-  return useQuery<Slot[]>(!PREVIEW && user && id ? `facilities:slots:${id}:${day}` : null, async () => {
+  return useQuery<Slot[]>(user && id ? `facilities:slots:${id}:${day}` : null, async () => {
+    if (PREVIEW) return previewSlots(day);
     const { data, error } = await supabase.rpc('facility_slots', { p_facility: id, p_day: day });
     if (error) throw error;
     return ((data as any[]) || []).map((r) => ({ startsAt: new Date(r.starts_at), endsAt: new Date(r.ends_at), free: !!r.free }));
@@ -163,4 +175,25 @@ export async function bookFacility(input: { facilityId: string; startsAt: Date; 
   invalidate('facilities:slots:');
   invalidate('sessions:');
   return data as string;
+}
+
+// Web preview only: one padel court with a few times already taken, so the slot states can be seen.
+const previewCourt: Facility = {
+  id: 'f-padel-1', name: 'Padel 1', kind: 'court', sport: 'padel', city: 'Riyadh', address: null, imageUrl: null,
+  description: null, price: 240, slotMinutes: 90, maxPlayers: 4, audience: 'everyone', communityId: null, cancelHours: 6,
+  noticeHours: 1, isSchool: false, venue: 'Preview venue', lat: null, lng: null, openDays: [0, 1, 2, 3, 4, 5, 6],
+  sports: ['padel'], parentId: null, bookable: true, dailyLimit: null, communityName: null,
+};
+function previewSlots(day: string): Slot[] {
+  const [y, m, d] = day.split('-').map(Number);
+  const out: Slot[] = [];
+  const now = Date.now();
+  for (let i = 0; i < 11; i++) {
+    const start = new Date(y, m - 1, d, 6, 0);
+    start.setMinutes(start.getMinutes() + i * 90);
+    const end = new Date(start.getTime() + 90 * 60000);
+    const taken = [2, 3, 6, 9].includes(i);
+    out.push({ startsAt: start, endsAt: end, free: !taken && start.getTime() >= now + 3600000 });
+  }
+  return out;
 }
