@@ -1,51 +1,36 @@
 import type { SportId } from './sports';
 
-// A picture of the field for each sport, so the Board shows at a glance what a session is.
-// Mostly photos of real courts and fields (the Andorra compound, used with the owner's permission),
-// served by the dashboard site; climbing and gym are free-licence photos (see
-// admin/public/places/*/CREDITS.md). Sports without a photo show their icon on a tinted tile.
-const BASE = 'https://beast-tribe.vercel.app/places/';
+// A picture for each sport, for places and sessions without a photo of their own.
+// It is brand art, not a photo, so it never passes off another venue as this one: the sport's
+// icon (Operation Beast's own set and game-icons.net, CC BY 3.0) on a brand colourway, made by
+// scripts/brand/place-art/generate.js and served by the dashboard site. Real photos (a place's
+// own, uploaded in HQ, or the Andorra courts) always come first.
+const BASE = 'https://beast-tribe.vercel.app/places/art/';
 
-const PHOTO: Partial<Record<SportId, string>> = {
-  padel: 'andorra/padel.jpg',
-  tennis: 'andorra/tennis.jpg',
-  pickleball: 'andorra/tennis.jpg',
-  basketball: 'andorra/indoor-court.jpg',
-  volleyball: 'andorra/indoor-court.jpg',
-  badminton: 'andorra/indoor-court.jpg',
-  football: 'andorra/football-pitch.jpg',
-  swimming: 'andorra/pool.jpg',
-  squash: 'andorra/squash.jpg',
-  table_tennis: 'andorra/squash-table-tennis.jpg',
-  cycling: 'andorra/spin-studio.jpg',
-  spinning: 'andorra/spin-studio.jpg',
-  boxing: 'andorra/boxing-studio.jpg',
-  mma: 'andorra/boxing-studio.jpg',
-  muay_thai: 'andorra/boxing-studio.jpg',
-  running: 'andorra/gardens.jpg',
-  walking: 'andorra/gardens.jpg',
-  climbing: 'sports/climbing.jpg',
-  gym: 'spots/gym.jpg',
-  crossfit: 'spots/gym.jpg',
-  hyrox: 'spots/gym.jpg',
-  calisthenics: 'spots/gym.jpg',
+const ART: Partial<Record<SportId, string>> = {
+  padel: 'padel', tennis: 'tennis', pickleball: 'racket', squash: 'racket', badminton: 'badminton',
+  table_tennis: 'pingpong', football: 'football', basketball: 'basketball', volleyball: 'volleyball',
+  swimming: 'swim', diving: 'swim', climbing: 'climbing',
+  boxing: 'boxing', muay_thai: 'boxing', mma: 'martial', jiu_jitsu: 'martial',
+  yoga: 'yoga', meditation: 'yoga', pilates: 'yoga', barre: 'yoga',
+  gym: 'dumbbell', calisthenics: 'dumbbell', crossfit: 'kettlebell', hyrox: 'kettlebell', bootcamp: 'kettlebell', lagree: 'kettlebell',
+  running: 'run', walking: 'walk', hiking: 'hiking', cycling: 'cycling', spinning: 'cycling', horse_riding: 'riding',
 };
 
-/** The sport's field photo, or null when the sport has none. */
+/** The sport's art, or null when the sport has none (the app then shows its icon). */
 export function sportPicture(sport: string): string | null {
-  const file = PHOTO[sport as SportId];
-  return file ? BASE + file : null;
+  const art = ART[sport as SportId];
+  return art ? `${BASE}${art}.jpg` : null;
 }
 
-/** The session's own photo (court, spot or cover) first, then the sport's field. */
+/** The session's own photo (court, spot or cover) first, then the sport's art. */
 export function sessionPicture(sport: string, imageUrl?: string | null): string | null {
   return imageUrl || sportPicture(sport);
 }
 
 /**
- * A place's picture: its own photo, else the photo of the sport being hosted there (when the place
- * takes it), else of the first of its sports that has one. Places without a photo of their own still
- * look like what they are.
+ * A place's picture: its own photo, else the art of the sport being hosted there (when the place
+ * takes it), else of the first of its sports that has art.
  */
 export function placePicture(imageUrl: string | null, sports: string[], sport?: string | null): string | null {
   if (imageUrl) return imageUrl;
