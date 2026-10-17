@@ -704,7 +704,7 @@ export const ar: Strings = {
     deleting: 'جارٍ الحذف…',
     version: 'الإصدار {v}',
     iconCredit: 'أيقونات الشارات من {credit}',
-    photoCredit: 'صور الأماكن: وادي حنيفة بعدسة Peter Dowley (CC BY 2.0)، حديقة السلام بعدسة Hamza A. Durrani (CC BY 4.0)، شاطئ كايت بعدسة Iamfinehere (CC0)، عبر ويكيميديا كومنز؛ والبقية من Unsplash.',
+    photoCredit: 'صور الأماكن بعدسة Peter Dowley، Hamza A. Durrani، Iamfinehere، Radosław Botev، haitham alfalah، AAlsaiad، Ayesha46، MNmagic، Pedronet، amanderson2، Derivator2017، Nick Jio وSoft Surfaces Ltd، عبر ويكيميديا كومنز وفليكر (CC BY وCC BY-SA وCC0؛ القائمة الكاملة في beast-tribe.vercel.app/places/spots/CREDITS.md)؛ والبقية من Unsplash.',
   },
   auth: {
     tagline: 'أيقظ الوحش بداخلك.',

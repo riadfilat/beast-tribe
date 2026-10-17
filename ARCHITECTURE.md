@@ -93,7 +93,7 @@ are the real gatekeeper, so even a tampered app can't see a private community or
 - **List and icons:** `src/lib/sports.ts`, with one entry per sport: id, iPhone icon, Android icon, database name. It also holds the popularity order and which sports use a court (`COURT_SPORTS`) or a route (`ROUTE_SPORTS`).
 - **Names:** `src/i18n/strings/en.ts` and `ar.ts` (`sports.*`, `sportNoun.*`); dashboard copy in `admin/src/lib/workouts.ts`.
 - **Database:** the `sports` table (members' chosen sports link by name). `bt_sport_slug()` turns a database name into the app's id ("Table Tennis" → `table_tennis`); `tests/db/sport-names.test.js` checks every sport still matches.
-- **Default pictures:** `src/lib/sportPhotos.ts`: a place's or session's own photo, else its sport's brand art (`admin/public/places/art/`, made by `scripts/brand/place-art/generate.js`).
+- **Default pictures:** `src/lib/sportPhotos.ts`: a place's or session's own photo, else its sport's brand art (`admin/public/places/art/`, made by `scripts/brand/place-art/generate.js`). Public places have photos in `admin/public/places/spots/` (credits in its CREDITS.md and the app's Settings).
 - **Known gap:** adding a sport touches 6–9 files. The target is one file per sport (see docs/AUDIT.md, problem 7).
 
 ### Workouts (the "Train" tab, switched off for launch)

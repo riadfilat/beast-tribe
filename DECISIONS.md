@@ -5,6 +5,12 @@ Add an entry whenever a choice would surprise a new engineer (CLAUDE.md, rule 9)
 
 ---
 
+### 2026-10-17 · Public places get real photos
+- **What:** parks, wadis and public courts show photos (103): 7 of the place itself (Al Bujairi, Al Ilb Dam, Al Rawdah Park, Al Murabba, King Fahad Library Park, Wadi Namar, the DQ wadi trails), the others a photo of a similar public park in Riyadh or an outdoor court. Businesses keep the brand art until they send their own photo.
+- **Why:** the owner said normal photos are fine for public places: a park photo doesn't pass off one business as another.
+- **How:** free licences only (Wikimedia Commons and Flickr via Openverse), each checked by eye (no signage, people fully clothed); credits in `admin/public/places/spots/CREDITS.md` and Settings. The migration only fills empty photos, so uploads are never overwritten.
+- **Rejected:** a Riyadh Boulevard photo (shop signs), a basketball photo with a shirtless player, a run-down stadium.
+
 ### 2026-10-17 · Places without a photo show brand art, not another venue's photo
 - **What:** the sport fallback in `src/lib/sportPhotos.ts` is now brand art (`admin/public/places/art/`, made by `scripts/brand/place-art/generate.js`): the sport's icon on an Operation Beast colourway, from the brand's own icon set and game-icons.net. Real photos (a place's own, Andorra's courts, Salam Park, Wadi Hanifah) still come first. Leejam's stock gym photo was cleared (102).
 - **Why:** the owner wants every picture to be of the right place. Showing Andorra's padel court for Padel Rush passed one venue off as another; art is clearly not a photo of anywhere.

@@ -662,7 +662,7 @@ export const en = {
     deleting: 'Deleting…',
     version: 'Version {v}',
     iconCredit: 'Group patch icons by {credit}',
-    photoCredit: 'Place photos: Wadi Hanifah by Peter Dowley (CC BY 2.0), Salam Park by Hamza A. Durrani (CC BY 4.0), Kite Beach by Iamfinehere (CC0), via Wikimedia Commons; others from Unsplash.',
+    photoCredit: 'Place photos by Peter Dowley, Hamza A. Durrani, Iamfinehere, Radosław Botev, haitham alfalah, AAlsaiad, Ayesha46, MNmagic, Pedronet, amanderson2, Derivator2017, Nick Jio and Soft Surfaces Ltd, via Wikimedia Commons and Flickr (CC BY, CC BY-SA and CC0; full list at beast-tribe.vercel.app/places/spots/CREDITS.md); others from Unsplash.',
   },
   auth: {
     tagline: 'Awaken the beast.',
